@@ -1,25 +1,38 @@
 """
-Difficulty scaling module for Augmented MCQA.
+Difficulty Scaling Experiments Module.
 
-Provides utilities for evaluating model performance across difficulty levels:
-- ARC: Easy (ARC-Easy) and Challenge (ARC-Challenge) splits
-- SuperGPQA: Hard graduate-level questions
-- MMLU-Pro: Standard difficulty
+Supports cross-difficulty comparison experiments:
+- ARC-Easy (easy, 4 options)
+- ARC-Challenge / MMLU-Pro (medium, 4/10 options)
+- SuperGPQA (hard, 10 options)
 
-This enables RQ4: Does the distractor effect scale with question difficulty?
+All loaders use exact column parsing based on analyzed HuggingFace structures.
 """
 
-from pathlib import Path
-from typing import Dict, List, Optional, Any, Literal
-from dataclasses import dataclass
-from enum import Enum
 import json
+from enum import Enum
+from pathlib import Path
+from dataclasses import dataclass, field
+from typing import List, Dict, Any, Optional
+from datetime import datetime
 
-from config import DATASETS_DIR, RESULTS_DIR
+from config import (
+    DATASETS_DIR,
+    RESULTS_DIR,
+    DatasetType,
+    DATASET_SCHEMA,
+    DistractorType,
+)
+from data.arc_processor import load_arc_dataset, get_arc_stats
+from data.supergpqa_processor import (
+    load_supergpqa_dataset,
+    get_supergpqa_stats,
+    filter_by_difficulty,
+)
 
 
 class DifficultyLevel(Enum):
-    """Question difficulty levels."""
+    """Difficulty levels for experiments."""
     EASY = "easy"
     MEDIUM = "medium"
     HARD = "hard"
@@ -27,259 +40,272 @@ class DifficultyLevel(Enum):
 
 @dataclass
 class DifficultyDataset:
-    """Configuration for a difficulty-specific dataset."""
+    """Configuration for a difficulty-level dataset."""
     name: str
-    level: DifficultyLevel
-    path: Path
-    num_options: int  # ARC has 4, MMLU-Pro has 10, SuperGPQA varies
-    source: str  # "arc", "mmlu_pro", "supergpqa"
-    split: Optional[str] = None  # For datasets with multiple splits
+    dataset_type: DatasetType
+    difficulty: DifficultyLevel
+    num_options: int
+    description: str
+    
+    # Loader arguments
+    loader_kwargs: Dict[str, Any] = field(default_factory=dict)
 
 
-# Standard difficulty scaling configuration
+# Pre-configured difficulty datasets
 DIFFICULTY_DATASETS = {
-    # Easy tier (ARC-Easy)
+    # Easy tier
     "arc_easy": DifficultyDataset(
-        name="ARC-Easy",
-        level=DifficultyLevel.EASY,
-        path=DATASETS_DIR / "arc" / "easy",
+        name="arc_easy",
+        dataset_type=DatasetType.ARC_EASY,
+        difficulty=DifficultyLevel.EASY,
         num_options=4,
-        source="arc",
-        split="easy",
+        description="ARC-Easy: Elementary-level science questions",
+        loader_kwargs={"difficulty": "easy"},
     ),
-    # Medium tier (ARC-Challenge, MMLU-Pro)
+    
+    # Medium tier
     "arc_challenge": DifficultyDataset(
-        name="ARC-Challenge",
-        level=DifficultyLevel.MEDIUM,
-        path=DATASETS_DIR / "arc" / "challenge",
+        name="arc_challenge",
+        dataset_type=DatasetType.ARC_CHALLENGE,
+        difficulty=DifficultyLevel.MEDIUM,
         num_options=4,
-        source="arc",
-        split="challenge",
+        description="ARC-Challenge: Harder science questions requiring reasoning",
+        loader_kwargs={"difficulty": "challenge"},
     ),
     "mmlu_pro": DifficultyDataset(
-        name="MMLU-Pro",
-        level=DifficultyLevel.MEDIUM,
-        path=DATASETS_DIR / "mmlu_pro_sorted",
+        name="mmlu_pro",
+        dataset_type=DatasetType.MMLU_PRO,
+        difficulty=DifficultyLevel.MEDIUM,
         num_options=10,
-        source="mmlu_pro",
+        description="MMLU-Pro: Extended MMLU with 10 options per question",
+        loader_kwargs={},
     ),
-    # Hard tier (SuperGPQA)
+    
+    # Hard tier
     "supergpqa": DifficultyDataset(
-        name="SuperGPQA",
-        level=DifficultyLevel.HARD,
-        path=DATASETS_DIR / "supergpqa",
-        num_options=4,  # Typically 4 options
-        source="supergpqa",
+        name="supergpqa",
+        dataset_type=DatasetType.SUPERGPQA,
+        difficulty=DifficultyLevel.HARD,
+        num_options=10,
+        description="SuperGPQA: Graduate-level expert questions",
+        loader_kwargs={"filter_10_options": True},
     ),
 }
 
 
-def load_arc_dataset(path: Path, split: str = "test") -> List[Dict]:
+def load_difficulty_dataset(
+    dataset_name: str,
+    split: str = "test",
+    limit: Optional[int] = None,
+) -> List[Dict[str, Any]]:
     """
-    Load ARC dataset from disk.
+    Load a dataset by name with proper column parsing.
     
-    ARC format:
-    - id: Question ID
-    - question: Question text
-    - choices: List of {"label": "A", "text": "..."} 
-    - answerKey: Correct answer label (A/B/C/D)
+    Args:
+        dataset_name: One of the DIFFICULTY_DATASETS keys
+        split: Dataset split to load
+        limit: Optional limit on entries
+        
+    Returns:
+        List of entries in unified format
     """
-    from datasets import load_from_disk
+    if dataset_name not in DIFFICULTY_DATASETS:
+        raise ValueError(
+            f"Unknown dataset: {dataset_name}. "
+            f"Available: {list(DIFFICULTY_DATASETS.keys())}"
+        )
     
-    dataset = load_from_disk(str(path))
+    config = DIFFICULTY_DATASETS[dataset_name]
     
-    entries = []
-    for entry in dataset[split] if split in dataset else dataset:
+    # Route to appropriate loader
+    if config.dataset_type in (DatasetType.ARC_EASY, DatasetType.ARC_CHALLENGE):
+        return load_arc_dataset(
+            difficulty=config.loader_kwargs.get("difficulty", "easy"),
+            split=split,
+            limit=limit,
+        )
+    
+    elif config.dataset_type == DatasetType.SUPERGPQA:
+        # SuperGPQA only has train split
+        actual_split = "train" if split == "test" else split
+        return load_supergpqa_dataset(
+            split=actual_split,
+            limit=limit,
+            filter_10_options=config.loader_kwargs.get("filter_10_options", True),
+        )
+    
+    elif config.dataset_type == DatasetType.MMLU_PRO:
+        # Use existing MMLU-Pro loader
+        from data.adapter import load_adapted
+        entries = load_adapted(
+            DATASETS_DIR / "mmlu_pro_sorted",
+            limit=limit,
+        )
         # Convert to unified format
-        choices = entry.get("choices", {})
-        labels = choices.get("label", [])
-        texts = choices.get("text", [])
-        
-        options = []
-        for label, text in zip(labels, texts):
-            options.append({"label": label, "text": text})
-        
-        # Find gold answer index
-        answer_key = entry.get("answerKey", "A")
-        gold_idx = labels.index(answer_key) if answer_key in labels else 0
-        
-        entries.append({
-            "id": entry.get("id", ""),
-            "question": entry.get("question", ""),
-            "options": options,
-            "gold_answer": texts[gold_idx] if gold_idx < len(texts) else "",
-            "gold_index": gold_idx,
-            "source": "arc",
-        })
+        return [
+            {
+                **e,
+                "dataset_type": DatasetType.MMLU_PRO.value,
+            }
+            for e in entries
+        ]
     
-    return entries
-
-
-def load_supergpqa_dataset(path: Path, split: str = "test") -> List[Dict]:
-    """
-    Load SuperGPQA dataset from disk.
-    
-    SuperGPQA format varies but typically includes:
-    - question: Question text
-    - choices/options: Answer choices
-    - answer: Correct answer
-    """
-    from datasets import load_from_disk
-    
-    dataset = load_from_disk(str(path))
-    
-    entries = []
-    for entry in dataset[split] if split in dataset else dataset:
-        # Handle different possible formats
-        question = entry.get("question", "")
-        
-        # Try different option field names
-        options = []
-        if "choices" in entry:
-            choices = entry["choices"]
-            if isinstance(choices, list):
-                options = choices
-            elif isinstance(choices, dict):
-                options = list(choices.values())
-        elif "options" in entry:
-            options = entry["options"]
-        elif "A" in entry:
-            # Some formats use A, B, C, D directly
-            options = [entry.get(k, "") for k in ["A", "B", "C", "D"] if k in entry]
-        
-        # Get gold answer
-        answer = entry.get("answer", entry.get("correct_answer", "A"))
-        
-        # Convert to index
-        if isinstance(answer, str) and len(answer) == 1:
-            gold_idx = ord(answer.upper()) - ord("A")
-        elif isinstance(answer, int):
-            gold_idx = answer
-        else:
-            gold_idx = 0
-        
-        gold_idx = min(gold_idx, len(options) - 1) if options else 0
-        
-        entries.append({
-            "id": entry.get("id", entry.get("question_id", "")),
-            "question": question,
-            "options": options,
-            "gold_answer": options[gold_idx] if gold_idx < len(options) else "",
-            "gold_index": gold_idx,
-            "source": "supergpqa",
-            "category": entry.get("category", entry.get("field", "general")),
-        })
-    
-    return entries
+    else:
+        raise ValueError(f"No loader implemented for {config.dataset_type}")
 
 
 def prepare_difficulty_evaluation(
-    difficulty_level: DifficultyLevel,
+    dataset_name: str,
+    num_human: int = 3,
+    num_model: int = 0,
     limit: Optional[int] = None,
-) -> Dict[str, List[Dict]]:
+) -> List[Dict[str, Any]]:
     """
-    Prepare datasets for a specific difficulty level.
+    Prepare a difficulty dataset for evaluation.
     
     Args:
-        difficulty_level: EASY, MEDIUM, or HARD
-        limit: Optional limit on number of entries per dataset
+        dataset_name: One of the DIFFICULTY_DATASETS keys
+        num_human: Number of human/original distractors to include
+        num_model: Number of model/synthetic distractors to include
+        limit: Optional limit on entries
         
     Returns:
-        Dict mapping dataset name to list of entries
+        List of entries ready for evaluation
     """
-    datasets = {}
+    entries = load_difficulty_dataset(dataset_name, limit=limit)
+    config = DIFFICULTY_DATASETS[dataset_name]
     
-    for key, config in DIFFICULTY_DATASETS.items():
-        if config.level != difficulty_level:
-            continue
+    # Build options for each entry
+    for entry in entries:
+        # Get available distractors
+        human_distractors = entry.get(DistractorType.COND_HUMAN_Q_A.value, [])
+        model_distractors = entry.get(DistractorType.COND_MODEL_Q_A.value, [])
         
-        if not config.path.exists():
-            print(f"Dataset not found: {config.path}")
-            continue
+        # Select distractors
+        selected_human = human_distractors[:num_human] if human_distractors else []
+        selected_model = model_distractors[:num_model] if model_distractors else []
         
-        if config.source == "arc":
-            entries = load_arc_dataset(config.path)
-        elif config.source == "supergpqa":
-            entries = load_supergpqa_dataset(config.path)
-        else:
-            # Use generic loader
-            from datasets import load_from_disk
-            dataset = load_from_disk(str(config.path))
-            entries = [dict(e) for e in dataset]
-        
-        if limit:
-            entries = entries[:limit]
-        
-        datasets[key] = entries
-        print(f"Loaded {len(entries)} entries from {config.name}")
+        # Build final options: gold + selected distractors
+        gold = entry.get("gold_answer", "")
+        entry["eval_options"] = [gold] + selected_human + selected_model
+        entry["eval_num_options"] = len(entry["eval_options"])
+        entry["distractor_config"] = f"{num_human}H{num_model}M"
     
-    return datasets
+    return entries
 
 
 def compute_difficulty_comparison(
-    results_by_difficulty: Dict[str, Dict[str, float]],
+    results: Dict[str, Dict[str, Any]],
 ) -> Dict[str, Any]:
     """
-    Compute comparison metrics across difficulty levels.
+    Compute comparative statistics across difficulty levels.
     
     Args:
-        results_by_difficulty: Dict mapping difficulty level to results dict
+        results: Dict mapping dataset_name -> evaluation results
         
     Returns:
-        Comparison analysis
+        Comparison statistics
     """
-    analysis = {
+    comparison = {
         "by_difficulty": {},
-        "trends": {},
+        "accuracy_trend": [],
+        "timestamp": datetime.now().isoformat(),
     }
     
-    for level, results in results_by_difficulty.items():
-        accuracy = results.get("accuracy", 0)
-        analysis["by_difficulty"][level] = {
-            "accuracy": accuracy,
-            "total": results.get("total", 0),
-        }
+    for diff_level in DifficultyLevel:
+        level_results = [
+            (name, res) for name, res in results.items()
+            if DIFFICULTY_DATASETS.get(name, {}).difficulty == diff_level
+        ]
+        
+        if level_results:
+            accuracies = [res.get("accuracy", 0) for _, res in level_results]
+            comparison["by_difficulty"][diff_level.value] = {
+                "datasets": [name for name, _ in level_results],
+                "mean_accuracy": sum(accuracies) / len(accuracies),
+                "accuracies": dict(level_results),
+            }
     
-    # Compute trends (accuracy drop from easy to hard)
-    levels = ["easy", "medium", "hard"]
-    accuracies = [
-        analysis["by_difficulty"].get(l, {}).get("accuracy", 0)
-        for l in levels
-    ]
+    # Build accuracy trend (easy -> medium -> hard)
+    for level in [DifficultyLevel.EASY, DifficultyLevel.MEDIUM, DifficultyLevel.HARD]:
+        level_data = comparison["by_difficulty"].get(level.value, {})
+        if level_data:
+            comparison["accuracy_trend"].append({
+                "difficulty": level.value,
+                "mean_accuracy": level_data.get("mean_accuracy", 0),
+            })
     
-    if accuracies[0] > 0 and accuracies[-1] > 0:
-        analysis["trends"]["accuracy_drop"] = accuracies[0] - accuracies[-1]
-        analysis["trends"]["relative_drop"] = (accuracies[0] - accuracies[-1]) / accuracies[0]
-    
-    return analysis
+    return comparison
 
 
 def save_difficulty_results(
     results: Dict[str, Any],
-    experiment_name: str,
+    dataset_name: str,
     output_dir: Optional[Path] = None,
+    distractor_config: str = "3H0M",
 ) -> Path:
     """
-    Save difficulty scaling experiment results.
+    Save difficulty experiment results with dataset type prefix.
     
     Args:
         results: Results dictionary
-        experiment_name: Name for this experiment
-        output_dir: Output directory (default: RESULTS_DIR/difficulty)
+        dataset_name: Name of dataset (for prefix)
+        output_dir: Output directory (default: RESULTS_DIR)
+        distractor_config: Distractor configuration string
         
     Returns:
         Path to saved results
     """
     if output_dir is None:
-        output_dir = RESULTS_DIR / "difficulty" / experiment_name
+        output_dir = RESULTS_DIR / "difficulty_scaling"
     
-    output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     
-    output_path = output_dir / "difficulty_results.json"
+    # Use dataset type prefix in filename
+    filename = f"{dataset_name}_{distractor_config}_results.json"
+    output_path = output_dir / filename
     
     with open(output_path, "w") as f:
         json.dump(results, f, indent=2, default=str)
     
-    print(f"Saved difficulty results to: {output_path}")
+    print(f"Saved results to {output_path}")
     return output_path
+
+
+def get_dataset_stats(dataset_name: str, limit: Optional[int] = None) -> Dict[str, Any]:
+    """Get statistics for a difficulty dataset."""
+    config = DIFFICULTY_DATASETS[dataset_name]
+    entries = load_difficulty_dataset(dataset_name, limit=limit)
+    
+    if config.dataset_type in (DatasetType.ARC_EASY, DatasetType.ARC_CHALLENGE):
+        return get_arc_stats(entries)
+    elif config.dataset_type == DatasetType.SUPERGPQA:
+        return get_supergpqa_stats(entries)
+    else:
+        return {
+            "total_entries": len(entries),
+            "dataset_type": config.dataset_type.value,
+            "difficulty": config.difficulty.value,
+        }
+
+
+if __name__ == "__main__":
+    # Test all loaders
+    print("Testing difficulty dataset loaders...\n")
+    
+    for name, config in DIFFICULTY_DATASETS.items():
+        print(f"\n{'='*50}")
+        print(f"{name} ({config.difficulty.value})")
+        print(f"{'='*50}")
+        
+        try:
+            entries = load_difficulty_dataset(name, limit=5)
+            print(f"Loaded {len(entries)} entries")
+            
+            if entries:
+                print(f"Sample question: {entries[0]['question'][:100]}...")
+                print(f"Options count: {len(entries[0].get('options', []))}")
+                print(f"Gold answer: {entries[0].get('gold_answer', '')[:50]}...")
+                
+        except Exception as e:
+            print(f"Error: {e}")

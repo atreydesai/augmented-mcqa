@@ -22,11 +22,11 @@ from .difficulty import (
     DifficultyLevel,
     DifficultyDataset,
     DIFFICULTY_DATASETS,
-    load_arc_dataset,
-    load_supergpqa_dataset,
+    load_difficulty_dataset,
     prepare_difficulty_evaluation,
     compute_difficulty_comparison,
     save_difficulty_results,
+    get_dataset_stats,
 )
 
 
@@ -49,12 +49,9 @@ __all__ = [
     "DifficultyLevel",
     "DifficultyDataset",
     "DIFFICULTY_DATASETS",
-    "load_arc_dataset",
-    "load_supergpqa_dataset",
+    "load_difficulty_dataset",
     "prepare_difficulty_evaluation",
     "compute_difficulty_comparison",
     "save_difficulty_results",
-]
-    "determine_prediction_type",
-    "CHOICE_LABELS",
+    "get_dataset_stats",
 ]

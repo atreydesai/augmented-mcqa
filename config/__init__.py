@@ -25,6 +25,12 @@ from .settings import (
     UNIFIED_TO_LEGACY,
     get_distractor_column,
     
+    # Dataset types and schema
+    DatasetType,
+    DATASET_SCHEMA,
+    get_answer_index,
+    get_options_from_entry,
+    
     # Configurations
     DatasetConfig,
     ModelConfig,
@@ -59,6 +65,10 @@ __all__ = [
     "LEGACY_COLUMN_MAPPING",
     "UNIFIED_TO_LEGACY",
     "get_distractor_column",
+    "DatasetType",
+    "DATASET_SCHEMA",
+    "get_answer_index",
+    "get_options_from_entry",
     "DatasetConfig",
     "ModelConfig",
     "DATASET_CONFIGS",

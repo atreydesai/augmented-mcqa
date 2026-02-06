@@ -45,6 +45,22 @@ from .adapter import (
     load_adapted,
 )
 
+from .arc_processor import (
+    load_arc_dataset,
+    process_arc_for_experiments,
+    add_synthetic_distractors_to_arc,
+    get_arc_stats,
+)
+
+from .supergpqa_processor import (
+    load_supergpqa_dataset,
+    process_supergpqa_for_experiments,
+    add_synthetic_distractors_to_supergpqa,
+    get_supergpqa_stats,
+    filter_by_difficulty,
+    filter_by_discipline,
+)
+
 __all__ = [
     # Downloader
     "download_dataset",
@@ -81,4 +97,16 @@ __all__ = [
     "DataAdapter",
     "AdaptedEntry",
     "load_adapted",
+    # ARC Processor
+    "load_arc_dataset",
+    "process_arc_for_experiments",
+    "add_synthetic_distractors_to_arc",
+    "get_arc_stats",
+    # SuperGPQA Processor
+    "load_supergpqa_dataset",
+    "process_supergpqa_for_experiments",
+    "add_synthetic_distractors_to_supergpqa",
+    "get_supergpqa_stats",
+    "filter_by_difficulty",
+    "filter_by_discipline",
 ]

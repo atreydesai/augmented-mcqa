@@ -21,6 +21,17 @@ from .visualize import (
     plot_all_rq,
 )
 
+from .difficulty_visualize import (
+    load_difficulty_results,
+    plot_arc_comparison,
+    plot_supergpqa_by_difficulty,
+    plot_difficulty_combined,
+    plot_distractor_effect_scaling,
+    plot_all_difficulty,
+    DIFFICULTY_COLORS,
+    DATASET_COLORS,
+)
+
 
 __all__ = [
     # Analyzer
@@ -41,4 +52,13 @@ __all__ = [
     "plot_rq2_human_distractors",
     "plot_rq3_model_distractors",
     "plot_all_rq",
+    # Difficulty visualization
+    "load_difficulty_results",
+    "plot_arc_comparison",
+    "plot_supergpqa_by_difficulty",
+    "plot_difficulty_combined",
+    "plot_distractor_effect_scaling",
+    "plot_all_difficulty",
+    "DIFFICULTY_COLORS",
+    "DATASET_COLORS",
 ]

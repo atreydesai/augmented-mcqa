@@ -150,6 +150,137 @@ def get_distractor_column(entry: dict, distractor_type: DistractorType) -> List[
 
 
 # =============================================================================
+# Dataset Type and Schema Configuration
+# =============================================================================
+
+class DatasetType(Enum):
+    """
+    Enum for all supported dataset types.
+    
+    Each type has specific column mappings in DATASET_SCHEMA.
+    """
+    MMLU = "mmlu"
+    MMLU_PRO = "mmlu_pro"
+    ARC_EASY = "arc_easy"
+    ARC_CHALLENGE = "arc_challenge"
+    SUPERGPQA = "supergpqa"
+
+
+# Exact column mappings for each dataset type (based on HuggingFace analysis)
+DATASET_SCHEMA = {
+    DatasetType.MMLU: {
+        # cais/mmlu - Original MMLU dataset
+        # columns: ['question', 'subject', 'choices', 'answer']
+        "question": "question",
+        "options": "choices",           # list of 4 strings
+        "answer_index": "answer",       # int 0-3
+        "answer_letter": None,          # not provided, compute from index
+        "category": "subject",          # e.g., 'abstract_algebra'
+        "num_options": 4,
+        "hf_path": "cais/mmlu",
+        "hf_config": "all",
+        "splits": ["test", "validation", "dev"],
+    },
+    DatasetType.MMLU_PRO: {
+        # TIGER-Lab/MMLU-Pro - Extended MMLU with 10 options
+        # columns: ['question_id', 'question', 'options', 'answer', 'answer_index', 
+        #           'cot_content', 'category', 'src']
+        "question": "question",
+        "options": "options",           # list of ~10 strings
+        "answer_index": "answer_index", # int 0-9
+        "answer_letter": "answer",      # 'A'-'J'
+        "category": "category",         # e.g., 'business', 'physics'
+        "src": "src",                   # original source dataset
+        "num_options": 10,
+        "hf_path": "TIGER-Lab/MMLU-Pro",
+        "hf_config": None,
+        "splits": ["test", "validation"],
+    },
+    DatasetType.ARC_EASY: {
+        # allenai/ai2_arc (ARC-Easy config)
+        # columns: ['id', 'question', 'choices', 'answerKey']
+        # choices = {'text': ['opt1',...], 'label': ['A','B','C','D']}
+        "question": "question",
+        "options": "choices.text",      # nested: choices['text']
+        "labels": "choices.label",      # nested: choices['label']
+        "answer_letter": "answerKey",   # 'A'-'D'
+        "answer_index": None,           # compute from answerKey
+        "category": None,               # not provided
+        "num_options": 4,
+        "hf_path": "allenai/ai2_arc",
+        "hf_config": "ARC-Easy",
+        "splits": ["test", "validation", "train"],
+    },
+    DatasetType.ARC_CHALLENGE: {
+        # allenai/ai2_arc (ARC-Challenge config)
+        # Same structure as ARC-Easy but harder questions
+        "question": "question",
+        "options": "choices.text",
+        "labels": "choices.label",
+        "answer_letter": "answerKey",
+        "answer_index": None,
+        "category": None,
+        "num_options": 4,
+        "hf_path": "allenai/ai2_arc",
+        "hf_config": "ARC-Challenge",
+        "splits": ["test", "validation", "train"],
+    },
+    DatasetType.SUPERGPQA: {
+        # m-a-p/SuperGPQA - Graduate-level questions
+        # columns: ['uuid', 'question', 'options', 'answer', 'answer_letter',
+        #           'discipline', 'field', 'subfield', 'difficulty', 'is_calculation']
+        # Filter to 10-option questions only (87.3% of dataset)
+        "question": "question",
+        "options": "options",           # list of strings (filter to 10)
+        "answer_text": "answer",        # full text of correct answer
+        "answer_letter": "answer_letter", # 'A'-'J'
+        "answer_index": None,           # compute from answer_letter
+        "category": "field",            # e.g., 'Electronic Science'
+        "discipline": "discipline",     # e.g., 'Engineering'
+        "subfield": "subfield",
+        "difficulty": "difficulty",     # 'middle' / 'hard'
+        "num_options": 10,              # filter to 10 only
+        "hf_path": "m-a-p/SuperGPQA",
+        "hf_config": None,
+        "splits": ["train"],            # only train split available
+    },
+}
+
+
+def get_answer_index(entry: dict, dataset_type: DatasetType) -> int:
+    """Get answer index from entry based on dataset type."""
+    schema = DATASET_SCHEMA[dataset_type]
+    
+    # If answer_index is directly available
+    if schema.get("answer_index") and schema["answer_index"] in entry:
+        return int(entry[schema["answer_index"]])
+    
+    # Compute from answer_letter
+    if schema.get("answer_letter") and schema["answer_letter"] in entry:
+        letter = entry[schema["answer_letter"]]
+        if letter and len(letter) == 1:
+            return ord(letter.upper()) - ord('A')
+    
+    return 0
+
+
+def get_options_from_entry(entry: dict, dataset_type: DatasetType) -> List[str]:
+    """Get options list from entry based on dataset type."""
+    schema = DATASET_SCHEMA[dataset_type]
+    options_key = schema["options"]
+    
+    # Handle nested dict access (e.g., 'choices.text')
+    if "." in options_key:
+        parts = options_key.split(".")
+        val = entry
+        for part in parts:
+            val = val.get(part, [])
+        return list(val) if val else []
+    
+    return list(entry.get(options_key, []))
+
+
+# =============================================================================
 # Dataset Configuration
 # =============================================================================
 
@@ -164,6 +295,7 @@ class DatasetConfig:
     question_column: str = "question"
     options_column: str = "options"
     gold_column: str = "choices_answer"
+    dataset_type: Optional[DatasetType] = None
     
     def __post_init__(self):
         if self.local_path is None:
@@ -172,25 +304,35 @@ class DatasetConfig:
 
 # Pre-configured datasets
 DATASET_CONFIGS = {
-    "mmlu_pro": DatasetConfig(
-        name="mmlu_pro",
-        hf_path="TIGER-Lab/MMLU-Pro",
-        splits=["test", "validation"],
-    ),
     "mmlu": DatasetConfig(
         name="mmlu",
         hf_path="cais/mmlu",
         splits=["test"],
+        dataset_type=DatasetType.MMLU,
+    ),
+    "mmlu_pro": DatasetConfig(
+        name="mmlu_pro",
+        hf_path="TIGER-Lab/MMLU-Pro",
+        splits=["test", "validation"],
+        dataset_type=DatasetType.MMLU_PRO,
     ),
     "arc_easy": DatasetConfig(
         name="arc_easy",
         hf_path="allenai/ai2_arc",
         splits=["test"],
+        dataset_type=DatasetType.ARC_EASY,
+    ),
+    "arc_challenge": DatasetConfig(
+        name="arc_challenge",
+        hf_path="allenai/ai2_arc",
+        splits=["test"],
+        dataset_type=DatasetType.ARC_CHALLENGE,
     ),
     "supergpqa": DatasetConfig(
         name="supergpqa",
         hf_path="m-a-p/SuperGPQA",
-        splits=["test"],
+        splits=["train"],
+        dataset_type=DatasetType.SUPERGPQA,
     ),
 }
 
