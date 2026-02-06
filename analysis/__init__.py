@@ -32,6 +32,22 @@ from .difficulty_visualize import (
     DATASET_COLORS,
 )
 
+from .branching_analysis import (
+    load_branching_results,
+    plot_human_distractor_branching,
+    plot_human_benefit_comparison,
+    HUMAN_COLORS,
+)
+
+from .category_analysis import (
+    compute_accuracy_by_category,
+    plot_category_breakdown,
+    plot_category_heatmap,
+    plot_supergpqa_by_discipline,
+    generate_category_report,
+    MMLU_PRO_CATEGORY_GROUPS,
+)
+
 
 __all__ = [
     # Analyzer
@@ -61,4 +77,17 @@ __all__ = [
     "plot_all_difficulty",
     "DIFFICULTY_COLORS",
     "DATASET_COLORS",
+    # Branching analysis
+    "load_branching_results",
+    "plot_human_distractor_branching",
+    "plot_human_benefit_comparison",
+    "HUMAN_COLORS",
+    # Category analysis
+    "compute_accuracy_by_category",
+    "plot_category_breakdown",
+    "plot_category_heatmap",
+    "plot_supergpqa_by_discipline",
+    "generate_category_report",
+    "MMLU_PRO_CATEGORY_GROUPS",
 ]
+
