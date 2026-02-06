@@ -1,6 +1,6 @@
 # Augmented MCQA
 
-A clean, modular repository for Multiple Choice Question Answering research with synthetic distractor generation and behavioral signature analysis.
+[Fill in later]
 
 ## Quick Start
 
