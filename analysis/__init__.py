@@ -11,10 +11,14 @@ from .analyzer import (
 )
 
 from .visualize import (
-    create_behavioral_bar_chart,
-    create_accuracy_comparison,
-    create_category_heatmap,
-    plot_results_summary,
+    load_summary_file,
+    load_3H_plus_M_results,
+    load_human_only_results,
+    load_model_only_results,
+    plot_rq1_combined,
+    plot_rq2_human_distractors,
+    plot_rq3_model_distractors,
+    plot_all_rq,
 )
 
 
@@ -27,9 +31,14 @@ __all__ = [
     "analyze_experiment",
     "compare_experiments",
     "format_signature_table",
-    # Visualize
-    "create_behavioral_bar_chart",
-    "create_accuracy_comparison",
-    "create_category_heatmap",
-    "plot_results_summary",
+    # Visualize - Data loaders
+    "load_summary_file",
+    "load_3H_plus_M_results",
+    "load_human_only_results",
+    "load_model_only_results",
+    # Visualize - RQ plots
+    "plot_rq1_combined",
+    "plot_rq2_human_distractors",
+    "plot_rq3_model_distractors",
+    "plot_all_rq",
 ]

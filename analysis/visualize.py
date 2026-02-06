@@ -1,237 +1,483 @@
 """
 Visualization module for Augmented MCQA.
 
-Provides plotting utilities for experiment results.
+Generates the 6 RQ line plots:
+- RQ1 (Full): 3H+M vs Human Only vs Model Only (Full Questions)
+- RQ1 (Choices): 3H+M vs Human Only vs Model Only (Choices Only)
+- RQ2 (Full): Human Only comparison (MMLU-Pro vs MMLU-Aug)
+- RQ2 (Choices): Human Only comparison (Choices Only)
+- RQ3 (Full): Model Only comparison (MMLU-Pro vs MMLU-Aug)
+- RQ3 (Choices): Model Only comparison (Choices Only)
+
+Based on overlay_full_vs_choices_only.py from the original repository.
 """
 
-from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Any
 import json
+import os
+from pathlib import Path
+from typing import Dict, List, Optional, Any
+
+import matplotlib.pyplot as plt
 
 
-def create_behavioral_bar_chart(
-    experiments: Dict[str, Dict],
-    title: str = "Behavioral Signature Comparison",
-    output_path: Optional[Path] = None,
-    figsize: Tuple[int, int] = (10, 6),
-):
-    """
-    Create a bar chart comparing behavioral signatures across experiments.
+def load_summary_file(base_dir: Path, setting_name: str, summary_filename: str) -> Optional[Dict]:
+    """Load a single summary file and return accuracy data."""
+    summary_path = base_dir / setting_name / summary_filename
+    if not summary_path.exists():
+        return None
     
-    Args:
-        experiments: Dict mapping experiment name to results with signature
-        title: Chart title
-        output_path: Path to save figure (optional)
-        figsize: Figure size
-    """
-    import matplotlib.pyplot as plt
-    import numpy as np
+    with open(summary_path, "r") as f:
+        summary = json.load(f)
     
-    names = list(experiments.keys())
-    n_exp = len(names)
-    
-    # Extract rates
-    g_rates = []
-    h_rates = []
-    m_rates = []
-    
-    for name in names:
-        sig = experiments[name].get("signature", {})
-        rates = sig.get("rates", {})
-        g_rates.append(rates.get("G", 0) * 100)
-        h_rates.append(rates.get("H", 0) * 100)
-        m_rates.append(rates.get("M", 0) * 100)
-    
-    # Create plot
-    x = np.arange(n_exp)
-    width = 0.25
-    
-    fig, ax = plt.subplots(figsize=figsize)
-    
-    bars1 = ax.bar(x - width, g_rates, width, label='Gold (G)', color='#2ecc71')
-    bars2 = ax.bar(x, h_rates, width, label='Human (H)', color='#3498db')
-    bars3 = ax.bar(x + width, m_rates, width, label='Model (M)', color='#e74c3c')
-    
-    ax.set_ylabel('Selection Rate (%)')
-    ax.set_title(title)
-    ax.set_xticks(x)
-    ax.set_xticklabels(names, rotation=45, ha='right')
-    ax.legend()
-    ax.set_ylim(0, 100)
-    
-    plt.tight_layout()
-    
-    if output_path:
-        plt.savefig(output_path, dpi=150, bbox_inches='tight')
-        print(f"Saved: {output_path}")
-    
-    return fig, ax
+    return {
+        "accuracy": summary.get("acc"),
+        "correct": summary.get("corr"),
+        "wrong": summary.get("wrong"),
+    }
 
 
-def create_accuracy_comparison(
-    experiments: Dict[str, float],
-    title: str = "Accuracy Comparison",
-    output_path: Optional[Path] = None,
-    figsize: Tuple[int, int] = (10, 6),
-):
-    """
-    Create a bar chart comparing accuracies across experiments.
+def load_3H_plus_M_results(
+    base_dir: Path,
+    dataset_type: str = "normal",
+    is_choices_only: bool = False,
+) -> List[Dict]:
+    """Load 3H + M results (3H0M through 3H6M)."""
+    results = []
     
-    Args:
-        experiments: Dict mapping experiment name to accuracy (0-1)
-        title: Chart title
-        output_path: Path to save figure (optional)
-        figsize: Figure size
-    """
-    import matplotlib.pyplot as plt
+    for m in range(0, 7):  # 0M to 6M
+        if is_choices_only:
+            setting_name = f"3H{m}M_{dataset_type}_choices_only"
+            summary_filename = f"overall_summary_3H_{m}M_choices_only.json"
+        else:
+            setting_name = f"3H{m}M_{dataset_type}"
+            summary_filename = f"overall_summary_3H_{m}M.json"
+        
+        data = load_summary_file(base_dir, setting_name, summary_filename)
+        if data:
+            results.append({
+                "setting": setting_name,
+                "num_human": 3,
+                "num_model": m,
+                "total_distractors": 3 + m,
+                **data
+            })
     
-    names = list(experiments.keys())
-    accuracies = [experiments[n] * 100 for n in names]
-    
-    fig, ax = plt.subplots(figsize=figsize)
-    
-    bars = ax.bar(range(len(names)), accuracies, color='#3498db')
-    
-    # Add value labels on bars
-    for bar, acc in zip(bars, accuracies):
-        ax.text(
-            bar.get_x() + bar.get_width()/2,
-            bar.get_height() + 1,
-            f'{acc:.1f}%',
-            ha='center',
-            va='bottom',
-            fontsize=9,
-        )
-    
-    ax.set_ylabel('Accuracy (%)')
-    ax.set_title(title)
-    ax.set_xticks(range(len(names)))
-    ax.set_xticklabels(names, rotation=45, ha='right')
-    ax.set_ylim(0, 105)
-    
-    plt.tight_layout()
-    
-    if output_path:
-        plt.savefig(output_path, dpi=150, bbox_inches='tight')
-        print(f"Saved: {output_path}")
-    
-    return fig, ax
+    return results
 
 
-def create_category_heatmap(
-    category_results: Dict[str, Dict[str, float]],
-    metric: str = "gold_rate",
-    title: str = "Accuracy by Category",
-    output_path: Optional[Path] = None,
-    figsize: Tuple[int, int] = (12, 8),
-):
-    """
-    Create a heatmap of results by experiment and category.
+def load_human_only_results(
+    base_dir: Path,
+    dataset_type: str = "normal",
+    is_choices_only: bool = False,
+) -> List[Dict]:
+    """Load Human Only results (1H0M, 2H0M, 3H0M)."""
+    results = []
     
-    Args:
-        category_results: Dict mapping experiment to category results
-        metric: Which metric to display
-        title: Chart title
-        output_path: Path to save figure (optional)
-        figsize: Figure size
-    """
-    import matplotlib.pyplot as plt
-    import numpy as np
+    for h in range(1, 4):  # 1H to 3H
+        if is_choices_only:
+            setting_name = f"{h}H0M_{dataset_type}_choices_only"
+            summary_filename = f"overall_summary_{h}H_0M_choices_only.json"
+        else:
+            setting_name = f"{h}H0M_{dataset_type}"
+            summary_filename = f"overall_summary_{h}H_0M.json"
+        
+        data = load_summary_file(base_dir, setting_name, summary_filename)
+        if data:
+            results.append({
+                "setting": setting_name,
+                "num_human": h,
+                "num_model": 0,
+                "total_distractors": h,
+                **data
+            })
     
-    experiments = list(category_results.keys())
-    
-    # Get all categories
-    all_categories = set()
-    for exp_results in category_results.values():
-        all_categories.update(exp_results.keys())
-    categories = sorted(all_categories)
-    
-    # Build matrix
-    data = []
-    for exp in experiments:
-        row = []
-        for cat in categories:
-            val = category_results[exp].get(cat, {})
-            if isinstance(val, dict):
-                row.append(val.get(metric, 0))
-            else:
-                row.append(val)
-        data.append(row)
-    
-    data = np.array(data) * 100  # Convert to percentage
-    
-    fig, ax = plt.subplots(figsize=figsize)
-    
-    im = ax.imshow(data, cmap='RdYlGn', aspect='auto', vmin=0, vmax=100)
-    
-    # Labels
-    ax.set_xticks(range(len(categories)))
-    ax.set_xticklabels(categories, rotation=45, ha='right')
-    ax.set_yticks(range(len(experiments)))
-    ax.set_yticklabels(experiments)
-    
-    # Colorbar
-    cbar = ax.figure.colorbar(im, ax=ax)
-    cbar.ax.set_ylabel(f'{metric} (%)', rotation=-90, va="bottom")
-    
-    ax.set_title(title)
-    
-    plt.tight_layout()
-    
-    if output_path:
-        plt.savefig(output_path, dpi=150, bbox_inches='tight')
-        print(f"Saved: {output_path}")
-    
-    return fig, ax
+    return results
 
 
-def plot_results_summary(
-    results_dir: Path,
+def load_model_only_results(
+    base_dir: Path,
+    dataset_type: str = "normal",
+    is_choices_only: bool = False,
+) -> List[Dict]:
+    """Load Model Only results (0H1M through 0H6M)."""
+    results = []
+    
+    for m in range(1, 7):  # 1M to 6M
+        if is_choices_only:
+            setting_name = f"0H{m}M_{dataset_type}_choices_only"
+            summary_filename = f"overall_summary_0H_{m}M_choices_only.json"
+        else:
+            setting_name = f"0H{m}M_{dataset_type}"
+            summary_filename = f"overall_summary_0H_{m}M.json"
+        
+        data = load_summary_file(base_dir, setting_name, summary_filename)
+        if data:
+            results.append({
+                "setting": setting_name,
+                "num_human": 0,
+                "num_model": m,
+                "total_distractors": m,
+                **data
+            })
+    
+    return results
+
+
+def plot_rq1_combined(
+    base_dir: Path,
     output_dir: Optional[Path] = None,
+    show: bool = False,
 ):
     """
-    Generate standard plots from a results directory.
+    RQ1: Combined plot showing all experiment types.
+    
+    Creates two plots:
+    - Full Questions: 3H+M, Human Only, Model Only (MMLU-Pro and MMLU-Aug)
+    - Choices Only: Same series for choices-only condition
+    """
+    base_dir = Path(base_dir)
+    
+    # Load all data variants
+    print("Loading results...")
+    
+    # 3H + M results
+    results_3H_normal_full = load_3H_plus_M_results(base_dir, "normal", False)
+    results_3H_normal_choices = load_3H_plus_M_results(base_dir, "normal", True)
+    results_3H_aug_full = load_3H_plus_M_results(base_dir, "augmented", False)
+    results_3H_aug_choices = load_3H_plus_M_results(base_dir, "augmented", True)
+    
+    # Human Only results
+    results_human_normal_full = load_human_only_results(base_dir, "normal", False)
+    results_human_normal_choices = load_human_only_results(base_dir, "normal", True)
+    results_human_aug_full = load_human_only_results(base_dir, "augmented", False)
+    results_human_aug_choices = load_human_only_results(base_dir, "augmented", True)
+    
+    # Model Only results
+    results_model_normal_full = load_model_only_results(base_dir, "normal", False)
+    results_model_normal_choices = load_model_only_results(base_dir, "normal", True)
+    results_model_aug_full = load_model_only_results(base_dir, "augmented", False)
+    results_model_aug_choices = load_model_only_results(base_dir, "augmented", True)
+    
+    # ===== PLOT 1: Full Questions =====
+    plt.figure(figsize=(14, 9))
+    
+    # 3H + M variants (Full)
+    if results_3H_normal_full:
+        x = [r['total_distractors'] for r in results_3H_normal_full]
+        y = [r['accuracy'] for r in results_3H_normal_full]
+        plt.plot(x, y, marker='o', linewidth=2.5, markersize=10, 
+                 label='3H + M (MMLU-Pro)', color='blue', linestyle='-')
+    
+    if results_3H_aug_full:
+        x = [r['total_distractors'] for r in results_3H_aug_full]
+        y = [r['accuracy'] for r in results_3H_aug_full]
+        plt.plot(x, y, marker='s', linewidth=2.5, markersize=10, 
+                 label='3H + M (MMLU-Aug)', color='red', linestyle='-')
+    
+    # Human Only variants (Full)
+    if results_human_normal_full:
+        x = [r['total_distractors'] for r in results_human_normal_full]
+        y = [r['accuracy'] for r in results_human_normal_full]
+        plt.plot(x, y, marker='^', linewidth=2.5, markersize=10, 
+                 label='Human Only (MMLU-Pro)', color='purple', linestyle='--', alpha=0.8)
+    
+    if results_human_aug_full:
+        x = [r['total_distractors'] for r in results_human_aug_full]
+        y = [r['accuracy'] for r in results_human_aug_full]
+        plt.plot(x, y, marker='v', linewidth=2.5, markersize=10, 
+                 label='Human Only (MMLU-Aug)', color='orange', linestyle='--', alpha=0.8)
+    
+    # Model Only variants (Full)
+    if results_model_normal_full:
+        x = [r['total_distractors'] for r in results_model_normal_full]
+        y = [r['accuracy'] for r in results_model_normal_full]
+        plt.plot(x, y, marker='D', linewidth=2.5, markersize=10, 
+                 label='Model Only (MMLU-Pro)', color='green', linestyle=':', alpha=0.8)
+    
+    if results_model_aug_full:
+        x = [r['total_distractors'] for r in results_model_aug_full]
+        y = [r['accuracy'] for r in results_model_aug_full]
+        plt.plot(x, y, marker='d', linewidth=2.5, markersize=10, 
+                 label='Model Only (MMLU-Aug)', color='brown', linestyle=':', alpha=0.8)
+    
+    # Styling for Plot 1
+    plt.xlabel('Total Number of Distractors', fontsize=18)
+    plt.ylabel('Accuracy', fontsize=18)
+    plt.xticks(fontsize=14)
+    plt.yticks(fontsize=14)
+    plt.title('Accuracy vs Total Number of Distractors\n(Full Questions)', fontsize=20, fontweight='bold')
+    plt.legend(loc='upper right', fontsize=12, markerscale=1.0, frameon=True, 
+               bbox_to_anchor=(1.0, 1.0), ncol=1)
+    plt.grid(True, alpha=0.3)
+    plt.xlim(0, 10)
+    plt.ylim(0.65, 0.95)
+    plt.tight_layout()
+    
+    if output_dir:
+        output_dir = Path(output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
+        output_path = output_dir / "rq1_full_questions.png"
+        plt.savefig(output_path, dpi=300, bbox_inches='tight')
+        print(f"Saved: {output_path}")
+    
+    if show:
+        plt.show()
+    plt.close()
+    
+    # ===== PLOT 2: Choices Only =====
+    plt.figure(figsize=(14, 9))
+    
+    # 3H + M variants (Choices Only)
+    if results_3H_normal_choices:
+        x = [r['total_distractors'] for r in results_3H_normal_choices]
+        y = [r['accuracy'] for r in results_3H_normal_choices]
+        plt.plot(x, y, marker='o', linewidth=2.5, markersize=10, 
+                 label='3H + M (MMLU-Pro)', color='blue', linestyle='-')
+    
+    if results_3H_aug_choices:
+        x = [r['total_distractors'] for r in results_3H_aug_choices]
+        y = [r['accuracy'] for r in results_3H_aug_choices]
+        plt.plot(x, y, marker='s', linewidth=2.5, markersize=10, 
+                 label='3H + M (MMLU-Aug)', color='red', linestyle='-')
+    
+    # Human Only variants (Choices Only)
+    if results_human_normal_choices:
+        x = [r['total_distractors'] for r in results_human_normal_choices]
+        y = [r['accuracy'] for r in results_human_normal_choices]
+        plt.plot(x, y, marker='^', linewidth=2.5, markersize=10, 
+                 label='Human Only (MMLU-Pro)', color='purple', linestyle='--', alpha=0.8)
+    
+    if results_human_aug_choices:
+        x = [r['total_distractors'] for r in results_human_aug_choices]
+        y = [r['accuracy'] for r in results_human_aug_choices]
+        plt.plot(x, y, marker='v', linewidth=2.5, markersize=10, 
+                 label='Human Only (MMLU-Aug)', color='orange', linestyle='--', alpha=0.8)
+    
+    # Model Only variants (Choices Only)
+    if results_model_normal_choices:
+        x = [r['total_distractors'] for r in results_model_normal_choices]
+        y = [r['accuracy'] for r in results_model_normal_choices]
+        plt.plot(x, y, marker='D', linewidth=2.5, markersize=10, 
+                 label='Model Only (MMLU-Pro)', color='green', linestyle=':', alpha=0.8)
+    
+    if results_model_aug_choices:
+        x = [r['total_distractors'] for r in results_model_aug_choices]
+        y = [r['accuracy'] for r in results_model_aug_choices]
+        plt.plot(x, y, marker='d', linewidth=2.5, markersize=10, 
+                 label='Model Only (MMLU-Aug)', color='brown', linestyle=':', alpha=0.8)
+    
+    # Styling for Plot 2
+    plt.xlabel('Total Number of Distractors', fontsize=18)
+    plt.ylabel('Accuracy', fontsize=18)
+    plt.xticks(fontsize=14)
+    plt.yticks(fontsize=14)
+    plt.title('Accuracy vs Total Number of Distractors\n(Choices Only)', fontsize=20, fontweight='bold')
+    plt.legend(loc='upper right', fontsize=12, markerscale=1.0, frameon=True, 
+               bbox_to_anchor=(1.0, 1.0), ncol=1)
+    plt.grid(True, alpha=0.3)
+    plt.xlim(0, 10)
+    plt.ylim(0.35, 0.8)
+    plt.tight_layout()
+    
+    if output_dir:
+        output_path = output_dir / "rq1_choices_only.png"
+        plt.savefig(output_path, dpi=300, bbox_inches='tight')
+        print(f"Saved: {output_path}")
+    
+    if show:
+        plt.show()
+    plt.close()
+
+
+def plot_rq2_human_distractors(
+    base_dir: Path,
+    output_dir: Optional[Path] = None,
+    show: bool = False,
+):
+    """
+    RQ2: Human-only distractor comparison (MMLU-Pro vs MMLU-Aug).
+    
+    Creates two plots: Full Questions and Choices Only.
+    """
+    base_dir = Path(base_dir)
+    
+    # Load Human Only results
+    results_normal_full = load_human_only_results(base_dir, "normal", False)
+    results_normal_choices = load_human_only_results(base_dir, "normal", True)
+    results_aug_full = load_human_only_results(base_dir, "augmented", False)
+    results_aug_choices = load_human_only_results(base_dir, "augmented", True)
+    
+    # ===== PLOT 1: Full Questions =====
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 8))
+    
+    # Full Questions
+    if results_aug_full:
+        x = [r['total_distractors'] for r in results_aug_full]
+        y = [r['accuracy'] for r in results_aug_full]
+        ax1.plot(x, y, marker='s', linewidth=4, markersize=14, 
+                 label='MMLU-Aug (Augmented)', color='red', linestyle='-', alpha=0.7, zorder=2)
+    
+    if results_normal_full:
+        x = [r['total_distractors'] + 0.05 for r in results_normal_full]  # Offset for visibility
+        y = [r['accuracy'] for r in results_normal_full]
+        ax1.plot(x, y, marker='o', linewidth=4, markersize=14, 
+                 label='MMLU-Pro (Normal)', color='blue', linestyle='--', alpha=0.7, zorder=3,
+                 markeredgewidth=2, markeredgecolor='darkblue', markerfacecolor='lightblue')
+    
+    ax1.set_xlabel('Number of Human Distractors', fontsize=18)
+    ax1.set_ylabel('Accuracy', fontsize=18)
+    ax1.tick_params(axis='both', labelsize=16)
+    ax1.set_title('Human-Only Distractors\n(Full Questions with Stem)', fontsize=20, fontweight='bold')
+    ax1.legend(loc='best', fontsize=16, frameon=True)
+    ax1.grid(True, alpha=0.3, linewidth=1.5)
+    ax1.set_xlim(0.5, 3.5)
+    ax1.set_xticks([1, 2, 3])
+    
+    # Choices Only
+    if results_aug_choices:
+        x = [r['total_distractors'] for r in results_aug_choices]
+        y = [r['accuracy'] for r in results_aug_choices]
+        ax2.plot(x, y, marker='s', linewidth=4, markersize=14, 
+                 label='MMLU-Aug (Augmented)', color='red', linestyle='-', alpha=0.7, zorder=2)
+    
+    if results_normal_choices:
+        x = [r['total_distractors'] + 0.05 for r in results_normal_choices]
+        y = [r['accuracy'] for r in results_normal_choices]
+        ax2.plot(x, y, marker='o', linewidth=4, markersize=14, 
+                 label='MMLU-Pro (Normal)', color='blue', linestyle='--', alpha=0.7, zorder=3,
+                 markeredgewidth=2, markeredgecolor='darkblue', markerfacecolor='lightblue')
+    
+    ax2.set_xlabel('Number of Human Distractors', fontsize=18)
+    ax2.set_ylabel('Accuracy', fontsize=18)
+    ax2.tick_params(axis='both', labelsize=16)
+    ax2.set_title('Human-Only Distractors\n(Choices Only, No Stem)', fontsize=20, fontweight='bold')
+    ax2.legend(loc='best', fontsize=16, frameon=True)
+    ax2.grid(True, alpha=0.3, linewidth=1.5)
+    ax2.set_xlim(0.5, 3.5)
+    ax2.set_xticks([1, 2, 3])
+    
+    fig.suptitle('RQ2: Human-Only Distractor Analysis (1H-3H)', fontsize=20, fontweight='bold', y=1.02)
+    plt.tight_layout()
+    
+    if output_dir:
+        output_dir = Path(output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
+        output_path = output_dir / "rq2_human_only.png"
+        plt.savefig(output_path, dpi=300, bbox_inches='tight')
+        print(f"Saved: {output_path}")
+    
+    if show:
+        plt.show()
+    plt.close()
+
+
+def plot_rq3_model_distractors(
+    base_dir: Path,
+    output_dir: Optional[Path] = None,
+    show: bool = False,
+):
+    """
+    RQ3: Model-only distractor comparison (MMLU-Pro vs MMLU-Aug).
+    
+    Creates two plots: Full Questions and Choices Only.
+    """
+    base_dir = Path(base_dir)
+    
+    # Load Model Only results
+    results_normal_full = load_model_only_results(base_dir, "normal", False)
+    results_normal_choices = load_model_only_results(base_dir, "normal", True)
+    results_aug_full = load_model_only_results(base_dir, "augmented", False)
+    results_aug_choices = load_model_only_results(base_dir, "augmented", True)
+    
+    # ===== Combined Plot =====
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 8))
+    
+    # Full Questions
+    if results_aug_full:
+        x = [r['total_distractors'] for r in results_aug_full]
+        y = [r['accuracy'] for r in results_aug_full]
+        ax1.plot(x, y, marker='s', linewidth=4, markersize=14, 
+                 label='MMLU-Aug (Augmented)', color='red', linestyle='-', alpha=0.7, zorder=2)
+    
+    if results_normal_full:
+        x = [r['total_distractors'] + 0.05 for r in results_normal_full]
+        y = [r['accuracy'] for r in results_normal_full]
+        ax1.plot(x, y, marker='o', linewidth=4, markersize=14, 
+                 label='MMLU-Pro (Normal)', color='blue', linestyle='--', alpha=0.7, zorder=3,
+                 markeredgewidth=2, markeredgecolor='darkblue', markerfacecolor='lightblue')
+    
+    ax1.set_xlabel('Number of Model Distractors', fontsize=18)
+    ax1.set_ylabel('Accuracy', fontsize=18)
+    ax1.tick_params(axis='both', labelsize=16)
+    ax1.set_title('Model-Only Distractors\n(Full Questions with Stem)', fontsize=20, fontweight='bold')
+    ax1.legend(loc='best', fontsize=16, frameon=True)
+    ax1.grid(True, alpha=0.3, linewidth=1.5)
+    ax1.set_xlim(0.5, 6.5)
+    ax1.set_xticks([1, 2, 3, 4, 5, 6])
+    
+    # Choices Only
+    if results_aug_choices:
+        x = [r['total_distractors'] for r in results_aug_choices]
+        y = [r['accuracy'] for r in results_aug_choices]
+        ax2.plot(x, y, marker='s', linewidth=4, markersize=14, 
+                 label='MMLU-Aug (Augmented)', color='red', linestyle='-', alpha=0.7, zorder=2)
+    
+    if results_normal_choices:
+        x = [r['total_distractors'] + 0.05 for r in results_normal_choices]
+        y = [r['accuracy'] for r in results_normal_choices]
+        ax2.plot(x, y, marker='o', linewidth=4, markersize=14, 
+                 label='MMLU-Pro (Normal)', color='blue', linestyle='--', alpha=0.7, zorder=3,
+                 markeredgewidth=2, markeredgecolor='darkblue', markerfacecolor='lightblue')
+    
+    ax2.set_xlabel('Number of Model Distractors', fontsize=18)
+    ax2.set_ylabel('Accuracy', fontsize=18)
+    ax2.tick_params(axis='both', labelsize=16)
+    ax2.set_title('Model-Only Distractors\n(Choices Only, No Stem)', fontsize=20, fontweight='bold')
+    ax2.legend(loc='best', fontsize=16, frameon=True)
+    ax2.grid(True, alpha=0.3, linewidth=1.5)
+    ax2.set_xlim(0.5, 6.5)
+    ax2.set_xticks([1, 2, 3, 4, 5, 6])
+    
+    fig.suptitle('RQ3: Model-Only Distractor Analysis (1M-6M)', fontsize=20, fontweight='bold', y=1.02)
+    plt.tight_layout()
+    
+    if output_dir:
+        output_dir = Path(output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
+        output_path = output_dir / "rq3_model_only.png"
+        plt.savefig(output_path, dpi=300, bbox_inches='tight')
+        print(f"Saved: {output_path}")
+    
+    if show:
+        plt.show()
+    plt.close()
+
+
+def plot_all_rq(
+    base_dir: Path,
+    output_dir: Optional[Path] = None,
+    show: bool = False,
+):
+    """
+    Generate all 6 RQ plots.
     
     Args:
-        results_dir: Directory containing results.json
-        output_dir: Where to save plots (default: results_dir/plots)
+        base_dir: Directory containing experiment results
+        output_dir: Where to save plots (default: base_dir/plots)
+        show: Whether to display plots interactively
     """
-    results_path = Path(results_dir) / "results.json"
-    
-    if not results_path.exists():
-        print(f"No results.json found at {results_path}")
-        return
+    base_dir = Path(base_dir)
     
     if output_dir is None:
-        output_dir = Path(results_dir) / "plots"
-    output_dir = Path(output_dir)
-    output_dir.mkdir(parents=True, exist_ok=True)
+        output_dir = base_dir / "plots"
     
-    # Load results
-    with open(results_path, 'r') as f:
-        data = json.load(f)
+    print("Generating RQ1: Combined Analysis...")
+    plot_rq1_combined(base_dir, output_dir, show)
     
-    # Extract summary if available
-    summary = data.get("summary", {})
-    config = data.get("config", {})
+    print("Generating RQ2: Human-Only Distractor Analysis...")
+    plot_rq2_human_distractors(base_dir, output_dir, show)
     
-    exp_name = config.get("name", "experiment")
+    print("Generating RQ3: Model-Only Distractor Analysis...")
+    plot_rq3_model_distractors(base_dir, output_dir, show)
     
-    # Create behavioral chart if we have behavioral counts
-    if "behavioral_counts" in summary:
-        create_behavioral_bar_chart(
-            {exp_name: {"signature": {"counts": summary["behavioral_counts"], "rates": {}}}},
-            title=f"Behavioral Signature: {exp_name}",
-            output_path=output_dir / "behavioral.png",
-        )
-    
-    # Create accuracy by category chart
-    if "accuracy_by_category" in summary:
-        cat_data = summary["accuracy_by_category"]
-        create_accuracy_comparison(
-            cat_data,
-            title=f"Accuracy by Category: {exp_name}",
-            output_path=output_dir / "accuracy_by_category.png",
-        )
-    
-    print(f"Plots saved to: {output_dir}")
+    print(f"\nAll plots saved to: {output_dir}")
