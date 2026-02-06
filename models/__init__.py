@@ -11,26 +11,31 @@ from .local_client import LocalClient
 # Client registry for factory function
 _CLIENT_REGISTRY = {
     # OpenAI models
-    "gpt-4": OpenAIClient,
     "gpt-4.1": OpenAIClient,
     "gpt-4.1-2025-04-14": OpenAIClient,
+    "gpt-5-mini": OpenAIClient,
+    "gpt-5-mini-2025-08-07": OpenAIClient,
+    "gpt-5.2": OpenAIClient,
+    "gpt-5.2-2025-12-11": OpenAIClient,
     "openai": OpenAIClient,
     
     # Anthropic models
-    "claude-3.5-sonnet": AnthropicClient,
-    "claude-3-5-sonnet-20241022": AnthropicClient,
-    "claude-3-opus": AnthropicClient,
-    "claude-3-opus-20240229": AnthropicClient,
+    "claude-opus-4-6": AnthropicClient,
+    "claude-sonnet-4-5": AnthropicClient,
+    "claude-sonnet-4-5-20250929": AnthropicClient,
+    "claude-haiku-4-5": AnthropicClient,
+    "claude-haiku-4-5-20251001": AnthropicClient,
     "anthropic": AnthropicClient,
     
     # Google Gemini models
-    "gemini-1.5-pro": GeminiClient,
-    "gemini-1.5-flash": GeminiClient,
-    "gemini-2.0-flash": GeminiClient,
+    "gemini-3-pro-preview": GeminiClient,
+    "gemini-3-flash-preview": GeminiClient,
+    "gemini-2.5-flash-lite": GeminiClient,
     "gemini": GeminiClient,
     
     # DeepSeek models
     "deepseek-chat": DeepSeekClient,
+    "deepseek-reasoner": DeepSeekClient,
     "deepseek": DeepSeekClient,
     
     # Local models
@@ -47,15 +52,19 @@ def get_client(model_name: str, **kwargs) -> ModelClient:
     Args:
         model_name: Model name or provider identifier
         **kwargs: Additional arguments passed to client constructor
+            - reasoning_effort: For OpenAI GPT-5 models ("minimal"/"low"/"medium"/"high"/"none")
+            - thinking_level: For Anthropic/Gemini ("off"/"low"/"medium"/"high")
         
     Returns:
         Configured ModelClient instance
         
     Examples:
-        >>> client = get_client("gpt-4.1")
-        >>> client = get_client("claude-3.5-sonnet")
-        >>> client = get_client("gemini-1.5-flash")
-        >>> client = get_client("local", model_id="Qwen/Qwen2.5-7B-Instruct")
+        >>> client = get_client("gpt-5.2-2025-12-11")
+        >>> client = get_client("gpt-5.2-2025-12-11", reasoning_effort="high")
+        >>> client = get_client("claude-sonnet-4-5-20250929", thinking_level="medium")
+        >>> client = get_client("gemini-3-flash-preview", thinking_level="high")
+        >>> client = get_client("deepseek-reasoner")
+        >>> client = get_client("Qwen/Qwen2.5-7B-Instruct")
     """
     # Look up in registry
     if model_name in _CLIENT_REGISTRY:
