@@ -18,6 +18,17 @@ from .runner import (
     CHOICE_LABELS,
 )
 
+from .difficulty import (
+    DifficultyLevel,
+    DifficultyDataset,
+    DIFFICULTY_DATASETS,
+    load_arc_dataset,
+    load_supergpqa_dataset,
+    prepare_difficulty_evaluation,
+    compute_difficulty_comparison,
+    save_difficulty_results,
+)
+
 
 __all__ = [
     # Config
@@ -32,6 +43,18 @@ __all__ = [
     "run_experiment",
     "run_batch",
     "build_mcqa_prompt",
+    "determine_prediction_type",
+    "CHOICE_LABELS",
+    # Difficulty
+    "DifficultyLevel",
+    "DifficultyDataset",
+    "DIFFICULTY_DATASETS",
+    "load_arc_dataset",
+    "load_supergpqa_dataset",
+    "prepare_difficulty_evaluation",
+    "compute_difficulty_comparison",
+    "save_difficulty_results",
+]
     "determine_prediction_type",
     "CHOICE_LABELS",
 ]
