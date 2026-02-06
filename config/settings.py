@@ -80,17 +80,28 @@ class DistractorType(Enum):
     - In dataset columns
     - In experiment configurations
     - In results and analysis
+    
+    IMPORTANT DISTINCTION:
+    - cond_human_q_a: 3 human distractors from original MMLU/ARC/SuperGPQA
+    - cond_model_q_a: EXISTING 6 synthetic distractors from MMLU-Pro (NOT for ARC/SuperGPQA)
+    - cond_model_q_a_scratch: NEWLY GENERATED from Q+A only (no conditioning)
+    - cond_model_q_a_dhuman: NEWLY GENERATED conditioned on 3 human distractors
+    - cond_model_q_a_dmodel: NEWLY GENERATED conditioned on 3 random existing synthetic
     """
-    # Human distractors from original MMLU
+    # Human distractors from original MMLU/ARC/SuperGPQA (up to 3)
     COND_HUMAN_Q_A = "cond_human_q_a"
     
-    # Model distractors conditioned on question + answer only
+    # EXISTING synthetic distractors from MMLU-Pro only (up to 6)
+    # NOT available for ARC or SuperGPQA
     COND_MODEL_Q_A = "cond_model_q_a"
     
-    # Model distractors conditioned on question + answer + human distractors
+    # NEWLY GENERATED distractors from Q+A only (no conditioning)
+    COND_MODEL_Q_A_SCRATCH = "cond_model_q_a_scratch"
+    
+    # NEWLY GENERATED distractors conditioned on Q+A + 3 human distractors
     COND_MODEL_Q_A_DHUMAN = "cond_model_q_a_dhuman"
     
-    # Model distractors conditioned on question + answer + model distractors
+    # NEWLY GENERATED distractors conditioned on Q+A + 3 random existing synthetic
     COND_MODEL_Q_A_DMODEL = "cond_model_q_a_dmodel"
 
 

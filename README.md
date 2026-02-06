@@ -14,69 +14,70 @@ cp .env.example .env
 
 ---
 
-## Step 1: Download Datasets
+## Quick Test
 
-Download all required datasets from HuggingFace:
+Run the full pipeline test (dry-run, no API calls):
 
 ```bash
-# Download all datasets (run once)
-python -c "
-from data.downloader import download_all_datasets
-download_all_datasets()
-"
+bash scripts/test_run.sh
 ```
-
-This downloads:
-- **MMLU** → `datasets/mmlu/`
-- **MMLU-Pro** → `datasets/mmlu_pro/`
-- **ARC** (Easy + Challenge) → `datasets/arc/`
-- **SuperGPQA** → `datasets/supergpqa/`
 
 ---
 
-## Step 2: Process MMLU-Pro
-
-Sort MMLU-Pro distractors into human vs synthetic:
+## Step 1: Download Datasets
 
 ```bash
-python -c "
-from data.sorter import process_mmlu_pro
-process_mmlu_pro()
-"
+python -c "from data.downloader import download_all_datasets; download_all_datasets()"
 ```
 
-Output: `datasets/mmlu_pro_sorted/` with columns:
-- `cond_human_q_a` - Original MMLU distractors
-- `cond_model_q_a` - MMLU-Pro synthetic distractors
+This downloads MMLU, MMLU-Pro, ARC (Easy/Challenge), and SuperGPQA.
+
+---
+
+## Step 2: Process All Datasets
+
+```bash
+python scripts/process_all.py
+```
+
+Or process individually:
+```bash
+python scripts/process_all.py --dataset mmlu_pro
+python scripts/process_all.py --dataset arc
+python scripts/process_all.py --dataset supergpqa
+```
+
+**Output:**
+- `datasets/mmlu_pro_sorted/` - Human vs synthetic distractors separated
+- `datasets/arc_processed/` - ARC-Easy and ARC-Challenge in unified format
+- `datasets/supergpqa_processed/` - SuperGPQA filtered to 10-option questions
 
 ---
 
 ## Step 3: Generate Synthetic Distractors
 
-Generate new distractors using different models. **Each run uses a unique output file** to allow concurrent execution.
-
 ```bash
 # List available models
 python scripts/generate_distractors.py --list-models
 
-# Generate with different models (can run concurrently)
+# Generate with different models (concurrent-safe naming)
 python scripts/generate_distractors.py \
     --input datasets/mmlu_pro_sorted/test.json \
-    --output datasets/augmented/mmlu_pro_gpt4.json \
+    --output datasets/augmented/mmlupro_gpt4_scratch.json \
     --model gpt-4.1 \
     --mode from_scratch
 
 python scripts/generate_distractors.py \
     --input datasets/mmlu_pro_sorted/test.json \
-    --output datasets/augmented/mmlu_pro_claude.json \
+    --output datasets/augmented/mmlupro_claude_scratch.json \
     --model claude-sonnet-4-5 \
     --mode from_scratch
 
 python scripts/generate_distractors.py \
     --input datasets/mmlu_pro_sorted/test.json \
-    --output datasets/augmented/mmlu_pro_gemini.json \
-    --model gemini-3-flash-preview \
-    --mode from_scratch
+    --output datasets/augmented/mmlupro_gpt4_condhuman.json \
+    --model gpt-4.1 \
+    --mode conditioned_human
 ```
 
 ### Generation Modes
@@ -87,6 +88,23 @@ python scripts/generate_distractors.py \
 | `conditioned_human` | `cond_model_q_a_dhuman` | Conditioned on human distractors |
 | `conditioned_synthetic` | `cond_model_q_a_dmodel` | Conditioned on model distractors |
 
+### Run Concurrent Generations
+
+```bash
+# All 3 modes × 2 models = 6 concurrent jobs
+for MODEL in gpt-4.1 claude-sonnet-4-5; do
+    SHORT="${MODEL//\//_}"
+    for MODE in from_scratch conditioned_human conditioned_synthetic; do
+        python scripts/generate_distractors.py \
+            --input datasets/mmlu_pro_sorted/test.json \
+            --output "datasets/augmented/mmlupro_${SHORT}_${MODE}.json" \
+            --model "$MODEL" \
+            --mode "$MODE" &
+    done
+done
+wait
+```
+
 ---
 
 ## Step 4: Create Filtered Subsets
@@ -96,77 +114,67 @@ Create evaluation subsets with specific distractor configurations:
 ```bash
 python -c "
 from data.filter import create_standard_subsets
-
-# Creates subsets like 3H0M (3 human, 0 model), 0H3M, 3H3M
 create_standard_subsets(
-    input_path='datasets/augmented/mmlu_pro_gpt4.json',
+    input_path='datasets/augmented/mmlupro_gpt4_scratch.json',
     output_dir='datasets/filtered/gpt4/'
 )
 "
 ```
 
+Creates: `3H0M.json`, `0H3M.json`, `3H3M.json`, `1H0M.json`, `2H0M.json`, etc.
+
 ---
 
 ## Step 5: Run Experiments
 
-Run evaluation experiments. **Use unique output directories** for concurrent runs.
-
 ```bash
-# Single experiment
 python scripts/run_experiment.py \
     --dataset datasets/filtered/gpt4/3H3M.json \
     --model gpt-4.1 \
-    --output-dir results/gpt4_eval_3H3M \
+    --output-dir results/gpt4_eval_gpt4_gen_3H3M \
     --limit 100
+```
 
-# Batch experiments with different models (concurrent-safe)
-for MODEL in gpt-4.1 claude-sonnet-4-5 gemini-3-flash-preview; do
-    for CONFIG in 3H0M 0H3M 3H3M; do
-        python scripts/run_experiment.py \
-            --dataset datasets/filtered/gpt4/$CONFIG.json \
-            --model $MODEL \
-            --output-dir results/${MODEL}_${CONFIG} &
+### Concurrent Experiments
+
+```bash
+# Evaluator × Generator × Config = unique output dir
+EVALUATORS=("gpt-4.1" "claude-sonnet-4-5")
+GENERATORS=("gpt4" "claude")
+CONFIGS=("3H0M" "0H3M" "3H3M")
+
+for EVAL in "${EVALUATORS[@]}"; do
+    EVAL_SHORT="${EVAL//\//_}"
+    for GEN in "${GENERATORS[@]}"; do
+        for CFG in "${CONFIGS[@]}"; do
+            python scripts/run_experiment.py \
+                --dataset "datasets/filtered/${GEN}/${CFG}.json" \
+                --model "$EVAL" \
+                --output-dir "results/${EVAL_SHORT}_${GEN}_${CFG}" &
+        done
     done
 done
 wait
-```
-
-### Config via JSON
-
-```bash
-python scripts/run_experiment.py --config experiments/configs/rq1.json
 ```
 
 ---
 
 ## Step 6: Analyze Results
 
-### Compute Behavioral Signatures
-
 ```bash
+# Behavioral signatures
 python -c "
 from analysis import analyze_experiment
-
-results = analyze_experiment('results/gpt4_eval_3H3M/')
+results = analyze_experiment('results/gpt4_eval_gpt4_gen_3H3M/')
 print(f'Accuracy: {results[\"accuracy\"]:.2%}')
-print(f'Gold rate: {results[\"gold_rate\"]:.2%}')
 "
-```
 
-### Category/Topic Breakdown
-
-```bash
+# Category breakdown
 python -c "
-from analysis import plot_category_breakdown, generate_category_report
-
+from analysis import plot_category_breakdown
 plot_category_breakdown(
-    'results/gpt4_eval_3H3M/results.json',
-    output_path='results/plots/category_gpt4_3H3M.png'
-)
-
-generate_category_report(
-    'results/gpt4_eval_3H3M/results.json',
-    output_dir='results/reports/'
+    'results/gpt4_eval_gpt4_gen_3H3M/results.json',
+    output_path='results/plots/category_breakdown.png'
 )
 "
 ```
@@ -175,134 +183,45 @@ generate_category_report(
 
 ## Step 7: Generate Visualizations
 
-### RQ Plots
-
 ```bash
+# RQ plots
 python -c "
 from analysis import plot_all_rq
-
-plot_all_rq(
-    base_dir='results/',
-    output_dir='results/plots/'
-)
+plot_all_rq(base_dir='results/', output_dir='results/plots/')
 "
-```
 
-### Branching Analysis (1H vs 2H vs 3H)
-
-```bash
+# Branching analysis (1H vs 2H vs 3H)
 python -c "
-from analysis import plot_human_distractor_branching, plot_human_benefit_comparison
-
-plot_human_distractor_branching(
-    base_dir='results/',
-    output_dir='results/plots/'
-)
-
-plot_human_benefit_comparison(
-    base_dir='results/',
-    output_dir='results/plots/'
-)
+from analysis import plot_human_distractor_branching
+plot_human_distractor_branching(base_dir='results/', output_dir='results/plots/')
 "
-```
 
-### Difficulty Scaling
-
-```bash
+# Difficulty scaling
 python -c "
 from analysis import plot_all_difficulty
-
-plot_all_difficulty(
-    results_dir='results/difficulty_scaling/',
-    output_dir='results/plots/difficulty/'
-)
+plot_all_difficulty(results_dir='results/', output_dir='results/plots/difficulty/')
 "
 ```
 
 ---
 
-## Running Concurrently (Naming Conventions)
+## Concurrent Naming Convention
 
-To run jobs in parallel without conflicts, use this naming pattern:
+To avoid conflicts when running jobs in parallel:
 
 ```
-results/{evaluator_model}_{generator_model}_{dataset}_{config}/
+datasets/augmented/{dataset}_{generator}_{mode}.json
+datasets/filtered/{generator}/{config}.json
+results/{evaluator}_{generator}_{config}/
 ```
 
 **Examples:**
 ```
-results/gpt4_gpt4_mmlupro_3H3M/       # GPT-4 evaluating GPT-4 generated
-results/claude_gemini_mmlupro_3H0M/   # Claude evaluating Gemini generated
-results/gpt4_human_arc_easy/          # GPT-4 on ARC with human distractors
+datasets/augmented/mmlupro_gpt4_scratch.json
+datasets/augmented/arc_claude_condhuman.json
+results/gpt4_gpt4_3H3M/
+results/claude_gemini_0H3M/
 ```
-
-**Concurrent batch script:**
-```bash
-#!/bin/bash
-# run_all.sh
-
-EVALUATORS=("gpt-4.1" "claude-sonnet-4-5")
-GENERATORS=("gpt4" "claude" "gemini")
-CONFIGS=("3H0M" "0H3M" "3H3M")
-
-for EVAL in "${EVALUATORS[@]}"; do
-    for GEN in "${GENERATORS[@]}"; do
-        for CFG in "${CONFIGS[@]}"; do
-            OUTPUT="results/${EVAL//\//_}_${GEN}_mmlupro_${CFG}"
-            python scripts/run_experiment.py \
-                --dataset "datasets/filtered/${GEN}/${CFG}.json" \
-                --model "$EVAL" \
-                --output-dir "$OUTPUT" &
-        done
-    done
-done
-wait
-echo "All experiments complete"
-```
-
----
-
-## Project Structure
-
-```
-augmented-mcqa/
-├── config/          # Configuration and settings
-├── data/            # Dataset downloading, processing, adapters
-│   ├── downloader.py      # Download from HuggingFace
-│   ├── sorter.py          # Sort MMLU-Pro distractors
-│   ├── augmentor.py       # Generate synthetic distractors
-│   ├── filter.py          # Create filtered subsets
-│   └── adapter.py         # Unified data access
-├── models/          # Model clients (single source of truth)
-│   ├── openai_client.py
-│   ├── anthropic_client.py
-│   ├── gemini_client.py
-│   ├── deepseek_client.py
-│   └── local_client.py    # vLLM for local models
-├── experiments/     # Experiment config and runners
-├── evaluation/      # Answer extraction, scoring
-├── analysis/        # Analysis and visualization
-│   ├── analyzer.py           # Behavioral signatures
-│   ├── visualize.py          # RQ plots
-│   ├── branching_analysis.py # 1H/2H/3H comparison
-│   └── category_analysis.py  # Topic breakdown
-├── scripts/         # CLI entry points
-│   ├── run_experiment.py
-│   └── generate_distractors.py
-├── datasets/        # Downloaded/generated data
-└── results/         # Experiment outputs
-```
-
----
-
-## Distractor Naming Convention
-
-| Type | Column Name | Source |
-|------|-------------|--------|
-| Human distractors | `cond_human_q_a` | Original MMLU |
-| Model distractors | `cond_model_q_a` | Generated from Q+A |
-| Conditioned on human | `cond_model_q_a_dhuman` | Generated given human distractors |
-| Conditioned on model | `cond_model_q_a_dmodel` | Generated given model distractors |
 
 ---
 
@@ -316,17 +235,35 @@ python scripts/generate_distractors.py --list-models
 |----------|--------|
 | OpenAI | `gpt-4.1`, `gpt-5-mini`, `gpt-5.2` |
 | Anthropic | `claude-opus-4-6`, `claude-sonnet-4-5`, `claude-haiku-4-5` |
-| Google | `gemini-3-pro-preview`, `gemini-3-flash-preview`, `gemini-2.5-flash-lite` |
+| Google | `gemini-3-pro-preview`, `gemini-3-flash-preview` |
 | DeepSeek | `deepseek-chat`, `deepseek-reasoner` |
 | Local | `qwen3-8b` (vLLM) |
 
 ---
 
-## Research Questions
+## Project Structure
 
-- **RQ1**: Accuracy comparison across human vs model distractors
-- **RQ2**: Effect of adding human distractors (1H vs 2H vs 3H)
-- **RQ3**: Original MMLU-Pro vs recreated MMLU-Pro-Aug
+```
+augmented-mcqa/
+├── scripts/
+│   ├── process_all.py           # Process all datasets
+│   ├── generate_distractors.py  # Generate synthetic distractors
+│   ├── run_experiment.py        # Run evaluation experiments
+│   └── test_run.sh              # End-to-end test
+├── data/
+│   ├── downloader.py            # Download from HuggingFace
+│   ├── sorter.py                # Sort MMLU-Pro distractors
+│   ├── arc_processor.py         # Process ARC dataset
+│   ├── supergpqa_processor.py   # Process SuperGPQA
+│   ├── augmentor.py             # Generate distractors
+│   └── filter.py                # Create filtered subsets
+├── models/                      # Model clients (single source of truth)
+├── experiments/                 # Experiment config and runners
+├── evaluation/                  # Answer extraction, scoring
+├── analysis/                    # Analysis and visualization
+├── datasets/                    # Downloaded/processed data
+└── results/                     # Experiment outputs
+```
 
 ---
 

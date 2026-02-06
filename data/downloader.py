@@ -173,20 +173,28 @@ def download_arc(save_path: Optional[Path] = None) -> Dict[str, DatasetDict]:
     return results
 
 
-def download_supergpqa(save_path: Optional[Path] = None) -> DatasetDict:
+def download_supergpqa(save_path: Optional[Path] = None, force_redownload: bool = False) -> DatasetDict:
     """Download SuperGPQA dataset."""
     hf_path = "m-a-p/SuperGPQA"
     if save_path is None:
         save_path = DATASETS_DIR / "supergpqa"
     save_path = Path(save_path)
     
-    if save_path.exists():
+    if save_path.exists() and not force_redownload:
         print(f"SuperGPQA already exists at {save_path}")
         from datasets import load_from_disk
         return load_from_disk(str(save_path))
     
     print(f"Downloading SuperGPQA...")
-    dataset = load_dataset(hf_path)
+    try:
+        # Try normal download first
+        dataset = load_dataset(hf_path)
+    except (TypeError, Exception) as e:
+        # Cache may be corrupted, force redownload
+        print(f"Cache error: {e}")
+        print("Forcing redownload with cache bypass...")
+        dataset = load_dataset(hf_path, download_mode="force_redownload")
+    
     save_path.mkdir(parents=True, exist_ok=True)
     dataset.save_to_disk(str(save_path))
     print(f"Saved to {save_path}")
@@ -229,6 +237,42 @@ def print_dataset_info(dataset: DatasetDict, name: str = "Dataset") -> None:
         
         if "sample_entry" in split_info:
             print(f"    Sample keys: {list(split_info['sample_entry'].keys())}")
+
+
+def download_all_datasets() -> Dict[str, Any]:
+    """
+    Download all required datasets.
+    
+    Returns:
+        Dict mapping dataset name to downloaded dataset
+    """
+    results = {}
+    
+    print("=" * 50)
+    print("Downloading MMLU-Pro...")
+    print("=" * 50)
+    results["mmlu_pro"] = download_mmlu_pro()
+    
+    print("\n" + "=" * 50)
+    print("Downloading MMLU (all configs)...")
+    print("=" * 50)
+    results["mmlu"] = download_mmlu_all_configs()
+    
+    print("\n" + "=" * 50)
+    print("Downloading ARC...")
+    print("=" * 50)
+    results["arc"] = download_arc()
+    
+    print("\n" + "=" * 50)
+    print("Downloading SuperGPQA...")
+    print("=" * 50)
+    results["supergpqa"] = download_supergpqa()
+    
+    print("\n" + "=" * 50)
+    print("All datasets downloaded!")
+    print("=" * 50)
+    
+    return results
 
 
 if __name__ == "__main__":

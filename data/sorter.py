@@ -156,15 +156,19 @@ def process_mmlu_pro(
     mmlu_path: Optional[Path] = None,
     output_path: Optional[Path] = None,
     report_whitespace_bugs: bool = True,
+    filter_10_options: bool = True,
 ) -> DatasetDict:
     """
     Process MMLU-Pro to separate human and synthetic distractors.
     
+    IMPORTANT: By default, only 10-option questions are processed because:
+    - 10 options = 1 gold + 3 human + 6 synthetic
+    - Questions with fewer options have incomplete distractor sets
+    
     Creates a new dataset with additional columns:
-    - cond_human_q_a: List of human distractors (from MMLU)
-    - cond_model_q_a: List of synthetic distractors (added by MMLU-Pro)
+    - cond_human_q_a: List of human distractors (from MMLU, up to 3)
+    - cond_model_q_a: List of synthetic distractors (added by MMLU-Pro, up to 6)
     - choices_answer: The gold answer (as a single-item list for consistency)
-    - source_mmlu_subset: Which MMLU subset the question came from
     - whitespace_bug_fixed: Whether whitespace was cleaned
     
     Args:
@@ -172,6 +176,7 @@ def process_mmlu_pro(
         mmlu_path: Path to MMLU dataset (for building lookup)
         output_path: Where to save the processed dataset
         report_whitespace_bugs: If True, report questions with whitespace issues
+        filter_10_options: If True, only process questions with exactly 10 options
         
     Returns:
         Processed DatasetDict
@@ -234,14 +239,28 @@ def process_mmlu_pro(
     
     # Process all splits
     processed = {}
+    skipped_counts = {}
+    
     for split_name, split_data in mmlu_pro.items():
         print(f"Processing {split_name} split ({len(split_data)} entries)...")
         processed_entries = []
+        skipped = 0
         
         for entry in tqdm(split_data, desc=f"  {split_name}"):
+            options = entry.get("options", [])
+            
+            # Filter to 10-option questions if requested
+            if filter_10_options and len(options) != 10:
+                skipped += 1
+                continue
+            
             processed_entries.append(process_entry(dict(entry)))
         
         processed[split_name] = Dataset.from_list(processed_entries)
+        skipped_counts[split_name] = skipped
+        
+        if filter_10_options and skipped > 0:
+            print(f"    Filtered: kept {len(processed_entries)}, skipped {skipped} (non-10-option)")
     
     result = DatasetDict(processed)
     

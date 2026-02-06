@@ -37,14 +37,25 @@ from config import (
 
 
 class AugmentorMode(Enum):
-    """Generation mode for synthetic distractors."""
-    # Generate from question + answer only (produces cond_model_q_a)
+    """
+    Generation mode for synthetic distractors.
+    
+    IMPORTANT: cond_model_q_a contains EXISTING synthetic distractors from MMLU-Pro.
+    These modes generate NEW distractors:
+    - FROM_SCRATCH: New distractors from Q+A only (no conditioning)
+    - CONDITIONED_HUMAN: New distractors conditioned on 3 human distractors
+    - CONDITIONED_SYNTHETIC: New distractors conditioned on 3 random existing synthetic
+    """
+    # Generate from question + answer only
+    # Output: cond_model_q_a_scratch (NEW generated, not the existing MMLU-Pro ones)
     FROM_SCRATCH = "from_scratch"
     
-    # Generate conditioned on human distractors (produces cond_model_q_a_dhuman)
+    # Generate conditioned on 3 human distractors
+    # Output: cond_model_q_a_dhuman
     CONDITIONED_HUMAN = "conditioned_human"
     
-    # Generate conditioned on existing synthetic distractors (produces cond_model_q_a_dmodel)
+    # Generate conditioned on 3 RANDOMLY SELECTED existing synthetic distractors
+    # Output: cond_model_q_a_dmodel
     CONDITIONED_SYNTHETIC = "conditioned_synthetic"
 
 
@@ -182,7 +193,7 @@ def parse_generated_distractors(response: str, expected_count: int = 9) -> List[
 def build_prompt(
     entry: Dict,
     mode: AugmentorMode,
-    num_distractors: int = 9,
+    num_distractors: int = 6,
 ) -> str:
     """
     Build the generation prompt based on mode.
@@ -190,7 +201,7 @@ def build_prompt(
     Args:
         entry: Dataset entry with question, answer, and possibly existing distractors
         mode: Generation mode
-        num_distractors: Number of distractors to generate
+        num_distractors: Number of distractors to generate (default 6)
         
     Returns:
         Formatted prompt string
@@ -213,27 +224,48 @@ def build_prompt(
             gold_answer=gold_answer,
         )
     
-    elif mode in (AugmentorMode.CONDITIONED_HUMAN, AugmentorMode.CONDITIONED_SYNTHETIC):
-        # Get conditioning distractors
-        if mode == AugmentorMode.CONDITIONED_HUMAN:
-            distractors = get_distractor_column(entry, DistractorType.COND_HUMAN_Q_A)
-        else:
-            distractors = get_distractor_column(entry, DistractorType.COND_MODEL_Q_A)
+    elif mode == AugmentorMode.CONDITIONED_HUMAN:
+        # Get human distractors (up to 3 from original MMLU/ARC/SuperGPQA)
+        distractors = get_distractor_column(entry, DistractorType.COND_HUMAN_Q_A)
         
-        # Need at least 3 distractors for conditioning
+        # Need exactly 3 distractors for conditioning
         if len(distractors) < 3:
-            # Fall back to from_scratch if not enough distractors
+            # Fall back to from_scratch if not enough human distractors
             return DISTRACTOR_GENERATION_PROMPT.format(
                 question=question,
                 gold_answer=gold_answer,
             )
         
+        # Use first 3 human distractors
         return DISTRACTOR_GENERATION_PROMPT_CONDITIONED.format(
             question=question,
             gold_answer=gold_answer,
             distractor_1=distractors[0],
             distractor_2=distractors[1],
             distractor_3=distractors[2],
+        )
+    
+    elif mode == AugmentorMode.CONDITIONED_SYNTHETIC:
+        # Get existing synthetic distractors (from MMLU-Pro, up to 6)
+        distractors = get_distractor_column(entry, DistractorType.COND_MODEL_Q_A)
+        
+        # Need at least 3 synthetic distractors to select from
+        if len(distractors) < 3:
+            # Fall back to from_scratch if not enough synthetic distractors
+            return DISTRACTOR_GENERATION_PROMPT.format(
+                question=question,
+                gold_answer=gold_answer,
+            )
+        
+        # RANDOMLY SELECT 3 from the available synthetic distractors
+        selected_distractors = random.sample(distractors, 3)
+        
+        return DISTRACTOR_GENERATION_PROMPT_CONDITIONED.format(
+            question=question,
+            gold_answer=gold_answer,
+            distractor_1=selected_distractors[0],
+            distractor_2=selected_distractors[1],
+            distractor_3=selected_distractors[2],
         )
     
     raise ValueError(f"Unknown mode: {mode}")
@@ -295,9 +327,14 @@ def generate_distractors(
 
 
 def get_output_column(mode: AugmentorMode) -> str:
-    """Get the output column name for a generation mode."""
+    """
+    Get the output column name for a generation mode.
+    
+    Note: FROM_SCRATCH outputs to cond_model_q_a_scratch (NEW generated),
+    NOT to cond_model_q_a (which holds EXISTING MMLU-Pro synthetic distractors).
+    """
     mapping = {
-        AugmentorMode.FROM_SCRATCH: DistractorType.COND_MODEL_Q_A.value,
+        AugmentorMode.FROM_SCRATCH: DistractorType.COND_MODEL_Q_A_SCRATCH.value,
         AugmentorMode.CONDITIONED_HUMAN: DistractorType.COND_MODEL_Q_A_DHUMAN.value,
         AugmentorMode.CONDITIONED_SYNTHETIC: DistractorType.COND_MODEL_Q_A_DMODEL.value,
     }
