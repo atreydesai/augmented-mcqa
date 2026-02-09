@@ -26,10 +26,10 @@ def process_mmlu_pro():
     
     from data.sorter import process_mmlu_pro as _process
     
-    output_dir = DATASETS_DIR / "mmlu_pro_sorted"
-    result = _process(output_dir=output_dir)
+    output_path = DATASETS_DIR / "mmlu_pro_sorted"
+    result = _process(output_path=output_path)
     
-    print(f"✅ MMLU-Pro processed -> {output_dir}")
+    print(f"✅ MMLU-Pro processed -> {output_path}")
     return result
 
 

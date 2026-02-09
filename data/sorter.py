@@ -89,6 +89,11 @@ def build_mmlu_lookup(mmlu_path: Path) -> Dict[str, Set[str]]:
         if not subset_dir.is_dir() or subset_dir.name.startswith("."):
             continue
             
+        # Skip 'all' or 'auxiliary_train' if processing individual subjects
+        # to avoid redundant work and schema mismatches
+        if subset_dir.name in ("all", "auxiliary_train"):
+            continue
+            
         try:
             subset_data = load_from_disk(str(subset_dir))
         except Exception:
@@ -97,6 +102,10 @@ def build_mmlu_lookup(mmlu_path: Path) -> Dict[str, Set[str]]:
         # Process all splits
         for split_name, split_data in subset_data.items():
             for entry in split_data:
+                # Robustly check for question key
+                if "question" not in entry:
+                    continue
+                
                 question = clean_whitespace(entry["question"].lower())
                 choices = entry.get("choices", [])
                 for choice in choices:

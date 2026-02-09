@@ -96,6 +96,7 @@ def process_supergpqa_for_experiments(
     limit: Optional[int] = None,
     filter_10_options: bool = True,
     output_dir: Optional[Path] = None,
+    output_path: Optional[Path] = None,
 ) -> Path:
     """
     Process SuperGPQA dataset and save in unified format.
@@ -104,25 +105,28 @@ def process_supergpqa_for_experiments(
         split: Dataset split
         limit: Optional limit
         filter_10_options: If True, only include 10-option questions
-        output_dir: Output directory (default: DATASETS_DIR)
+        output_dir: Output base directory
+        output_path: Exact output file path (overrides output_dir)
         
     Returns:
         Path to saved dataset
     """
     entries = load_supergpqa_dataset(split, limit, filter_10_options)
     
-    if output_dir is None:
-        output_dir = DATASETS_DIR
+    if output_path is None:
+        if output_dir is None:
+            output_dir = DATASETS_DIR
+        
+        # Default path structure: output_dir/supergpqa/split.json
+        output_path = output_dir / "supergpqa" / f"{split}.json"
     
-    # Use dataset type prefix in output
-    output_path = output_dir / "supergpqa" / f"{split}.json"
     output_path.parent.mkdir(parents=True, exist_ok=True)
     
     with open(output_path, "w") as f:
         json.dump(entries, f, indent=2)
     
     print(f"Saved {len(entries)} entries to {output_path}")
-    return output_path
+    return entries
 
 
 def add_synthetic_distractors_to_supergpqa(

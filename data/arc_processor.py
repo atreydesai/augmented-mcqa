@@ -93,6 +93,7 @@ def process_arc_for_experiments(
     split: str = "test",
     limit: Optional[int] = None,
     output_dir: Optional[Path] = None,
+    output_path: Optional[Path] = None,
 ) -> Path:
     """
     Process ARC dataset and save in unified format for experiments.
@@ -101,26 +102,29 @@ def process_arc_for_experiments(
         difficulty: "easy" or "challenge"
         split: Dataset split
         limit: Optional limit
-        output_dir: Output directory (default: DATASETS_DIR)
+        output_dir: Output base directory
+        output_path: Exact output file path (overrides output_dir)
         
     Returns:
         Path to saved dataset
     """
     entries = load_arc_dataset(difficulty, split, limit)
     
-    if output_dir is None:
-        output_dir = DATASETS_DIR
+    if output_path is None:
+        if output_dir is None:
+            output_dir = DATASETS_DIR
+        
+        # Default path structure: output_dir/arc_difficulty/split.json
+        prefix = f"arc_{difficulty}"
+        output_path = output_dir / prefix / f"{split}.json"
     
-    # Use dataset type prefix in output
-    prefix = f"arc_{difficulty}"
-    output_path = output_dir / prefix / f"{split}.json"
     output_path.parent.mkdir(parents=True, exist_ok=True)
     
     with open(output_path, "w") as f:
         json.dump(entries, f, indent=2)
     
     print(f"Saved {len(entries)} entries to {output_path}")
-    return output_path
+    return entries
 
 
 def add_synthetic_distractors_to_arc(
