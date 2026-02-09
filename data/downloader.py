@@ -93,6 +93,10 @@ def download_dataset(
     dataset.save_to_disk(str(save_path))
     print(f"  Saved to: {save_path}")
     
+    # Push to Hugging Face
+    from data.hub_utils import push_dataset_to_hub
+    push_dataset_to_hub(dataset, dataset_name=dataset_name, suffix="raw")
+    
     return dataset
 
 

@@ -12,44 +12,54 @@ augmented-mcqa/
 │   ├── settings.py      # Paths, API keys, enums (DistractorType, DatasetType)
 │   └── __init__.py      # Exports all config
 ├── data/                # Data pipeline
-│   ├── downloader.py    # Download datasets from HuggingFace
-│   ├── sorter.py        # Sort MMLU-Pro into human vs synthetic distractors
-│   ├── arc_processor.py # Process ARC-Easy/Challenge
-│   ├── supergpqa_processor.py  # Process SuperGPQA (10-option questions)
-│   ├── augmentor.py     # Generate synthetic distractors using LLMs
-│   ├── filter.py        # Create filtered subsets (3H0M, 0H3M, 3H3M, etc.)
-│   └── adapter.py       # Unified data access layer
-├── models/              # LLM clients (SINGLE SOURCE OF TRUTH for model selection)
+│   ├── downloader.py    # Download datasets from HF to datasets/raw/
+│   ├── sorter.py        # Sort MMLU-Pro to datasets/processed/
+│   ├── arc_processor.py # Process ARC to datasets/processed/
+│   ├── supergpqa_processor.py  # Process SuperGPQA to datasets/processed/
+│   ├── augmentor.py     # Generate synthetic distractors to datasets/augmented/
+│   ├── filter.py        # Create filtered subsets (3H0M, 0H3M, etc.)
+│   └── adapter.py       # Unified data access layer (DataAdapter)
+├── models/              # LLM clients (SINGLE SOURCE OF TRUTH)
 │   ├── base.py          # Abstract ModelClient interface
+│   ├── __init__.py      # Factory (get_client) & Registry
 │   ├── openai_client.py
 │   ├── anthropic_client.py
 │   ├── gemini_client.py
 │   ├── deepseek_client.py
-│   └── local_client.py  # vLLM for local models
+│   └── local_client.py
 ├── experiments/         # Experiment framework
 │   ├── config.py        # ExperimentConfig dataclass
 │   ├── runner.py        # ExperimentRunner
 │   └── difficulty.py    # Difficulty scaling experiments
 ├── evaluation/          # Answer extraction and scoring
-│   └── evaluator.py
+│   └── evaluator.py     # build_mcqa_prompt (SINGLE SOURCE OF TRUTH)
 ├── analysis/            # Analysis and visualization
-│   ├── analyzer.py      # Behavioral signatures, gold rate
-│   ├── visualize.py     # RQ1, RQ2, RQ3 plots
-│   ├── difficulty_visualize.py  # Difficulty scaling plots
-│   ├── branching_analysis.py    # 1H vs 2H vs 3H comparison
-│   └── category_analysis.py     # Topic/category breakdown
+│   ├── analyzer.py      # Behavioral signatures
+│   └── visualize.py     # Plotting functions
 ├── scripts/             # CLI entry points
-│   ├── process_all.py           # Process all datasets
-│   ├── generate_distractors.py  # Generate distractors with model selection
-│   ├── run_experiment.py        # Run evaluation experiments
-│   └── test_run.sh              # End-to-end test script
-├── datasets/            # Downloaded and processed data
+│   ├── process_all.py           # Process all raw datasets
+│   ├── generate_distractors.py  # Generate augmented datasets
+│   └── run_experiment.py        # Run evaluation experiments
+├── tests/               # Test Suite
+│   ├── conftest.py
+│   ├── test_config.py
+│   ├── test_models.py
+│   ├── test_data_processing.py
+│   ├── test_augmentation.py
+│   └── test_integration.py
+├── datasets/            # Data Directory (Managed Structure)
+│   ├── raw/             # Downloaded from HuggingFace
+│   ├── processed/       # Unified JSON format
+│   └── augmented/       # Generated distractors
+│       ├── from_scratch/
+│       ├── conditioned_human/
+│       └── conditioned_synthetic/
 └── results/             # Experiment outputs
 ```
 
 ## Key Concepts
 
-### Distractor Types (Column Names)
+### Distractor Types (Unified Enum)
 | Column | Meaning |
 |--------|---------|
 | `cond_human_q_a` | Human-written distractors (from original MMLU) |
@@ -57,72 +67,33 @@ augmented-mcqa/
 | `cond_model_q_a_dhuman` | Model-generated conditioned on human distractors |
 | `cond_model_q_a_dmodel` | Model-generated conditioned on model distractors |
 
-### Configuration Shorthand
-- `3H0M` = 3 human distractors, 0 model distractors
-- `0H3M` = 0 human, 3 model
-- `3H3M` = 3 human, 3 model (6 total distractors)
-
 ### Datasets
 1. **MMLU-Pro** - Primary dataset, has both human and synthetic distractors
 2. **ARC** - Easy and Challenge splits
 3. **SuperGPQA** - Filtered to 10-option questions only
 
-## Pipeline (7 Steps)
+## Pipeline
 
-1. **Download**: `python -c "from data.downloader import download_all_datasets; download_all_datasets()"`
-2. **Process**: `python scripts/process_all.py`
-3. **Generate**: `python scripts/generate_distractors.py --model gpt-4.1 --mode from_scratch ...`
-4. **Filter**: Create subsets via `data.filter.create_standard_subsets()`
-5. **Experiment**: `python scripts/run_experiment.py --model gpt-4.1 --dataset ... --output-dir ...`
-6. **Analyze**: Use `analysis.analyze_experiment()`, `plot_category_breakdown()`
-7. **Visualize**: `plot_all_rq()`, `plot_human_distractor_branching()`, `plot_all_difficulty()`
+1. **Download**: `python -m data.downloader --dataset all` -> `datasets/raw/`
+2. **Process**: `python scripts/process_all.py` -> `datasets/processed/`
+3. **Generate**: `python scripts/generate_distractors.py ...` -> `datasets/augmented/{mode}/`
+4. **Filter**: `data.filter` tools
+5. **Experiment**: `python scripts/run_experiment.py ...`
 
 ## Model Registry
 
-All models are in `models/__init__.py._CLIENT_REGISTRY`. Use `models.get_client(model_name)` to get a client.
-
-Available: `gpt-4.1`, `gpt-5-mini`, `gpt-5.2`, `claude-opus-4-6`, `claude-sonnet-4-5`, `claude-haiku-4-5`, `gemini-3-pro-preview`, `gemini-3-flash-preview`, `deepseek-chat`, `deepseek-reasoner`, `qwen3-8b`
-
-## Generation Modes (AugmentorMode enum)
-
-- `FROM_SCRATCH` - Generate distractors from question + answer only
-- `CONDITIONED_HUMAN` - Generate given existing human distractors
-- `CONDITIONED_SYNTHETIC` - Generate given existing model distractors
-
-## Concurrent Execution Naming
-
-To run jobs in parallel without conflicts:
-```
-datasets/augmented/{dataset}_{generator}_{mode}.json
-results/{evaluator}_{generator}_{config}/
-```
-
-Example: `results/gpt4_claude_3H3M/` = GPT-4 evaluating Claude-generated distractors with 3H+3M config
-
-## Research Questions
-
-- **RQ1**: Accuracy on human vs model-generated distractors
-- **RQ2**: Effect of adding human distractors (1H vs 2H vs 3H branching)
-- **RQ3**: Original MMLU-Pro vs recreated MMLU-Pro-Aug
-
-## Key Files Modified/Created
-
-- `config/generator_config.py` - DELETED (redundant, use models/ directly)
-- `analysis/branching_analysis.py` - 1H/2H/3H branching visualization
-- `analysis/category_analysis.py` - Topic/discipline breakdown
-- `scripts/process_all.py` - Process all datasets
-- `scripts/generate_distractors.py` - CLI for distractor generation
-- `scripts/test_run.sh` - End-to-end test
-- `data/downloader.py` - Added `download_all_datasets()`
-
-## Environment
-
-- API keys in `.env`: `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_API_KEY`, `DEEPSEEK_API_KEY`, `HF_TOKEN`
-- Paths: `DATASETS_DIR`, `RESULTS_DIR`, `MODEL_CACHE_DIR`
-- Conda env: `qgqa`
+Use `models.get_client(model_name)` to get a client instance.
+Registry defined in `models/__init__.py`.
 
 ## Testing
 
+Run the full test suite with `pytest`:
 ```bash
-bash scripts/test_run.sh  # Dry-run validation of full pipeline
+python -m pytest tests/
 ```
+
+## Environment
+
+- API keys in `.env`
+- Paths: `DATASETS_DIR` (defaults to `./datasets`), `RESULTS_DIR`
+- Conda env: `qgqa`

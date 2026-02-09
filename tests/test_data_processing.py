@@ -1,5 +1,5 @@
 import pytest
-from data.sorter import clean_whitespace, clean_options
+from data.mmlu_pro_processor import clean_whitespace, clean_options
 from config import DATASET_SCHEMA, DatasetType
 
 def test_clean_whitespace():

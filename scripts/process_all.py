@@ -12,82 +12,85 @@ Usage:
 import sys
 import argparse
 from pathlib import Path
+from typing import Optional
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from config import DATASETS_DIR
+from config import DATASETS_DIR, PROCESSED_DATASETS_DIR
+from data import (
+    process_mmlu_pro as process_mmlu_pro_func,
+    process_arc_for_experiments,
+    process_supergpqa_for_experiments,
+)
 
 
-def process_mmlu_pro():
+def run_mmlu_pro(limit: Optional[int] = None):
     """Sort MMLU-Pro into human vs synthetic distractors."""
     print("\n" + "=" * 60)
     print("Processing MMLU-Pro (sorting human vs synthetic distractors)")
     print("=" * 60)
     
-    from data.sorter import process_mmlu_pro as _process
-    
-    output_path = DATASETS_DIR / "mmlu_pro_processed"
-    result = _process(output_path=output_path)
+    output_path = PROCESSED_DATASETS_DIR / "mmlu_pro_processed"
+    result = process_mmlu_pro_func(output_path=output_path, limit=limit)
     
     print(f"✅ MMLU-Pro processed -> {output_path}")
     return result
 
 
-def process_arc():
+def run_arc(limit: Optional[int] = None):
     """Process ARC-Easy and ARC-Challenge into unified format."""
     print("\n" + "=" * 60)
     print("Processing ARC (Easy + Challenge)")
     print("=" * 60)
     
-    from data.arc_processor import process_arc_for_experiments
-    
     arc_easy = process_arc_for_experiments(
         difficulty="easy",
-        output_path=DATASETS_DIR / "arc_processed" / "arc_easy.json"
+        output_path=PROCESSED_DATASETS_DIR / "arc_processed" / "arc_easy.json",
+        limit=limit
     )
     print(f"  ARC-Easy: {len(arc_easy)} entries")
     
     arc_challenge = process_arc_for_experiments(
         difficulty="challenge",
-        output_path=DATASETS_DIR / "arc_processed" / "arc_challenge.json"
+        output_path=PROCESSED_DATASETS_DIR / "arc_processed" / "arc_challenge.json",
+        limit=limit
     )
     print(f"  ARC-Challenge: {len(arc_challenge)} entries")
     
-    print(f"✅ ARC processed -> {DATASETS_DIR / 'arc_processed'}")
+    print(f"✅ ARC processed -> {PROCESSED_DATASETS_DIR / 'arc_processed'}")
     return {"easy": arc_easy, "challenge": arc_challenge}
 
 
-def process_supergpqa():
+def run_supergpqa(limit: Optional[int] = None):
     """Process SuperGPQA into unified format (10-option questions only)."""
     print("\n" + "=" * 60)
     print("Processing SuperGPQA (filtering to 10-option questions)")
     print("=" * 60)
     
-    from data.supergpqa_processor import process_supergpqa_for_experiments
-    
     result = process_supergpqa_for_experiments(
-        output_path=DATASETS_DIR / "supergpqa_processed" / "supergpqa.json"
+        output_path=PROCESSED_DATASETS_DIR / "supergpqa_processed" / "supergpqa.json",
+        limit=limit
     )
     
     print(f"  SuperGPQA: {len(result)} entries (10-option only)")
-    print(f"✅ SuperGPQA processed -> {DATASETS_DIR / 'supergpqa_processed'}")
+    print(f"✅ SuperGPQA processed -> {PROCESSED_DATASETS_DIR / 'supergpqa_processed'}")
     return result
 
 
-def process_all():
+def run_all(limit: Optional[int] = None):
     """Process all datasets."""
     results = {}
     
-    results["mmlu_pro"] = process_mmlu_pro()
-    results["arc"] = process_arc()
-    results["supergpqa"] = process_supergpqa()
+    results["mmlu_pro"] = run_mmlu_pro(limit=limit)
+    results["arc"] = run_arc(limit=limit)
+    results["supergpqa"] = run_supergpqa(limit=limit)
     
     print("\n" + "=" * 60)
     print("All datasets processed!")
     print("=" * 60)
-    print(f"  datasets/mmlu_pro_processed/")
-    print(f"  datasets/arc_processed/")
-    print(f"  datasets/supergpqa_processed/")
+    print(f"  datasets/processed/mmlu_pro_processed/")
+    print(f"  datasets/processed/arc_processed/")
+    print(f"  datasets/processed/supergpqa_processed/")
     
     return results
 
@@ -101,16 +104,22 @@ def main():
         default="all",
         help="Which dataset to process (default: all)"
     )
+    parser.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Limit entries per dataset (for testing)"
+    )
     args = parser.parse_args()
     
     if args.dataset == "all":
-        process_all()
+        run_all(limit=args.limit)
     elif args.dataset == "mmlu_pro":
-        process_mmlu_pro()
+        run_mmlu_pro(limit=args.limit)
     elif args.dataset == "arc":
-        process_arc()
+        run_arc(limit=args.limit)
     elif args.dataset == "supergpqa":
-        process_supergpqa()
+        run_supergpqa(limit=args.limit)
 
 
 if __name__ == "__main__":

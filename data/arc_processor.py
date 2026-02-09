@@ -57,11 +57,17 @@ def load_arc_dataset(
     
     # Convert to unified format
     entries = []
+    skipped_count = 0
     for entry in tqdm(ds, desc=f"Loading ARC-{difficulty.capitalize()}"):
         # Extract options from nested dict
         options = entry["choices"]["text"]
         labels = entry["choices"]["label"]
         
+        # Filter: minimum 4 options required
+        if len(options) < 4:
+            skipped_count += 1
+            continue
+            
         # Get answer index from letter
         answer_letter = entry["answerKey"]
         try:
@@ -85,6 +91,9 @@ def load_arc_dataset(
             ],
         }
         entries.append(unified_entry)
+        
+    if skipped_count > 0:
+        print(f"  Skipped {skipped_count} entries with fewer than 4 options")
     
     return entries
 
@@ -95,38 +104,46 @@ def process_arc_for_experiments(
     limit: Optional[int] = None,
     output_dir: Optional[Path] = None,
     output_path: Optional[Path] = None,
-) -> Path:
+) -> Any:
     """
-    Process ARC dataset and save in unified format for experiments.
+    Process ARC dataset and save as HF Dataset for experiments.
     
     Args:
         difficulty: "easy" or "challenge"
         split: Dataset split
         limit: Optional limit
         output_dir: Output base directory
-        output_path: Exact output file path (overrides output_dir)
+        output_path: Exact output directory path (overrides output_dir)
         
     Returns:
-        Path to saved dataset
+        Processed Dataset
     """
+    from datasets import Dataset
     entries = load_arc_dataset(difficulty, split, limit)
+    
+    # Convert to HF Dataset for standardization
+    dataset = Dataset.from_list(entries)
     
     if output_path is None:
         if output_dir is None:
             output_dir = PROCESSED_DATASETS_DIR
         
-        # Default path structure: output_dir/arc_difficulty.json (no split, usually just test)
-        # But wait, arc has splits. Let's keep structure: arc_easy.json or arc_easy_test.json?
-        # Implementation plan says: datasets/processed/arc_easy.json
-        output_path = output_dir / f"arc_{difficulty}.json"
+        # Default path structure: output_dir/arc_processed/arc_easy
+        output_path = output_dir / "arc_processed" / f"arc_{difficulty}"
     
+    output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     
-    with open(output_path, "w") as f:
-        json.dump(entries, f, indent=2)
-    
+    # Save as HF Dataset
+    dataset.save_to_disk(str(output_path))
     print(f"Saved {len(entries)} entries to {output_path}")
-    return entries
+    
+    # Push to Hugging Face
+    from data.hub_utils import push_dataset_to_hub
+    repo_id = f"atreydesai/qgqa-arc-{difficulty}-processed"
+    push_dataset_to_hub(dataset, repo_id=repo_id)
+    
+    return dataset
 
 
 def add_synthetic_distractors_to_arc(

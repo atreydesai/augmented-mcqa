@@ -127,6 +127,11 @@ def process_supergpqa_for_experiments(
         json.dump(entries, f, indent=2)
     
     print(f"Saved {len(entries)} entries to {output_path}")
+    
+    # Push to Hugging Face
+    from data.hub_utils import push_dataset_to_hub
+    push_dataset_to_hub(entries, repo_id="atreydesai/qgqa-supergpqa-processed")
+    
     return entries
 
 

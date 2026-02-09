@@ -135,20 +135,24 @@ def load_difficulty_dataset(
         )
     
     elif config.dataset_type == DatasetType.MMLU_PRO:
-        # Use existing MMLU-Pro loader
-        from data.adapter import load_adapted
-        entries = load_adapted(
-            DATASETS_DIR / "mmlu_pro_sorted",
-            limit=limit,
-        )
-        # Convert to unified format
-        return [
-            {
-                **e,
-                "dataset_type": DatasetType.MMLU_PRO.value,
-            }
-            for e in entries
-        ]
+        # Load from disk (Dataset object)
+        from datasets import load_from_disk
+        dataset = load_from_disk(str(DATASETS_DIR / "mmlu_pro_processed"))
+        
+        # Determine split
+        if split in dataset:
+            entries = list(dataset[split])
+        else:
+            entries = list(dataset.values())[0] if hasattr(dataset, "values") else list(dataset)
+            
+        if limit:
+            entries = entries[:limit]
+            
+        # Add dataset_type
+        for e in entries:
+            e["dataset_type"] = DatasetType.MMLU_PRO.value
+            
+        return entries
     
     else:
         raise ValueError(f"No loader implemented for {config.dataset_type}")

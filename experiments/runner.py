@@ -14,11 +14,12 @@ from datetime import datetime
 from tqdm import tqdm
 
 from .config import ExperimentConfig
-from data import DataAdapter, load_adapted, FilterConfig, filter_dataset
 from models import get_client, ModelClient, GenerationResult
 from config import (
     DistractorType,
     get_distractor_column,
+    get_options_from_entry,
+    get_answer_index,
 )
 from evaluation.evaluator import build_mcqa_prompt
 
@@ -200,10 +201,18 @@ class ExperimentRunner:
             self._client = get_client(self.config.model_name, **kwargs)
         return self._client
     
-    def _load_data(self) -> DataAdapter:
+    def _load_data(self) -> Any:
         """Load and optionally filter dataset."""
         if self._adapter is None:
-            self._adapter = load_adapted(str(self.config.dataset_path))
+            from datasets import load_from_disk
+            dataset = load_from_disk(str(self.config.dataset_path))
+            # Handle split
+            if "test" in dataset:
+                self._adapter = dataset["test"]
+            elif hasattr(dataset, "values"):
+                self._adapter = list(dataset.values())[0]
+            else:
+                self._adapter = dataset
         return self._adapter
     
     def _prepare_entry(self, entry, idx: int) -> Optional[Dict[str, Any]]:
@@ -217,13 +226,21 @@ class ExperimentRunner:
         import random
         
         # Get gold answer
-        gold_answer = entry.gold_answer
+        gold_answers = entry.get("choices_answer", [])
+        if gold_answers:
+            gold_answer = gold_answers[0]
+        else:
+            # Fallback
+            options = entry.get("options", [])
+            answer_idx = entry.get("answer_index", 0)
+            gold_answer = options[answer_idx] if answer_idx < len(options) else ""
+            
         if not gold_answer:
             return None
         
         # Get distractors
-        human_distractors = entry.cond_human_q_a
-        model_distractors = entry.get_distractors(self.config.model_distractor_type)
+        human_distractors = get_distractor_column(entry, DistractorType.COND_HUMAN_Q_A)
+        model_distractors = get_distractor_column(entry, self.config.model_distractor_type)
         
         # Check if we have enough
         if len(human_distractors) < self.config.num_human:
@@ -257,13 +274,13 @@ class ExperimentRunner:
         new_model_indices = [indices.index(i) for i in model_original_indices]
         
         return {
-            "question": entry.question,
+            "question": entry.get("question", ""),
             "options": shuffled_options,
             "gold_idx": new_gold_idx,
             "gold_answer": gold_answer,
             "human_indices": new_human_indices,
             "model_indices": new_model_indices,
-            "category": entry.category,
+            "category": entry.get("category", ""),
         }
     
     def run(self) -> ExperimentResults:

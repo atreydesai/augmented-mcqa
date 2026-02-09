@@ -201,6 +201,11 @@ def filter_dataset(
     output_path.mkdir(parents=True, exist_ok=True)
     result.save_to_disk(str(output_path))
     
+    # Push to Hugging Face
+    from data.hub_utils import push_dataset_to_hub
+    repo_id = f"atreydesai/qgqa-{Path(dataset_path).stem}-{config.num_human}H_{config.num_model}M-filtered"
+    push_dataset_to_hub(result, repo_id=repo_id)
+    
     print(f"\n✓ Saved filtered dataset to {output_path}")
     print(f"  Config: {config.num_human}H + {config.num_model}M")
     print(f"  Entries: {len(result)}")

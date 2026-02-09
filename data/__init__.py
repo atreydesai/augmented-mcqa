@@ -10,7 +10,7 @@ from .downloader import (
     print_dataset_info,
 )
 
-from .sorter import (
+from .mmlu_pro_processor import (
     process_mmlu_pro,
     sort_distractors,
     build_mmlu_lookup,
@@ -39,12 +39,6 @@ from .filter import (
     CHOICE_LABELS,
 )
 
-from .adapter import (
-    DataAdapter,
-    AdaptedEntry,
-    load_adapted,
-)
-
 from .arc_processor import (
     load_arc_dataset,
     process_arc_for_experiments,
@@ -61,6 +55,10 @@ from .supergpqa_processor import (
     filter_by_discipline,
 )
 
+from .hub_utils import (
+    push_dataset_to_hub,
+)
+
 __all__ = [
     # Downloader
     "download_dataset",
@@ -70,7 +68,7 @@ __all__ = [
     "download_supergpqa",
     "get_dataset_info",
     "print_dataset_info",
-    # Sorter
+    # MMLU-Pro Processor
     "process_mmlu_pro",
     "sort_distractors",
     "build_mmlu_lookup",
@@ -93,10 +91,6 @@ __all__ = [
     "shuffle_options_deterministic",
     "get_answer_letter",
     "CHOICE_LABELS",
-    # Adapter
-    "DataAdapter",
-    "AdaptedEntry",
-    "load_adapted",
     # ARC Processor
     "load_arc_dataset",
     "process_arc_for_experiments",
@@ -109,4 +103,6 @@ __all__ = [
     "get_supergpqa_stats",
     "filter_by_difficulty",
     "filter_by_discipline",
+    # Hub Utils
+    "push_dataset_to_hub",
 ]

@@ -371,6 +371,11 @@ def augment_dataset(
     result = Dataset.from_list(augmented_entries)
     result.save_to_disk(str(output_path))
     
+    # Push to Hugging Face
+    from data.hub_utils import push_dataset_to_hub
+    repo_id = f"atreydesai/qgqa-{Path(dataset_path).stem}-{config.mode.value}-augmented"
+    push_dataset_to_hub(result, repo_id=repo_id)
+    
     # Clean up intermediate file
     if intermediate_path.exists():
         intermediate_path.unlink()
