@@ -26,7 +26,7 @@ def process_mmlu_pro():
     
     from data.sorter import process_mmlu_pro as _process
     
-    output_path = DATASETS_DIR / "mmlu_pro_sorted"
+    output_path = DATASETS_DIR / "mmlu_pro_processed"
     result = _process(output_path=output_path)
     
     print(f"✅ MMLU-Pro processed -> {output_path}")
@@ -85,7 +85,7 @@ def process_all():
     print("\n" + "=" * 60)
     print("All datasets processed!")
     print("=" * 60)
-    print(f"  datasets/mmlu_pro_sorted/")
+    print(f"  datasets/mmlu_pro_processed/")
     print(f"  datasets/arc_processed/")
     print(f"  datasets/supergpqa_processed/")
     

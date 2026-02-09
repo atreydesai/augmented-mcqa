@@ -3,8 +3,8 @@
 Process MMLU-Pro dataset: sort distractors and fix whitespace.
 
 Usage:
-    python scripts/process_mmlu_pro.py --input datasets/mmlu_pro \
-        --mmlu datasets/mmlu --output datasets/mmlu_pro_sorted
+    python data/mmlu_pro_processor.py --input datasets/mmlu_pro \
+        --mmlu datasets/mmlu --output datasets/mmlu_pro_processed
 """
 
 import argparse
@@ -36,7 +36,7 @@ def main():
     parser.add_argument(
         "--output",
         type=str,
-        default=str(DATASETS_DIR / "mmlu_pro_sorted"),
+        default=str(DATASETS_DIR / "mmlu_pro_processed"),
         help="Output path for processed dataset",
     )
     parser.add_argument(
