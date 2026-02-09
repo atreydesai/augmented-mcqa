@@ -16,6 +16,7 @@ from tqdm import tqdm
 
 from config import (
     DATASETS_DIR,
+    PROCESSED_DATASETS_DIR,
     DatasetType,
     DATASET_SCHEMA,
     DistractorType,
@@ -112,11 +113,12 @@ def process_arc_for_experiments(
     
     if output_path is None:
         if output_dir is None:
-            output_dir = DATASETS_DIR
+            output_dir = PROCESSED_DATASETS_DIR
         
-        # Default path structure: output_dir/arc_difficulty/split.json
-        prefix = f"arc_{difficulty}"
-        output_path = output_dir / prefix / f"{split}.json"
+        # Default path structure: output_dir/arc_difficulty.json (no split, usually just test)
+        # But wait, arc has splits. Let's keep structure: arc_easy.json or arc_easy_test.json?
+        # Implementation plan says: datasets/processed/arc_easy.json
+        output_path = output_dir / f"arc_{difficulty}.json"
     
     output_path.parent.mkdir(parents=True, exist_ok=True)
     

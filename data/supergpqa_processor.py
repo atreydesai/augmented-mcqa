@@ -16,6 +16,7 @@ from tqdm import tqdm
 
 from config import (
     DATASETS_DIR,
+    PROCESSED_DATASETS_DIR,
     DatasetType,
     DATASET_SCHEMA,
     DistractorType,
@@ -115,10 +116,10 @@ def process_supergpqa_for_experiments(
     
     if output_path is None:
         if output_dir is None:
-            output_dir = DATASETS_DIR
+            output_dir = PROCESSED_DATASETS_DIR
         
-        # Default path structure: output_dir/supergpqa/split.json
-        output_path = output_dir / "supergpqa" / f"{split}.json"
+        # Implementation plan says: datasets/processed/supergpqa.json
+        output_path = output_dir / "supergpqa.json"
     
     output_path.parent.mkdir(parents=True, exist_ok=True)
     

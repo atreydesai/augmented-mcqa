@@ -31,6 +31,15 @@ DATASETS_DIR = Path(os.getenv("DATASETS_DIR", PROJECT_ROOT / "datasets"))
 RESULTS_DIR = Path(os.getenv("RESULTS_DIR", PROJECT_ROOT / "results"))
 MODEL_CACHE_DIR = Path(os.getenv("MODEL_CACHE_DIR", "/fs/nexus-scratch/adesai10/hub"))
 
+# Additional Dataset Paths
+RAW_DATASETS_DIR = DATASETS_DIR / "raw"
+PROCESSED_DATASETS_DIR = DATASETS_DIR / "processed"
+AUGMENTED_DATASETS_DIR = DATASETS_DIR / "augmented"
+AUGMENTED_FROM_SCRATCH_DIR = AUGMENTED_DATASETS_DIR / "from_scratch"
+AUGMENTED_CONDITIONED_HUMAN_DIR = AUGMENTED_DATASETS_DIR / "conditioned_human"
+AUGMENTED_CONDITIONED_SYNTHETIC_DIR = AUGMENTED_DATASETS_DIR / "conditioned_synthetic"
+
+
 # Ensure directories exist
 DATASETS_DIR.mkdir(parents=True, exist_ok=True)
 RESULTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -310,7 +319,7 @@ class DatasetConfig:
     
     def __post_init__(self):
         if self.local_path is None:
-            self.local_path = DATASETS_DIR / self.name
+            self.local_path = RAW_DATASETS_DIR / self.name
 
 
 # Pre-configured datasets
@@ -344,83 +353,6 @@ DATASET_CONFIGS = {
         hf_path="m-a-p/SuperGPQA",
         splits=["train"],
         dataset_type=DatasetType.SUPERGPQA,
-    ),
-}
-
-
-# =============================================================================
-# Model Configuration
-# =============================================================================
-
-@dataclass
-class ModelConfig:
-    """Configuration for a model."""
-    name: str
-    provider: str  # "openai", "anthropic", "google", "deepseek", "local"
-    model_id: str
-    supports_logprobs: bool = False
-    max_tokens: int = 4000
-    temperature: float = 0.0
-    
-    
-# Pre-configured models
-MODEL_CONFIGS = {
-    # OpenAI
-    "gpt-4.1": ModelConfig(
-        name="gpt-4.1",
-        provider="openai",
-        model_id="gpt-4.1-2025-04-14",
-        supports_logprobs=True,
-    ),
-    "gpt-4": ModelConfig(
-        name="gpt-4",
-        provider="openai",
-        model_id="gpt-4",
-        supports_logprobs=True,
-    ),
-    
-    # Anthropic
-    "claude-3.5-sonnet": ModelConfig(
-        name="claude-3.5-sonnet",
-        provider="anthropic",
-        model_id="claude-3-5-sonnet-20241022",
-        supports_logprobs=False,
-    ),
-    "claude-3-opus": ModelConfig(
-        name="claude-3-opus",
-        provider="anthropic",
-        model_id="claude-3-opus-20240229",
-        supports_logprobs=False,
-    ),
-    
-    # Google Gemini
-    "gemini-1.5-pro": ModelConfig(
-        name="gemini-1.5-pro",
-        provider="google",
-        model_id="gemini-1.5-pro",
-        supports_logprobs=False,
-    ),
-    "gemini-1.5-flash": ModelConfig(
-        name="gemini-1.5-flash",
-        provider="google",
-        model_id="gemini-1.5-flash",
-        supports_logprobs=False,
-    ),
-    
-    # DeepSeek
-    "deepseek-chat": ModelConfig(
-        name="deepseek-chat",
-        provider="deepseek",
-        model_id="deepseek-chat",
-        supports_logprobs=True,
-    ),
-    
-    # Local models
-    "qwen3-8b": ModelConfig(
-        name="qwen3-8b",
-        provider="local",
-        model_id="Qwen/Qwen2.5-7B-Instruct",
-        supports_logprobs=True,
     ),
 }
 
@@ -480,16 +412,3 @@ def get_api_key(provider: str) -> str:
     if not key:
         raise ValueError(f"API key not configured for provider: {provider}. Check your .env file.")
     return key
-
-
-def get_model_config(model_name: str) -> ModelConfig:
-    """Get configuration for a model by name."""
-    if model_name in MODEL_CONFIGS:
-        return MODEL_CONFIGS[model_name]
-    
-    # Try to find by model_id
-    for config in MODEL_CONFIGS.values():
-        if config.model_id == model_name:
-            return config
-    
-    raise ValueError(f"Unknown model: {model_name}. Available: {list(MODEL_CONFIGS.keys())}")

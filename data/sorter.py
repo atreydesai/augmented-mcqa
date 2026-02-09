@@ -18,6 +18,8 @@ from tqdm import tqdm
 
 from config import (
     DATASETS_DIR,
+    RAW_DATASETS_DIR,
+    PROCESSED_DATASETS_DIR,
     DistractorType,
     RANDOM_SEED,
 )
@@ -192,11 +194,11 @@ def process_mmlu_pro(
     """
     # Set default paths
     if mmlu_pro_path is None:
-        mmlu_pro_path = DATASETS_DIR / "mmlu_pro"
+        mmlu_pro_path = RAW_DATASETS_DIR / "mmlu_pro"
     if mmlu_path is None:
-        mmlu_path = DATASETS_DIR / "mmlu_all"
+        mmlu_path = RAW_DATASETS_DIR / "mmlu_all"
     if output_path is None:
-        output_path = DATASETS_DIR / "mmlu_pro_sorted"
+        output_path = PROCESSED_DATASETS_DIR / "mmlu_pro.json"
     
     mmlu_pro_path = Path(mmlu_pro_path)
     mmlu_path = Path(mmlu_path)

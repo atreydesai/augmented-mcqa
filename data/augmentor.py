@@ -26,6 +26,7 @@ from tqdm import tqdm
 
 from config import (
     DATASETS_DIR,
+    AUGMENTED_DATASETS_DIR,
     RESULTS_DIR,
     RANDOM_SEED,
     DistractorType,
@@ -34,6 +35,7 @@ from config import (
     DISTRACTOR_GENERATION_PROMPT_CONDITIONED,
     get_api_key,
 )
+from models import get_client
 
 
 class AugmentorMode(Enum):
@@ -72,72 +74,7 @@ class GenerationConfig:
     save_interval: int = 50  # Save intermediate results every N entries
 
 
-def _get_openai_client():
-    """Initialize OpenAI client."""
-    import openai
-    return openai.OpenAI(api_key=get_api_key("openai"))
 
-
-def _get_anthropic_client():
-    """Initialize Anthropic client."""
-    import anthropic
-    return anthropic.Anthropic(api_key=get_api_key("anthropic"))
-
-
-def _get_google_client():
-    """Initialize Google Gemini client."""
-    from google import genai
-    return genai.Client(api_key=get_api_key("google"))
-
-
-def _generate_openai(
-    client,
-    prompt: str,
-    model_name: str,
-    temperature: float,
-) -> str:
-    """Generate using OpenAI API."""
-    response = client.chat.completions.create(
-        model=model_name,
-        messages=[{"role": "user", "content": prompt}],
-        temperature=temperature,
-        max_tokens=1000,
-    )
-    return response.choices[0].message.content
-
-
-def _generate_anthropic(
-    client,
-    prompt: str,
-    model_name: str,
-    temperature: float,
-) -> str:
-    """Generate using Anthropic API."""
-    response = client.messages.create(
-        model=model_name,
-        max_tokens=1000,
-        temperature=temperature,
-        messages=[{"role": "user", "content": prompt}],
-    )
-    return response.content[0].text
-
-
-def _generate_google(
-    client,
-    prompt: str,
-    model_name: str,
-    temperature: float,
-) -> str:
-    """Generate using Google Gemini API."""
-    response = client.models.generate_content(
-        model=model_name,
-        contents=prompt,
-        config={
-            "temperature": temperature,
-            "max_output_tokens": 1000,
-        },
-    )
-    return response.text
 
 
 def parse_generated_distractors(response: str, expected_count: int = 9) -> List[str]:
@@ -290,25 +227,19 @@ def generate_distractors(
     prompt = build_prompt(entry, config.mode, config.num_distractors)
     
     # Select generation function based on provider
-    generate_fn = {
-        "openai": _generate_openai,
-        "anthropic": _generate_anthropic,
-        "google": _generate_google,
-    }.get(config.model_provider)
-    
-    if not generate_fn:
-        raise ValueError(f"Unknown provider: {config.model_provider}")
+    # NOTE: Functionality replaced by unified models.get_client()
+    client = get_client(config.model_name)
     
     # Generate with retries
     for attempt in range(config.max_retries):
         try:
-            response = generate_fn(
-                client,
-                prompt,
-                config.model_name,
-                config.temperature,
+
+            response = client.generate(
+                prompt=prompt,
+                temperature=config.temperature,
+                max_tokens=1000,
             )
-            distractors = parse_generated_distractors(response, config.num_distractors)
+            distractors = parse_generated_distractors(response.text, config.num_distractors)
             
             if len(distractors) >= config.num_distractors // 2:
                 return distractors
@@ -373,16 +304,8 @@ def augment_dataset(
             dataset = list(dataset.values())[0]
     
     # Initialize client
-    client_init = {
-        "openai": _get_openai_client,
-        "anthropic": _get_anthropic_client,
-        "google": _get_google_client,
-    }.get(config.model_provider)
-    
-    if not client_init:
-        raise ValueError(f"Unknown provider: {config.model_provider}")
-    
-    client = client_init()
+    # The client type is inferred from the model name in the config
+    client = get_client(config.model_name)
     
     # Load existing results if resuming
     processed = {}
@@ -395,7 +318,14 @@ def augment_dataset(
     output_column = get_output_column(config.mode)
     
     if output_path is None:
-        output_path = DATASETS_DIR / f"augmented_{config.mode.value}"
+        # Default path: augmented/{mode}/{dataset_name}_{model_name}.json
+        dataset_name = Path(dataset_path).stem
+        model_safe = config.model_name.replace("/", "_")
+        
+        output_dir = AUGMENTED_DATASETS_DIR / config.mode.value
+        output_dir.mkdir(parents=True, exist_ok=True)
+        
+        output_path = output_dir / f"{dataset_name}_{model_safe}.json"
     output_path = Path(output_path)
     
     intermediate_path = output_path / "intermediate.json"

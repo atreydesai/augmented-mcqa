@@ -17,7 +17,7 @@ import json
 from datasets import load_dataset, get_dataset_config_names, DatasetDict, Dataset
 from tqdm import tqdm
 
-from config import DATASETS_DIR, DATASET_CONFIGS, DatasetConfig
+from config import DATASETS_DIR, RAW_DATASETS_DIR, DATASET_CONFIGS, DatasetConfig
 
 
 def download_dataset(
@@ -53,7 +53,7 @@ def download_dataset(
         if save_path is None:
             # Create path from dataset name
             safe_name = dataset_name.replace("/", "_").replace("-", "_")
-            save_path = DATASETS_DIR / safe_name
+            save_path = RAW_DATASETS_DIR / safe_name
     
     save_path = Path(save_path)
     
@@ -110,7 +110,7 @@ def download_mmlu_all_configs(save_path: Optional[Path] = None) -> Dict[str, Dat
     """
     hf_path = "cais/mmlu"
     if save_path is None:
-        save_path = DATASETS_DIR / "mmlu_all"
+        save_path = RAW_DATASETS_DIR / "mmlu_all"
     save_path = Path(save_path)
     
     # Get all available configs (subjects)
@@ -150,7 +150,7 @@ def download_arc(save_path: Optional[Path] = None) -> Dict[str, DatasetDict]:
     """
     hf_path = "allenai/ai2_arc"
     if save_path is None:
-        save_path = DATASETS_DIR / "arc"
+        save_path = RAW_DATASETS_DIR / "arc"
     save_path = Path(save_path)
     
     results = {}
@@ -177,7 +177,7 @@ def download_supergpqa(save_path: Optional[Path] = None, force_redownload: bool 
     """Download SuperGPQA dataset."""
     hf_path = "m-a-p/SuperGPQA"
     if save_path is None:
-        save_path = DATASETS_DIR / "supergpqa"
+        save_path = RAW_DATASETS_DIR / "supergpqa"
     save_path = Path(save_path)
     
     if save_path.exists() and not force_redownload:

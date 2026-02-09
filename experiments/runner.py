@@ -17,10 +17,10 @@ from .config import ExperimentConfig
 from data import DataAdapter, load_adapted, FilterConfig, filter_dataset
 from models import get_client, ModelClient, GenerationResult
 from config import (
-    MCQA_PROMPT_TEMPLATE,
     DistractorType,
     get_distractor_column,
 )
+from evaluation.evaluator import build_mcqa_prompt
 
 
 CHOICE_LABELS = "ABCDEFGHIJ"
@@ -141,29 +141,7 @@ class ExperimentResults:
         return path
 
 
-def build_mcqa_prompt(
-    question: str,
-    options: List[str],
-) -> str:
-    """
-    Build an MCQA prompt from question and options.
-    
-    Args:
-        question: The question text
-        options: List of answer options
-        
-    Returns:
-        Formatted prompt string
-    """
-    options_str = "\n".join(
-        f"{CHOICE_LABELS[i]}. {opt}"
-        for i, opt in enumerate(options)
-    )
-    
-    return MCQA_PROMPT_TEMPLATE.format(
-        question=question,
-        options=options_str,
-    )
+
 
 
 def determine_prediction_type(
