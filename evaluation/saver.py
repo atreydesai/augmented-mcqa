@@ -1,9 +1,3 @@
-"""
-Results saving module for Augmented MCQA.
-
-Handles saving evaluation results to JSON and optionally to HuggingFace Hub.
-"""
-
 import json
 import os
 from pathlib import Path
@@ -18,17 +12,6 @@ def save_results_json(
     output_path: Path,
     pretty: bool = True,
 ) -> Path:
-    """
-    Save results to JSON file.
-    
-    Args:
-        results: Results dictionary
-        output_path: Output file path
-        pretty: Whether to format JSON with indentation
-        
-    Returns:
-        Path to saved file
-    """
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     
@@ -46,17 +29,6 @@ def save_results_csv(
     output_path: Path,
     columns: Optional[List[str]] = None,
 ) -> Path:
-    """
-    Save results to CSV file.
-    
-    Args:
-        results: List of result dictionaries
-        output_path: Output file path
-        columns: Column names to include (default: all)
-        
-    Returns:
-        Path to saved file
-    """
     import csv
     
     output_path = Path(output_path)
@@ -89,22 +61,6 @@ def create_results_summary(
     total_entries: int = 0,
     duration_seconds: Optional[float] = None,
 ) -> Dict[str, Any]:
-    """
-    Create a standardized results summary.
-    
-    Args:
-        experiment_name: Name of the experiment
-        model_name: Model identifier
-        config: Experiment configuration
-        accuracy: Overall accuracy
-        behavioral_counts: G/H/M prediction counts
-        accuracy_by_category: Accuracy per category
-        total_entries: Total number of evaluated entries
-        duration_seconds: Evaluation duration
-        
-    Returns:
-        Standardized results summary dictionary
-    """
     summary = {
         "experiment_name": experiment_name,
         "model_name": model_name,
@@ -142,20 +98,6 @@ def save_experiment_results(
     summary: Dict[str, Any],
     output_dir: Optional[Path] = None,
 ) -> Dict[str, Path]:
-    """
-    Save all experiment results (summary + individual results).
-    
-    Args:
-        experiment_name: Name of the experiment
-        model_name: Model identifier
-        config: Experiment configuration
-        individual_results: List of per-entry results
-        summary: Summary metrics
-        output_dir: Output directory (default: RESULTS_DIR/experiment_name)
-        
-    Returns:
-        Dict mapping result type to saved path
-    """
     if output_dir is None:
         output_dir = RESULTS_DIR / experiment_name
     output_dir = Path(output_dir)
@@ -194,17 +136,6 @@ def push_to_hub(
     repo_id: str,
     private: bool = True,
 ) -> bool:
-    """
-    Push results dataset to HuggingFace Hub.
-    
-    Args:
-        dataset_path: Path to dataset directory
-        repo_id: HuggingFace repository ID
-        private: Whether to make the repo private
-        
-    Returns:
-        True if successful, False if skipped or failed
-    """
     if HF_SKIP_PUSH:
         print("Skipping HuggingFace push (HF_SKIP_PUSH=1)")
         return False

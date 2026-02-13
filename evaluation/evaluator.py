@@ -1,14 +1,8 @@
-"""
-Evaluation module for Augmented MCQA.
-
-Provides unified evaluation logic for both API and local models.
-"""
-
 from typing import List, Dict, Optional, Tuple
 import re
 
 from config import MCQA_PROMPT_FULL, MCQA_PROMPT_CHOICES_ONLY
-
+#fixed the eval logic from last repo so local and api have the same but just routed diff at the end
 
 CHOICE_LABELS = "ABCDEFGHIJ"
 
@@ -19,17 +13,6 @@ def build_mcqa_prompt(
     choices_only: bool = False,
     template: str = MCQA_PROMPT_FULL,
 ) -> str:
-    """
-    Build a formatted MCQA prompt.
-    
-    Args:
-        question: The question text
-        options: List of answer options
-        choices_only: Whether to include the question stem
-        
-    Returns:
-        Formatted prompt string
-    """
     options_str = "\n".join(
         f"{CHOICE_LABELS[i]}. {opt.strip()}"
         for i, opt in enumerate(options)
@@ -47,21 +30,6 @@ def build_mcqa_prompt(
 
 
 def extract_answer(text: str) -> str:
-    """
-    Extract the answer letter from model response.
-    
-    Handles various response formats:
-    - "The answer is (A)"
-    - "The answer is A"
-    - "A"
-    - "A. ..."
-    
-    Args:
-        text: Model response text
-        
-    Returns:
-        Single uppercase letter (A-J) or empty string if not found
-    """
     text = text.strip()
     
     # Pattern 1: "The answer is (X)" or "The answer is X"
@@ -77,6 +45,7 @@ def extract_answer(text: str) -> str:
         return match.group(1).upper()
     
     # Pattern 3: Last standalone letter in the response
+    # CHECK IF THIS IS GOOD???
     pattern3 = r"\b([A-J])\b"
     matches = re.findall(pattern3, text)
     if matches:
@@ -89,16 +58,6 @@ def check_correctness(
     prediction: str,
     gold_index: int,
 ) -> bool:
-    """
-    Check if prediction matches gold answer.
-    
-    Args:
-        prediction: Predicted answer letter
-        gold_index: Index of gold answer (0-indexed)
-        
-    Returns:
-        True if correct
-    """
     if not prediction or gold_index < 0:
         return False
     
@@ -112,19 +71,6 @@ def get_prediction_type(
     human_indices: List[int],
     model_indices: List[int],
 ) -> str:
-    """
-    Determine behavioral prediction type.
-    
-    Args:
-        prediction: Predicted answer letter
-        gold_index: Index of gold answer
-        human_indices: Indices of human distractors
-        model_indices: Indices of model distractors
-        
-    Returns:
-        "G" (gold), "H" (human distractor), "M" (model distractor), 
-        "?" (unknown/invalid)
-    """
     if not prediction or prediction not in CHOICE_LABELS:
         return "?"
     
@@ -144,16 +90,6 @@ def compute_accuracy(
     predictions: List[str],
     gold_indices: List[int],
 ) -> float:
-    """
-    Compute overall accuracy.
-    
-    Args:
-        predictions: List of predicted answer letters
-        gold_indices: List of gold answer indices
-        
-    Returns:
-        Accuracy as a float between 0 and 1
-    """
     if not predictions:
         return 0.0
     
@@ -171,18 +107,6 @@ def compute_behavioral_signature(
     human_indices_list: List[List[int]],
     model_indices_list: List[List[int]],
 ) -> Dict[str, int]:
-    """
-    Compute behavioral signature (G/H/M counts).
-    
-    Args:
-        predictions: List of predicted answer letters
-        gold_indices: List of gold answer indices
-        human_indices_list: List of human distractor indices per question
-        model_indices_list: List of model distractor indices per question
-        
-    Returns:
-        Dict with counts for each prediction type
-    """
     counts = {"G": 0, "H": 0, "M": 0, "?": 0}
     
     for pred, gold, human_idx, model_idx in zip(
@@ -195,18 +119,6 @@ def compute_behavioral_signature(
 
 
 def compute_gold_rate(predictions: List[str], gold_indices: List[int]) -> float:
-    """
-    Compute the rate at which the model selects the gold answer.
-    
-    This is equivalent to accuracy but named differently for clarity.
-    
-    Args:
-        predictions: List of predicted answer letters
-        gold_indices: List of gold answer indices
-        
-    Returns:
-        Gold rate as a float between 0 and 1
-    """
     return compute_accuracy(predictions, gold_indices)
 
 
@@ -214,16 +126,6 @@ def compute_human_rate(
     predictions: List[str],
     human_indices_list: List[List[int]],
 ) -> float:
-    """
-    Compute the rate at which the model selects human distractors.
-    
-    Args:
-        predictions: List of predicted answer letters
-        human_indices_list: List of human distractor indices per question
-        
-    Returns:
-        Human distractor selection rate
-    """
     if not predictions:
         return 0.0
     
@@ -241,16 +143,6 @@ def compute_model_rate(
     predictions: List[str],
     model_indices_list: List[List[int]],
 ) -> float:
-    """
-    Compute the rate at which the model selects model distractors.
-    
-    Args:
-        predictions: List of predicted answer letters
-        model_indices_list: List of model distractor indices per question
-        
-    Returns:
-        Model distractor selection rate
-    """
     if not predictions:
         return 0.0
     
