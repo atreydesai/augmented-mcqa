@@ -78,6 +78,12 @@ class ExperimentConfig:
     
     # Categories to include (None = all)
     categories: Optional[List[str]] = None
+
+    # Filter unified dataset by dataset_type field (e.g., "mmlu_pro", "supergpqa")
+    dataset_type_filter: Optional[str] = None
+
+    # Track which distractor source this config uses (scratch/dhuman/dmodel)
+    distractor_source: Optional[str] = None
     
     def __post_init__(self):
         """Validate and set defaults after initialization."""
@@ -135,6 +141,8 @@ class ExperimentConfig:
             "max_tokens": self.max_tokens,
             "output_dir": str(self.output_dir),
             "categories": self.categories,
+            "dataset_type_filter": self.dataset_type_filter,
+            "distractor_source": self.distractor_source,
             "config_id": self.config_id,
         }
     

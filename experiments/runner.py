@@ -187,7 +187,7 @@ class ExperimentRunner:
         """
         self.config = config
         self._client: Optional[ModelClient] = None
-        self._adapter: Optional[DataAdapter] = None
+        self._adapter: Optional[Any] = None
     
     def _get_client(self) -> ModelClient:
         """Get or create model client."""
@@ -202,17 +202,25 @@ class ExperimentRunner:
         return self._client
     
     def _load_data(self) -> Any:
-        """Load and optionally filter dataset."""
+        """Load and optionally filter dataset by dataset_type."""
         if self._adapter is None:
             from datasets import load_from_disk
             dataset = load_from_disk(str(self.config.dataset_path))
             # Handle split
             if "test" in dataset:
-                self._adapter = dataset["test"]
+                data = dataset["test"]
             elif hasattr(dataset, "values"):
-                self._adapter = list(dataset.values())[0]
+                data = list(dataset.values())[0]
             else:
-                self._adapter = dataset
+                data = dataset
+
+            # Filter by dataset_type if specified
+            if self.config.dataset_type_filter:
+                data = data.filter(
+                    lambda x: x.get("dataset_type", "") == self.config.dataset_type_filter
+                )
+
+            self._adapter = data
         return self._adapter
     
     def _prepare_entry(self, entry, idx: int) -> Optional[Dict[str, Any]]:
