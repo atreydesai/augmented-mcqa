@@ -1,16 +1,3 @@
-"""
-Visualization module for Augmented MCQA.
-
-Generates research question plots for the unified dataset with multiple
-dataset_types (mmlu_pro, supergpqa, arc_easy, arc_challenge) and
-distractor sources (scratch, dhuman, dmodel).
-
-New directory structure:
-  results/{model}_{dataset_type}_{distractor_source}/{nH}{mM}/results.json
-
-Supports both the new ExperimentResults format and legacy summary files.
-"""
-
 import json
 from pathlib import Path
 from typing import Dict, List, Optional, Any
@@ -35,11 +22,6 @@ DISTRACTOR_SOURCE_LABELS = {
 
 
 def load_results_file(results_path: Path) -> Optional[Dict]:
-    """
-    Load a results.json file in the new ExperimentResults format.
-
-    Returns dict with accuracy, correct, total, or None if file missing.
-    """
     if not results_path.exists():
         return None
 
@@ -55,7 +37,6 @@ def load_results_file(results_path: Path) -> Optional[Dict]:
 
 
 def load_summary_file(base_dir: Path, setting_name: str, summary_filename: str) -> Optional[Dict]:
-    """Load a single summary file (legacy format) and return accuracy data."""
     summary_path = base_dir / setting_name / summary_filename
     if not summary_path.exists():
         return None
@@ -72,7 +53,6 @@ def load_summary_file(base_dir: Path, setting_name: str, summary_filename: str) 
 
 
 def _build_results_dir_name(model: str, dataset_type: str, distractor_source: str) -> str:
-    """Build the directory name pattern for results."""
     return f"{model.replace('/', '_')}_{dataset_type}_{distractor_source}"
 
 
@@ -82,14 +62,6 @@ def load_3H_plus_M_results(
     dataset_type: Optional[str] = None,
     distractor_source: Optional[str] = None,
 ) -> List[Dict]:
-    """
-    Load 3H + M results (3H0M through 3H6M).
-
-    Supports new directory structure:
-      base_dir/{model}_{dataset_type}_{distractor_source}/{nH}{mM}/results.json
-
-    If model/dataset_type/distractor_source are None, searches directly under base_dir.
-    """
     results = []
 
     for m in range(0, 7):
@@ -120,7 +92,6 @@ def load_human_only_results(
     dataset_type: Optional[str] = None,
     distractor_source: Optional[str] = None,
 ) -> List[Dict]:
-    """Load Human Only results (1H0M, 2H0M, 3H0M)."""
     results = []
 
     for h in range(1, 4):
@@ -151,7 +122,6 @@ def load_model_only_results(
     dataset_type: Optional[str] = None,
     distractor_source: Optional[str] = None,
 ) -> List[Dict]:
-    """Load Model Only results (0H1M through 0H6M)."""
     results = []
 
     for m in range(1, 7):
@@ -180,11 +150,6 @@ def _detect_available_configs(
     base_dir: Path,
     model: str,
 ) -> Dict[str, List[str]]:
-    """
-    Auto-detect available dataset_type and distractor_source combinations.
-
-    Returns dict mapping dataset_type -> list of distractor_sources found.
-    """
     available = {}
     model_safe = model.replace("/", "_")
     prefix = f"{model_safe}_"
@@ -213,11 +178,6 @@ def plot_rq1_combined(
     output_dir: Optional[Path] = None,
     show: bool = False,
 ):
-    """
-    RQ1: Combined plot showing 3H+M, Human-Only, Model-Only across dataset_types.
-
-    One plot per distractor_source with lines per dataset_type.
-    """
     base_dir = Path(base_dir)
 
     fig, axes = plt.subplots(1, 3, figsize=(22, 7))
@@ -275,12 +235,6 @@ def plot_rq2_human_distractors(
     output_dir: Optional[Path] = None,
     show: bool = False,
 ):
-    """
-    RQ2: Human-only distractor comparison across dataset_types.
-
-    Shows how accuracy changes from 1H to 3H for each dataset_type.
-    One subplot per distractor_source.
-    """
     base_dir = Path(base_dir)
     sources = ["scratch", "dhuman", "dmodel"]
 
@@ -338,12 +292,6 @@ def plot_rq3_model_distractors(
     output_dir: Optional[Path] = None,
     show: bool = False,
 ):
-    """
-    RQ3: Model-only distractor comparison across dataset_types.
-
-    Shows how accuracy changes from 0H+1M to 0H+6M for each dataset_type.
-    One subplot per distractor_source.
-    """
     base_dir = Path(base_dir)
     sources = ["scratch", "dhuman", "dmodel"]
 
@@ -401,15 +349,6 @@ def plot_all_rq(
     output_dir: Optional[Path] = None,
     show: bool = False,
 ):
-    """
-    Generate all RQ plots.
-
-    Args:
-        base_dir: Directory containing experiment results
-        model: Model name used in directory structure. If empty, auto-detect.
-        output_dir: Where to save plots (default: base_dir/plots)
-        show: Whether to display plots interactively
-    """
     base_dir = Path(base_dir)
 
     if output_dir is None:

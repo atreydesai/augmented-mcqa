@@ -1,0 +1,56 @@
+{
+  "config": {
+    "name": "gpt-4.1_arc_challenge_dhuman_0H1M",
+    "dataset_path": "datasets/augmented/unified_processed_claude-opus-4-6_20260213_033913",
+    "model_name": "gpt-4.1",
+    "num_human": 0,
+    "num_model": 1,
+    "model_distractor_type": "cond_model_q_a_dhuman",
+    "eval_mode": "behavioral",
+    "choices_only": false,
+    "limit": 100,
+    "seed": 42,
+    "reasoning_effort": null,
+    "thinking_level": null,
+    "temperature": 0.0,
+    "max_tokens": 100,
+    "output_dir": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/gpt-4.1_arc_challenge_dhuman/0H1M",
+    "categories": null,
+    "dataset_type_filter": "arc_challenge",
+    "distractor_source": "dhuman",
+    "config_id": "gpt-4.1_arc_challenge_dhuman_0H1M_0H1M_gpt-4.1"
+  },
+  "summary": {
+    "total": 1,
+    "correct": 1,
+    "accuracy": 1.0,
+    "behavioral_counts": {
+      "G": 1,
+      "H": 0,
+      "M": 0,
+      "?": 0
+    },
+    "accuracy_by_category": {
+      "": 1.0
+    }
+  },
+  "timing": {
+    "start": "2026-02-13T10:54:00.106012",
+    "end": "2026-02-13T10:54:00.663034",
+    "duration_seconds": 0.557022
+  },
+  "results": [
+    {
+      "question_idx": 0,
+      "question": "An astronomer observes that a planet rotates faster after a meteorite impact. Which is the most like...",
+      "gold_answer": "Planetary days will become shorter.",
+      "gold_index": 1,
+      "model_answer": "B",
+      "model_prediction": "B",
+      "is_correct": true,
+      "category": "",
+      "prediction_type": "G",
+      "latency_ms": 339.1064453125
+    }
+  ]
+}

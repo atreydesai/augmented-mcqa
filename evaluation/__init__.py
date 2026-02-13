@@ -1,5 +1,3 @@
-"""Evaluation module for Augmented MCQA."""
-
 from .evaluator import (
     CHOICE_LABELS,
     build_mcqa_prompt,

@@ -1,5 +1,3 @@
-"""Configuration module for Augmented MCQA."""
-
 from .settings import (
     # Paths
     PROJECT_ROOT,
