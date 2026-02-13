@@ -17,39 +17,70 @@ def homogenize_features(dataset_dict: DatasetDict) -> DatasetDict:
     Ensure all splits in a DatasetDict have the same features and types.
     Adds missing columns as nulls and casts all splits to a unified schema.
     """
+    from datasets import Value, Sequence
+    
     if not isinstance(dataset_dict, DatasetDict):
         return dataset_dict
         
     # Collect all feature definitions across all splits
+    # We want to find the "best" (most specific) type for each column
     unified_features_dict = {}
+    
+    # First pass: identify all columns and their types, preferring non-null types
     for split in dataset_dict.values():
         for name, feature in split.features.items():
             if name not in unified_features_dict:
                 unified_features_dict[name] = feature
             else:
-                # If current is null type, try to upgrade it to a real type if found
-                curr = unified_features_dict[name]
-                if hasattr(curr, 'dtype') and curr.dtype == 'null':
-                    if hasattr(feature, 'dtype') and feature.dtype != 'null':
-                        unified_features_dict[name] = feature
-                    elif not hasattr(feature, 'dtype'): # likely a nested feature
-                        unified_features_dict[name] = feature
+                existing = unified_features_dict[name]
+                existing_str = str(existing)
+                # Upgrade from null/generic to a real type
+                if "null" in existing_str:
+                    unified_features_dict[name] = feature
 
     unified_features = Features(unified_features_dict)
     
     homogenized = {}
     for split_name, dataset in dataset_dict.items():
         current_ds = dataset
-        # Add missing columns
+        # Add missing columns with typed defaults
         missing_cols = set(unified_features_dict.keys()) - set(current_ds.column_names)
         for col in missing_cols:
-            current_ds = current_ds.add_column(col, [None] * len(current_ds))
+            target_type = unified_features_dict[col]
+            target_str = str(target_type)
+            if "List" in target_str or "Sequence" in target_str:
+                default_val = [[] for _ in range(len(current_ds))]
+            else:
+                default_val = ["" if "string" in target_str else None] * len(current_ds)
+            current_ds = current_ds.add_column(col, default_val)
         
-        # Cast to unified features to ensure all splits have identical types
-        try:
-            current_ds = current_ds.cast(unified_features)
-        except Exception as e:
-            print(f"⚠️ Warning: Could not cast split {split_name} to unified features: {e}")
+        # Fix columns that exist but have null types where we need real types
+        needs_rebuild = False
+        data_dict = None
+        for col_name in current_ds.column_names:
+            current_type_str = str(current_ds.features.get(col_name, ""))
+            target_type_str = str(unified_features_dict.get(col_name, ""))
+            if "null" in current_type_str and "null" not in target_type_str:
+                needs_rebuild = True
+                if data_dict is None:
+                    data_dict = current_ds.to_dict()
+                # Replace None values with typed defaults
+                if "List" in target_type_str or "Sequence" in target_type_str:
+                    data_dict[col_name] = [v if v is not None else [] for v in data_dict[col_name]]
+                elif "string" in target_type_str:
+                    data_dict[col_name] = [v if v is not None else "" for v in data_dict[col_name]]
+        
+        if needs_rebuild and data_dict is not None:
+            try:
+                current_ds = Dataset.from_dict(data_dict, features=unified_features)
+            except Exception as e:
+                print(f"⚠️ Warning: Could not rebuild split {split_name}: {e}")
+        else:
+            # Cast to unified features
+            try:
+                current_ds = current_ds.cast(unified_features)
+            except Exception as e:
+                print(f"⚠️ Warning: Could not cast split {split_name}: {e}")
             
         homogenized[split_name] = current_ds
         

@@ -67,7 +67,6 @@ class ModelClient(ABC):
     def generate(
         self,
         prompt: str,
-        temperature: float = 0.0,
         max_tokens: int = 100,
         **kwargs,
     ) -> GenerationResult:
@@ -76,7 +75,6 @@ class ModelClient(ABC):
         
         Args:
             prompt: The input prompt
-            temperature: Sampling temperature (0.0 = deterministic)
             max_tokens: Maximum tokens to generate
             **kwargs: Additional provider-specific parameters
             
@@ -88,7 +86,6 @@ class ModelClient(ABC):
     def generate_batch(
         self,
         prompts: list[str],
-        temperature: float = 0.0,
         max_tokens: int = 100,
         **kwargs,
     ) -> list[GenerationResult]:
@@ -100,7 +97,6 @@ class ModelClient(ABC):
         
         Args:
             prompts: List of input prompts
-            temperature: Sampling temperature
             max_tokens: Maximum tokens per response
             **kwargs: Additional parameters
             
@@ -108,7 +104,7 @@ class ModelClient(ABC):
             List of GenerationResults
         """
         return [
-            self.generate(prompt, temperature, max_tokens, **kwargs)
+            self.generate(prompt, max_tokens, **kwargs)
             for prompt in prompts
         ]
     

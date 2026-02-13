@@ -26,7 +26,7 @@ class OpenAIClient(ModelClient):
     """
     
     # Models that support reasoning_effort parameter
-    REASONING_MODELS = {"gpt-5", "gpt-5-mini", "gpt-5.1", "gpt-5.2"}
+    REASONING_MODELS = {"gpt-5", "gpt-5-mini", "gpt-5.1", "gpt-5.2","gpt-5.2-2025-12-11"}
     
     def __init__(
         self,
@@ -81,7 +81,6 @@ class OpenAIClient(ModelClient):
     def generate(
         self,
         prompt: str,
-        temperature: float = 0.0,
         max_tokens: int = 100,
         reasoning_effort: Optional[ReasoningEffort] = None,
         **kwargs,
@@ -91,7 +90,6 @@ class OpenAIClient(ModelClient):
         
         Args:
             prompt: Input prompt
-            temperature: Sampling temperature
             max_tokens: Maximum completion tokens
             reasoning_effort: Override reasoning effort for this call (GPT-5 only)
             **kwargs: Additional API parameters
@@ -100,7 +98,6 @@ class OpenAIClient(ModelClient):
         params = {
             "model": self._model_id,
             "messages": [{"role": "user", "content": prompt}],
-            "temperature": temperature,
             "max_completion_tokens": max_tokens,
         }
         

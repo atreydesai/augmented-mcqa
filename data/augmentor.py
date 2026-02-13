@@ -69,7 +69,7 @@ class GenerationConfig:
     model_provider: str  # "openai", "anthropic", "google"
     model_name: str
     num_distractors: int = 9  # Default: generate 9 to make 10 total options
-    temperature: float = 0.7
+    max_tokens: int = 2048  # Max output tokens per API call
     max_retries: int = 3
     retry_delay: float = 1.0
     save_interval: int = 50  # Save intermediate results every N entries
@@ -210,16 +210,23 @@ def augment_dataset(
     limit: Optional[int] = None,
     resume_from: Optional[Path] = None,
     push_to_hub: bool = True,
+    splits: Optional[List[str]] = None,
 ) -> Dataset:
     """
     Augment a dataset with synthetic distractors and full MCQA columns.
+    
+    Args:
+        splits: If provided, only process these specific splits (for parallelization).
     """
     # Load dataset
     dataset = load_from_disk(str(dataset_path))
     if isinstance(dataset, DatasetDict):
         # We process all splits in the dict if it's a Dict
         final_dataset_dict = {}
-        for split_name, ds in dataset.items():
+        items = dataset.items()
+        if splits:
+            items = [(k, v) for k, v in items if k in splits]
+        for split_name, ds in items:
             print(f"\nProcessing split: {split_name}")
             final_dataset_dict[split_name] = augment_single_dataset(ds, config, limit)
         result = DatasetDict(final_dataset_dict)
@@ -283,53 +290,61 @@ def augment_single_dataset(dataset: Dataset, config: GenerationConfig, limit: Op
         human_distractors = new_entry.get("choices_human", [])
         
         for mode in modes_to_run:
-            try:
-                prefix = mode_prefixes[mode]
-                model_col = mode_model_cols[mode]
-                
-                # 1. Build Prompt (now returns distractors used for context)
-                prompt, context_distractors = build_prompt(new_entry, mode)
-                
-                # 2. Generate
-                response = client.generate(prompt=prompt, temperature=config.temperature)
-                raw_text = response.text
-                
-                # 3. Parse Distractors (Always 6 per user prompt)
-                distractors = parse_generated_distractors(raw_text, 6)
-                
-                # 4. Assembly (1 answer + 6 synthetic + 3 human = 10 total)
-                options, correct_letter = assemble_mcqa_options(answer, human_distractors, distractors, mode)
-                
-                # 5. Column Population (Ordered as requested)
-                # qa_full_question (Refined for conditioned modes)
-                if mode == AugmentorMode.FROM_SCRATCH:
-                    new_entry[f"{prefix}_full_question"] = f"Question: {new_entry['question']}\nAnswer: A: {answer}"
-                else:
-                    # Conditioned format: Question + Existing 4 options (A + B,C,D) + Answer
-                    context_options = [f"A: {answer}"]
-                    for j, d in enumerate(context_distractors):
-                        letter = chr(ord('B') + j)
-                        context_options.append(f"{letter}: {d}")
-                    options_str = "\n".join(context_options)
-                    new_entry[f"{prefix}_full_question"] = f"Question: {new_entry['question']}\nExisting 4 Options: {options_str}\nAnswer: A: {answer}"
-                
-                # qa_model_input
-                new_entry[f"{prefix}_model_input"] = prompt
-                
-                # qa_model_output
-                new_entry[f"{prefix}_model_output"] = raw_text
-                
-                # cond_model_q_a_scratch (or dhuman/dmodel)
-                new_entry[model_col] = distractors
-                
-                # qa_options_randomized
-                new_entry[f"{prefix}_options_randomized"] = options
-                
-                # qa_correct_answer_letter
-                new_entry[f"{prefix}_correct_answer_letter"] = correct_letter
-                
-            except Exception as e:
-                print(f"Error at entry {i}, mode {mode.value}: {e}")
+            prefix = mode_prefixes[mode]
+            model_col = mode_model_cols[mode]
+            success = False
+            
+            for attempt in range(config.max_retries):
+                try:
+                    # 1. Build Prompt (now returns distractors used for context)
+                    prompt, context_distractors = build_prompt(new_entry, mode)
+                    
+                    # 2. Generate
+                    response = client.generate(prompt=prompt, max_tokens=config.max_tokens)
+                    raw_text = response.text
+                    
+                    # 3. Parse Distractors (Always 6 per user prompt)
+                    distractors = parse_generated_distractors(raw_text, 6)
+                    
+                    # 4. Assembly (1 answer + 6 synthetic + 3 human = 10 total)
+                    options, correct_letter = assemble_mcqa_options(answer, human_distractors, distractors, mode)
+                    
+                    # 5. Column Population (Ordered as requested)
+                    if mode == AugmentorMode.FROM_SCRATCH:
+                        new_entry[f"{prefix}_full_question"] = f"Question: {new_entry['question']}\nAnswer: A: {answer}"
+                    else:
+                        context_options = [f"A: {answer}"]
+                        for j, d in enumerate(context_distractors):
+                            letter = chr(ord('B') + j)
+                            context_options.append(f"{letter}: {d}")
+                        options_str = "\n".join(context_options)
+                        new_entry[f"{prefix}_full_question"] = f"Question: {new_entry['question']}\nExisting 4 Options: {options_str}\nAnswer: A: {answer}"
+                    
+                    new_entry[f"{prefix}_model_input"] = prompt
+                    new_entry[f"{prefix}_model_output"] = raw_text
+                    new_entry[model_col] = distractors
+                    new_entry[f"{prefix}_options_randomized"] = options
+                    new_entry[f"{prefix}_correct_answer_letter"] = correct_letter
+                    
+                    success = True
+                    break
+                    
+                except Exception as e:
+                    delay = config.retry_delay * (2 ** attempt)
+                    if attempt < config.max_retries - 1:
+                        print(f"⚠️ Entry {i}, mode {mode.value}, attempt {attempt+1}/{config.max_retries}: {e}. Retrying in {delay:.1f}s...")
+                        time.sleep(delay)
+                    else:
+                        print(f"❌ Entry {i}, mode {mode.value}: Failed after {config.max_retries} attempts: {e}")
+            
+            if not success:
+                # Set typed defaults so schema stays consistent across splits
+                new_entry.setdefault(model_col, [])
+                new_entry.setdefault(f"{prefix}_options_randomized", [])
+                new_entry.setdefault(f"{prefix}_correct_answer_letter", "")
+                new_entry.setdefault(f"{prefix}_full_question", "")
+                new_entry.setdefault(f"{prefix}_model_input", "")
+                new_entry.setdefault(f"{prefix}_model_output", "")
                 
         augmented_entries.append(new_entry)
         
@@ -339,9 +354,7 @@ def augment_single_dataset(dataset: Dataset, config: GenerationConfig, limit: Op
                 json.dump(augmented_entries, f, indent=2)
             print(f"\n💾 Saved intermediate results ({i+1} entries) to {temp_save_path}")
             
-    # Remove temp file on completion if we reached the end
-    if temp_save_path.exists():
-        temp_save_path.unlink()
+    # Keep temp file as a recovery point (not deleted)
         
     return Dataset.from_list(augmented_entries)
 

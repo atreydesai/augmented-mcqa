@@ -134,6 +134,10 @@
       "dtype": "bool",
       "_type": "Value"
     },
+    "id": {
+      "dtype": "string",
+      "_type": "Value"
+    },
     "question_id": {
       "dtype": "int64",
       "_type": "Value"
@@ -142,12 +146,9 @@
       "dtype": "bool",
       "_type": "Value"
     },
-    "labels": {
-      "feature": {
-        "dtype": "string",
-        "_type": "Value"
-      },
-      "_type": "List"
+    "discipline": {
+      "dtype": "string",
+      "_type": "Value"
     },
     "dataset_type": {
       "dtype": "string",
@@ -157,17 +158,16 @@
       "dtype": "string",
       "_type": "Value"
     },
-    "id": {
-      "dtype": "string",
-      "_type": "Value"
-    },
     "answer_letter": {
       "dtype": "string",
       "_type": "Value"
     },
-    "discipline": {
-      "dtype": "string",
-      "_type": "Value"
+    "labels": {
+      "feature": {
+        "dtype": "string",
+        "_type": "Value"
+      },
+      "_type": "List"
     }
   },
   "homepage": "",

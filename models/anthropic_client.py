@@ -26,7 +26,7 @@ class AnthropicClient(ModelClient):
     # Models that support extended thinking
     THINKING_MODELS = {
         "claude-opus-4", "claude-sonnet-4", "claude-haiku-4",
-        "claude-opus-4-5", "claude-sonnet-4-5", "claude-haiku-4-5"
+        "claude-opus-4-6", "claude-sonnet-4-5", "claude-haiku-4-5"
     }
     
     # Approximate thinking budgets (in tokens)
@@ -86,7 +86,6 @@ class AnthropicClient(ModelClient):
     def generate(
         self,
         prompt: str,
-        temperature: float = 0.0,
         max_tokens: int = 100,
         thinking_level: Optional[ThinkingLevel] = None,
         **kwargs,
@@ -96,7 +95,6 @@ class AnthropicClient(ModelClient):
         
         Args:
             prompt: Input prompt
-            temperature: Sampling temperature
             max_tokens: Maximum output tokens
             thinking_level: Override thinking level for this call
             **kwargs: Additional API parameters
@@ -105,7 +103,6 @@ class AnthropicClient(ModelClient):
         params = {
             "model": self._model_id,
             "max_tokens": max_tokens,
-            "temperature": temperature,
             "messages": [{"role": "user", "content": prompt}],
         }
         

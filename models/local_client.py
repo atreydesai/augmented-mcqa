@@ -93,20 +93,18 @@ class LocalClient(ModelClient):
     def generate(
         self,
         prompt: str,
-        temperature: float = 0.0,
         max_tokens: int = 100,
         **kwargs,
     ) -> GenerationResult:
         """
         Generate using vLLM.
         """
-        results = self.generate_batch([prompt], temperature, max_tokens, **kwargs)
+        results = self.generate_batch([prompt], max_tokens, **kwargs)
         return results[0]
     
     def generate_batch(
         self,
         prompts: List[str],
-        temperature: float = 0.0,
         max_tokens: int = 100,
         **kwargs,
     ) -> List[GenerationResult]:
@@ -121,11 +119,7 @@ class LocalClient(ModelClient):
         self._ensure_loaded()
         
         # Create sampling params
-        # Note: temperature=0 causes issues in some versions, use very small value
-        actual_temp = max(temperature, 0.01) if temperature == 0 else temperature
-        
         sampling_params = SamplingParams(
-            temperature=actual_temp,
             max_tokens=max_tokens,
             seed=self._seed,
         )

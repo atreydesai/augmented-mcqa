@@ -75,7 +75,6 @@ class GeminiClient(ModelClient):
     def generate(
         self,
         prompt: str,
-        temperature: float = 0.0,
         max_tokens: int = 100,
         thinking_level: Optional[ThinkingLevel] = None,
         **kwargs,
@@ -85,7 +84,6 @@ class GeminiClient(ModelClient):
         
         Args:
             prompt: Input prompt
-            temperature: Sampling temperature
             max_tokens: Maximum output tokens
             thinking_level: Override thinking level for this call (Gemini 3 only)
             **kwargs: Additional API parameters
@@ -94,7 +92,6 @@ class GeminiClient(ModelClient):
         
         # Build generation config
         config_params = {
-            "temperature": temperature,
             "max_output_tokens": max_tokens,
         }
         
@@ -111,8 +108,21 @@ class GeminiClient(ModelClient):
             config=config,
         )
         
-        # Extract text
-        text = response.text if response.text else ""
+        # Extract text - handle thinking mode where response.text may be None
+        text = ""
+        try:
+            text = response.text or ""
+        except Exception:
+            pass
+        
+        # If response.text failed or is empty, extract from parts manually
+        # (Gemini 3 thinking models split output into thought vs non-thought parts)
+        if not text and response.candidates:
+            parts = response.candidates[0].content.parts
+            text = "\n".join(
+                p.text for p in parts
+                if p.text and not getattr(p, "thought", False)
+            )
         
         # Extract usage if available
         usage = None

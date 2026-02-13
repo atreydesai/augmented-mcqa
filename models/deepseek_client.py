@@ -63,7 +63,6 @@ class DeepSeekClient(ModelClient):
     def generate(
         self,
         prompt: str,
-        temperature: float = 0.0,
         max_tokens: int = 100,
         **kwargs,
     ) -> GenerationResult:
@@ -76,7 +75,6 @@ class DeepSeekClient(ModelClient):
         response = self._client.chat.completions.create(
             model=self._model_id,
             messages=[{"role": "user", "content": prompt}],
-            temperature=temperature,
             max_tokens=max_tokens,
             **kwargs,
         )
