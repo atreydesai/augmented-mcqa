@@ -121,13 +121,16 @@ LEGACY_COLUMN_MAPPING: Dict[str, DistractorType] = {
     
     # Model distractors (q+a conditioned)
     "choices_synthetic": DistractorType.COND_MODEL_Q_A,
+    "legacy_choices_synthetic": DistractorType.COND_MODEL_Q_A,
     "choices_synthetic_conditioned_goldandstem": DistractorType.COND_MODEL_Q_A,
     
     # Model distractors (conditioned on human)
     "choices_newsynthetic": DistractorType.COND_MODEL_Q_A_DHUMAN,
+    "cond_model_q_a_dhuman": DistractorType.COND_MODEL_Q_A_DHUMAN,
     
     # Model distractors (conditioned on model)
     "choices_newsynthetic_conditioned_synthetic": DistractorType.COND_MODEL_Q_A_DMODEL,
+    "cond_model_q_a_dmodel": DistractorType.COND_MODEL_Q_A_DMODEL,
 }
 
 
@@ -158,12 +161,12 @@ def get_distractor_column(entry: dict, distractor_type: DistractorType) -> List[
     """
     # First try the unified name
     unified_name = distractor_type.value
-    if unified_name in entry:
+    if unified_name in entry and entry[unified_name] is not None:
         return list(entry[unified_name])
     
     # Fall back to legacy names
     for legacy_name in UNIFIED_TO_LEGACY.get(distractor_type, []):
-        if legacy_name in entry and entry[legacy_name]:
+        if legacy_name in entry and entry[legacy_name] is not None:
             return list(entry[legacy_name])
     
     return []

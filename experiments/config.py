@@ -64,6 +64,7 @@ class ExperimentConfig:
     
     # Evaluation settings
     eval_mode: EvalMode = "accuracy"
+    choices_only: bool = False
     limit: Optional[int] = None
     seed: int = RANDOM_SEED
     
@@ -127,6 +128,7 @@ class ExperimentConfig:
             "num_model": self.num_model,
             "model_distractor_type": self.model_distractor_type.value,
             "eval_mode": self.eval_mode,
+            "choices_only": self.choices_only,
             "limit": self.limit,
             "seed": self.seed,
             "reasoning_effort": self.reasoning_effort,

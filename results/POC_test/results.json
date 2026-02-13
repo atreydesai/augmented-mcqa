@@ -1,0 +1,102 @@
+{
+  "config": {
+    "name": "POC_test",
+    "dataset_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/processed/unified_processed/mmlu_pro",
+    "model_name": "gpt-4o",
+    "num_human": 3,
+    "num_model": 0,
+    "model_distractor_type": "cond_model_q_a",
+    "eval_mode": "behavioral",
+    "choices_only": false,
+    "limit": 5,
+    "seed": 42,
+    "reasoning_effort": null,
+    "thinking_level": null,
+    "temperature": 0.0,
+    "max_tokens": 100,
+    "output_dir": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/POC_test",
+    "categories": null,
+    "config_id": "POC_test_3H0M_gpt-4o"
+  },
+  "summary": {
+    "total": 5,
+    "correct": 5,
+    "accuracy": 1.0,
+    "behavioral_counts": {
+      "G": 5,
+      "H": 0,
+      "M": 0,
+      "?": 0
+    },
+    "accuracy_by_category": {
+      "business": 1.0
+    }
+  },
+  "timing": {
+    "start": "2026-02-13T04:43:33.479525",
+    "end": "2026-02-13T04:43:43.207716",
+    "duration_seconds": 9.728191
+  },
+  "results": [
+    {
+      "question_idx": 0,
+      "question": "Managers are entrusted to run the company in the best interest of ________. Specifically, they have ...",
+      "gold_answer": "Shareholders, Care and Skill, Diligence",
+      "gold_index": 2,
+      "model_answer": "C",
+      "model_prediction": "C",
+      "is_correct": true,
+      "category": "business",
+      "prediction_type": "G",
+      "latency_ms": 1662.626953125
+    },
+    {
+      "question_idx": 1,
+      "question": "There are two main issues associated with _____ sizing. _______ is a key issue as due to the informa...",
+      "gold_answer": "Down, Involvement, Remuneration, Compensation",
+      "gold_index": 1,
+      "model_answer": "B",
+      "model_prediction": "B",
+      "is_correct": true,
+      "category": "business",
+      "prediction_type": "G",
+      "latency_ms": 404.73388671875
+    },
+    {
+      "question_idx": 2,
+      "question": "_______ locate morality beyond the sphere of rationality in an emotional 'moral impulse' towards oth...",
+      "gold_answer": "Postmodern ethics",
+      "gold_index": 2,
+      "model_answer": "C",
+      "model_prediction": "C",
+      "is_correct": true,
+      "category": "business",
+      "prediction_type": "G",
+      "latency_ms": 497.832763671875
+    },
+    {
+      "question_idx": 3,
+      "question": "Some of key differences between Islamic finance and conventional finance include - prohibition of ch...",
+      "gold_answer": "Interest, Uncertain, Speculative, Tangible assets",
+      "gold_index": 2,
+      "model_answer": "C",
+      "model_prediction": "C",
+      "is_correct": true,
+      "category": "business",
+      "prediction_type": "G",
+      "latency_ms": 465.403564453125
+    },
+    {
+      "question_idx": 4,
+      "question": "Which of the following are the three broad groups of organizational characteristics segmentation cri...",
+      "gold_answer": "Organizational size, industry type, and geographical location.",
+      "gold_index": 1,
+      "model_answer": "B",
+      "model_prediction": "B",
+      "is_correct": true,
+      "category": "business",
+      "prediction_type": "G",
+      "latency_ms": 336.429443359375
+    }
+  ]
+}

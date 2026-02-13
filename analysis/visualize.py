@@ -20,48 +20,73 @@ from typing import Dict, List, Optional, Any
 import matplotlib.pyplot as plt
 
 
-def load_summary_file(base_dir: Path, setting_name: str, summary_filename: str) -> Optional[Dict]:
-    """Load a single summary file and return accuracy data."""
-    summary_path = base_dir / setting_name / summary_filename
+def load_summary_file(base_dir: Path, setting_name: str) -> Optional[Dict]:
+    """Load the new results.json format and return accuracy data."""
+    summary_path = base_dir / setting_name / "results.json"
     if not summary_path.exists():
-        return None
+        # Fallback to overall_summary.json if results.json not found
+        summary_path = base_dir / setting_name / "overall_summary.json"
+        if not summary_path.exists():
+            return None
     
     with open(summary_path, "r") as f:
-        summary = json.load(f)
+        data = json.load(f)
     
+    # Handle new results.json structure
+    if "summary" in data:
+        summary = data["summary"]
+        return {
+            "accuracy": summary.get("accuracy", 0),
+            "total": summary.get("total", 0),
+            "correct": summary.get("correct", 0),
+        }
+    
+    # Handle old overall_summary.json format
     return {
-        "accuracy": summary.get("acc"),
-        "correct": summary.get("corr"),
-        "wrong": summary.get("wrong"),
+        "accuracy": data.get("acc", 0),
+        "total": data.get("total", 0),
+        "correct": data.get("corr", 0),
     }
 
 
-def load_3H_plus_M_results(
+def load_results_for_rq(
     base_dir: Path,
-    dataset_type: str = "normal",
-    is_choices_only: bool = False,
-) -> List[Dict]:
-    """Load 3H + M results (3H0M through 3H6M)."""
-    results = []
+    dataset: str,
+    model: str,
+    prefix: str = "RQ",
+) -> Dict[str, List[Dict]]:
+    """
+    Load all related results for an RQ combined analysis.
     
-    for m in range(0, 7):  # 0M to 6M
-        if is_choices_only:
-            setting_name = f"3H{m}M_{dataset_type}_choices_only"
-            summary_filename = f"overall_summary_3H_{m}M_choices_only.json"
-        else:
-            setting_name = f"3H{m}M_{dataset_type}"
-            summary_filename = f"overall_summary_3H_{m}M.json"
-        
-        data = load_summary_file(base_dir, setting_name, summary_filename)
+    Looks for directories matching the RQ pattern.
+    """
+    results = {
+        "human_only": [],
+        "human_only_choices": [],
+        "dhuman_synthetic": [],
+        "dhuman_synthetic_choices": [],
+        "scratch_synthetic": [],
+        "existing_synthetic": [],
+        "dmodel_synthetic": [],
+    }
+    
+    # Map from suffix to result key
+    mappings = {
+        f"human_only_{dataset}_{model}": "human_only",
+        f"human_only_choices_{dataset}_{model}": "human_only_choices",
+        f"dhuman_synthetic_{dataset}_{model}": "dhuman_synthetic",
+        f"dhuman_synthetic_choices_{dataset}_{model}": "dhuman_synthetic_choices",
+        f"scratch_synthetic_{dataset}_{model}": "scratch_synthetic",
+        f"existing_synthetic_{dataset}_{model}": "existing_synthetic",
+        f"dmodel_synthetic_{dataset}_{model}": "dmodel_synthetic",
+    }
+    
+    for suffix, key in mappings.items():
+        name = f"{prefix}_{suffix}"
+        data = load_summary_file(base_dir, name)
         if data:
-            results.append({
-                "setting": setting_name,
-                "num_human": 3,
-                "num_model": m,
-                "total_distractors": 3 + m,
-                **data
-            })
-    
+            results[key].append(data)
+            
     return results
 
 

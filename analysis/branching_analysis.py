@@ -35,72 +35,73 @@ LINE_STYLES = {
 
 def load_branching_results(
     base_dir: Path,
-    dataset_type: str = "normal",
-    is_choices_only: bool = False,
+    dataset: str,
+    model: str,
 ) -> Dict[str, Dict[str, Any]]:
     """
-    Load results for branching analysis.
+    Load results for branching analysis from RQ2 configurations.
     
     Args:
         base_dir: Results base directory
-        dataset_type: "normal" or "augmented"
-        is_choices_only: Whether to load choices-only results
+        dataset: Dataset name
+        model: Model name
         
     Returns:
-        Dict mapping config string -> results dict
+        Dict mapping config string (e.g. "2H3M") -> results dict
     """
     results = {}
-    suffix = "_choices_only" if is_choices_only else ""
     
-    # Load all H+M configurations
-    for h in range(1, 4):  # 1H, 2H, 3H
-        for m in range(0, 7):  # 0M to 6M
-            config = f"{h}H{m}M"
-            setting_dir = base_dir / f"{config}_{dataset_type}{suffix}"
+    # Load all H+M configurations from RQ2
+    # Base cases: 1H0M, 2H0M, 3H0M (from RQ2 or RQ1)
+    # Branching cases: 1H3M, 2H3M (from RQ2)
+    # Plus whatever other configs were run
+    
+    # Simple search for directories starting with RQ and containing dataset/model
+    for path in base_dir.iterdir():
+        if not path.is_dir() or dataset not in path.name or model not in path.name:
+            continue
             
-            # Try multiple summary file patterns
-            patterns = [
-                f"overall_summary_{h}H_{m}M{suffix}.json",
-                f"overall_summary.json",
-                "results.json",
-            ]
+        # Parse config from name if possible
+        # Pattern: RQ2_human_benefit_{nh}H_{nm}M_{dataset}_{model}
+        # Or: RQ_human_only_{dataset}_{model} (which is 3H0M)
+        
+        nh, nm = None, None
+        if "human_benefit" in path.name:
+            import re
+            match = re.search(r"(\d)H(?:_(\d)M)?", path.name)
+            if match:
+                nh = int(match.group(1))
+                nm = int(match.group(2)) if match.group(2) else 0
+        elif "human_only" in path.name and "choices" not in path.name:
+            nh, nm = 3, 0
             
-            for pattern in patterns:
-                summary_path = setting_dir / pattern
-                if summary_path.exists():
-                    with open(summary_path) as f:
-                        data = json.load(f)
-                    results[config] = {
-                        "accuracy": data.get("acc", data.get("accuracy", 0)),
-                        "correct": data.get("corr", data.get("correct", 0)),
-                        "total": data.get("total", 0),
-                    }
-                    break
+        if nh is not None:
+            config_key = f"{nh}H{nm}M"
+            
+            results_path = path / "results.json"
+            if results_path.exists():
+                with open(results_path) as f:
+                    data = json.load(f)
+                
+                summary = data.get("summary", {})
+                results[config_key] = {
+                    "accuracy": summary.get("accuracy", 0),
+                    "correct": summary.get("correct", 0),
+                    "total": summary.get("total", 0),
+                }
     
     return results
 
 
 def plot_human_distractor_branching(
     base_dir: Path,
-    dataset_type: str = "normal",
+    dataset: str,
+    model: str,
     output_dir: Optional[Path] = None,
     show: bool = False,
 ) -> Dict[str, Path]:
     """
-    Create branching analysis plots.
-    
-    Creates two plots (Full Questions and Choices Only) showing:
-    - Three baseline curves for 1H, 2H, 3H
-    - Branching lines for adding model distractors
-    
-    Args:
-        base_dir: Directory containing experiment results
-        dataset_type: "normal" or "augmented"
-        output_dir: Where to save plots
-        show: Whether to display interactively
-        
-    Returns:
-        Dict mapping plot name -> output path
+    Create branching analysis plots for a specific dataset and model.
     """
     base_dir = Path(base_dir)
     if output_dir is None:
@@ -110,9 +111,7 @@ def plot_human_distractor_branching(
     
     output_paths = {}
     
-    for is_choices_only in [False, True]:
-        suffix = "choices_only" if is_choices_only else "full"
-        results = load_branching_results(base_dir, dataset_type, is_choices_only)
+    results = load_branching_results(base_dir, dataset, model)
         
         if not results:
             print(f"No results found for {suffix}")
@@ -274,15 +273,15 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Branching human distractor analysis")
     parser.add_argument("--results-dir", type=str, required=True, help="Results directory")
     parser.add_argument("--output-dir", type=str, help="Output directory for plots")
-    parser.add_argument("--dataset-type", type=str, default="normal", choices=["normal", "augmented"])
+    parser.add_argument("--dataset", type=str, default="mmlu_pro", help="Dataset name")
+    parser.add_argument("--model", type=str, default="gpt-4o", help="Model name")
     parser.add_argument("--show", action="store_true", help="Show plots interactively")
     args = parser.parse_args()
     
     results_dir = Path(args.results_dir)
     output_dir = Path(args.output_dir) if args.output_dir else None
     
-    print("Creating branching analysis plots...")
-    plot_human_distractor_branching(results_dir, args.dataset_type, output_dir, args.show)
+    print(f"Creating branching analysis plots for {args.dataset} / {args.model}...")
+    plot_human_distractor_branching(results_dir, args.dataset, args.model, output_dir, args.show)
     
-    print("\nCreating benefit comparison plot...")
-    plot_human_benefit_comparison(results_dir, output_dir, args.show)
+    # ... human benefit comparison would need similar update if used ...

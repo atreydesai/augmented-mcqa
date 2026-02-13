@@ -41,13 +41,14 @@ def main():
     parser.add_argument(
         "--model-type",
         type=str,
-        choices=["cond_model_q_a", "cond_model_q_a_dhuman", "cond_model_q_a_dmodel"],
+        choices=[t.value for t in DistractorType],
         default="cond_model_q_a",
         help="Type of model distractors",
     )
     
     # Evaluation settings
     parser.add_argument("--eval-mode", type=str, choices=["accuracy", "behavioral"], default="behavioral")
+    parser.add_argument("--choices-only", action="store_true", help="Use choices-only prompt")
     parser.add_argument("--limit", type=int, help="Limit number of entries")
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
     
@@ -80,6 +81,7 @@ def main():
             num_model=args.num_model,
             model_distractor_type=model_type,
             eval_mode=args.eval_mode,
+            choices_only=args.choices_only,
             limit=args.limit,
             seed=args.seed,
             reasoning_effort=args.reasoning_effort,

@@ -1,0 +1,39 @@
+{
+  "config": {
+    "name": "RQ_existing_synthetic_mmlu_pro_gpt-4o",
+    "dataset_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/processed/unified_processed/mmlu_pro",
+    "model_name": "gpt-4o",
+    "num_human": 0,
+    "num_model": 6,
+    "model_distractor_type": "cond_model_q_a",
+    "eval_mode": "behavioral",
+    "choices_only": false,
+    "limit": 25,
+    "seed": 42,
+    "reasoning_effort": null,
+    "thinking_level": null,
+    "temperature": 0.0,
+    "max_tokens": 100,
+    "output_dir": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/RQ_existing_synthetic_mmlu_pro_gpt-4o",
+    "categories": null,
+    "config_id": "RQ_existing_synthetic_mmlu_pro_gpt-4o_0H6M_gpt-4o"
+  },
+  "summary": {
+    "total": 0,
+    "correct": 0,
+    "accuracy": 0.0,
+    "behavioral_counts": {
+      "G": 0,
+      "H": 0,
+      "M": 0,
+      "?": 0
+    },
+    "accuracy_by_category": {}
+  },
+  "timing": {
+    "start": "2026-02-13T07:50:12.705496",
+    "end": "2026-02-13T07:50:36.918206",
+    "duration_seconds": 24.21271
+  },
+  "results": []
+}

@@ -187,7 +187,7 @@ class ExperimentRunner:
         """
         self.config = config
         self._client: Optional[ModelClient] = None
-        self._adapter: Optional[DataAdapter] = None
+        self._dataset: Optional[Any] = None
     
     def _get_client(self) -> ModelClient:
         """Get or create model client."""
@@ -203,17 +203,18 @@ class ExperimentRunner:
     
     def _load_data(self) -> Any:
         """Load and optionally filter dataset."""
-        if self._adapter is None:
+        if self._dataset is None:
             from datasets import load_from_disk
             dataset = load_from_disk(str(self.config.dataset_path))
             # Handle split
             if "test" in dataset:
-                self._adapter = dataset["test"]
-            elif hasattr(dataset, "values"):
-                self._adapter = list(dataset.values())[0]
+                self._dataset = dataset["test"]
+            elif hasattr(dataset, "values") and not hasattr(dataset, "__iter__"):
+                # If it's a DatasetDict but not a single split
+                self._dataset = list(dataset.values())[0]
             else:
-                self._adapter = dataset
-        return self._adapter
+                self._dataset = dataset
+        return self._dataset
     
     def _prepare_entry(self, entry, idx: int) -> Optional[Dict[str, Any]]:
         """
@@ -294,13 +295,13 @@ class ExperimentRunner:
         results.start_time = datetime.now()
         
         # Load data
-        adapter = self._load_data()
+        dataset = self._load_data()
         
         # Get client
         client = self._get_client()
         
         # Filter by categories if specified
-        entries = list(adapter)
+        entries = list(dataset)
         if self.config.categories:
             entries = [
                 e for e in entries
@@ -332,6 +333,7 @@ class ExperimentRunner:
             prompt = build_mcqa_prompt(
                 prepared["question"],
                 prepared["options"],
+                choices_only=self.config.choices_only,
             )
             
             # Generate
