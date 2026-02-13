@@ -90,6 +90,31 @@ def load_results_for_rq(
     return results
 
 
+def load_3H_plus_M_results(
+    base_dir: Path,
+    dataset_type: str = "normal",
+    is_choices_only: bool = False,
+) -> List[Dict]:
+    """Load 3H+M results (3H0M through 3H6M)."""
+    results = []
+    
+    for m in range(7):  # 0M to 6M
+        suffix = "_choices_only" if is_choices_only else ""
+        setting_name = f"3H{m}M_{dataset_type}{suffix}"
+        
+        data = load_summary_file(base_dir, setting_name)
+        if data:
+            results.append({
+                "setting": setting_name,
+                "num_human": 3,
+                "num_model": m,
+                "total_distractors": 3 + m,
+                **data
+            })
+    
+    return results
+
+
 def load_human_only_results(
     base_dir: Path,
     dataset_type: str = "normal",
@@ -99,14 +124,10 @@ def load_human_only_results(
     results = []
     
     for h in range(1, 4):  # 1H to 3H
-        if is_choices_only:
-            setting_name = f"{h}H0M_{dataset_type}_choices_only"
-            summary_filename = f"overall_summary_{h}H_0M_choices_only.json"
-        else:
-            setting_name = f"{h}H0M_{dataset_type}"
-            summary_filename = f"overall_summary_{h}H_0M.json"
+        suffix = "_choices_only" if is_choices_only else ""
+        setting_name = f"{h}H0M_{dataset_type}{suffix}"
         
-        data = load_summary_file(base_dir, setting_name, summary_filename)
+        data = load_summary_file(base_dir, setting_name)
         if data:
             results.append({
                 "setting": setting_name,
@@ -128,14 +149,10 @@ def load_model_only_results(
     results = []
     
     for m in range(1, 7):  # 1M to 6M
-        if is_choices_only:
-            setting_name = f"0H{m}M_{dataset_type}_choices_only"
-            summary_filename = f"overall_summary_0H_{m}M_choices_only.json"
-        else:
-            setting_name = f"0H{m}M_{dataset_type}"
-            summary_filename = f"overall_summary_0H_{m}M.json"
+        suffix = "_choices_only" if is_choices_only else ""
+        setting_name = f"0H{m}M_{dataset_type}{suffix}"
         
-        data = load_summary_file(base_dir, setting_name, summary_filename)
+        data = load_summary_file(base_dir, setting_name)
         if data:
             results.append({
                 "setting": setting_name,
