@@ -81,12 +81,14 @@ def load_arc_dataset(
             "question": entry["question"],
             "options": options,
             "labels": labels,
-            "gold_answer": options[answer_index] if answer_index < len(options) else options[0],
+            "answer": options[answer_index] if answer_index < len(options) else options[0],
+            "choices_answer": [options[answer_index] if answer_index < len(options) else options[0]],
             "answer_index": answer_index,
             "answer_letter": answer_letter,
             "dataset_type": dataset_type.value,
-            # Original distractors (all non-gold options)
-            DistractorType.COND_HUMAN_Q_A.value: [
+            "category": "", # ARC doesn't have categories
+            # Rename cond_human_q_a -> choices_human
+            "choices_human": [
                 opt for i, opt in enumerate(options) if i != answer_index
             ],
         }

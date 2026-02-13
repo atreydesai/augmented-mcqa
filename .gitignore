@@ -49,16 +49,17 @@ env/
 htmlcov/
 
 # Large files (datasets and results tracked separately)
-datasets/*
-!datasets/.gitkeep
-results/*
-!results/.gitkeep
+# datasets/*
+# !datasets/.gitkeep
+# results/*
+# !results/.gitkeep
 
 # Model weights
 *.bin
 *.pt
 *.pth
 *.safetensors
+*.arrow
 
 # Logs
 *.log

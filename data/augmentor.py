@@ -77,26 +77,15 @@ class GenerationConfig:
 
 
 
-def parse_generated_distractors(response: str, expected_count: int = 9) -> List[str]:
+def parse_generated_distractors(response: str, expected_count: int = 6) -> List[str]:
     """
     Parse generated distractors from model response.
-    
-    Expected format:
-    B: <distractor>
-    C: <distractor>
-    ...
-    
-    Args:
-        response: Raw model response
-        expected_count: Expected number of distractors
-        
-    Returns:
-        List of parsed distractor strings
+    Expected format: E: <text>, F: <text>, etc.
     """
     distractors = []
     
-    # Try to match pattern like "B: <text>" or "B. <text>" or just "B <text>"
-    pattern = r'^([B-J])[:\.\s]+(.+)$'
+    # Try to match pattern like "E: <text>" or "E. <text>" or just "E <text>"
+    pattern = r'^([E-J])[:\.\s]+(.+)$'
     
     for line in response.strip().split('\n'):
         line = line.strip()
@@ -106,23 +95,18 @@ def parse_generated_distractors(response: str, expected_count: int = 9) -> List[
         match = re.match(pattern, line, re.IGNORECASE)
         if match:
             distractor = match.group(2).strip()
-            # Clean up common formatting issues
             distractor = distractor.rstrip('.')
             if distractor:
                 distractors.append(distractor)
     
-    # If parsing failed, try alternative approaches
-    if len(distractors) < expected_count // 2:
-        # Try splitting by common separators
-        lines = [l.strip() for l in response.split('\n') if l.strip()]
+    # Fallback: if we didn't get enough, just take any lines that look like options
+    if len(distractors) < expected_count:
+        lines = [l.strip() for l in response.strip().split('\n') if l.strip()]
         for line in lines:
-            # Skip lines that are just letters
-            if re.match(r'^[A-J]\.?$', line):
-                continue
-            # Remove leading letter markers
-            cleaned = re.sub(r'^[B-J][:\.\s]+', '', line).strip()
-            if cleaned and cleaned not in distractors:
-                distractors.append(cleaned)
+            if ":" in line and line[0] in "ABCDEFGHIJ":
+                cleaned = line.split(":", 1)[1].strip()
+                if cleaned not in distractors:
+                    distractors.append(cleaned)
     
     return distractors[:expected_count]
 
@@ -132,29 +116,12 @@ def build_prompt(
     mode: AugmentorMode,
     num_distractors: int = 6,
 ) -> str:
-    """
-    Build the generation prompt based on mode.
-    
-    Args:
-        entry: Dataset entry with question, answer, and possibly existing distractors
-        mode: Generation mode
-        num_distractors: Number of distractors to generate (default 6)
-        
-    Returns:
-        Formatted prompt string
-    """
+    """Build the generation prompt based on mode."""
     question = entry["question"]
-    
-    # Get gold answer
-    gold_answers = entry.get("choices_answer", [])
-    if gold_answers:
-        gold_answer = gold_answers[0]
-    else:
-        # Fallback: try to get from options using answer_index
-        options = entry.get("options", [])
-        answer_idx = entry.get("answer_index", 0)
-        gold_answer = options[answer_idx] if answer_idx < len(options) else ""
-    
+    gold_answer = entry.get("answer", "")
+    if not gold_answer and entry.get("choices_answer"):
+        gold_answer = entry["choices_answer"][0]
+
     if mode == AugmentorMode.FROM_SCRATCH:
         return DISTRACTOR_GENERATION_PROMPT.format(
             question=question,
@@ -162,18 +129,11 @@ def build_prompt(
         )
     
     elif mode == AugmentorMode.CONDITIONED_HUMAN:
-        # Get human distractors (up to 3 from original MMLU/ARC/SuperGPQA)
-        distractors = get_distractor_column(entry, DistractorType.COND_HUMAN_Q_A)
-        
-        # Need exactly 3 distractors for conditioning
+        distractors = entry.get("choices_human", [])
         if len(distractors) < 3:
-            # Fall back to from_scratch if not enough human distractors
-            return DISTRACTOR_GENERATION_PROMPT.format(
-                question=question,
-                gold_answer=gold_answer,
-            )
+            # Fallback to 1 + enough human
+            return DISTRACTOR_GENERATION_PROMPT.format(question=question, gold_answer=gold_answer)
         
-        # Use first 3 human distractors
         return DISTRACTOR_GENERATION_PROMPT_CONDITIONED.format(
             question=question,
             gold_answer=gold_answer,
@@ -183,93 +143,60 @@ def build_prompt(
         )
     
     elif mode == AugmentorMode.CONDITIONED_SYNTHETIC:
-        # Get existing synthetic distractors (from MMLU-Pro, up to 6)
-        distractors = get_distractor_column(entry, DistractorType.COND_MODEL_Q_A)
+        # User instructions: pick 3 random from cond_model_q_a_scratch
+        scratch_distractors = entry.get(DistractorType.COND_MODEL_Q_A_SCRATCH.value, [])
+        if len(scratch_distractors) < 3:
+            return DISTRACTOR_GENERATION_PROMPT.format(question=question, gold_answer=gold_answer)
         
-        # Need at least 3 synthetic distractors to select from
-        if len(distractors) < 3:
-            # Fall back to from_scratch if not enough synthetic distractors
-            return DISTRACTOR_GENERATION_PROMPT.format(
-                question=question,
-                gold_answer=gold_answer,
-            )
-        
-        # RANDOMLY SELECT 3 from the available synthetic distractors
-        selected_distractors = random.sample(distractors, 3)
-        
+        selected = random.sample(scratch_distractors, 3)
         return DISTRACTOR_GENERATION_PROMPT_CONDITIONED.format(
             question=question,
             gold_answer=gold_answer,
-            distractor_1=selected_distractors[0],
-            distractor_2=selected_distractors[1],
-            distractor_3=selected_distractors[2],
+            distractor_1=selected[0],
+            distractor_2=selected[1],
+            distractor_3=selected[2],
         )
     
     raise ValueError(f"Unknown mode: {mode}")
 
 
-def generate_distractors(
-    entry: Dict,
-    config: GenerationConfig,
-    client: Any,
-) -> List[str]:
+def assemble_mcqa_options(
+    answer: str,
+    human_distractors: List[str],
+    model_distractors: List[str],
+    num_total: int = 10
+) -> (List[str], str):
     """
-    Generate synthetic distractors for a single entry.
-    
-    Args:
-        entry: Dataset entry
-        config: Generation configuration
-        client: API client for the provider
-        
-    Returns:
-        List of generated distractor strings
+    Assemble and randomize options.
+    Returns: (list_of_options, correct_letter)
     """
-    prompt = build_prompt(entry, config.mode, config.num_distractors)
+    # 1. Answer
+    # 2. Pick 3 human
+    human_subset = human_distractors[:3]
+    # 3. Model distractors (should be 6)
     
-    # Select generation function based on provider
-    # NOTE: Functionality replaced by unified models.get_client()
-    client = get_client(config.model_name)
+    all_options = [answer] + human_subset + model_distractors
+    # Ensure exactly num_total by padding if needed (shouldn't happen with correct flow)
+    all_options = all_options[:num_total]
     
-    # Generate with retries
-    for attempt in range(config.max_retries):
-        try:
-
-            response = client.generate(
-                prompt=prompt,
-                temperature=config.temperature,
-                max_tokens=1000,
-            )
-            distractors = parse_generated_distractors(response.text, config.num_distractors)
-            
-            if len(distractors) >= config.num_distractors // 2:
-                return distractors
-            
-            # Not enough distractors parsed, retry
-            if attempt < config.max_retries - 1:
-                time.sleep(config.retry_delay)
-                
-        except Exception as e:
-            if attempt < config.max_retries - 1:
-                time.sleep(config.retry_delay * (attempt + 1))
-            else:
-                raise
+    # Randomize
+    indices = list(range(len(all_options)))
+    random.shuffle(indices)
     
-    return distractors  # Return whatever we got
+    shuffled_options = [all_options[i] for i in indices]
+    answer_idx = indices.index(0) # 0 was the original answer index
+    correct_letter = chr(ord('A') + answer_idx)
+    
+    return shuffled_options, correct_letter
 
 
-def get_output_column(mode: AugmentorMode) -> str:
-    """
-    Get the output column name for a generation mode.
-    
-    Note: FROM_SCRATCH outputs to cond_model_q_a_scratch (NEW generated),
-    NOT to cond_model_q_a (which holds EXISTING MMLU-Pro synthetic distractors).
-    """
-    mapping = {
-        AugmentorMode.FROM_SCRATCH: DistractorType.COND_MODEL_Q_A_SCRATCH.value,
-        AugmentorMode.CONDITIONED_HUMAN: DistractorType.COND_MODEL_Q_A_DHUMAN.value,
-        AugmentorMode.CONDITIONED_SYNTHETIC: DistractorType.COND_MODEL_Q_A_DMODEL.value,
-    }
-    return mapping[mode]
+def format_options_for_prompt(options: List[str]) -> str:
+    """Format options as A: ..., B: ..."""
+    formatted = []
+    for i, opt in enumerate(options):
+        letter = chr(ord('A') + i)
+        formatted.append(f"{letter}: {opt}")
+    return "\n".join(formatted)
 
 
 def augment_dataset(
@@ -280,174 +207,116 @@ def augment_dataset(
     resume_from: Optional[Path] = None,
 ) -> Dataset:
     """
-    Augment a dataset with synthetic distractors.
-    
-    Args:
-        dataset_path: Path to input dataset
-        config: Generation configuration
-        output_path: Where to save augmented dataset
-        limit: Limit number of entries to process (for testing)
-        resume_from: Path to intermediate results to resume from
-        
-    Returns:
-        Augmented Dataset
+    Augment a dataset with synthetic distractors and full MCQA columns.
     """
+    from config import MCQA_PROMPT_FULL
+    
     # Load dataset
     dataset = load_from_disk(str(dataset_path))
-    
-    # Handle DatasetDict vs Dataset
     if isinstance(dataset, DatasetDict):
-        # Use test split by default
-        if "test" in dataset:
-            dataset = dataset["test"]
-        else:
-            dataset = list(dataset.values())[0]
-    
-    # Initialize client
-    # The client type is inferred from the model name in the config
+        # We process all splits in the dict if it's a Dict
+        final_dataset_dict = {}
+        for split_name, ds in dataset.items():
+            print(f"\nProcessing split: {split_name}")
+            final_dataset_dict[split_name] = augment_single_dataset(ds, config, limit)
+        result = DatasetDict(final_dataset_dict)
+    else:
+        result = augment_single_dataset(dataset, config, limit)
+
+    # Save
+    if output_path:
+        output_path = Path(output_path)
+        result.save_to_disk(str(output_path))
+        print(f"Saved to {output_path}")
+        
+    return result
+
+
+def augment_single_dataset(dataset: Dataset, config: GenerationConfig, limit: Optional[int] = None) -> Dataset:
+    """Process a single Dataset."""
+    from config import MCQA_PROMPT_FULL
     client = get_client(config.model_name)
     
-    # Load existing results if resuming
-    processed = {}
-    if resume_from and resume_from.exists():
-        with open(resume_from, 'r') as f:
-            processed = json.load(f)
-        print(f"Resuming from {len(processed)} processed entries")
+    # Prefixes for columns based on mode
+    mode_suffixes = {
+        AugmentorMode.FROM_SCRATCH: ("scratch", "qa"),
+        AugmentorMode.CONDITIONED_HUMAN: ("dhuman", "qadh"),
+        AugmentorMode.CONDITIONED_SYNTHETIC: ("dmodel", "qadm"),
+    }
+    suffix, prefix = mode_suffixes[config.mode]
     
-    # Set up output paths
-    output_column = get_output_column(config.mode)
+    model_col = f"cond_model_q_a_{suffix}"
+    options_col = f"{prefix}_options_randomized"
+    letter_col = f"{prefix}_correct_answer_letter"
+    question_col = f"{prefix}_full_question"
+    input_col = f"{prefix}_model_input"
+    output_col = f"{prefix}_model_output"
     
-    if output_path is None:
-        # Default path: augmented/{mode}/{dataset_name}_{model_name}.json
-        dataset_name = Path(dataset_path).stem
-        model_safe = config.model_name.replace("/", "_")
-        
-        output_dir = AUGMENTED_DATASETS_DIR / config.mode.value
-        output_dir.mkdir(parents=True, exist_ok=True)
-        
-        output_path = output_dir / f"{dataset_name}_{model_safe}.json"
-    output_path = Path(output_path)
-    
-    intermediate_path = output_path / "intermediate.json"
-    output_path.mkdir(parents=True, exist_ok=True)
-    
-    # Process entries
     entries = list(dataset)
     if limit:
         entries = entries[:limit]
-    
-    augmented_entries = []
-    
-    for i, entry in enumerate(tqdm(entries, desc=f"Generating ({config.mode.value})")):
-        # Check if already processed
-        entry_key = str(i)
-        if entry_key in processed:
-            augmented = dict(entry)
-            augmented[output_column] = processed[entry_key]
-            augmented_entries.append(augmented)
-            continue
         
+    augmented_entries = []
+    for i, entry in enumerate(tqdm(entries, desc=f"Augmenting ({config.mode.value})")):
         try:
-            distractors = generate_distractors(entry, config, client)
-            processed[entry_key] = distractors
+            prompt = build_prompt(entry, config.mode)
+            response = client.generate(prompt=prompt, temperature=config.temperature)
+            raw_text = response.text
+            distractors = parse_generated_distractors(raw_text, 6)
             
-            augmented = dict(entry)
-            augmented[output_column] = distractors
-            augmented_entries.append(augmented)
+            # Assembly
+            answer = entry.get("answer", "")
+            if not answer and entry.get("choices_answer"):
+                answer = entry["choices_answer"][0]
             
-            # Save intermediate results
-            if (i + 1) % config.save_interval == 0:
-                with open(intermediate_path, 'w') as f:
-                    json.dump(processed, f)
-                print(f"  Saved intermediate results ({i + 1} entries)")
-                
+            human_distractors = entry.get("choices_human", [])
+            
+            # Prepare options
+            options, correct_letter = assemble_mcqa_options(answer, human_distractors, distractors)
+            
+            # Formatting
+            options_text = format_options_for_prompt(options)
+            full_question = f"{entry['question']}\n{options_text}"
+            model_input = MCQA_PROMPT_FULL.format(question=entry['question'], options=options_text)
+            
+            # Fill entry
+            new_entry = dict(entry)
+            new_entry[model_col] = distractors
+            new_entry[output_col] = raw_text
+            new_entry[options_col] = options
+            new_entry[letter_col] = correct_letter
+            new_entry[question_col] = full_question
+            new_entry[input_col] = model_input
+            
+            augmented_entries.append(new_entry)
+            
         except Exception as e:
-            print(f"  Error at entry {i}: {e}")
-            augmented = dict(entry)
-            augmented[output_column] = []
-            augmented_entries.append(augmented)
-    
-    # Create and save final dataset
-    result = Dataset.from_list(augmented_entries)
-    result.save_to_disk(str(output_path))
-    
-    # Push to Hugging Face
-    from data.hub_utils import push_dataset_to_hub
-    repo_id = f"atreydesai/qgqa-{Path(dataset_path).stem}-{config.mode.value}-augmented"
-    push_dataset_to_hub(result, repo_id=repo_id)
-    
-    # Clean up intermediate file
-    if intermediate_path.exists():
-        intermediate_path.unlink()
-    
-    print(f"\n✓ Saved augmented dataset to {output_path}")
-    print(f"  Mode: {config.mode.value}")
-    print(f"  Output column: {output_column}")
-    print(f"  Entries: {len(result)}")
-    
-    return result
+            print(f"Error at {i}: {e}")
+            augmented_entries.append(dict(entry))
+            
+    return Dataset.from_list(augmented_entries)
 
 
 if __name__ == "__main__":
     import argparse
-    
-    parser = argparse.ArgumentParser(description="Generate synthetic distractors")
-    parser.add_argument(
-        "--dataset",
-        type=str,
-        required=True,
-        help="Path to input dataset",
-    )
-    parser.add_argument(
-        "--mode",
-        type=str,
-        choices=["from_scratch", "conditioned_human", "conditioned_synthetic"],
-        default="from_scratch",
-        help="Generation mode",
-    )
-    parser.add_argument(
-        "--provider",
-        type=str,
-        choices=["openai", "anthropic", "google"],
-        default="openai",
-        help="Model provider",
-    )
-    parser.add_argument(
-        "--model",
-        type=str,
-        default="gpt-4",
-        help="Model name",
-    )
-    parser.add_argument(
-        "--output",
-        type=str,
-        default=None,
-        help="Output path",
-    )
-    parser.add_argument(
-        "--limit",
-        type=int,
-        default=None,
-        help="Limit number of entries (for testing)",
-    )
-    parser.add_argument(
-        "--resume",
-        type=str,
-        default=None,
-        help="Path to intermediate results to resume from",
-    )
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--dataset", type=str, required=True)
+    parser.add_argument("--mode", type=str, default="from_scratch")
+    parser.add_argument("--model", type=str, default="gpt-4.1")
+    parser.add_argument("--output", type=str)
+    parser.add_argument("--limit", type=int)
     args = parser.parse_args()
     
     config = GenerationConfig(
         mode=AugmentorMode(args.mode),
-        model_provider=args.provider,
+        model_provider="openai", # Dummy, inferred from name
         model_name=args.model,
     )
     
     augment_dataset(
         dataset_path=Path(args.dataset),
         config=config,
-        output_path=Path(args.output) if args.output else None,
-        limit=args.limit,
-        resume_from=Path(args.resume) if args.resume else None,
+        output_path=args.output,
+        limit=args.limit
     )
+

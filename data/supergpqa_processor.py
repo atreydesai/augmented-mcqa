@@ -70,7 +70,8 @@ def load_supergpqa_dataset(
                 "id": raw.get("uuid", ""),
                 "question": raw.get("question", ""),
                 "options": options,
-                "gold_answer": raw.get("answer", options[answer_index] if answer_index < len(options) else ""),
+                "answer": raw.get("answer", options[answer_index] if answer_index < len(options) else ""),
+                "choices_answer": [raw.get("answer", options[answer_index] if answer_index < len(options) else "")],
                 "answer_index": answer_index,
                 "answer_letter": answer_letter,
                 "dataset_type": DatasetType.SUPERGPQA.value,
@@ -79,8 +80,8 @@ def load_supergpqa_dataset(
                 "subfield": raw.get("subfield", ""),
                 "difficulty": raw.get("difficulty", "middle"),
                 "is_calculation": raw.get("is_calculation", False),
-                # Original distractors (all non-gold options)
-                DistractorType.COND_HUMAN_Q_A.value: [
+                # Rename cond_human_q_a -> choices_human
+                "choices_human": [
                     opt for i, opt in enumerate(options) if i != answer_index
                 ],
             }
@@ -98,41 +99,45 @@ def process_supergpqa_for_experiments(
     filter_10_options: bool = True,
     output_dir: Optional[Path] = None,
     output_path: Optional[Path] = None,
-) -> Path:
+) -> Any:
     """
-    Process SuperGPQA dataset and save in unified format.
+    Process SuperGPQA dataset and save as HF Dataset format.
     
     Args:
         split: Dataset split
         limit: Optional limit
         filter_10_options: If True, only include 10-option questions
         output_dir: Output base directory
-        output_path: Exact output file path (overrides output_dir)
+        output_path: Exact output directory path (overrides output_dir)
         
     Returns:
-        Path to saved dataset
+        Processed Dataset
     """
+    from datasets import Dataset
     entries = load_supergpqa_dataset(split, limit, filter_10_options)
+    
+    # Convert to HF Dataset for standardization
+    dataset = Dataset.from_list(entries)
     
     if output_path is None:
         if output_dir is None:
             output_dir = PROCESSED_DATASETS_DIR
         
-        # Implementation plan says: datasets/processed/supergpqa.json
-        output_path = output_dir / "supergpqa.json"
+        # Default path structure: output_dir/supergpqa_processed
+        output_path = output_dir / "supergpqa_processed"
     
+    output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     
-    with open(output_path, "w") as f:
-        json.dump(entries, f, indent=2)
-    
+    # Save as HF Dataset
+    dataset.save_to_disk(str(output_path))
     print(f"Saved {len(entries)} entries to {output_path}")
     
     # Push to Hugging Face
     from data.hub_utils import push_dataset_to_hub
-    push_dataset_to_hub(entries, repo_id="atreydesai/qgqa-supergpqa-processed")
+    push_dataset_to_hub(dataset, repo_id="atreydesai/qgqa-supergpqa-processed")
     
-    return entries
+    return dataset
 
 
 def add_synthetic_distractors_to_supergpqa(

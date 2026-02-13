@@ -203,8 +203,10 @@ def process_mmlu_pro(
         return {
             **entry,
             "question": question,
-            DistractorType.COND_HUMAN_Q_A.value: human_distractors,
-            DistractorType.COND_MODEL_Q_A.value: synthetic_distractors,
+            # Schema Unification
+            "choices_human": human_distractors,
+            "legacy_choices_synthetic": synthetic_distractors,
+            "answer": gold_answer,
             "choices_answer": [gold_answer] if gold_answer else [],
             "whitespace_bug_fixed": had_whitespace_bug,
         }

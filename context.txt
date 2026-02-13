@@ -97,3 +97,44 @@ python -m pytest tests/
 - API keys in `.env`
 - Paths: `DATASETS_DIR` (defaults to `./datasets`), `RESULTS_DIR`
 - Conda env: `qgqa`
+
+# Project Context: Augmented MCQA
+
+## Current Status
+Transitioning to standardizing all processed datasets as Hugging Face `Dataset` objects (saving via `save_to_disk` and pushing to Hub). 
+
+## Major Changes & Refactoring
+
+### 1. Robust/Exact MMLU-Pro Matching
+- Implemented **Exact Matching** between MMLU and MMLU-Pro questions using raw strings (before any cleaning).
+- Only questions common to both datasets are preserved.
+- Human vs Synthetic distractors are identified based on exact option matches in the original MMLU.
+- Post-identification, whitespace cleaning and STEM-specific bug fixes (leading whitespace removal for chemistry, physics, math) are applied.
+
+### 2. Dataset Standardization (HF Dataset Format)
+- **MMLU-Pro**: Processed as `datasets.Dataset`, renamed `test` split to `train`, and removed `validation` split. Saved locally via `save_to_disk`.
+- **ARC (Easy & Challenge)**: Updated `data/arc_processor.py` to filter questions with fewer than 4 options. Converted to `datasets.Dataset` format and saved locally using `save_to_disk` (instead of JSON).
+- **SuperGPQA**: Filtered to 10-option questions. Converted to `datasets.Dataset` format and saved locally using `save_to_disk`.
+
+### 3. Pipeline Refactoring
+- **Consolidation**: Integrated `sorter.py` logic into `mmlu_pro_processor.py`.
+- **Deletion**: Removed obsolete `adapter.py` and `sorter.py`.
+- **Master Script**: Updated `scripts/process_all.py` to orchestration processing of all three datasets with directory-based output paths to support the HF Dataset format. Added `--limit` support.
+
+### 4. Hugging Face Integration
+- All processed datasets are automatically pushed to the Hugging Face Hub under the `atreydesai/` namespace as proper datasets.
+
+## Key Files
+- `data/mmlu_pro_processor.py`: Exact matching and split refactoring logic.
+- `data/arc_processor.py`: Minimum 4-option filter and HF Dataset conversion.
+- `data/supergpqa_processor.py`: HF Dataset conversion.
+- `scripts/process_all.py`: Orchestration and path management.
+- `data/hub_utils.py`: Centralized Hub pushing utility.
+
+## Deployment Details
+- Processed datasets saved to `datasets/processed/`.
+- Exact directory names:
+    - `datasets/processed/mmlu_pro_processed/`
+    - `datasets/processed/arc_processed/arc_easy/`
+    - `datasets/processed/arc_processed/arc_challenge/`
+    - `datasets/processed/supergpqa_processed/`

@@ -102,29 +102,33 @@ def main():
         print("\n🔍 Dry run - done")
         return 0
     
-    with open(input_path) as f:
-        entries = json.load(f)
-    
-    if args.limit:
-        entries = entries[:args.limit]
-    
-    print(f"   Entries: {len(entries)}")
     print("\n🚀 Starting generation...")
     
     # Determine provider from client type
     provider = client.__class__.__name__.replace("Client", "").lower()
     
-    augmented = augment_dataset(
-        entries=entries,
+    from data.augmentor import GenerationConfig, augment_dataset
+    
+    config = GenerationConfig(
         mode=mode_map[args.mode],
         model_provider=provider,
-        model_name=client.model_id,
+        model_name=args.model,
         num_distractors=args.num_distractors,
-        save_path=output_path,
-        save_interval=args.save_interval,
     )
     
-    print(f"\n✅ Done. {len(augmented)} entries -> {output_path}")
+    # The new augment_dataset expects a Path to a local dataset (load_from_disk)
+    # However, if it's already a JSON, we might need to handle that or just point to the unified dataset.
+    
+    print(f"🚀 Starting generation for {input_path}...")
+    
+    augmented = augment_dataset(
+        dataset_path=input_path,
+        config=config,
+        output_path=output_path,
+        limit=args.limit
+    )
+    
+    print(f"\n✅ Done. Augmented dataset saved to {output_path}")
     return 0
 
 
