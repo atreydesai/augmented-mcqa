@@ -206,19 +206,32 @@ class ExperimentRunner:
         if self._adapter is None:
             from datasets import load_from_disk
             dataset = load_from_disk(str(self.config.dataset_path))
-            # Handle split
-            if "test" in dataset:
-                data = dataset["test"]
-            elif hasattr(dataset, "values"):
-                data = list(dataset.values())[0]
-            else:
-                data = dataset
 
-            # Filter by dataset_type if specified
+            # If dataset_type_filter is specified, try to use it as a split name first
+            # (unified datasets are DatasetDicts with splits like "mmlu_pro", "arc_easy", etc.)
             if self.config.dataset_type_filter:
-                data = data.filter(
-                    lambda x: x.get("dataset_type", "") == self.config.dataset_type_filter
-                )
+                if hasattr(dataset, "keys") and self.config.dataset_type_filter in dataset:
+                    data = dataset[self.config.dataset_type_filter]
+                elif hasattr(dataset, "column_names") and "dataset_type" in dataset.column_names:
+                    # Flat dataset with a dataset_type column
+                    dt_filter = self.config.dataset_type_filter
+                    data = dataset.filter(lambda x: x["dataset_type"] == dt_filter)
+                else:
+                    # Fallback: use first available split
+                    if "test" in dataset:
+                        data = dataset["test"]
+                    elif hasattr(dataset, "values"):
+                        data = list(dataset.values())[0]
+                    else:
+                        data = dataset
+            else:
+                # No filter: use test split or first split
+                if "test" in dataset:
+                    data = dataset["test"]
+                elif hasattr(dataset, "values"):
+                    data = list(dataset.values())[0]
+                else:
+                    data = dataset
 
             self._adapter = data
         return self._adapter
@@ -329,7 +342,7 @@ class ExperimentRunner:
         
         # Run evaluations
         skipped = 0
-        for idx, entry in enumerate(tqdm(entries, desc="Evaluating")):
+        for idx, entry in enumerate(tqdm(entries, desc="Evaluating", disable=getattr(self.config, '_quiet', False))):
             # Prepare entry
             prepared = self._prepare_entry(entry, idx)
             if prepared is None:

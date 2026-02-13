@@ -249,6 +249,9 @@ def main():
     # Run experiments
     summaries = []
     if args.parallel > 1:
+        # Suppress tqdm progress bars in parallel mode to avoid thread-safety crashes
+        for cfg in configs:
+            cfg._quiet = True
         with ThreadPoolExecutor(max_workers=args.parallel) as executor:
             futures = {executor.submit(run_single_config, cfg): cfg for cfg in configs}
             for future in as_completed(futures):
