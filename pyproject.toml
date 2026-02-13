@@ -1,0 +1,21 @@
+[project]
+name = "augmented-mcqa"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "anthropic>=0.79.0",
+    "datasets>=4.5.0",
+    "google-genai>=1.63.0",
+    "huggingface-hub>=1.4.1",
+    "matplotlib>=3.10.8",
+    "numpy>=2.4.2",
+    "openai>=2.20.0",
+    "pandas>=3.0.0",
+    "python-dotenv>=1.2.1",
+    "requests>=2.32.5",
+    "seaborn>=0.13.2",
+    "tqdm>=4.67.3",
+    "transformers>=5.1.0",
+]
