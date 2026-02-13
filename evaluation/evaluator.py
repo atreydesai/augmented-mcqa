@@ -7,7 +7,7 @@ Provides unified evaluation logic for both API and local models.
 from typing import List, Dict, Optional, Tuple
 import re
 
-from config import MCQA_PROMPT_FULL
+from config import MCQA_PROMPT_FULL, MCQA_PROMPT_CHOICES_ONLY
 
 
 CHOICE_LABELS = "ABCDEFGHIJ"
@@ -16,6 +16,7 @@ CHOICE_LABELS = "ABCDEFGHIJ"
 def build_mcqa_prompt(
     question: str,
     options: List[str],
+    choices_only: bool = False,
     template: str = MCQA_PROMPT_FULL,
 ) -> str:
     """
