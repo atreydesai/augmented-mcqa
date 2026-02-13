@@ -24,10 +24,8 @@ from .augmentor import (
     AugmentorMode,
     GenerationConfig,
     augment_dataset,
-    generate_distractors,
     build_prompt,
     parse_generated_distractors,
-    get_output_column,
 )
 
 from .filter import (
@@ -80,10 +78,8 @@ __all__ = [
     "AugmentorMode",
     "GenerationConfig",
     "augment_dataset",
-    "generate_distractors",
     "build_prompt",
     "parse_generated_distractors",
-    "get_output_column",
     # Filter
     "FilterConfig",
     "filter_dataset",

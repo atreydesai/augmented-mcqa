@@ -36,6 +36,7 @@ from config import (
     get_api_key,
 )
 from models import get_client
+from data.hub_utils import push_dataset_to_hub
 
 
 class AugmentorMode(Enum):
@@ -80,12 +81,12 @@ class GenerationConfig:
 def parse_generated_distractors(response: str, expected_count: int = 6) -> List[str]:
     """
     Parse generated distractors from model response.
-    Expected format: E: <text>, F: <text>, etc.
+    Supports formats like B: <text> through J: <text>.
     """
     distractors = []
     
-    # Try to match pattern like "E: <text>" or "E. <text>" or just "E <text>"
-    pattern = r'^([E-J])[:\.\s]+(.+)$'
+    # Match pattern like "B: <text>" through "J: <text>"
+    pattern = r'^([B-J])[:\.\s]+(.+)$'
     
     for line in response.strip().split('\n'):
         line = line.strip()
@@ -104,9 +105,11 @@ def parse_generated_distractors(response: str, expected_count: int = 6) -> List[
         lines = [l.strip() for l in response.strip().split('\n') if l.strip()]
         for line in lines:
             if ":" in line and line[0] in "ABCDEFGHIJ":
-                cleaned = line.split(":", 1)[1].strip()
-                if cleaned not in distractors:
-                    distractors.append(cleaned)
+                parts = line.split(":", 1)
+                if len(parts) > 1:
+                    cleaned = parts[1].strip()
+                    if cleaned and cleaned not in distractors:
+                        distractors.append(cleaned)
     
     return distractors[:expected_count]
 
@@ -114,9 +117,8 @@ def parse_generated_distractors(response: str, expected_count: int = 6) -> List[
 def build_prompt(
     entry: Dict,
     mode: AugmentorMode,
-    num_distractors: int = 6,
-) -> str:
-    """Build the generation prompt based on mode."""
+) -> (str, List[str]):
+    """Build the generation prompt based on mode and return it along with selected distractors."""
     question = entry["question"]
     gold_answer = entry.get("answer", "")
     if not gold_answer and entry.get("choices_answer"):
@@ -126,28 +128,31 @@ def build_prompt(
         return DISTRACTOR_GENERATION_PROMPT.format(
             question=question,
             gold_answer=gold_answer,
-        )
+        ), []
     
     elif mode == AugmentorMode.CONDITIONED_HUMAN:
         distractors = entry.get("choices_human", [])
-        if len(distractors) < 3:
-            # Fallback to 1 + enough human
-            return DISTRACTOR_GENERATION_PROMPT.format(question=question, gold_answer=gold_answer)
+        if not distractors or len(distractors) < 3:
+            # Fallback to scratch if no human distractors
+            return DISTRACTOR_GENERATION_PROMPT.format(question=question, gold_answer=gold_answer), []
         
+        selected = distractors[:3]
         return DISTRACTOR_GENERATION_PROMPT_CONDITIONED.format(
             question=question,
             gold_answer=gold_answer,
-            distractor_1=distractors[0],
-            distractor_2=distractors[1],
-            distractor_3=distractors[2],
-        )
+            distractor_1=selected[0],
+            distractor_2=selected[1],
+            distractor_3=selected[2],
+        ), selected
     
     elif mode == AugmentorMode.CONDITIONED_SYNTHETIC:
-        # User instructions: pick 3 random from cond_model_q_a_scratch
+        # User instructions: pick 3 from cond_model_q_a_scratch
         scratch_distractors = entry.get(DistractorType.COND_MODEL_Q_A_SCRATCH.value, [])
-        if len(scratch_distractors) < 3:
-            return DISTRACTOR_GENERATION_PROMPT.format(question=question, gold_answer=gold_answer)
+        if not scratch_distractors or len(scratch_distractors) < 3:
+            return DISTRACTOR_GENERATION_PROMPT.format(question=question, gold_answer=gold_answer), []
         
+        # We don't random sample here so it's deterministic and traceable if we just take first 3, 
+        # or we random sample but return which ones we picked. User asked for 3 of the 6 previously generated.
         selected = random.sample(scratch_distractors, 3)
         return DISTRACTOR_GENERATION_PROMPT_CONDITIONED.format(
             question=question,
@@ -155,7 +160,7 @@ def build_prompt(
             distractor_1=selected[0],
             distractor_2=selected[1],
             distractor_3=selected[2],
-        )
+        ), selected
     
     raise ValueError(f"Unknown mode: {mode}")
 
@@ -164,6 +169,7 @@ def assemble_mcqa_options(
     answer: str,
     human_distractors: List[str],
     model_distractors: List[str],
+    mode: AugmentorMode,
     num_total: int = 10
 ) -> (List[str], str):
     """
@@ -171,13 +177,11 @@ def assemble_mcqa_options(
     Returns: (list_of_options, correct_letter)
     """
     # 1. Answer
-    # 2. Pick 3 human
+    # 2. Pick human distractors (always include up to 3 to reach 10 total)
     human_subset = human_distractors[:3]
-    # 3. Model distractors (should be 6)
     
+    # 3. Model distractors (should be 6 per current prompts)
     all_options = [answer] + human_subset + model_distractors
-    # Ensure exactly num_total by padding if needed (shouldn't happen with correct flow)
-    all_options = all_options[:num_total]
     
     # Randomize
     indices = list(range(len(all_options)))
@@ -205,12 +209,11 @@ def augment_dataset(
     output_path: Optional[Path] = None,
     limit: Optional[int] = None,
     resume_from: Optional[Path] = None,
+    push_to_hub: bool = True,
 ) -> Dataset:
     """
     Augment a dataset with synthetic distractors and full MCQA columns.
     """
-    from config import MCQA_PROMPT_FULL
-    
     # Load dataset
     dataset = load_from_disk(str(dataset_path))
     if isinstance(dataset, DatasetDict):
@@ -229,71 +232,117 @@ def augment_dataset(
         result.save_to_disk(str(output_path))
         print(f"Saved to {output_path}")
         
+        if push_to_hub:
+            dataset_name = output_path.name
+            print(f"Pushing to Hub as {dataset_name}...")
+            push_dataset_to_hub(result, dataset_name=dataset_name)
+        
     return result
 
 
 def augment_single_dataset(dataset: Dataset, config: GenerationConfig, limit: Optional[int] = None) -> Dataset:
-    """Process a single Dataset."""
-    from config import MCQA_PROMPT_FULL
+    """Process a single Dataset through all augmentation modes (scratch, human-conditioned, model-conditioned)."""
     client = get_client(config.model_name)
-    
-    # Prefixes for columns based on mode
-    mode_suffixes = {
-        AugmentorMode.FROM_SCRATCH: ("scratch", "qa"),
-        AugmentorMode.CONDITIONED_HUMAN: ("dhuman", "qadh"),
-        AugmentorMode.CONDITIONED_SYNTHETIC: ("dmodel", "qadm"),
-    }
-    suffix, prefix = mode_suffixes[config.mode]
-    
-    model_col = f"cond_model_q_a_{suffix}"
-    options_col = f"{prefix}_options_randomized"
-    letter_col = f"{prefix}_correct_answer_letter"
-    question_col = f"{prefix}_full_question"
-    input_col = f"{prefix}_model_input"
-    output_col = f"{prefix}_model_output"
     
     entries = list(dataset)
     if limit:
         entries = entries[:limit]
         
     augmented_entries = []
-    for i, entry in enumerate(tqdm(entries, desc=f"Augmenting ({config.mode.value})")):
-        try:
-            prompt = build_prompt(entry, config.mode)
-            response = client.generate(prompt=prompt, temperature=config.temperature)
-            raw_text = response.text
-            distractors = parse_generated_distractors(raw_text, 6)
+    
+    # We run modes in sequence because qadm depends on qa (scratch)
+    modes_to_run = [
+        AugmentorMode.FROM_SCRATCH, 
+        AugmentorMode.CONDITIONED_HUMAN, 
+        AugmentorMode.CONDITIONED_SYNTHETIC
+    ]
+    
+    mode_prefixes = {
+        AugmentorMode.FROM_SCRATCH: "qa",
+        AugmentorMode.CONDITIONED_HUMAN: "qadh",
+        AugmentorMode.CONDITIONED_SYNTHETIC: "qadm",
+    }
+    
+    mode_model_cols = {
+        AugmentorMode.FROM_SCRATCH: "cond_model_q_a_scratch",
+        AugmentorMode.CONDITIONED_HUMAN: "cond_model_q_a_dhuman",
+        AugmentorMode.CONDITIONED_SYNTHETIC: "cond_model_q_a_dmodel",
+    }
+    
+    timestamp = time.strftime("%Y%m%d_%H%M%S")
+    temp_save_path = RESULTS_DIR / f"temp_augmented_{config.model_name}_{timestamp}.json"
+    
+    for i, entry in enumerate(tqdm(entries, desc="Augmenting multi-mode")):
+        new_entry = dict(entry)
+        
+        # Core data needed for all modes
+        answer = new_entry.get("answer", "")
+        if not answer and new_entry.get("choices_answer"):
+            answer = new_entry["choices_answer"][0]
+        
+        human_distractors = new_entry.get("choices_human", [])
+        
+        for mode in modes_to_run:
+            try:
+                prefix = mode_prefixes[mode]
+                model_col = mode_model_cols[mode]
+                
+                # 1. Build Prompt (now returns distractors used for context)
+                prompt, context_distractors = build_prompt(new_entry, mode)
+                
+                # 2. Generate
+                response = client.generate(prompt=prompt, temperature=config.temperature)
+                raw_text = response.text
+                
+                # 3. Parse Distractors (Always 6 per user prompt)
+                distractors = parse_generated_distractors(raw_text, 6)
+                
+                # 4. Assembly (1 answer + 6 synthetic + 3 human = 10 total)
+                options, correct_letter = assemble_mcqa_options(answer, human_distractors, distractors, mode)
+                
+                # 5. Column Population (Ordered as requested)
+                # qa_full_question (Refined for conditioned modes)
+                if mode == AugmentorMode.FROM_SCRATCH:
+                    new_entry[f"{prefix}_full_question"] = f"Question: {new_entry['question']}\nAnswer: A: {answer}"
+                else:
+                    # Conditioned format: Question + Existing 4 options (A + B,C,D) + Answer
+                    context_options = [f"A: {answer}"]
+                    for j, d in enumerate(context_distractors):
+                        letter = chr(ord('B') + j)
+                        context_options.append(f"{letter}: {d}")
+                    options_str = "\n".join(context_options)
+                    new_entry[f"{prefix}_full_question"] = f"Question: {new_entry['question']}\nExisting 4 Options: {options_str}\nAnswer: A: {answer}"
+                
+                # qa_model_input
+                new_entry[f"{prefix}_model_input"] = prompt
+                
+                # qa_model_output
+                new_entry[f"{prefix}_model_output"] = raw_text
+                
+                # cond_model_q_a_scratch (or dhuman/dmodel)
+                new_entry[model_col] = distractors
+                
+                # qa_options_randomized
+                new_entry[f"{prefix}_options_randomized"] = options
+                
+                # qa_correct_answer_letter
+                new_entry[f"{prefix}_correct_answer_letter"] = correct_letter
+                
+            except Exception as e:
+                print(f"Error at entry {i}, mode {mode.value}: {e}")
+                
+        augmented_entries.append(new_entry)
+        
+        # Intermediate saving
+        if (i + 1) % config.save_interval == 0:
+            with open(temp_save_path, 'w') as f:
+                json.dump(augmented_entries, f, indent=2)
+            print(f"\n💾 Saved intermediate results ({i+1} entries) to {temp_save_path}")
             
-            # Assembly
-            answer = entry.get("answer", "")
-            if not answer and entry.get("choices_answer"):
-                answer = entry["choices_answer"][0]
-            
-            human_distractors = entry.get("choices_human", [])
-            
-            # Prepare options
-            options, correct_letter = assemble_mcqa_options(answer, human_distractors, distractors)
-            
-            # Formatting
-            options_text = format_options_for_prompt(options)
-            full_question = f"{entry['question']}\n{options_text}"
-            model_input = MCQA_PROMPT_FULL.format(question=entry['question'], options=options_text)
-            
-            # Fill entry
-            new_entry = dict(entry)
-            new_entry[model_col] = distractors
-            new_entry[output_col] = raw_text
-            new_entry[options_col] = options
-            new_entry[letter_col] = correct_letter
-            new_entry[question_col] = full_question
-            new_entry[input_col] = model_input
-            
-            augmented_entries.append(new_entry)
-            
-        except Exception as e:
-            print(f"Error at {i}: {e}")
-            augmented_entries.append(dict(entry))
-            
+    # Remove temp file on completion if we reached the end
+    if temp_save_path.exists():
+        temp_save_path.unlink()
+        
     return Dataset.from_list(augmented_entries)
 
 

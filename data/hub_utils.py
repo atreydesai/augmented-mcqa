@@ -6,11 +6,54 @@ import logging
 from typing import List, Dict, Any, Optional, Union
 from pathlib import Path
 
-from datasets import Dataset, DatasetDict
+from datasets import Dataset, DatasetDict, Features
 from config import HF_TOKEN, HF_SKIP_PUSH
 
 # Re-exporting logging to avoid direct logging if preferred, but using standard logging here
 logger = logging.getLogger(__name__)
+
+def homogenize_features(dataset_dict: DatasetDict) -> DatasetDict:
+    """
+    Ensure all splits in a DatasetDict have the same features and types.
+    Adds missing columns as nulls and casts all splits to a unified schema.
+    """
+    if not isinstance(dataset_dict, DatasetDict):
+        return dataset_dict
+        
+    # Collect all feature definitions across all splits
+    unified_features_dict = {}
+    for split in dataset_dict.values():
+        for name, feature in split.features.items():
+            if name not in unified_features_dict:
+                unified_features_dict[name] = feature
+            else:
+                # If current is null type, try to upgrade it to a real type if found
+                curr = unified_features_dict[name]
+                if hasattr(curr, 'dtype') and curr.dtype == 'null':
+                    if hasattr(feature, 'dtype') and feature.dtype != 'null':
+                        unified_features_dict[name] = feature
+                    elif not hasattr(feature, 'dtype'): # likely a nested feature
+                        unified_features_dict[name] = feature
+
+    unified_features = Features(unified_features_dict)
+    
+    homogenized = {}
+    for split_name, dataset in dataset_dict.items():
+        current_ds = dataset
+        # Add missing columns
+        missing_cols = set(unified_features_dict.keys()) - set(current_ds.column_names)
+        for col in missing_cols:
+            current_ds = current_ds.add_column(col, [None] * len(current_ds))
+        
+        # Cast to unified features to ensure all splits have identical types
+        try:
+            current_ds = current_ds.cast(unified_features)
+        except Exception as e:
+            print(f"⚠️ Warning: Could not cast split {split_name} to unified features: {e}")
+            
+        homogenized[split_name] = current_ds
+        
+    return DatasetDict(homogenized)
 
 def get_default_repo_id(name: str, suffix: str = "") -> str:
     """Get default repo ID for a dataset name."""
@@ -60,6 +103,9 @@ def push_dataset_to_hub(
         # Convert list of entries to Dataset if needed
         if isinstance(dataset_or_entries, (list, tuple)):
             dataset = Dataset.from_list(list(dataset_or_entries))
+        elif isinstance(dataset_or_entries, DatasetDict):
+            # Homogenize features across splits for DatasetDict to avoid push errors
+            dataset = homogenize_features(dataset_or_entries)
         else:
             dataset = dataset_or_entries
 

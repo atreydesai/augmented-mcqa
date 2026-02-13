@@ -58,7 +58,7 @@ class TestHubPush(unittest.TestCase):
         mock_dataset_instance.push_to_hub.assert_called_once_with(
             repo_id=repo_id,
             token='fake_token',
-            private=True
+            private=False
         )
 
 if __name__ == '__main__':

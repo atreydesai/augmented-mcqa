@@ -4,6 +4,7 @@ OpenAI model client for Augmented MCQA.
 Supports GPT-4.1, GPT-5, and GPT-5-mini with reasoning effort control.
 """
 
+import os
 from typing import Optional, Literal
 
 from .base import ModelClient, GenerationResult
@@ -53,7 +54,10 @@ class OpenAIClient(ModelClient):
         
         self._model_id = model_id
         self._api_key = api_key or get_api_key("openai")
-        self._client = openai.OpenAI(api_key=self._api_key)
+        
+        # Regional fix for some environments
+        base_url = os.getenv("OPENAI_BASE_URL", "https://us.api.openai.com/v1")
+        self._client = openai.OpenAI(api_key=self._api_key, base_url=base_url)
         self._reasoning_effort = reasoning_effort
         
         # Check if model supports reasoning

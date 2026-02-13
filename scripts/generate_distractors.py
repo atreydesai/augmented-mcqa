@@ -20,6 +20,7 @@ Usage:
 import argparse
 import json
 import sys
+import time
 from pathlib import Path
 
 # Add parent to path for imports
@@ -52,7 +53,8 @@ def parse_args():
     )
     parser.add_argument("--num-distractors", type=int, default=9)
     parser.add_argument("--limit", type=int, help="Limit entries")
-    parser.add_argument("--save-interval", type=int, default=50)
+    parser.add_argument("--save-interval", type=int, default=5, help="Save intermediate results every N entries")
+    parser.add_argument("--skip-push", action="store_true", help="Skip pushing to HF Hub")
     parser.add_argument("--dry-run", action="store_true")
     
     return parser.parse_args()
@@ -77,8 +79,6 @@ def main():
         print(f"Error: {input_path} not found")
         return 1
     
-    output_path = Path(args.output) if args.output else input_path.with_suffix(".augmented.json")
-    
     # Get client directly from models module
     try:
         client = get_client(args.model)
@@ -93,12 +93,10 @@ def main():
         "conditioned_synthetic": AugmentorMode.CONDITIONED_SYNTHETIC,
     }
     
-    print(f"\n🔧 Model: {client.name}")
-    print(f"   Mode: {args.mode}")
-    print(f"   Input: {input_path}")
-    print(f"   Output: {output_path}")
-    
     if args.dry_run:
+        print(f"\n🔧 Model: {client.name}")
+        print(f"   Mode: {args.mode}")
+        print(f"   Input: {input_path}")
         print("\n🔍 Dry run - done")
         return 0
     
@@ -109,15 +107,21 @@ def main():
     
     from data.augmentor import GenerationConfig, augment_dataset
     
+    timestamp = time.strftime("%Y%m%d_%H%M%S")
+    output_path = Path(args.output) if args.output else input_path.parent / f"{input_path.name}_{args.model}_{timestamp}"
+    
+    print(f"\n🔧 Model: {client.name}")
+    print(f"   Mode: {args.mode}")
+    print(f"   Input: {input_path}")
+    print(f"   Output: {output_path}")
+    
     config = GenerationConfig(
         mode=mode_map[args.mode],
         model_provider=provider,
         model_name=args.model,
         num_distractors=args.num_distractors,
+        save_interval=args.save_interval,
     )
-    
-    # The new augment_dataset expects a Path to a local dataset (load_from_disk)
-    # However, if it's already a JSON, we might need to handle that or just point to the unified dataset.
     
     print(f"🚀 Starting generation for {input_path}...")
     
@@ -125,7 +129,8 @@ def main():
         dataset_path=input_path,
         config=config,
         output_path=output_path,
-        limit=args.limit
+        limit=args.limit,
+        push_to_hub=not args.skip_push
     )
     
     print(f"\n✅ Done. Augmented dataset saved to {output_path}")

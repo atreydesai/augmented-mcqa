@@ -372,7 +372,7 @@ MCQA_PROMPT_CHOICES_ONLY = """The following are multiple choice options. Output 
 {options}
 Answer: """
 
-DISTRACTOR_GENERATION_PROMPT = """I have a multiple-choice question with the single correct answer, and I need to expand it to a ten-option multiple-choice question. Please generate six additional plausible but incorrect options (E, F, G, H, I, J) to accompany the original correct answer choice and three existing human-written distractors. Do not output anything except the incorrect options.
+DISTRACTOR_GENERATION_PROMPT = """I have a multiple-choice question with the single correct answer, and I need to expand it to a seven-option multiple-choice question. Please generate six additional plausible but incorrect options (B, C, D, E, F, G) to accompany the correct answer choice. Do not output anything except the incorrect options.
 
 Input:
 
@@ -380,10 +380,9 @@ Question: {question}
 
 Answer: A: {gold_answer}
 
-Please generate only the six new incorrect options E, F, G, H, I, and J. Output each option on a separate line in the format "E: <option>", "F: <option>", etc."""
+Please generate only the six new incorrect options B, C, D, E, F, and G. Output each option on a separate line in the format "B: <option>", "C: <option>", etc."""
 
-DISTRACTOR_GENERATION_PROMPT_CONDITIONED = """Option Augmentation Prompt Instruction (One-shot)
-I have a multiple-choice question with four options, one of which is correct, and I need to expand it to a ten-option multiple-choice question. The original options are A, B, C, and D, with one of them being the correct answer. Please generate six additional plausible but incorrect options (E, F, G, H, I, J) to accompany the original four.
+DISTRACTOR_GENERATION_PROMPT_CONDITIONED = """I have a multiple-choice question with four options, one of which is correct, and I need to expand it to a ten-option multiple-choice question. The original options are A, B, C, and D, with one of them being the correct answer. Please generate six additional plausible but incorrect options (E, F, G, H, I, J) to accompany the original four.
 
 Input:
 Question: {question}
