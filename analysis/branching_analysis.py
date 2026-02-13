@@ -7,6 +7,9 @@ with branching lines showing model distractor additions off each base.
 Creates plots showing:
 - Base lines: 1H, 2H, 3H (human-only baselines)
 - Branching lines: 1H+1M..6M, 2H+1M..6M, 3H+1M..6M
+
+New directory structure:
+  results/{model}_{dataset_type}_{distractor_source}/{nH}{mM}/results.json
 """
 
 import json
@@ -35,253 +38,275 @@ LINE_STYLES = {
 
 def load_branching_results(
     base_dir: Path,
-    dataset: str,
-    model: str,
+    model: Optional[str] = None,
+    dataset_type: Optional[str] = None,
+    distractor_source: Optional[str] = None,
 ) -> Dict[str, Dict[str, Any]]:
     """
-    Load results for branching analysis from RQ2 configurations.
-    
+    Load results for branching analysis.
+
+    Supports new directory structure:
+      base_dir/{model}_{dataset_type}_{distractor_source}/{nH}{mM}/results.json
+
+    If model/dataset_type/distractor_source are provided, uses new structure.
+    Otherwise falls back to searching directly under base_dir.
+
     Args:
         base_dir: Results base directory
-        dataset: Dataset name
-        model: Model name
-        
+        model: Model name (e.g., "gpt-4.1")
+        dataset_type: Dataset type (e.g., "mmlu_pro")
+        distractor_source: Distractor source (e.g., "scratch")
+
     Returns:
-        Dict mapping config string (e.g. "2H3M") -> results dict
+        Dict mapping config string (e.g., "3H2M") -> results dict
     """
     results = {}
-    
-    # Load all H+M configurations from RQ2
-    # Base cases: 1H0M, 2H0M, 3H0M (from RQ2 or RQ1)
-    # Branching cases: 1H3M, 2H3M (from RQ2)
-    # Plus whatever other configs were run
-    
-    # Simple search for directories starting with RQ and containing dataset/model
-    for path in base_dir.iterdir():
-        if not path.is_dir() or dataset not in path.name or model not in path.name:
-            continue
-            
-        # Parse config from name if possible
-        # Pattern: RQ2_human_benefit_{nh}H_{nm}M_{dataset}_{model}
-        # Or: RQ_human_only_{dataset}_{model} (which is 3H0M)
-        
-        nh, nm = None, None
-        if "human_benefit" in path.name:
-            import re
-            match = re.search(r"(\d)H(?:_(\d)M)?", path.name)
-            if match:
-                nh = int(match.group(1))
-                nm = int(match.group(2)) if match.group(2) else 0
-        elif "human_only" in path.name and "choices" not in path.name:
-            nh, nm = 3, 0
-            
-        if nh is not None:
-            config_key = f"{nh}H{nm}M"
-            
-            results_path = path / "results.json"
-            if results_path.exists():
-                with open(results_path) as f:
-                    data = json.load(f)
-                
-                summary = data.get("summary", {})
-                results[config_key] = {
-                    "accuracy": summary.get("accuracy", 0),
-                    "correct": summary.get("correct", 0),
-                    "total": summary.get("total", 0),
-                }
-    
+
+    for h in range(1, 4):  # 1H, 2H, 3H
+        for m in range(0, 7):  # 0M to 6M
+            config = f"{h}H{m}M"
+
+            if model and dataset_type and distractor_source:
+                dir_name = f"{model.replace('/', '_')}_{dataset_type}_{distractor_source}"
+                results_path = base_dir / dir_name / config / "results.json"
+            else:
+                results_path = base_dir / config / "results.json"
+
+            if not results_path.exists():
+                continue
+
+            with open(results_path) as f:
+                data = json.load(f)
+
+            summary = data.get("summary", {})
+            results[config] = {
+                "accuracy": summary.get("accuracy", 0),
+                "correct": summary.get("correct", 0),
+                "total": summary.get("total", 0),
+            }
+
     return results
 
 
 def plot_human_distractor_branching(
     base_dir: Path,
-    dataset: str,
-    model: str,
+    model: Optional[str] = None,
+    dataset_type: Optional[str] = None,
+    distractor_source: Optional[str] = None,
     output_dir: Optional[Path] = None,
     show: bool = False,
 ) -> Dict[str, Path]:
     """
-    Create branching analysis plots for a specific dataset and model.
+    Create branching analysis plot.
+
+    Shows three branching curves for 1H/2H/3H baselines
+    with model distractor additions.
+
+    Args:
+        base_dir: Directory containing experiment results
+        model: Model name
+        dataset_type: Dataset type to plot
+        distractor_source: Distractor source to plot
+        output_dir: Where to save plots
+        show: Whether to display interactively
+
+    Returns:
+        Dict mapping plot name -> output path
     """
     base_dir = Path(base_dir)
     if output_dir is None:
         output_dir = base_dir / "plots"
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    
+
     output_paths = {}
-    
-    results = load_branching_results(base_dir, dataset, model)
-        
-        if not results:
-            print(f"No results found for {suffix}")
-            continue
-        
-        fig, ax = plt.subplots(figsize=(14, 9))
-        
-        # Plot branching lines for each human baseline
-        for h in [1, 2, 3]:
-            color = HUMAN_COLORS[h]
-            style = LINE_STYLES[h]
-            
-            # Collect data points
-            x_vals = []
-            y_vals = []
-            
-            for m in range(0, 7):
-                config = f"{h}H{m}M"
-                if config in results:
-                    x_vals.append(h + m)  # Total distractors
-                    y_vals.append(results[config]["accuracy"])
-            
-            if x_vals:
-                ax.plot(
-                    x_vals, y_vals,
-                    marker='o', linewidth=2.5, markersize=10,
-                    color=color, linestyle=style,
-                    label=f'{h}H + M (base: {h} human)',
-                    alpha=0.9,
+
+    results = load_branching_results(base_dir, model, dataset_type, distractor_source)
+
+    if not results:
+        print("No results found for branching analysis")
+        return output_paths
+
+    fig, ax = plt.subplots(figsize=(14, 9))
+
+    # Plot branching lines for each human baseline
+    for h in [1, 2, 3]:
+        color = HUMAN_COLORS[h]
+        style = LINE_STYLES[h]
+
+        # Collect data points
+        x_vals = []
+        y_vals = []
+
+        for m in range(0, 7):
+            config = f"{h}H{m}M"
+            if config in results:
+                x_vals.append(h + m)  # Total distractors
+                y_vals.append(results[config]["accuracy"])
+
+        if x_vals:
+            ax.plot(
+                x_vals, y_vals,
+                marker='o', linewidth=2.5, markersize=10,
+                color=color, linestyle=style,
+                label=f'{h}H + M (base: {h} human)',
+                alpha=0.9,
+            )
+
+            # Add annotation at first point
+            if y_vals:
+                ax.annotate(
+                    f'{h}H',
+                    (x_vals[0], y_vals[0]),
+                    textcoords="offset points",
+                    xytext=(-15, 10),
+                    fontsize=11,
+                    fontweight='bold',
+                    color=color,
                 )
-                
-                # Add annotation at first point
-                if y_vals:
-                    ax.annotate(
-                        f'{h}H',
-                        (x_vals[0], y_vals[0]),
-                        textcoords="offset points",
-                        xytext=(-15, 10),
-                        fontsize=11,
-                        fontweight='bold',
-                        color=color,
-                    )
-        
-        # Styling
-        title_suffix = "Choices Only" if is_choices_only else "Full Questions"
-        ax.set_xlabel('Total Number of Distractors', fontsize=16)
-        ax.set_ylabel('Accuracy', fontsize=16)
-        ax.set_title(
-            f'Benefit of Human Distractors with Model Additions\n({title_suffix}, {dataset_type.capitalize()})',
-            fontsize=18, fontweight='bold'
-        )
-        ax.legend(loc='upper right', fontsize=12, frameon=True)
-        ax.grid(True, alpha=0.3)
-        ax.set_xlim(0, 10)
-        
-        # Adjust y-limits based on data
-        if is_choices_only:
-            ax.set_ylim(0.25, 0.75)
-        else:
-            ax.set_ylim(0.60, 0.95)
-        
-        ax.tick_params(axis='both', labelsize=12)
-        plt.tight_layout()
-        
-        # Save
-        output_path = output_dir / f"branching_{dataset_type}_{suffix}.png"
-        fig.savefig(output_path, dpi=300, bbox_inches='tight')
-        output_paths[f"branching_{suffix}"] = output_path
-        print(f"Saved: {output_path}")
-        
-        if show:
-            plt.show()
-        plt.close()
-    
+
+    # Styling
+    title_parts = ["Benefit of Human Distractors with Model Additions"]
+    if dataset_type:
+        title_parts.append(f"Dataset: {dataset_type}")
+    if distractor_source:
+        title_parts.append(f"Source: {distractor_source}")
+    if model:
+        title_parts.append(f"Model: {model}")
+
+    ax.set_xlabel('Total Number of Distractors', fontsize=16)
+    ax.set_ylabel('Accuracy', fontsize=16)
+    ax.set_title('\n'.join(title_parts), fontsize=16, fontweight='bold')
+    ax.legend(loc='upper right', fontsize=12, frameon=True)
+    ax.grid(True, alpha=0.3)
+    ax.set_xlim(0, 10)
+    ax.tick_params(axis='both', labelsize=12)
+    plt.tight_layout()
+
+    # Save
+    suffix_parts = [p for p in [dataset_type, distractor_source] if p]
+    suffix = "_".join(suffix_parts) if suffix_parts else "all"
+    output_path = output_dir / f"branching_{suffix}.png"
+    fig.savefig(output_path, dpi=300, bbox_inches='tight')
+    output_paths["branching"] = output_path
+    print(f"Saved: {output_path}")
+
+    if show:
+        plt.show()
+    plt.close()
+
     return output_paths
 
 
 def plot_human_benefit_comparison(
     base_dir: Path,
+    model: Optional[str] = None,
+    dataset_type: Optional[str] = None,
+    distractor_source: Optional[str] = None,
     output_dir: Optional[Path] = None,
     show: bool = False,
-) -> Path:
+) -> Optional[Path]:
     """
-    Create side-by-side comparison of human distractor benefit.
-    
-    Shows how accuracy degrades with model distractors for different
-    human distractor counts.
-    
+    Create degradation comparison showing how accuracy drops with model distractors
+    for different human distractor counts.
+
     Args:
         base_dir: Results directory
+        model: Model name
+        dataset_type: Dataset type
+        distractor_source: Distractor source
         output_dir: Output directory for plots
         show: Whether to display interactively
-        
+
     Returns:
-        Path to saved figure
+        Path to saved figure, or None if no data
     """
     base_dir = Path(base_dir)
     if output_dir is None:
         output_dir = base_dir / "plots"
     output_dir.mkdir(parents=True, exist_ok=True)
-    
-    fig, axes = plt.subplots(1, 2, figsize=(18, 7))
-    
-    for idx, (is_choices, ax) in enumerate(zip([False, True], axes)):
-        results = load_branching_results(base_dir, "normal", is_choices)
-        
-        # Calculate degradation rates
-        for h in [1, 2, 3]:
-            baseline = results.get(f"{h}H0M", {}).get("accuracy", 0)
-            
-            degradation = []
-            m_vals = []
-            
-            for m in range(0, 7):
-                config = f"{h}H{m}M"
-                if config in results:
-                    acc = results[config]["accuracy"]
-                    deg = baseline - acc if baseline else 0
-                    degradation.append(deg)
-                    m_vals.append(m)
-            
-            if degradation:
-                ax.plot(
-                    m_vals, degradation,
-                    marker='s', linewidth=2.5, markersize=9,
-                    color=HUMAN_COLORS[h],
-                    linestyle=LINE_STYLES[h],
-                    label=f'{h}H baseline',
-                )
-        
-        title = "Choices Only" if is_choices else "Full Questions"
-        ax.set_xlabel('Number of Model Distractors Added', fontsize=14)
-        ax.set_ylabel('Accuracy Drop from Baseline', fontsize=14)
-        ax.set_title(f'Accuracy Degradation ({title})', fontsize=16, fontweight='bold')
-        ax.legend(fontsize=12)
-        ax.grid(True, alpha=0.3)
-        ax.set_xlim(-0.5, 6.5)
-    
-    plt.suptitle(
-        'How Model Distractors Reduce Accuracy (by Human Base)',
-        fontsize=18, fontweight='bold', y=1.02
-    )
+
+    results = load_branching_results(base_dir, model, dataset_type, distractor_source)
+    if not results:
+        print("No results found for benefit comparison")
+        return None
+
+    fig, ax = plt.subplots(figsize=(12, 7))
+
+    # Calculate degradation rates
+    for h in [1, 2, 3]:
+        baseline = results.get(f"{h}H0M", {}).get("accuracy", 0)
+
+        degradation = []
+        m_vals = []
+
+        for m in range(0, 7):
+            config = f"{h}H{m}M"
+            if config in results:
+                acc = results[config]["accuracy"]
+                deg = baseline - acc if baseline else 0
+                degradation.append(deg)
+                m_vals.append(m)
+
+        if degradation:
+            ax.plot(
+                m_vals, degradation,
+                marker='s', linewidth=2.5, markersize=9,
+                color=HUMAN_COLORS[h],
+                linestyle=LINE_STYLES[h],
+                label=f'{h}H baseline',
+            )
+
+    title_parts = ["Accuracy Degradation with Model Distractors"]
+    if dataset_type:
+        title_parts.append(f"Dataset: {dataset_type}")
+    if distractor_source:
+        title_parts.append(f"Source: {distractor_source}")
+
+    ax.set_xlabel('Number of Model Distractors Added', fontsize=14)
+    ax.set_ylabel('Accuracy Drop from Baseline', fontsize=14)
+    ax.set_title('\n'.join(title_parts), fontsize=16, fontweight='bold')
+    ax.legend(fontsize=12)
+    ax.grid(True, alpha=0.3)
+    ax.set_xlim(-0.5, 6.5)
     plt.tight_layout()
-    
-    output_path = output_dir / "human_benefit_degradation.png"
+
+    suffix_parts = [p for p in [dataset_type, distractor_source] if p]
+    suffix = "_".join(suffix_parts) if suffix_parts else "all"
+    output_path = output_dir / f"human_benefit_degradation_{suffix}.png"
     fig.savefig(output_path, dpi=300, bbox_inches='tight')
     print(f"Saved: {output_path}")
-    
+
     if show:
         plt.show()
     plt.close()
-    
+
     return output_path
 
 
 if __name__ == "__main__":
     import argparse
-    
+
     parser = argparse.ArgumentParser(description="Branching human distractor analysis")
     parser.add_argument("--results-dir", type=str, required=True, help="Results directory")
+    parser.add_argument("--model", type=str, help="Model name")
+    parser.add_argument("--dataset-type", type=str, help="Dataset type (e.g., mmlu_pro)")
+    parser.add_argument("--distractor-source", type=str, help="Distractor source (e.g., scratch)")
     parser.add_argument("--output-dir", type=str, help="Output directory for plots")
-    parser.add_argument("--dataset", type=str, default="mmlu_pro", help="Dataset name")
-    parser.add_argument("--model", type=str, default="gpt-4o", help="Model name")
     parser.add_argument("--show", action="store_true", help="Show plots interactively")
     args = parser.parse_args()
-    
+
     results_dir = Path(args.results_dir)
     output_dir = Path(args.output_dir) if args.output_dir else None
-    
-    print(f"Creating branching analysis plots for {args.dataset} / {args.model}...")
-    plot_human_distractor_branching(results_dir, args.dataset, args.model, output_dir, args.show)
-    
-    # ... human benefit comparison would need similar update if used ...
+
+    print("Creating branching analysis plots...")
+    plot_human_distractor_branching(
+        results_dir, args.model, args.dataset_type, args.distractor_source,
+        output_dir, args.show,
+    )
+
+    print("\nCreating benefit comparison plot...")
+    plot_human_benefit_comparison(
+        results_dir, args.model, args.dataset_type, args.distractor_source,
+        output_dir, args.show,
+    )

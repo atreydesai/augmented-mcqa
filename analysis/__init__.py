@@ -11,6 +11,7 @@ from .analyzer import (
 )
 
 from .visualize import (
+    load_results_file,
     load_summary_file,
     load_3H_plus_M_results,
     load_human_only_results,
@@ -19,6 +20,8 @@ from .visualize import (
     plot_rq2_human_distractors,
     plot_rq3_model_distractors,
     plot_all_rq,
+    DATASET_TYPE_STYLES,
+    DISTRACTOR_SOURCE_LABELS,
 )
 
 from .difficulty_visualize import (
@@ -41,8 +44,10 @@ from .branching_analysis import (
 
 from .category_analysis import (
     compute_accuracy_by_category,
+    compute_accuracy_by_dataset_type,
     plot_category_breakdown,
     plot_category_heatmap,
+    plot_dataset_type_breakdown,
     plot_supergpqa_by_discipline,
     generate_category_report,
     MMLU_PRO_CATEGORY_GROUPS,
@@ -59,6 +64,7 @@ __all__ = [
     "compare_experiments",
     "format_signature_table",
     # Visualize - Data loaders
+    "load_results_file",
     "load_summary_file",
     "load_3H_plus_M_results",
     "load_human_only_results",
@@ -68,6 +74,8 @@ __all__ = [
     "plot_rq2_human_distractors",
     "plot_rq3_model_distractors",
     "plot_all_rq",
+    "DATASET_TYPE_STYLES",
+    "DISTRACTOR_SOURCE_LABELS",
     # Difficulty visualization
     "load_difficulty_results",
     "plot_arc_comparison",
@@ -84,10 +92,11 @@ __all__ = [
     "HUMAN_COLORS",
     # Category analysis
     "compute_accuracy_by_category",
+    "compute_accuracy_by_dataset_type",
     "plot_category_breakdown",
     "plot_category_heatmap",
+    "plot_dataset_type_breakdown",
     "plot_supergpqa_by_discipline",
     "generate_category_report",
     "MMLU_PRO_CATEGORY_GROUPS",
 ]
-
