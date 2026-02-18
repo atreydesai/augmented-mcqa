@@ -1,0 +1,56 @@
+{
+  "config": {
+    "name": "gpt-4.1_mmlu_pro_dmodel_1H0M",
+    "dataset_path": "datasets/augmented/unified_processed_claude-opus-4-6_20260213_033913",
+    "model_name": "gpt-4.1",
+    "num_human": 1,
+    "num_model": 0,
+    "model_distractor_type": "cond_model_q_a_dmodel",
+    "eval_mode": "behavioral",
+    "choices_only": false,
+    "limit": 100,
+    "seed": 42,
+    "reasoning_effort": null,
+    "thinking_level": null,
+    "temperature": 0.0,
+    "max_tokens": 100,
+    "output_dir": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/gpt-4.1_mmlu_pro_dmodel/1H0M",
+    "categories": null,
+    "dataset_type_filter": "mmlu_pro",
+    "distractor_source": "dmodel",
+    "config_id": "gpt-4.1_mmlu_pro_dmodel_1H0M_1H0M_gpt-4.1"
+  },
+  "summary": {
+    "total": 1,
+    "correct": 1,
+    "accuracy": 1.0,
+    "behavioral_counts": {
+      "G": 1,
+      "H": 0,
+      "M": 0,
+      "?": 0
+    },
+    "accuracy_by_category": {
+      "business": 1.0
+    }
+  },
+  "timing": {
+    "start": "2026-02-13T10:53:47.591453",
+    "end": "2026-02-13T10:53:48.461216",
+    "duration_seconds": 0.869763
+  },
+  "results": [
+    {
+      "question_idx": 0,
+      "question": "Managers are entrusted to run the company in the best interest of ________. Specifically, they have ...",
+      "gold_answer": "Shareholders, Care and Skill, Diligence",
+      "gold_index": 1,
+      "model_answer": "B",
+      "model_prediction": "B",
+      "is_correct": true,
+      "category": "business",
+      "prediction_type": "G",
+      "latency_ms": 427.777587890625
+    }
+  ]
+}

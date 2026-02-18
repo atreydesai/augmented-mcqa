@@ -1,18 +1,3 @@
-"""
-Category/Topic Breakout Analysis.
-
-Provides detailed visualizations broken down by:
-- MMLU-Pro categories (business, physics, math, etc.)
-- SuperGPQA disciplines and fields
-- ARC question types
-- Dataset type (mmlu_pro, supergpqa, arc_easy, arc_challenge)
-
-Supports both heatmaps and grouped bar charts.
-
-New results format: results.json with summary.accuracy, summary.correct, summary.total
-and per-entry results with category fields.
-"""
-
 import json
 from pathlib import Path
 from typing import Dict, List, Any, Optional, Tuple
@@ -55,19 +40,6 @@ DATASET_TYPE_COLORS = {
 def load_results_with_categories(
     results_path: Path,
 ) -> Tuple[Dict[str, Any], List[Dict]]:
-    """
-    Load results file and extract per-entry category information.
-
-    Supports the new ExperimentResults format (results.json) with:
-    - summary: {accuracy, correct, total, ...}
-    - results: [{question_idx, is_correct, category, ...}, ...]
-
-    Args:
-        results_path: Path to results JSON file
-
-    Returns:
-        Tuple of (summary dict, list of per-entry results)
-    """
     with open(results_path) as f:
         data = json.load(f)
 
@@ -81,16 +53,6 @@ def compute_accuracy_by_category(
     entries: List[Dict],
     category_key: str = "category",
 ) -> Dict[str, Dict[str, Any]]:
-    """
-    Compute accuracy statistics grouped by category.
-
-    Args:
-        entries: List of result entries
-        category_key: Key to use for grouping ("category", "discipline", "field")
-
-    Returns:
-        Dict mapping category -> {accuracy, correct, total}
-    """
     by_category = defaultdict(lambda: {"correct": 0, "total": 0})
 
     for entry in entries:
@@ -122,19 +84,6 @@ def compute_accuracy_by_dataset_type(
     distractor_sources: Optional[List[str]] = None,
     dataset_types: Optional[List[str]] = None,
 ) -> Dict[str, Dict[str, Dict[str, Any]]]:
-    """
-    Compute accuracy grouped by dataset_type and distractor_source.
-
-    Args:
-        base_dir: Results base directory
-        model: Model name
-        config_str: Distractor config (e.g., "3H0M")
-        distractor_sources: Sources to include (default: all)
-        dataset_types: Dataset types to include (default: all)
-
-    Returns:
-        Nested dict: {dataset_type: {distractor_source: {accuracy, correct, total}}}
-    """
     if distractor_sources is None:
         distractor_sources = ["scratch", "dhuman", "dmodel"]
     if dataset_types is None:
@@ -174,21 +123,6 @@ def plot_category_breakdown(
     figsize: Tuple[int, int] = (14, 8),
     show: bool = False,
 ) -> Optional[plt.Figure]:
-    """
-    Create bar chart showing accuracy by category.
-
-    Args:
-        results_path: Path to results JSON
-        category_key: Category field to group by
-        output_path: Where to save figure
-        top_n: Maximum categories to show
-        min_samples: Minimum samples required per category
-        figsize: Figure dimensions
-        show: Show interactively
-
-    Returns:
-        Matplotlib figure or None
-    """
     summary, entries = load_results_with_categories(results_path)
     by_cat = compute_accuracy_by_category(entries, category_key)
 
@@ -255,26 +189,6 @@ def plot_category_heatmap(
     top_n: int = 12,
     show: bool = False,
 ) -> Optional[plt.Figure]:
-    """
-    Create heatmap showing accuracy across categories and configs.
-
-    Supports new directory structure:
-      results_dir/{model}_{dataset_type}_{distractor_source}/{config}/results.json
-
-    Args:
-        results_dir: Directory containing results for different configs
-        configs: Distractor configurations to compare (e.g., ["3H0M", "3H3M", "0H3M"])
-        model: Model name
-        dataset_type: Dataset type
-        distractor_source: Distractor source
-        category_key: Category field to group by
-        output_path: Where to save figure
-        top_n: Number of categories to show
-        show: Show interactively
-
-    Returns:
-        Matplotlib figure or None
-    """
     if configs is None:
         configs = ["3H0M", "3H3M", "0H3M"]
 
@@ -370,24 +284,6 @@ def plot_dataset_type_breakdown(
     output_path: Optional[Path] = None,
     show: bool = False,
 ) -> Optional[plt.Figure]:
-    """
-    Plot accuracy comparison across dataset_types for given configs.
-
-    Creates a grouped bar chart showing accuracy for each dataset_type
-    across different distractor configurations.
-
-    Args:
-        base_dir: Results base directory
-        model: Model name
-        configs: Distractor configs to compare (default: ["3H0M", "3H3M", "0H3M"])
-        distractor_sources: Sources to include (default: ["scratch"])
-        dataset_types: Dataset types to include (default: all 4)
-        output_path: Where to save figure
-        show: Show interactively
-
-    Returns:
-        Matplotlib figure or None
-    """
     if configs is None:
         configs = ["3H0M", "3H3M", "3H6M", "0H3M", "0H6M"]
     if distractor_sources is None:
@@ -463,17 +359,6 @@ def plot_supergpqa_by_discipline(
     output_path: Optional[Path] = None,
     show: bool = False,
 ) -> Optional[plt.Figure]:
-    """
-    Create discipline-specific visualization for SuperGPQA.
-
-    Args:
-        results_path: Path to SuperGPQA results
-        output_path: Where to save
-        show: Show interactively
-
-    Returns:
-        Matplotlib figure or None
-    """
     summary, entries = load_results_with_categories(results_path)
 
     # By discipline
@@ -533,16 +418,6 @@ def generate_category_report(
     results_path: Path,
     output_dir: Optional[Path] = None,
 ) -> Dict[str, Any]:
-    """
-    Generate a comprehensive category analysis report.
-
-    Args:
-        results_path: Path to results JSON
-        output_dir: Directory for output files
-
-    Returns:
-        Report dictionary
-    """
     summary, entries = load_results_with_categories(results_path)
 
     report = {

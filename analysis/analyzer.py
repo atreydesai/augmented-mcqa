@@ -1,12 +1,3 @@
-"""
-Analysis module for Augmented MCQA.
-
-Provides analysis utilities for experiment results, including:
-- Behavioral signature analysis (G/H/M patterns)
-- Gold rate calculations
-- Category-level breakdowns
-"""
-
 import json
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Tuple
@@ -14,36 +5,12 @@ from collections import defaultdict
 
 
 def load_results(results_path: Path) -> Dict[str, Any]:
-    """
-    Load experiment results from JSON file.
-    
-    Args:
-        results_path: Path to results.json
-        
-    Returns:
-        Results dictionary
-    """
     with open(results_path, 'r') as f:
         return json.load(f)
 
 
 def compute_behavioral_signature(results: List[Dict]) -> Dict[str, Any]:
-    """
-    Compute behavioral signature from results.
-    
-    The behavioral signature captures:
-    - G rate: How often the model picks the gold (correct) answer
-    - H rate: How often the model picks human distractors  
-    - M rate: How often the model picks model distractors
-    
-    Args:
-        results: List of individual evaluation results
-        
-    Returns:
-        Dict with signature metrics
-    """
-    counts = {"G": 0, "H": 0, "M": 0, "?": 0}
-    
+    counts = {"G": 0, "H": 0, "M": 0, "?": 0}    
     for r in results:
         ptype = r.get("prediction_type", "?")
         if ptype in counts:
@@ -65,15 +32,7 @@ def compute_behavioral_signature(results: List[Dict]) -> Dict[str, Any]:
 
 
 def compute_gold_rate(results: List[Dict]) -> float:
-    """
-    Compute gold (correct) answer selection rate.
-    
-    Args:
-        results: List of individual evaluation results
-        
-    Returns:
-        Gold rate (accuracy) as float between 0 and 1
-    """
+    #Compute gold (correct) answer selection rate.
     if not results:
         return 0.0
     
@@ -84,15 +43,6 @@ def compute_gold_rate(results: List[Dict]) -> float:
 def compute_hierarchical_signature(
     results: List[Dict],
 ) -> Dict[str, Dict[str, Any]]:
-    """
-    Compute behavioral signatures by category.
-    
-    Args:
-        results: List of individual evaluation results
-        
-    Returns:
-        Dict mapping category to signature metrics
-    """
     by_category: Dict[str, List[Dict]] = defaultdict(list)
     
     for r in results:
@@ -108,15 +58,6 @@ def compute_hierarchical_signature(
 
 
 def analyze_experiment(results_path: Path) -> Dict[str, Any]:
-    """
-    Full analysis of an experiment.
-    
-    Args:
-        results_path: Path to results.json
-        
-    Returns:
-        Complete analysis results
-    """
     data = load_results(results_path)
     
     # Get individual results
@@ -147,16 +88,6 @@ def compare_experiments(
     experiment_paths: List[Path],
     names: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
-    """
-    Compare multiple experiments.
-    
-    Args:
-        experiment_paths: List of paths to results.json files
-        names: Optional names for each experiment
-        
-    Returns:
-        Comparison results
-    """
     if names is None:
         names = [f"exp_{i}" for i in range(len(experiment_paths))]
     
@@ -180,21 +111,11 @@ def compare_experiments(
         },
     }
 
-
+#AI GENERATED 
 def format_signature_table(
     experiments: Dict[str, Dict],
     include_counts: bool = False,
 ) -> str:
-    """
-    Format experiments as a comparison table.
-    
-    Args:
-        experiments: Dict mapping experiment name to results
-        include_counts: Whether to include raw counts
-        
-    Returns:
-        Formatted table string
-    """
     lines = []
     
     # Header

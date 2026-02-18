@@ -1,0 +1,21 @@
+{
+  "name": "gpt-4.1_arc_easy_dmodel_3H6M",
+  "dataset_path": "datasets/augmented/unified_processed_claude-opus-4-6_20260213_033913",
+  "model_name": "gpt-4.1",
+  "num_human": 3,
+  "num_model": 6,
+  "model_distractor_type": "cond_model_q_a_dmodel",
+  "eval_mode": "behavioral",
+  "choices_only": false,
+  "limit": 100,
+  "seed": 42,
+  "reasoning_effort": null,
+  "thinking_level": null,
+  "temperature": 0.0,
+  "max_tokens": 100,
+  "output_dir": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/gpt-4.1_arc_easy_dmodel/3H6M",
+  "categories": null,
+  "dataset_type_filter": "arc_easy",
+  "distractor_source": "dmodel",
+  "config_id": "gpt-4.1_arc_easy_dmodel_3H6M_3H6M_gpt-4.1"
+}

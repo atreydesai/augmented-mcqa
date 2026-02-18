@@ -1,16 +1,7 @@
-"""
-Branching Human Distractor Analysis.
 
-Visualizes the benefit of adding 1 vs 2 vs 3 human distractors
-with branching lines showing model distractor additions off each base.
-
-Creates plots showing:
-- Base lines: 1H, 2H, 3H (human-only baselines)
-- Branching lines: 1H+1M..6M, 2H+1M..6M, 3H+1M..6M
-
-New directory structure:
-  results/{model}_{dataset_type}_{distractor_source}/{nH}{mM}/results.json
-"""
+#Branching Human Distractor Analysis.
+#benefit of adding 1 vs 2 vs 3 human distractors
+#with branching lines showing model distractor additions off each base.
 
 import json
 from pathlib import Path
@@ -21,14 +12,13 @@ import numpy as np
 from config import RESULTS_DIR
 
 
-# Color scheme for human distractor baselines
 HUMAN_COLORS = {
     1: "#e74c3c",  # Red for 1H
     2: "#f39c12",  # Orange for 2H
     3: "#27ae60",  # Green for 3H
 }
 
-# Line styles for readability
+
 LINE_STYLES = {
     1: "-",
     2: "--",
@@ -42,24 +32,8 @@ def load_branching_results(
     dataset_type: Optional[str] = None,
     distractor_source: Optional[str] = None,
 ) -> Dict[str, Dict[str, Any]]:
-    """
-    Load results for branching analysis.
-
-    Supports new directory structure:
-      base_dir/{model}_{dataset_type}_{distractor_source}/{nH}{mM}/results.json
-
-    If model/dataset_type/distractor_source are provided, uses new structure.
-    Otherwise falls back to searching directly under base_dir.
-
-    Args:
-        base_dir: Results base directory
-        model: Model name (e.g., "gpt-4.1")
-        dataset_type: Dataset type (e.g., "mmlu_pro")
-        distractor_source: Distractor source (e.g., "scratch")
-
-    Returns:
-        Dict mapping config string (e.g., "3H2M") -> results dict
-    """
+    #new directory structure:
+    #  base_dir/{model}_{dataset_type}_{distractor_source}/{nH}{mM}/results.json
     results = {}
 
     for h in range(1, 4):  # 1H, 2H, 3H
@@ -96,23 +70,6 @@ def plot_human_distractor_branching(
     output_dir: Optional[Path] = None,
     show: bool = False,
 ) -> Dict[str, Path]:
-    """
-    Create branching analysis plot.
-
-    Shows three branching curves for 1H/2H/3H baselines
-    with model distractor additions.
-
-    Args:
-        base_dir: Directory containing experiment results
-        model: Model name
-        dataset_type: Dataset type to plot
-        distractor_source: Distractor source to plot
-        output_dir: Where to save plots
-        show: Whether to display interactively
-
-    Returns:
-        Dict mapping plot name -> output path
-    """
     base_dir = Path(base_dir)
     if output_dir is None:
         output_dir = base_dir / "plots"
@@ -206,21 +163,7 @@ def plot_human_benefit_comparison(
     output_dir: Optional[Path] = None,
     show: bool = False,
 ) -> Optional[Path]:
-    """
-    Create degradation comparison showing how accuracy drops with model distractors
-    for different human distractor counts.
-
-    Args:
-        base_dir: Results directory
-        model: Model name
-        dataset_type: Dataset type
-        distractor_source: Distractor source
-        output_dir: Output directory for plots
-        show: Whether to display interactively
-
-    Returns:
-        Path to saved figure, or None if no data
-    """
+    ## degradation comparison showing how accuracy drops with model distractors
     base_dir = Path(base_dir)
     if output_dir is None:
         output_dir = base_dir / "plots"

@@ -1,0 +1,56 @@
+{
+  "config": {
+    "name": "gpt-4.1_supergpqa_dhuman_2H0M",
+    "dataset_path": "datasets/augmented/unified_processed_claude-opus-4-6_20260213_033913",
+    "model_name": "gpt-4.1",
+    "num_human": 2,
+    "num_model": 0,
+    "model_distractor_type": "cond_model_q_a_dhuman",
+    "eval_mode": "behavioral",
+    "choices_only": false,
+    "limit": 100,
+    "seed": 42,
+    "reasoning_effort": null,
+    "thinking_level": null,
+    "temperature": 0.0,
+    "max_tokens": 100,
+    "output_dir": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/gpt-4.1_supergpqa_dhuman/2H0M",
+    "categories": null,
+    "dataset_type_filter": "supergpqa",
+    "distractor_source": "dhuman",
+    "config_id": "gpt-4.1_supergpqa_dhuman_2H0M_2H0M_gpt-4.1"
+  },
+  "summary": {
+    "total": 1,
+    "correct": 1,
+    "accuracy": 1.0,
+    "behavioral_counts": {
+      "G": 1,
+      "H": 0,
+      "M": 0,
+      "?": 0
+    },
+    "accuracy_by_category": {
+      "Electronic Science and Technology": 1.0
+    }
+  },
+  "timing": {
+    "start": "2026-02-13T10:53:50.801483",
+    "end": "2026-02-13T10:53:51.666371",
+    "duration_seconds": 0.864888
+  },
+  "results": [
+    {
+      "question_idx": 0,
+      "question": "The common-mode rejection ratio of the first stage amplification circuit in a three-op-amp different...",
+      "gold_answer": "The difference in the common-mode rejection ratio of A1 and A2 themselves",
+      "gold_index": 0,
+      "model_answer": "A",
+      "model_prediction": "A",
+      "is_correct": true,
+      "category": "Electronic Science and Technology",
+      "prediction_type": "G",
+      "latency_ms": 440.38916015625
+    }
+  ]
+}
