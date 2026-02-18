@@ -342,7 +342,9 @@ class ExperimentRunner:
         
         # Run evaluations
         skipped = 0
-        for idx, entry in enumerate(tqdm(entries, desc="Evaluating", disable=getattr(self.config, '_quiet', False))):
+        quiet = getattr(self.config, '_quiet', False)
+        iterator = enumerate(entries) if quiet else enumerate(tqdm(entries, desc="Evaluating"))
+        for idx, entry in iterator:
             # Prepare entry
             prepared = self._prepare_entry(entry, idx)
             if prepared is None:
