@@ -81,6 +81,7 @@ class GenerationConfig:
     save_interval: int = 50  # Save intermediate results every N entries
     reasoning_effort: Optional[str] = None
     generate_branching_prefix_columns: bool = False
+    skip_failed_entries: bool = False
 
 
 BRANCHING_PREFIX_MODEL_COLUMNS = {
@@ -127,35 +128,117 @@ def _build_conditioned_prompt(
 
 
 
-def parse_generated_distractors(response: str, expected_count: int = 6) -> List[str]:
+def parse_generated_distractors(
+    response: str,
+    expected_count: int = 6,
+    start_letter: str = "B",
+) -> List[str]:
     """
-    Parse generated distractors from model response.
-    Supports formats like B: <text> through J: <text>.
+    Parse generated distractors from model response using expected option letters.
+
+    This parser is strict about required letters but tolerant of extra lines
+    (e.g., model echoing existing options), which are ignored.
     """
-    distractors = []
-    
-    # Match pattern like "B: <text>" through "J: <text>"
-    pattern = r'^([B-J])[:\.\s]+(.+)$'
-    
-    for line in response.strip().split('\n'):
-        line = line.strip()
-        if not line:
+    if expected_count <= 0:
+        raise ValueError(f"expected_count must be > 0, got {expected_count}")
+    if len(start_letter) != 1 or not start_letter.isalpha():
+        raise ValueError(f"start_letter must be a single letter, got {start_letter!r}")
+
+    start = start_letter.upper()
+    start_ord = ord(start)
+    expected_letters = [chr(start_ord + i) for i in range(expected_count)]
+    expected_set = set(expected_letters)
+    by_letter: Dict[str, str] = {}
+
+    # Accept common separators: "E: text", "E. text", "E) text", "E - text"
+    pattern = r"^\s*([A-Z])\s*(?:[:\.\)\-])\s*(.+?)\s*$"
+
+    for line in response.strip().split("\n"):
+        stripped = line.strip()
+        if not stripped:
             continue
-            
-        match = re.match(pattern, line, re.IGNORECASE)
-        if match:
-            distractor = match.group(2).strip()
-            distractor = distractor.rstrip('.')
-            if distractor:
-                distractors.append(distractor)
-    
-    if len(distractors) != expected_count:
-        raise NonRetryableAugmentationError(
-            f"Expected exactly {expected_count} distractors, parsed {len(distractors)}. "
-            "Model output format is invalid."
+
+        match = re.match(pattern, stripped, re.IGNORECASE)
+        if not match:
+            continue
+
+        letter = match.group(1).upper()
+        if letter not in expected_set:
+            continue
+
+        text = match.group(2).strip().rstrip(".")
+        if not text:
+            continue
+
+        # Keep first valid occurrence per expected letter for deterministic parsing.
+        if letter not in by_letter:
+            by_letter[letter] = text
+
+    missing = [letter for letter in expected_letters if letter not in by_letter]
+    if missing:
+        raise ValueError(
+            f"Expected exactly {expected_count} distractors ({expected_letters}), parsed "
+            f"{len(by_letter)}. Missing letters: {missing}. Model output format is invalid."
         )
 
-    return distractors
+    return [by_letter[letter] for letter in expected_letters]
+
+
+def _expected_letters(start_letter: str, expected_count: int) -> List[str]:
+    start = start_letter.upper()
+    return [chr(ord(start) + i) for i in range(expected_count)]
+
+
+def _build_repair_prompt(
+    raw_output: str,
+    *,
+    start_letter: str,
+    expected_count: int,
+) -> str:
+    letters = _expected_letters(start_letter, expected_count)
+    letters_str = ", ".join(letters)
+    return (
+        "Reformat the text below into strict MCQ distractor lines.\n"
+        f"Output exactly {expected_count} lines with these letters only: {letters_str}.\n"
+        "Each line must be in the exact format '<LETTER>: <option>'.\n"
+        "Do not add explanations, markdown, numbering, or extra lines.\n\n"
+        "Text to reformat:\n"
+        f"{raw_output}"
+    )
+
+
+def _parse_or_repair_distractors(
+    *,
+    client,
+    raw_text: str,
+    expected_count: int,
+    start_letter: str,
+    max_tokens: int,
+) -> (List[str], str):
+    """
+    Parse distractors; if parsing fails, request a strict reformat pass and parse again.
+    """
+    try:
+        distractors = parse_generated_distractors(
+            raw_text,
+            expected_count=expected_count,
+            start_letter=start_letter,
+        )
+        return distractors, raw_text
+    except ValueError:
+        repair_prompt = _build_repair_prompt(
+            raw_text,
+            start_letter=start_letter,
+            expected_count=expected_count,
+        )
+        repaired = client.generate(prompt=repair_prompt, max_tokens=max_tokens)
+        repaired_text = repaired.text
+        distractors = parse_generated_distractors(
+            repaired_text,
+            expected_count=expected_count,
+            start_letter=start_letter,
+        )
+        return distractors, repaired_text
 
 
 def build_prompt(
@@ -287,10 +370,17 @@ def _generate_branching_prefix_columns(
         for attempt in range(config.max_retries):
             try:
                 response = client.generate(prompt=prompt, max_tokens=config.max_tokens)
-                generated = parse_generated_distractors(response.text, expected_count=model_count)
+                start_letter = chr(ord("A") + human_prefix_count + 1)
+                generated, model_output = _parse_or_repair_distractors(
+                    client=client,
+                    raw_text=response.text,
+                    expected_count=model_count,
+                    start_letter=start_letter,
+                    max_tokens=config.max_tokens,
+                )
                 new_entry[column_name] = generated
                 new_entry[f"{column_name}_model_input"] = prompt
-                new_entry[f"{column_name}_model_output"] = response.text
+                new_entry[f"{column_name}_model_output"] = model_output
                 success = True
                 break
             except Exception as exc:
@@ -341,12 +431,21 @@ def augment_dataset(
             if missing_splits:
                 raise ValueError(f"Requested splits not found: {missing_splits}")
             items = [(k, v) for k, v in items if k in splits]
+        if resume_from is not None and len(list(items)) != 1:
+            raise ValueError(
+                "resume_from is only supported when processing exactly one split"
+            )
         for split_name, ds in items:
             print(f"\nProcessing split: {split_name}")
-            final_dataset_dict[split_name] = augment_single_dataset(ds, config, limit)
+            final_dataset_dict[split_name] = augment_single_dataset(
+                ds,
+                config,
+                limit,
+                resume_from=resume_from,
+            )
         result = DatasetDict(final_dataset_dict)
     else:
-        result = augment_single_dataset(dataset, config, limit)
+        result = augment_single_dataset(dataset, config, limit, resume_from=resume_from)
 
     # Save
     if output_path:
@@ -362,7 +461,12 @@ def augment_dataset(
     return result
 
 
-def augment_single_dataset(dataset: Dataset, config: GenerationConfig, limit: Optional[int] = None) -> Dataset:
+def augment_single_dataset(
+    dataset: Dataset,
+    config: GenerationConfig,
+    limit: Optional[int] = None,
+    resume_from: Optional[Path] = None,
+) -> Dataset:
     """Process a single Dataset through all augmentation modes (scratch, human-conditioned, model-conditioned)."""
     client_kwargs: Dict[str, Any] = {}
     if config.model_provider == "openai" and config.reasoning_effort is not None:
@@ -372,8 +476,45 @@ def augment_single_dataset(dataset: Dataset, config: GenerationConfig, limit: Op
     entries = list(dataset)
     if limit:
         entries = entries[:limit]
-        
-    augmented_entries = []
+
+    augmented_entries: List[Dict[str, Any]] = []
+    start_index = 0
+
+    checkpoint_path: Optional[Path] = Path(resume_from) if resume_from else None
+    if checkpoint_path is not None:
+        if not checkpoint_path.exists():
+            raise FileNotFoundError(f"Resume checkpoint not found: {checkpoint_path}")
+        checkpoint_data = json.loads(checkpoint_path.read_text(encoding="utf-8"))
+        if not isinstance(checkpoint_data, list):
+            raise ValueError(
+                f"Resume checkpoint must be a list of entries: {checkpoint_path}"
+            )
+        if len(checkpoint_data) > len(entries):
+            raise ValueError(
+                "Resume checkpoint has more entries than target dataset: "
+                f"{len(checkpoint_data)} > {len(entries)}"
+            )
+        for idx, row in enumerate(checkpoint_data):
+            if not isinstance(row, dict):
+                raise ValueError(
+                    f"Resume checkpoint contains non-dict entry at position {idx}: {type(row)}"
+                )
+            row.setdefault("_source_index", idx)
+        augmented_entries = list(checkpoint_data)
+        start_index = (
+            max(int(row["_source_index"]) for row in augmented_entries) + 1
+            if augmented_entries
+            else 0
+        )
+        if start_index > len(entries):
+            raise ValueError(
+                "Resume checkpoint source indices exceed dataset length: "
+                f"start_index={start_index}, dataset_len={len(entries)}"
+            )
+        print(
+            f"Resuming from checkpoint {checkpoint_path} "
+            f"(resume_start_index={start_index}, kept_entries={len(augmented_entries)}, total={len(entries)})"
+        )
     
     # We run modes in sequence because qadm depends on qa (scratch)
     modes_to_run = [
@@ -394,11 +535,27 @@ def augment_single_dataset(dataset: Dataset, config: GenerationConfig, limit: Op
         AugmentorMode.CONDITIONED_SYNTHETIC: "cond_model_q_a_dmodel",
     }
     
-    timestamp = time.strftime("%Y%m%d_%H%M%S")
-    temp_save_path = RESULTS_DIR / f"temp_augmented_{config.model_name}_{timestamp}.json"
-    
-    for i, entry in enumerate(tqdm(entries, desc="Augmenting multi-mode")):
+    if checkpoint_path is not None:
+        temp_save_path = checkpoint_path
+    else:
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        temp_save_path = RESULTS_DIR / f"temp_augmented_{config.model_name}_{timestamp}.json"
+    temp_save_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if start_index >= len(entries):
+        print("Checkpoint already covers all entries; nothing to generate.")
+        return Dataset.from_list(augmented_entries)
+
+    skipped_entries = 0
+    iterator = tqdm(
+        entries[start_index:],
+        desc="Augmenting multi-mode",
+        initial=start_index,
+        total=len(entries),
+    )
+    for i, entry in enumerate(iterator, start=start_index):
         new_entry = dict(entry)
+        new_entry["_source_index"] = i
         
         # Core data needed for all modes
         answer = new_entry.get("answer", "")
@@ -407,6 +564,7 @@ def augment_single_dataset(dataset: Dataset, config: GenerationConfig, limit: Op
         
         human_distractors = _require_column_list(new_entry, DistractorType.COND_HUMAN_Q_A.value)
         
+        skip_current_entry = False
         for mode in modes_to_run:
             prefix = mode_prefixes[mode]
             model_col = mode_model_cols[mode]
@@ -422,7 +580,14 @@ def augment_single_dataset(dataset: Dataset, config: GenerationConfig, limit: Op
                     raw_text = response.text
                     
                     # 3. Parse Distractors (Always 6 per user prompt)
-                    distractors = parse_generated_distractors(raw_text, 6)
+                    start_letter = chr(ord("A") + len(context_distractors) + 1)
+                    distractors, model_output = _parse_or_repair_distractors(
+                        client=client,
+                        raw_text=raw_text,
+                        expected_count=6,
+                        start_letter=start_letter,
+                        max_tokens=config.max_tokens,
+                    )
                     
                     # 4. Assembly (1 answer + 6 synthetic + 3 human = 10 total)
                     options, correct_letter = assemble_mcqa_options(answer, human_distractors, distractors, mode)
@@ -439,7 +604,7 @@ def augment_single_dataset(dataset: Dataset, config: GenerationConfig, limit: Op
                         new_entry[f"{prefix}_full_question"] = f"Question: {new_entry['question']}\nExisting 4 Options: {options_str}\nAnswer: A: {answer}"
                     
                     new_entry[f"{prefix}_model_input"] = prompt
-                    new_entry[f"{prefix}_model_output"] = raw_text
+                    new_entry[f"{prefix}_model_output"] = model_output
                     new_entry[model_col] = distractors
                     new_entry[f"{prefix}_options_randomized"] = options
                     new_entry[f"{prefix}_correct_answer_letter"] = correct_letter
@@ -458,21 +623,41 @@ def augment_single_dataset(dataset: Dataset, config: GenerationConfig, limit: Op
                         print(f"❌ Entry {i}, mode {mode.value}: Failed after {config.max_retries} attempts: {e}")
             
             if not success:
+                if config.skip_failed_entries:
+                    print(
+                        f"⏭️ Entry {i}: skipping question after {config.max_retries} "
+                        f"failed attempts in mode={mode.value}"
+                    )
+                    skip_current_entry = True
+                    skipped_entries += 1
+                    break
                 raise RuntimeError(
                     f"Failed generation for entry={i}, mode={mode.value} after {config.max_retries} retries"
                 )
 
+        if skip_current_entry:
+            continue
+
         # Branching prefix columns are expensive to generate; only do this when explicitly requested.
         if config.generate_branching_prefix_columns:
-            _generate_branching_prefix_columns(
-                new_entry=new_entry,
-                client=client,
-                config=config,
-                question=new_entry.get("question", ""),
-                gold_answer=answer,
-                human_distractors=human_distractors,
-                entry_idx=i,
-            )
+            try:
+                _generate_branching_prefix_columns(
+                    new_entry=new_entry,
+                    client=client,
+                    config=config,
+                    question=new_entry.get("question", ""),
+                    gold_answer=answer,
+                    human_distractors=human_distractors,
+                    entry_idx=i,
+                )
+            except Exception as exc:
+                if config.skip_failed_entries:
+                    print(
+                        f"⏭️ Entry {i}: skipping question due to branching generation failure: {exc}"
+                    )
+                    skipped_entries += 1
+                    continue
+                raise
                 
         augmented_entries.append(new_entry)
         
@@ -480,9 +665,18 @@ def augment_single_dataset(dataset: Dataset, config: GenerationConfig, limit: Op
         if (i + 1) % config.save_interval == 0:
             with open(temp_save_path, 'w') as f:
                 json.dump(augmented_entries, f, indent=2)
-            print(f"\n💾 Saved intermediate results ({i+1} entries) to {temp_save_path}")
+            print(
+                f"\n💾 Saved intermediate results ({len(augmented_entries)} kept entries, "
+                f"processed={i+1}/{len(entries)}, skipped={skipped_entries}) to {temp_save_path}"
+            )
             
     # Keep temp file as a recovery point (not deleted)
+    with open(temp_save_path, "w") as f:
+        json.dump(augmented_entries, f, indent=2)
+    print(
+        f"Completed split generation: kept={len(augmented_entries)}, "
+        f"skipped={skipped_entries}, total={len(entries)}"
+    )
         
     return Dataset.from_list(augmented_entries)
 

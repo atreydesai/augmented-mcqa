@@ -22,7 +22,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional, Set
 
 from datasets import Dataset, DatasetDict, Features, Sequence, Value, load_dataset, load_from_disk
 
@@ -33,6 +33,7 @@ from config import (
     HF_SKIP_PUSH,
     HF_TOKEN,
     PROJECT_ROOT,
+    RESULTS_DIR,
     get_api_key,
 )
 from data.augmentor import AugmentorMode, GenerationConfig, augment_dataset
@@ -127,12 +128,51 @@ def _load_hf_datasetdict(repo_id: str) -> DatasetDict:
 
 
 def _save_datasetdict(path: Path, dataset: DatasetDict, overwrite: bool) -> None:
-    if path.exists():
-        if not overwrite:
-            raise FileExistsError(f"{path} already exists (use --overwrite)")
-        shutil.rmtree(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    dataset.save_to_disk(str(path))
+
+    if path.exists() and not overwrite:
+        raise FileExistsError(f"{path} already exists (use --overwrite)")
+
+    # Write to a temporary sibling path first to avoid self-overwrite conflicts
+    # with memory-mapped datasets loaded from the same destination.
+    tmp_path = path.parent / f"{path.name}_tmpwrite"
+    if tmp_path.exists():
+        shutil.rmtree(tmp_path)
+
+    dataset.save_to_disk(str(tmp_path))
+
+    if path.exists():
+        shutil.rmtree(path)
+    shutil.move(str(tmp_path), str(path))
+
+
+def _find_latest_checkpoint(model_alias: str) -> Optional[Path]:
+    pattern = f"temp_augmented_{model_alias}_*.json"
+    candidates = sorted(
+        RESULTS_DIR.glob(pattern),
+        key=lambda p: p.stat().st_mtime,
+        reverse=True,
+    )
+    for candidate in candidates:
+        try:
+            data = json.loads(candidate.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        if isinstance(data, list):
+            return candidate
+    return None
+
+
+def _extract_source_indices(gpqa_split: Dataset) -> Set[int]:
+    if "_source_index" not in gpqa_split.column_names:
+        raise ValueError("Generated gpqa split missing required '_source_index' column")
+    return {int(v) for v in gpqa_split["_source_index"]}
+
+
+def _drop_source_index_column(gpqa_split: Dataset) -> Dataset:
+    if "_source_index" in gpqa_split.column_names:
+        return gpqa_split.remove_columns(["_source_index"])
+    return gpqa_split
 
 
 def _validate_gpqa_generated(dataset: DatasetDict) -> Dict[str, Any]:
@@ -170,7 +210,6 @@ def _worker_run(
     gpqa_rows: List[Dict[str, Any]],
     *,
     overwrite: bool,
-    push_public: bool,
     run_tag: str,
 ) -> Dict[str, Any]:
     print(f"\n=== [{target.model_alias}] start ===")
@@ -199,19 +238,26 @@ def _worker_run(
         model_provider=provider,
         model_name=target.model_alias,
         num_distractors=9,
+        max_retries=3,
         reasoning_effort=None,  # keep provider defaults unless user sets explicitly
         generate_branching_prefix_columns=False,
+        skip_failed_entries=True,
     )
 
     tmp_output = AUGMENTED_DATASETS_DIR / f"tmp_gpqa_migrate_{target.model_slug}_{run_tag}"
     if tmp_output.exists():
         shutil.rmtree(tmp_output)
 
+    resume_from = _find_latest_checkpoint(target.model_alias)
+    if resume_from:
+        print(f"[{target.model_alias}] resuming from checkpoint: {resume_from}")
+
     augment_dataset(
         dataset_path=target.local_combined_dir,
         config=gen_cfg,
         output_path=tmp_output,
         limit=None,
+        resume_from=resume_from,
         push_to_hub=False,
         splits=["gpqa"],
     )
@@ -220,26 +266,15 @@ def _worker_run(
         raise ValueError(f"Unexpected generated output at {tmp_output}")
 
     gpqa_aug = generated["gpqa"]
+    included_source_indices = _extract_source_indices(gpqa_aug)
     combined = load_from_disk(str(target.local_combined_dir))
     combined["gpqa"] = gpqa_aug
     _save_datasetdict(target.local_combined_dir, combined, overwrite=True)
-    print(f"[{target.model_alias}] gpqa generation merged")
-
-    # 4) Validate.
-    validation = _validate_gpqa_generated(combined)
-    print(f"[{target.model_alias}] validation ok: {validation}")
-
-    # 5) Push to new public repo.
-    repo_id = f"atreydesai/qgqa-{run_tag}-{target.model_slug}"
-    pushed_url = None
-    if push_public:
-        pushed_url = push_dataset_to_hub(
-            combined,
-            repo_id=repo_id,
-            private=False,
-        )
-        if not pushed_url:
-            raise RuntimeError(f"Push failed for {repo_id}")
+    print(
+        f"[{target.model_alias}] gpqa generation merged "
+        f"(kept={len(included_source_indices)}/{len(gpqa_rows)}, "
+        f"skipped_local={len(gpqa_rows) - len(included_source_indices)})"
+    )
 
     # Cleanup temporary generated split directory.
     if tmp_output.exists():
@@ -250,21 +285,26 @@ def _worker_run(
         "source_repo": target.source_repo,
         "model_alias": target.model_alias,
         "local_combined_dir": str(target.local_combined_dir),
-        "target_repo_id": repo_id,
-        "pushed_url": pushed_url,
-        **validation,
+        "included_source_indices": sorted(included_source_indices),
+        "local_skipped_source_indices": sorted(
+            set(range(len(gpqa_rows))) - included_source_indices
+        ),
     }
 
 
-def _ensure_env() -> None:
+def _ensure_env(targets: List[TargetSpec]) -> None:
     if not HF_TOKEN:
         raise RuntimeError("HF_TOKEN is required")
 
-    required_providers = sorted({resolve_model(t.model_alias)[0] for t in TARGETS})
+    required_providers = sorted({resolve_model(t.model_alias)[0] for t in targets})
+    provider_key_map = {
+        "gemini": "google",
+    }
     for provider in required_providers:
-        if provider in {"openai", "anthropic", "gemini", "deepseek"}:
+        key_provider = provider_key_map.get(provider, provider)
+        if key_provider in {"openai", "anthropic", "google", "deepseek"}:
             # Raises if missing.
-            get_api_key(provider)
+            get_api_key(key_provider)
 
     hf_home = os.getenv("HF_HOME", "")
     if (not hf_home) or hf_home.startswith("/fs"):
@@ -283,16 +323,39 @@ def main() -> int:
     parser.add_argument("--push-public", action="store_true")
     parser.add_argument("--run-tag", type=str, default=None)
     parser.add_argument("--manifest-out", type=str, default=None)
+    parser.add_argument(
+        "--models",
+        nargs="+",
+        default=None,
+        help="Optional subset of model aliases or slugs to process "
+             "(e.g., gpt-4.1 gpt-5.2 claude-opus-4-6)",
+    )
     args = parser.parse_args()
+
+    if args.models:
+        requested = {m.strip() for m in args.models if m.strip()}
+        selected_targets = [
+            t for t in TARGETS if t.model_alias in requested or t.model_slug in requested
+        ]
+        selected_ids = {
+            *(t.model_alias for t in selected_targets),
+            *(t.model_slug for t in selected_targets),
+        }
+        missing = sorted(requested - selected_ids)
+        if missing:
+            raise ValueError(f"Unknown model selector(s): {missing}")
+    else:
+        selected_targets = list(TARGETS)
 
     if args.push_public and HF_SKIP_PUSH:
         raise RuntimeError("HF_SKIP_PUSH is set; cannot push while --push-public is enabled")
 
-    _ensure_env()
+    _ensure_env(selected_targets)
 
     run_tag = args.run_tag or datetime.now(timezone.utc).strftime("gpqa-migrate-%Y%m%d-%H%M%S")
     run_tag = _sanitize_slug(run_tag)
     print(f"Run tag: {run_tag}")
+    print("Selected models:", [t.model_alias for t in selected_targets])
 
     gpqa_rows = load_gpqa_dataset(split=args.gpqa_split, subset=args.gpqa_subset, limit=None)
     if len(gpqa_rows) != 448:
@@ -309,10 +372,9 @@ def main() -> int:
                 target,
                 gpqa_rows,
                 overwrite=args.overwrite,
-                push_public=args.push_public,
                 run_tag=run_tag,
             )
-            for target in TARGETS
+            for target in selected_targets
         ]
 
         for fut in as_completed(futures):
@@ -321,13 +383,106 @@ def main() -> int:
             except Exception as exc:
                 errors.append({"error": str(exc)})
 
+    finalized_results: List[Dict[str, Any]] = []
+    global_skipped_source_indices: List[int] = []
+    skipped_questions: List[Dict[str, Any]] = []
+
+    if not errors:
+        full_index_set = set(range(len(gpqa_rows)))
+        local_skipped_by_model: Dict[str, List[int]] = {}
+        for item in results:
+            included = {int(v) for v in item["included_source_indices"]}
+            local_skipped = sorted(full_index_set - included)
+            local_skipped_by_model[item["model_alias"]] = local_skipped
+
+        global_skip_set: Set[int] = set()
+        for skipped in local_skipped_by_model.values():
+            global_skip_set.update(skipped)
+        global_skipped_source_indices = sorted(global_skip_set)
+
+        print(
+            f"Global synchronized skip count: {len(global_skipped_source_indices)} "
+            f"indices -> {global_skipped_source_indices}"
+        )
+
+        skipped_questions = [
+            {
+                "source_index": idx,
+                "question": gpqa_rows[idx].get("question", ""),
+                "answer": gpqa_rows[idx].get("answer", ""),
+                "subfield": gpqa_rows[idx].get("subfield", ""),
+            }
+            for idx in global_skipped_source_indices
+        ]
+
+        target_by_alias = {t.model_alias: t for t in selected_targets}
+        for item in sorted(results, key=lambda x: x["model_alias"]):
+            model_alias = item["model_alias"]
+            try:
+                target = target_by_alias[model_alias]
+                local_path = Path(item["local_combined_dir"])
+                combined = load_from_disk(str(local_path))
+                if not isinstance(combined, DatasetDict):
+                    raise ValueError(f"Expected DatasetDict at {local_path}")
+
+                gpqa_split = combined["gpqa"]
+                if "_source_index" not in gpqa_split.column_names:
+                    raise ValueError(
+                        f"Missing _source_index in gpqa split for {model_alias}; cannot sync skips"
+                    )
+
+                keep_positions = [
+                    pos
+                    for pos, src_idx in enumerate(gpqa_split["_source_index"])
+                    if int(src_idx) not in global_skip_set
+                ]
+                gpqa_filtered = gpqa_split.select(keep_positions)
+                gpqa_filtered = _drop_source_index_column(gpqa_filtered)
+                combined["gpqa"] = gpqa_filtered
+                _save_datasetdict(local_path, combined, overwrite=True)
+
+                validation = _validate_gpqa_generated(combined)
+
+                repo_id = f"atreydesai/qgqa-{run_tag}-{target.model_slug}"
+                pushed_url = None
+                if args.push_public:
+                    pushed_url = push_dataset_to_hub(
+                        combined,
+                        repo_id=repo_id,
+                        private=False,
+                    )
+                    if not pushed_url:
+                        raise RuntimeError(f"Push failed for {repo_id}")
+
+                finalized_results.append(
+                    {
+                        "source_repo": item["source_repo"],
+                        "model_alias": model_alias,
+                        "local_combined_dir": str(local_path),
+                        "target_repo_id": repo_id,
+                        "pushed_url": pushed_url,
+                        "local_skipped_source_indices": local_skipped_by_model[model_alias],
+                        "global_skipped_source_indices": global_skipped_source_indices,
+                        **validation,
+                    }
+                )
+            except Exception as exc:
+                errors.append({"model_alias": model_alias, "error": str(exc)})
+
     manifest = {
         "created_at": datetime.now(timezone.utc).isoformat(),
         "run_tag": run_tag,
         "gpqa_subset": args.gpqa_subset,
         "gpqa_split": args.gpqa_split,
         "max_workers": args.max_workers,
-        "results": sorted(results, key=lambda x: x["model_alias"]),
+        "selected_models": [t.model_alias for t in selected_targets],
+        "results": (
+            sorted(finalized_results, key=lambda x: x["model_alias"])
+            if finalized_results
+            else sorted(results, key=lambda x: x["model_alias"])
+        ),
+        "global_skipped_source_indices": global_skipped_source_indices,
+        "global_skipped_questions": skipped_questions,
         "errors": errors,
     }
 
@@ -338,6 +493,16 @@ def main() -> int:
     manifest_path.parent.mkdir(parents=True, exist_ok=True)
     manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     print(f"\nManifest written to: {manifest_path}")
+
+    if global_skipped_source_indices:
+        skipped_path = manifest_path.parent / "skipped_questions.json"
+        skipped_payload = {
+            "run_tag": run_tag,
+            "global_skipped_source_indices": global_skipped_source_indices,
+            "global_skipped_questions": skipped_questions,
+        }
+        skipped_path.write_text(json.dumps(skipped_payload, indent=2), encoding="utf-8")
+        print(f"Skipped-question report written to: {skipped_path}")
 
     if errors:
         print(f"Completed with {len(errors)} error(s).")

@@ -1,6 +1,29 @@
 {
+  "builder_name": "parquet",
   "citation": "",
+  "config_name": "default",
+  "dataset_name": "qgqa-gemini-3-flash-20260213-041708",
+  "dataset_size": 27257618,
   "description": "",
+  "download_checksums": {
+    "hf://datasets/atreydesai/qgqa-gemini-3-flash-20260213-041708@86d4f74874a5d0889238cd31af97bbb4d8ca4d4e/data/arc_challenge-00000-of-00001.parquet": {
+      "num_bytes": 2282696,
+      "checksum": null
+    },
+    "hf://datasets/atreydesai/qgqa-gemini-3-flash-20260213-041708@86d4f74874a5d0889238cd31af97bbb4d8ca4d4e/data/arc_easy-00000-of-00001.parquet": {
+      "num_bytes": 1883702,
+      "checksum": null
+    },
+    "hf://datasets/atreydesai/qgqa-gemini-3-flash-20260213-041708@86d4f74874a5d0889238cd31af97bbb4d8ca4d4e/data/mmlu_pro-00000-of-00001.parquet": {
+      "num_bytes": 5677920,
+      "checksum": null
+    },
+    "hf://datasets/atreydesai/qgqa-gemini-3-flash-20260213-041708@86d4f74874a5d0889238cd31af97bbb4d8ca4d4e/data/supergpqa-00000-of-00001.parquet": {
+      "num_bytes": 2314929,
+      "checksum": null
+    }
+  },
+  "download_size": 12159247,
   "features": {
     "question": {
       "dtype": "string",
@@ -189,5 +212,38 @@
     }
   },
   "homepage": "",
-  "license": ""
+  "license": "",
+  "size_in_bytes": 39416865,
+  "splits": {
+    "arc_challenge": {
+      "name": "arc_challenge",
+      "num_bytes": 5098805,
+      "num_examples": 750,
+      "dataset_name": "qgqa-gemini-3-flash-20260213-041708"
+    },
+    "arc_easy": {
+      "name": "arc_easy",
+      "num_bytes": 4405931,
+      "num_examples": 750,
+      "dataset_name": "qgqa-gemini-3-flash-20260213-041708"
+    },
+    "mmlu_pro": {
+      "name": "mmlu_pro",
+      "num_bytes": 12347930,
+      "num_examples": 750,
+      "dataset_name": "qgqa-gemini-3-flash-20260213-041708"
+    },
+    "supergpqa": {
+      "name": "supergpqa",
+      "num_bytes": 5404952,
+      "num_examples": 750,
+      "dataset_name": "qgqa-gemini-3-flash-20260213-041708"
+    }
+  },
+  "version": {
+    "version_str": "0.0.0",
+    "major": 0,
+    "minor": 0,
+    "patch": 0
+  }
 }
