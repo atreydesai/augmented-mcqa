@@ -91,18 +91,13 @@ class DistractorType(Enum):
     - In results and analysis
     
     IMPORTANT DISTINCTION:
-    - cond_human_q_a: 3 human distractors from original MMLU/ARC/SuperGPQA
-    - cond_model_q_a: EXISTING 6 synthetic distractors from MMLU-Pro (NOT for ARC/SuperGPQA)
+    - choices_human: 3 human distractors from original MMLU/ARC/SuperGPQA
     - cond_model_q_a_scratch: NEWLY GENERATED from Q+A only (no conditioning)
     - cond_model_q_a_dhuman: NEWLY GENERATED conditioned on 3 human distractors
-    - cond_model_q_a_dmodel: NEWLY GENERATED conditioned on 3 random existing synthetic
+    - cond_model_q_a_dmodel: NEWLY GENERATED conditioned on 3 random scratch distractors
     """
     # Human distractors from original MMLU/ARC/SuperGPQA (up to 3)
-    COND_HUMAN_Q_A = "cond_human_q_a"
-    
-    # EXISTING synthetic distractors from MMLU-Pro only (up to 6)
-    # NOT available for ARC or SuperGPQA
-    COND_MODEL_Q_A = "cond_model_q_a"
+    COND_HUMAN_Q_A = "choices_human"
     
     # NEWLY GENERATED distractors from Q+A only (no conditioning)
     COND_MODEL_Q_A_SCRATCH = "cond_model_q_a_scratch"
@@ -110,47 +105,13 @@ class DistractorType(Enum):
     # NEWLY GENERATED distractors conditioned on Q+A + 3 human distractors
     COND_MODEL_Q_A_DHUMAN = "cond_model_q_a_dhuman"
     
-    # NEWLY GENERATED distractors conditioned on Q+A + 3 random existing synthetic
+    # NEWLY GENERATED distractors conditioned on Q+A + 3 random scratch distractors
     COND_MODEL_Q_A_DMODEL = "cond_model_q_a_dmodel"
-
-
-# Mapping from legacy column names to unified names
-LEGACY_COLUMN_MAPPING: Dict[str, DistractorType] = {
-    # Human distractors
-    "choices_human": DistractorType.COND_HUMAN_Q_A,
-    
-    # Model distractors (q+a conditioned)
-    "choices_synthetic": DistractorType.COND_MODEL_Q_A,
-    "legacy_choices_synthetic": DistractorType.COND_MODEL_Q_A,
-    "choices_synthetic_conditioned_goldandstem": DistractorType.COND_MODEL_Q_A,
-    
-    # Model distractors (conditioned on human)
-    "choices_newsynthetic": DistractorType.COND_MODEL_Q_A_DHUMAN,
-    "cond_model_q_a_dhuman": DistractorType.COND_MODEL_Q_A_DHUMAN,
-    
-    # Model distractors (conditioned on model)
-    "choices_newsynthetic_conditioned_synthetic": DistractorType.COND_MODEL_Q_A_DMODEL,
-    "cond_model_q_a_dmodel": DistractorType.COND_MODEL_Q_A_DMODEL,
-}
-
-
-# Reverse mapping: unified name to possible legacy column names
-UNIFIED_TO_LEGACY: Dict[DistractorType, List[str]] = {
-    DistractorType.COND_HUMAN_Q_A: ["choices_human"],
-    DistractorType.COND_MODEL_Q_A: [
-        "choices_synthetic",
-        "choices_synthetic_conditioned_goldandstem",
-    ],
-    DistractorType.COND_MODEL_Q_A_DHUMAN: ["choices_newsynthetic"],
-    DistractorType.COND_MODEL_Q_A_DMODEL: ["choices_newsynthetic_conditioned_synthetic"],
-}
 
 
 def get_distractor_column(entry: dict, distractor_type: DistractorType) -> List[str]:
     """
     Get distractor values from a dataset entry using the unified naming convention.
-    
-    Handles both legacy and new column names transparently.
     
     Args:
         entry: A dataset entry dictionary
@@ -159,16 +120,10 @@ def get_distractor_column(entry: dict, distractor_type: DistractorType) -> List[
     Returns:
         List of distractor strings
     """
-    # First try the unified name
     unified_name = distractor_type.value
     if unified_name in entry and entry[unified_name] is not None:
         return list(entry[unified_name])
-    
-    # Fall back to legacy names
-    for legacy_name in UNIFIED_TO_LEGACY.get(distractor_type, []):
-        if legacy_name in entry and entry[legacy_name] is not None:
-            return list(entry[legacy_name])
-    
+
     return []
 
 

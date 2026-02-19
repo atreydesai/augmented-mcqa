@@ -19,7 +19,6 @@ from config import (
     DATASETS_DIR,
     RANDOM_SEED,
     DistractorType,
-    get_distractor_column,
 )
 
 
@@ -28,7 +27,7 @@ class FilterConfig:
     """Configuration for filtering a dataset."""
     num_human: int = 3
     num_model: int = 0
-    model_distractor_type: DistractorType = DistractorType.COND_MODEL_Q_A
+    model_distractor_type: DistractorType = DistractorType.COND_MODEL_Q_A_SCRATCH
     shuffle_seed: int = RANDOM_SEED
     require_minimum: bool = True  # Skip entries that don't have enough distractors
 
@@ -111,8 +110,12 @@ def filter_dataset(
     if isinstance(dataset, DatasetDict):
         if "test" in dataset:
             dataset = dataset["test"]
+        elif len(dataset.keys()) == 1:
+            dataset = next(iter(dataset.values()))
         else:
-            dataset = list(dataset.values())[0]
+            raise ValueError(
+                f"Dataset has multiple splits {list(dataset.keys())}; expected 'test' split."
+            )
     
     # Set up output path
     if output_path is None:
@@ -131,23 +134,23 @@ def filter_dataset(
     for idx, entry in enumerate(tqdm(entries, desc="Filtering")):
         # Get gold answer
         gold_answers = entry.get("choices_answer", [])
-        if not gold_answers:
-            # Fallback
-            options = entry.get("options", [])
-            answer_idx = entry.get("answer_index", 0)
-            gold_answer = options[answer_idx] if answer_idx < len(options) else ""
-        else:
-            gold_answer = gold_answers[0]
+        gold_answer = gold_answers[0] if gold_answers else ""
         
         if not gold_answer:
             skipped_count += 1
             continue
         
         # Get human distractors
-        human_distractors = get_distractor_column(entry, DistractorType.COND_HUMAN_Q_A)
+        human_values = entry.get(DistractorType.COND_HUMAN_Q_A.value)
+        if human_values is None:
+            raise KeyError(f"Missing required column '{DistractorType.COND_HUMAN_Q_A.value}'")
+        human_distractors = list(human_values)
         
         # Get model distractors
-        model_distractors = get_distractor_column(entry, config.model_distractor_type)
+        model_values = entry.get(config.model_distractor_type.value)
+        if model_values is None:
+            raise KeyError(f"Missing required column '{config.model_distractor_type.value}'")
+        model_distractors = list(model_values)
         
         # Check if we have enough
         if config.require_minimum:
@@ -256,7 +259,7 @@ def create_standard_subsets(
         config = FilterConfig(
             num_human=num_human,
             num_model=num_model,
-            model_distractor_type=DistractorType.COND_MODEL_Q_A,
+            model_distractor_type=DistractorType.COND_MODEL_Q_A_SCRATCH,
         )
         
         output_path = output_base / name
@@ -300,8 +303,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--model-type",
         type=str,
-        choices=["cond_model_q_a", "cond_model_q_a_dhuman", "cond_model_q_a_dmodel"],
-        default="cond_model_q_a",
+        choices=["cond_model_q_a_scratch", "cond_model_q_a_dhuman", "cond_model_q_a_dmodel"],
+        default="cond_model_q_a_scratch",
         help="Type of model distractors to use",
     )
     parser.add_argument(
@@ -331,7 +334,7 @@ if __name__ == "__main__":
         )
     else:
         model_type = {
-            "cond_model_q_a": DistractorType.COND_MODEL_Q_A,
+            "cond_model_q_a_scratch": DistractorType.COND_MODEL_Q_A_SCRATCH,
             "cond_model_q_a_dhuman": DistractorType.COND_MODEL_Q_A_DHUMAN,
             "cond_model_q_a_dmodel": DistractorType.COND_MODEL_Q_A_DMODEL,
         }[args.model_type]

@@ -1,5 +1,3 @@
-import pytest
-import os
 from pathlib import Path
 from config import (
     DATASETS_DIR,
@@ -23,8 +21,7 @@ def test_path_constants():
 
 def test_distractor_type_enum():
     """Verify DistractorType enum values."""
-    assert DistractorType.COND_HUMAN_Q_A.value == "cond_human_q_a"
-    assert DistractorType.COND_MODEL_Q_A.value == "cond_model_q_a"
+    assert DistractorType.COND_HUMAN_Q_A.value == "choices_human"
     assert DistractorType.COND_MODEL_Q_A_SCRATCH.value == "cond_model_q_a_scratch"
     assert DistractorType.COND_MODEL_Q_A_DHUMAN.value == "cond_model_q_a_dhuman"
     assert DistractorType.COND_MODEL_Q_A_DMODEL.value == "cond_model_q_a_dmodel"
@@ -32,17 +29,13 @@ def test_distractor_type_enum():
 def test_get_distractor_column():
     """Verify distractor column retrieval."""
     entry = {
-        "cond_human_q_a": ["h1", "h2"],
-        "cond_model_q_a": ["m1", "m2"],
-        "choices_human": ["legacy_h1"],
+        "choices_human": ["h1", "h2"],
+        "cond_model_q_a_scratch": ["m1", "m2"],
     }
     
     # Test correct unified access
     assert get_distractor_column(entry, DistractorType.COND_HUMAN_Q_A) == ["h1", "h2"]
-    
-    # Test legacy fallback
-    legacy_entry = {"choices_human": ["legacy_h1"]}
-    assert get_distractor_column(legacy_entry, DistractorType.COND_HUMAN_Q_A) == ["legacy_h1"]
+    assert get_distractor_column(entry, DistractorType.COND_MODEL_Q_A_SCRATCH) == ["m1", "m2"]
     
     # Test empty
     assert get_distractor_column({}, DistractorType.COND_HUMAN_Q_A) == []

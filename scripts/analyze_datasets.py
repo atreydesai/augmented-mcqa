@@ -25,7 +25,7 @@ def analyze_dataset(name, entries, is_dict=False):
     # Print sample values for key columns
     keys_to_check = [
         "question", "options", "answer", "gold_answer", "answer_index", 
-        "category", "src", "subfield", "difficulty", "cond_human_q_a", 
+        "category", "src", "subfield", "difficulty", "choices_human", 
         "lines", "choices", "answerKey"
     ]
     

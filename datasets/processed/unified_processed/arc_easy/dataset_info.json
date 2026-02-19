@@ -1,6 +1,29 @@
 {
+  "builder_name": "parquet",
   "citation": "",
+  "config_name": "default",
+  "dataset_name": "qgqa-unified-processed",
+  "dataset_size": 38351791,
   "description": "",
+  "download_checksums": {
+    "hf://datasets/atreydesai/qgqa-unified-processed@72eff4faa4740a60214a9ea6eaa3641094d77f09/data/arc_easy-00000-of-00001.parquet": {
+      "num_bytes": 538177,
+      "checksum": null
+    },
+    "hf://datasets/atreydesai/qgqa-unified-processed@72eff4faa4740a60214a9ea6eaa3641094d77f09/data/arc_challenge-00000-of-00001.parquet": {
+      "num_bytes": 337206,
+      "checksum": null
+    },
+    "hf://datasets/atreydesai/qgqa-unified-processed@72eff4faa4740a60214a9ea6eaa3641094d77f09/data/mmlu_pro-00000-of-00001.parquet": {
+      "num_bytes": 3044265,
+      "checksum": null
+    },
+    "hf://datasets/atreydesai/qgqa-unified-processed@72eff4faa4740a60214a9ea6eaa3641094d77f09/data/supergpqa-00000-of-00001.parquet": {
+      "num_bytes": 12475837,
+      "checksum": null
+    }
+  },
+  "download_size": 16395485,
   "features": {
     "question": {
       "dtype": "string",
@@ -168,8 +191,55 @@
         "_type": "Value"
       },
       "_type": "List"
+    },
+    "cond_human_q_a": {
+      "feature": {
+        "dtype": "string",
+        "_type": "Value"
+      },
+      "_type": "List"
+    },
+    "cond_model_q_a": {
+      "feature": {
+        "dtype": "null",
+        "_type": "Value"
+      },
+      "_type": "List"
     }
   },
   "homepage": "",
-  "license": ""
+  "license": "",
+  "size_in_bytes": 54747276,
+  "splits": {
+    "arc_easy": {
+      "name": "arc_easy",
+      "num_bytes": 1302459,
+      "num_examples": 2369,
+      "dataset_name": "qgqa-unified-processed"
+    },
+    "arc_challenge": {
+      "name": "arc_challenge",
+      "num_bytes": 738744,
+      "num_examples": 1168,
+      "dataset_name": "qgqa-unified-processed"
+    },
+    "mmlu_pro": {
+      "name": "mmlu_pro",
+      "num_bytes": 6488947,
+      "num_examples": 4895,
+      "dataset_name": "qgqa-unified-processed"
+    },
+    "supergpqa": {
+      "name": "supergpqa",
+      "num_bytes": 29821641,
+      "num_examples": 23158,
+      "dataset_name": "qgqa-unified-processed"
+    }
+  },
+  "version": {
+    "version_str": "0.0.0",
+    "major": 0,
+    "minor": 0,
+    "patch": 0
+  }
 }

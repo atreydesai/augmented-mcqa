@@ -178,7 +178,7 @@ def process_mmlu_pro(
         if sort_res is None:
             return None
             
-        human_distractors, synthetic_distractors, gold_answer = sort_res
+        human_distractors, _synthetic_distractors, gold_answer = sort_res
         
         # Now apply cleaning and fixes to the entry
         category = entry.get("category", "").lower()
@@ -205,7 +205,6 @@ def process_mmlu_pro(
             "question": question,
             # Schema Unification
             "choices_human": human_distractors,
-            "legacy_choices_synthetic": synthetic_distractors,
             "answer": gold_answer,
             "choices_answer": [gold_answer] if gold_answer else [],
             "whitespace_bug_fixed": had_whitespace_bug,
@@ -292,7 +291,6 @@ def verify_sorting(output_path: Path, num_samples: int = 5) -> None:
             print(f"  Question: {entry['question'][:80]}...")
             print(f"  Gold: {entry.get('choices_answer', [])}")
             print(f"  Human distractors: {len(entry.get(DistractorType.COND_HUMAN_Q_A.value, []))}")
-            print(f"  Model distractors: {len(entry.get(DistractorType.COND_MODEL_Q_A.value, []))}")
 
 
 def main():

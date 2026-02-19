@@ -38,6 +38,16 @@ def test_branching21_matrix_count(tmp_path):
     )
     assert len(configs) == 21
     assert all(cfg.sampling_strategy == "branching_cumulative" for cfg in configs)
+    assert all(cfg.branching_mode == "human_prefix" for cfg in configs)
+
+    pairs = {(cfg.num_human, cfg.num_model) for cfg in configs}
+    expected_pairs = (
+        {(0, m) for m in range(1, 7)}
+        | {(1, m) for m in range(0, 6)}
+        | {(2, m) for m in range(0, 5)}
+        | {(3, m) for m in range(0, 4)}
+    )
+    assert pairs == expected_pairs
 
 
 def test_core16_uses_independent_sampling(tmp_path):

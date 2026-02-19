@@ -4,7 +4,7 @@ ARC Dataset Processor.
 Processes ARC-Easy and ARC-Challenge datasets with:
 1. Exact column parsing based on HuggingFace structure
 2. Conversion to unified format
-3. Synthetic distractor generation (cond_model_q_a)
+3. Synthetic distractor generation (cond_model_q_a_scratch)
 4. Conditioned-on-synthetic distractor generation (cond_model_q_a_dmodel)
 """
 
@@ -87,7 +87,7 @@ def load_arc_dataset(
             "answer_letter": answer_letter,
             "dataset_type": dataset_type.value,
             "category": "", # ARC doesn't have categories
-            # Rename cond_human_q_a -> choices_human
+            # Human distractors are stored in choices_human
             "choices_human": [
                 opt for i, opt in enumerate(options) if i != answer_index
             ],
@@ -151,7 +151,7 @@ def process_arc_for_experiments(
 def add_synthetic_distractors_to_arc(
     entries: List[Dict[str, Any]],
     synthetic_distractors: List[List[str]],
-    distractor_type: DistractorType = DistractorType.COND_MODEL_Q_A,
+    distractor_type: DistractorType = DistractorType.COND_MODEL_Q_A_SCRATCH,
 ) -> List[Dict[str, Any]]:
     """
     Add synthetic distractors to ARC entries.
@@ -183,7 +183,7 @@ def get_arc_stats(entries: List[Dict[str, Any]]) -> Dict[str, Any]:
             1 for e in entries if DistractorType.COND_HUMAN_Q_A.value in e
         ),
         "has_model_distractors": sum(
-            1 for e in entries if DistractorType.COND_MODEL_Q_A.value in e
+            1 for e in entries if DistractorType.COND_MODEL_Q_A_SCRATCH.value in e
         ),
         "has_conditioned_distractors": sum(
             1 for e in entries if DistractorType.COND_MODEL_Q_A_DMODEL.value in e

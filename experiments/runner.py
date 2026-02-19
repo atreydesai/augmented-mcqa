@@ -16,10 +16,7 @@ from tqdm import tqdm
 
 from .config import ExperimentConfig
 from models import get_client, ModelClient
-from config import (
-    DistractorType,
-    get_distractor_column,
-)
+from config import DistractorType
 from evaluation.evaluator import build_mcqa_prompt
 
 
@@ -205,7 +202,12 @@ class ExperimentRunner:
     Runs experiments based on ExperimentConfig.
     """
     
-    def __init__(self, config: ExperimentConfig):
+    def __init__(
+        self,
+        config: ExperimentConfig,
+        client: Optional[ModelClient] = None,
+        dataset_cache: Optional[Dict[tuple[str, str], Any]] = None,
+    ):
         """
         Initialize runner with configuration.
         
@@ -213,7 +215,8 @@ class ExperimentRunner:
             config: Experiment configuration
         """
         self.config = config
-        self._client: Optional[ModelClient] = None
+        self._client: Optional[ModelClient] = client
+        self._dataset_cache = dataset_cache
         self._adapter: Optional[Any] = None
     
     def _get_client(self) -> ModelClient:
@@ -230,38 +233,98 @@ class ExperimentRunner:
     
     def _load_data(self) -> Any:
         """Load and optionally filter dataset by dataset_type."""
-        if self._adapter is None:
-            from datasets import load_from_disk
-            dataset = load_from_disk(str(self.config.dataset_path))
+        if self._adapter is not None:
+            return self._adapter
 
-            # If dataset_type_filter is specified, try to use it as a split name first
-            # (unified datasets are DatasetDicts with splits like "mmlu_pro", "arc_easy", etc.)
-            if self.config.dataset_type_filter:
-                if hasattr(dataset, "keys") and self.config.dataset_type_filter in dataset:
-                    data = dataset[self.config.dataset_type_filter]
-                elif hasattr(dataset, "column_names") and "dataset_type" in dataset.column_names:
-                    # Flat dataset with a dataset_type column
-                    dt_filter = self.config.dataset_type_filter
-                    data = dataset.filter(lambda x: x["dataset_type"] == dt_filter)
-                else:
-                    # Fallback: use first available split
-                    if "test" in dataset:
-                        data = dataset["test"]
-                    elif hasattr(dataset, "values"):
-                        data = list(dataset.values())[0]
-                    else:
-                        data = dataset
+        dataset_path_key = str(self.config.dataset_path)
+        dataset_type_key = self.config.dataset_type_filter or "__all__"
+        adapter_cache_key = (dataset_path_key, dataset_type_key)
+        raw_cache_key = (dataset_path_key, "__raw__")
+
+        if self._dataset_cache is not None and adapter_cache_key in self._dataset_cache:
+            self._adapter = self._dataset_cache[adapter_cache_key]
+            return self._adapter
+
+        from datasets import load_from_disk
+        if self._dataset_cache is not None and raw_cache_key in self._dataset_cache:
+            dataset = self._dataset_cache[raw_cache_key]
+        else:
+            dataset = load_from_disk(str(self.config.dataset_path))
+            if self._dataset_cache is not None:
+                self._dataset_cache[raw_cache_key] = dataset
+
+        # If dataset_type_filter is specified, try to use it as a split name first
+        # (unified datasets are DatasetDicts with splits like "mmlu_pro", "arc_easy", etc.)
+        if self.config.dataset_type_filter:
+            if hasattr(dataset, "keys") and self.config.dataset_type_filter in dataset:
+                data = dataset[self.config.dataset_type_filter]
+            elif hasattr(dataset, "column_names") and "dataset_type" in dataset.column_names:
+                # Flat dataset with a dataset_type column
+                dt_filter = self.config.dataset_type_filter
+                data = dataset.filter(lambda x: x["dataset_type"] == dt_filter)
+                if len(data) == 0:
+                    raise ValueError(
+                        f"dataset_type_filter='{dt_filter}' matched zero rows in {self.config.dataset_path}"
+                    )
             else:
-                # No filter: use test split or first split
+                available_splits = list(dataset.keys()) if hasattr(dataset, "keys") else []
+                raise ValueError(
+                    f"dataset_type_filter='{self.config.dataset_type_filter}' not found in {self.config.dataset_path}. "
+                    f"Available splits: {available_splits}"
+                )
+        else:
+            # No filter: require an unambiguous split selection.
+            if hasattr(dataset, "keys"):
                 if "test" in dataset:
                     data = dataset["test"]
-                elif hasattr(dataset, "values"):
-                    data = list(dataset.values())[0]
+                elif len(dataset.keys()) == 1:
+                    data = next(iter(dataset.values()))
                 else:
-                    data = dataset
+                    raise ValueError(
+                        f"Dataset has multiple splits {list(dataset.keys())}; "
+                        "set dataset_type_filter explicitly."
+                    )
+            else:
+                data = dataset
 
-            self._adapter = data
+        self._adapter = data
+        if self._dataset_cache is not None:
+            self._dataset_cache[adapter_cache_key] = data
         return self._adapter
+
+    def _branching_model_column(self) -> Optional[str]:
+        """Return branching-specific model column for human-prefix mode."""
+        if self.config.branching_mode != "human_prefix":
+            return None
+
+        if self.config.num_human <= 0:
+            return DistractorType.COND_MODEL_Q_A_SCRATCH.value
+
+        column_map = {
+            1: "cond_model_q_a_dhuman_h1",
+            2: "cond_model_q_a_dhuman_h2",
+            3: "cond_model_q_a_dhuman_h3",
+        }
+        return column_map.get(self.config.num_human)
+
+    @staticmethod
+    def _require_distractor_column(entry: Dict[str, Any], column_name: str) -> List[str]:
+        values = entry.get(column_name)
+        if values is None:
+            raise KeyError(f"Missing required distractor column '{column_name}'")
+        return list(values)
+
+    def _get_model_distractors(self, entry: Dict[str, Any]) -> List[str]:
+        """Resolve model distractor list for the current config/entry."""
+        branch_column = self._branching_model_column()
+        if branch_column:
+            if branch_column not in entry or entry[branch_column] is None:
+                raise KeyError(
+                    f"Missing required branching column '{branch_column}' for "
+                    f"branching_mode={self.config.branching_mode}, num_human={self.config.num_human}"
+                )
+            return list(entry[branch_column])
+        return self._require_distractor_column(entry, self.config.model_distractor_type.value)
 
     def _select_distractors(
         self,
@@ -276,6 +339,12 @@ class ExperimentRunner:
         - branching_cumulative: use deterministic per-question order and take prefixes
         """
         if self.config.sampling_strategy == "branching_cumulative":
+            if self.config.branching_mode == "human_prefix":
+                return (
+                    list(human_distractors[: self.config.num_human]),
+                    list(model_distractors[: self.config.num_model]),
+                )
+
             human_order = list(human_distractors)
             model_order = list(model_distractors)
 
@@ -334,53 +403,51 @@ class ExperimentRunner:
         gold_answers = entry.get("choices_answer", [])
         gold_answer = gold_answers[0] if gold_answers else ""
         if not gold_answer:
-            options = entry.get("options", [])
-            answer_idx = entry.get("answer_index", 0)
-            if answer_idx < len(options):
-                gold_answer = options[answer_idx]
-        if not gold_answer:
             return "missing_gold_answer"
 
-        human_distractors = get_distractor_column(entry, DistractorType.COND_HUMAN_Q_A)
+        human_distractors = self._require_distractor_column(
+            entry, DistractorType.COND_HUMAN_Q_A.value
+        )
         if len(human_distractors) < self.config.num_human:
             return "insufficient_human_distractors"
 
-        model_distractors = get_distractor_column(entry, self.config.model_distractor_type)
+        model_distractors = self._get_model_distractors(entry)
         if len(model_distractors) < self.config.num_model:
             return "insufficient_model_distractors"
 
         return "unknown"
     
-    def _prepare_entry(self, entry, idx: int) -> Optional[Dict[str, Any]]:
+    def _prepare_entry(self, entry, idx: int) -> Dict[str, Any]:
         """
         Prepare an entry for evaluation.
         
         Assembles options with specified distractor configuration.
         
-        Returns None if entry doesn't have enough distractors.
+        Raises ValueError if required fields/distractors are missing.
         """
-        # Get gold answer
+        # Gold answer must be provided by processed datasets.
         gold_answers = entry.get("choices_answer", [])
-        if gold_answers:
-            gold_answer = gold_answers[0]
-        else:
-            # Fallback
-            options = entry.get("options", [])
-            answer_idx = entry.get("answer_index", 0)
-            gold_answer = options[answer_idx] if answer_idx < len(options) else ""
-            
+        gold_answer = gold_answers[0] if gold_answers else ""
         if not gold_answer:
-            return None
+            raise ValueError("Missing choices_answer[0]; processed dataset schema is required")
         
         # Get distractors
-        human_distractors = get_distractor_column(entry, DistractorType.COND_HUMAN_Q_A)
-        model_distractors = get_distractor_column(entry, self.config.model_distractor_type)
+        human_distractors = self._require_distractor_column(
+            entry, DistractorType.COND_HUMAN_Q_A.value
+        )
+        model_distractors = self._get_model_distractors(entry)
         
         # Check if we have enough
         if len(human_distractors) < self.config.num_human:
-            return None
+            raise ValueError(
+                f"Insufficient human distractors: required={self.config.num_human}, "
+                f"found={len(human_distractors)}"
+            )
         if len(model_distractors) < self.config.num_model:
-            return None
+            raise ValueError(
+                f"Insufficient model distractors: required={self.config.num_model}, "
+                f"found={len(model_distractors)}"
+            )
 
         selected_human, selected_model = self._select_distractors(
             human_distractors,
@@ -445,18 +512,11 @@ class ExperimentRunner:
         self.config.save()
         
         # Run evaluations
-        skipped = 0
-        skip_reasons: Dict[str, int] = {}
         quiet = getattr(self.config, '_quiet', False)
         iterator = enumerate(entries) if quiet else enumerate(tqdm(entries, desc="Evaluating"))
         for idx, entry in iterator:
             # Prepare entry
             prepared = self._prepare_entry(entry, idx)
-            if prepared is None:
-                skipped += 1
-                reason = self._get_skip_reason(entry)
-                skip_reasons[reason] = skip_reasons.get(reason, 0) + 1
-                continue
             
             # Build prompt
             prompt = build_mcqa_prompt(
@@ -524,15 +584,6 @@ class ExperimentRunner:
         
         results.end_time = datetime.now()
         
-        if skipped > 0:
-            print(f"  Skipped {skipped} entries (insufficient distractors)")
-            print(f"  Skip breakdown: {skip_reasons}")
-            if len(results.results) == 0 and skip_reasons.get("insufficient_model_distractors", 0) > 0:
-                print(
-                    "  Hint: selected model distractor column appears empty for this dataset path. "
-                    "Use an augmented dataset containing cond_model_q_a_* columns."
-                )
-        
         print(f"\n=== Results ===")
         print(f"Accuracy: {results.accuracy:.2%}")
         if self.config.eval_mode == "behavioral":
@@ -545,7 +596,11 @@ class ExperimentRunner:
         return results
 
 
-def run_experiment(config: ExperimentConfig) -> ExperimentResults:
+def run_experiment(
+    config: ExperimentConfig,
+    client: Optional[ModelClient] = None,
+    dataset_cache: Optional[Dict[tuple[str, str], Any]] = None,
+) -> ExperimentResults:
     """
     Convenience function to run an experiment.
     
@@ -555,7 +610,7 @@ def run_experiment(config: ExperimentConfig) -> ExperimentResults:
     Returns:
         ExperimentResults
     """
-    runner = ExperimentRunner(config)
+    runner = ExperimentRunner(config, client=client, dataset_cache=dataset_cache)
     return runner.run()
 
 

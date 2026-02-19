@@ -42,16 +42,33 @@ Or run from manifest:
 uv run python scripts/eval_matrix.py run --manifest results/manifests/my_plan.json --skip-existing
 ```
 
+During `run`, the process reuses a shared model client per model/settings key and caches
+dataset adapters across configs. For local/vLLM models this avoids reloading weights for
+every dataset/distractor configuration in the same shard/job.
+
+The evaluation runner is fail-fast by design:
+
+- no fallback to an arbitrary split when `dataset_type_filter` is missing/invalid
+- no fallback from branching-specific columns to generic model columns
+- no silent skip-on-missing distractor metadata
+- no compatibility-column fallback during runtime (canonical columns are required)
+
 ## Presets
 
 - `core16`
   - Historical label for the core matrix
   - 15 unique configs after deduplicating overlap (`3H0M` appears in two conceptual groups)
 - `branching21`
-  - Full grid `1H..3H` x `0M..6M`
+  - Human-prefix branching layout:
+    - `0H+1..6M`, `1H+0..5M`, `2H+0..4M`, `3H+0..3M`
   - Cumulative branching semantics per question:
-    - Example: `1H0M -> 1H1M -> 1H2M` carries the same selected `H` distractor forward and adds `M` distractors by deterministic prefix expansion
-    - Option order is re-shuffled deterministically for each config
+    - Human branch is fixed prefix order (`D1`, `D1+D2`, `D1+D2+D3`)
+    - Model branch expands by prefix within each human branch (`+M1`, `+M1+M2`, ...)
+    - Option order is re-shuffled deterministically per config
+  - Requires branching generation columns:
+    - `cond_model_q_a_dhuman_h1`
+    - `cond_model_q_a_dhuman_h2`
+    - `cond_model_q_a_dhuman_h3`
 
 Difficulty is represented by dataset type selection, not a separate pipeline:
 

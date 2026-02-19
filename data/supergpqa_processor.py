@@ -80,7 +80,7 @@ def load_supergpqa_dataset(
                 "subfield": raw.get("subfield", ""),
                 "difficulty": raw.get("difficulty", "middle"),
                 "is_calculation": raw.get("is_calculation", False),
-                # Rename cond_human_q_a -> choices_human
+                # Human distractors are stored in choices_human
                 "choices_human": [
                     opt for i, opt in enumerate(options) if i != answer_index
                 ],
@@ -143,7 +143,7 @@ def process_supergpqa_for_experiments(
 def add_synthetic_distractors_to_supergpqa(
     entries: List[Dict[str, Any]],
     synthetic_distractors: List[List[str]],
-    distractor_type: DistractorType = DistractorType.COND_MODEL_Q_A,
+    distractor_type: DistractorType = DistractorType.COND_MODEL_Q_A_SCRATCH,
 ) -> List[Dict[str, Any]]:
     """
     Add synthetic distractors to SuperGPQA entries.
@@ -192,7 +192,7 @@ def get_supergpqa_stats(entries: List[Dict[str, Any]]) -> Dict[str, Any]:
             1 for e in entries if DistractorType.COND_HUMAN_Q_A.value in e
         ),
         "has_model_distractors": sum(
-            1 for e in entries if DistractorType.COND_MODEL_Q_A.value in e
+            1 for e in entries if DistractorType.COND_MODEL_Q_A_SCRATCH.value in e
         ),
     }
     return stats

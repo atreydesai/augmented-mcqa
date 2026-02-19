@@ -1,0 +1,77 @@
+{
+  "builder_name": "json",
+  "citation": "",
+  "config_name": "default",
+  "dataset_name": "super_gpqa",
+  "dataset_size": 19989550,
+  "description": "",
+  "download_checksums": {
+    "hf://datasets/m-a-p/SuperGPQA@4430d4458112c7d4497fdcf94d7cc223313d6acf/SuperGPQA-all.jsonl": {
+      "num_bytes": 23957124,
+      "checksum": null
+    }
+  },
+  "download_size": 23957124,
+  "features": {
+    "uuid": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "question": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "options": {
+      "feature": {
+        "dtype": "string",
+        "_type": "Value"
+      },
+      "_type": "List"
+    },
+    "answer": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "answer_letter": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "discipline": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "field": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "subfield": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "difficulty": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "is_calculation": {
+      "dtype": "bool",
+      "_type": "Value"
+    }
+  },
+  "homepage": "",
+  "license": "",
+  "size_in_bytes": 43946674,
+  "splits": {
+    "train": {
+      "name": "train",
+      "num_bytes": 19989550,
+      "num_examples": 26529,
+      "dataset_name": "super_gpqa"
+    }
+  },
+  "version": {
+    "version_str": "0.0.0",
+    "major": 0,
+    "minor": 0,
+    "patch": 0
+  }
+}

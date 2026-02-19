@@ -24,6 +24,7 @@ from config import (
 # Evaluation modes
 EvalMode = Literal["accuracy", "behavioral"]
 SamplingStrategy = Literal["independent", "branching_cumulative"]
+BranchingMode = Literal["shuffled_prefix", "human_prefix"]
 
 
 @dataclass
@@ -61,11 +62,12 @@ class ExperimentConfig:
     # Distractor configuration
     num_human: int = 3
     num_model: int = 0
-    model_distractor_type: DistractorType = DistractorType.COND_MODEL_Q_A
+    model_distractor_type: DistractorType = DistractorType.COND_MODEL_Q_A_SCRATCH
     
     # Evaluation settings
     eval_mode: EvalMode = "accuracy"
     sampling_strategy: SamplingStrategy = "independent"
+    branching_mode: BranchingMode = "shuffled_prefix"
     choices_only: bool = False
     limit: Optional[int] = None
     seed: int = RANDOM_SEED
@@ -110,6 +112,8 @@ class ExperimentConfig:
             raise ValueError(
                 "sampling_strategy must be 'independent' or 'branching_cumulative'"
             )
+        if self.branching_mode not in {"shuffled_prefix", "human_prefix"}:
+            raise ValueError("branching_mode must be 'shuffled_prefix' or 'human_prefix'")
     
     @property
     def config_id(self) -> str:
@@ -141,6 +145,7 @@ class ExperimentConfig:
             "model_distractor_type": self.model_distractor_type.value,
             "eval_mode": self.eval_mode,
             "sampling_strategy": self.sampling_strategy,
+            "branching_mode": self.branching_mode,
             "choices_only": self.choices_only,
             "limit": self.limit,
             "seed": self.seed,

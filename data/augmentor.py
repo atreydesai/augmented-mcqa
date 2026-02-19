@@ -4,7 +4,7 @@ Synthetic distractor generator for MCQA datasets.
 Supports multiple generation modes:
 - FROM_SCRATCH: Generate distractors from question + answer only
 - CONDITIONED_HUMAN: Generate conditioned on human distractors
-- CONDITIONED_SYNTHETIC: Generate conditioned on existing synthetic distractors
+- CONDITIONED_SYNTHETIC: Generate conditioned on scratch distractors
 
 Supports multiple model providers:
 - OpenAI (GPT-4, etc.)
@@ -25,15 +25,9 @@ from datasets import Dataset, DatasetDict, load_from_disk
 from tqdm import tqdm
 
 from config import (
-    DATASETS_DIR,
-    AUGMENTED_DATASETS_DIR,
     RESULTS_DIR,
-    RANDOM_SEED,
     DistractorType,
-    get_distractor_column,
     DISTRACTOR_GENERATION_PROMPT,
-    DISTRACTOR_GENERATION_PROMPT_CONDITIONED,
-    get_api_key,
 )
 from models import get_client
 from data.hub_utils import push_dataset_to_hub
@@ -43,11 +37,10 @@ class AugmentorMode(Enum):
     """
     Generation mode for synthetic distractors.
     
-    IMPORTANT: cond_model_q_a contains EXISTING synthetic distractors from MMLU-Pro.
     These modes generate NEW distractors:
     - FROM_SCRATCH: New distractors from Q+A only (no conditioning)
     - CONDITIONED_HUMAN: New distractors conditioned on 3 human distractors
-    - CONDITIONED_SYNTHETIC: New distractors conditioned on 3 random existing synthetic
+    - CONDITIONED_SYNTHETIC: New distractors conditioned on 3 random scratch distractors
     """
     # Generate from question + answer only
     # Output: cond_model_q_a_scratch (NEW generated, not the existing MMLU-Pro ones)
@@ -57,9 +50,22 @@ class AugmentorMode(Enum):
     # Output: cond_model_q_a_dhuman
     CONDITIONED_HUMAN = "conditioned_human"
     
-    # Generate conditioned on 3 RANDOMLY SELECTED existing synthetic distractors
+    # Generate conditioned on 3 RANDOMLY SELECTED scratch distractors
     # Output: cond_model_q_a_dmodel
     CONDITIONED_SYNTHETIC = "conditioned_synthetic"
+
+
+class NonRetryableAugmentationError(RuntimeError):
+    """Raised for deterministic data/schema issues that should fail fast."""
+
+
+def _require_column_list(entry: Dict[str, Any], column_name: str) -> List[str]:
+    values = entry.get(column_name)
+    if values is None:
+        raise NonRetryableAugmentationError(
+            f"Missing required column '{column_name}' in dataset entry"
+        )
+    return list(values)
 
 
 @dataclass
@@ -73,6 +79,49 @@ class GenerationConfig:
     max_retries: int = 3
     retry_delay: float = 1.0
     save_interval: int = 50  # Save intermediate results every N entries
+    reasoning_effort: Optional[str] = "minimal"
+    generate_branching_prefix_columns: bool = False
+
+
+BRANCHING_PREFIX_MODEL_COLUMNS = {
+    1: "cond_model_q_a_dhuman_h1",
+    2: "cond_model_q_a_dhuman_h2",
+    3: "cond_model_q_a_dhuman_h3",
+}
+
+
+def _build_conditioned_prompt(
+    question: str,
+    gold_answer: str,
+    context_distractors: List[str],
+    num_new_distractors: int,
+) -> str:
+    """Build a conditioned generation prompt for variable context/prefix lengths."""
+    if num_new_distractors <= 0:
+        raise ValueError(f"num_new_distractors must be > 0, got {num_new_distractors}")
+
+    lines = [f"A: {gold_answer}"]
+    for idx, distractor in enumerate(context_distractors, start=1):
+        letter = chr(ord("A") + idx)
+        lines.append(f"{letter}: {distractor}")
+
+    start_letter_ord = ord("A") + len(context_distractors) + 1
+    output_letters = [
+        chr(start_letter_ord + offset)
+        for offset in range(num_new_distractors)
+    ]
+    output_letters_str = ", ".join(output_letters)
+
+    return (
+        "I have a multiple-choice question with existing options where A is the correct answer.\n"
+        "Please generate additional plausible but incorrect options.\n\n"
+        f"Question: {question}\n"
+        "Existing Options:\n"
+        + "\n".join(lines)
+        + "\n\n"
+        f"Generate exactly {num_new_distractors} new incorrect options: {output_letters_str}.\n"
+        "Output each option on a separate line in the format \"<LETTER>: <option>\"."
+    )
 
 
 
@@ -100,18 +149,13 @@ def parse_generated_distractors(response: str, expected_count: int = 6) -> List[
             if distractor:
                 distractors.append(distractor)
     
-    # Fallback: if we didn't get enough, just take any lines that look like options
-    if len(distractors) < expected_count:
-        lines = [l.strip() for l in response.strip().split('\n') if l.strip()]
-        for line in lines:
-            if ":" in line and line[0] in "ABCDEFGHIJ":
-                parts = line.split(":", 1)
-                if len(parts) > 1:
-                    cleaned = parts[1].strip()
-                    if cleaned and cleaned not in distractors:
-                        distractors.append(cleaned)
-    
-    return distractors[:expected_count]
+    if len(distractors) != expected_count:
+        raise NonRetryableAugmentationError(
+            f"Expected exactly {expected_count} distractors, parsed {len(distractors)}. "
+            "Model output format is invalid."
+        )
+
+    return distractors
 
 
 def build_prompt(
@@ -131,35 +175,39 @@ def build_prompt(
         ), []
     
     elif mode == AugmentorMode.CONDITIONED_HUMAN:
-        distractors = entry.get("choices_human", [])
+        distractors = _require_column_list(entry, DistractorType.COND_HUMAN_Q_A.value)
         if not distractors or len(distractors) < 3:
-            # Fallback to scratch if no human distractors
-            return DISTRACTOR_GENERATION_PROMPT.format(question=question, gold_answer=gold_answer), []
+            raise NonRetryableAugmentationError(
+                f"CONDITIONED_HUMAN requires at least 3 human distractors in "
+                f"{DistractorType.COND_HUMAN_Q_A.value}"
+            )
         
         selected = distractors[:3]
-        return DISTRACTOR_GENERATION_PROMPT_CONDITIONED.format(
+        return _build_conditioned_prompt(
             question=question,
             gold_answer=gold_answer,
-            distractor_1=selected[0],
-            distractor_2=selected[1],
-            distractor_3=selected[2],
+            context_distractors=selected,
+            num_new_distractors=6,
         ), selected
     
     elif mode == AugmentorMode.CONDITIONED_SYNTHETIC:
         # User instructions: pick 3 from cond_model_q_a_scratch
-        scratch_distractors = entry.get(DistractorType.COND_MODEL_Q_A_SCRATCH.value, [])
+        scratch_distractors = _require_column_list(
+            entry, DistractorType.COND_MODEL_Q_A_SCRATCH.value
+        )
         if not scratch_distractors or len(scratch_distractors) < 3:
-            return DISTRACTOR_GENERATION_PROMPT.format(question=question, gold_answer=gold_answer), []
+            raise NonRetryableAugmentationError(
+                "CONDITIONED_SYNTHETIC requires at least 3 distractors in cond_model_q_a_scratch"
+            )
         
         # We don't random sample here so it's deterministic and traceable if we just take first 3, 
         # or we random sample but return which ones we picked. User asked for 3 of the 6 previously generated.
         selected = random.sample(scratch_distractors, 3)
-        return DISTRACTOR_GENERATION_PROMPT_CONDITIONED.format(
+        return _build_conditioned_prompt(
             question=question,
             gold_answer=gold_answer,
-            distractor_1=selected[0],
-            distractor_2=selected[1],
-            distractor_3=selected[2],
+            context_distractors=selected,
+            num_new_distractors=6,
         ), selected
     
     raise ValueError(f"Unknown mode: {mode}")
@@ -203,6 +251,70 @@ def format_options_for_prompt(options: List[str]) -> str:
     return "\n".join(formatted)
 
 
+def _generate_branching_prefix_columns(
+    *,
+    new_entry: Dict[str, Any],
+    client,
+    config: GenerationConfig,
+    question: str,
+    gold_answer: str,
+    human_distractors: List[str],
+    entry_idx: int,
+) -> None:
+    """
+    Generate branching-specific model distractors for human-prefix conditions:
+    - h=1 -> 5 model distractors
+    - h=2 -> 4 model distractors
+    - h=3 -> 3 model distractors
+    """
+    for human_prefix_count, column_name in BRANCHING_PREFIX_MODEL_COLUMNS.items():
+        model_count = 6 - human_prefix_count
+        if len(human_distractors) < human_prefix_count:
+            raise NonRetryableAugmentationError(
+                f"Branching generation requires at least {human_prefix_count} human distractors; "
+                f"found {len(human_distractors)}"
+            )
+
+        prefix_humans = human_distractors[:human_prefix_count]
+        prompt = _build_conditioned_prompt(
+            question=question,
+            gold_answer=gold_answer,
+            context_distractors=prefix_humans,
+            num_new_distractors=model_count,
+        )
+
+        success = False
+        for attempt in range(config.max_retries):
+            try:
+                response = client.generate(prompt=prompt, max_tokens=config.max_tokens)
+                generated = parse_generated_distractors(response.text, expected_count=model_count)
+                new_entry[column_name] = generated
+                new_entry[f"{column_name}_model_input"] = prompt
+                new_entry[f"{column_name}_model_output"] = response.text
+                success = True
+                break
+            except Exception as exc:
+                delay = config.retry_delay * (2 ** attempt)
+                if attempt < config.max_retries - 1:
+                    print(
+                        f"⚠️ Entry {entry_idx}, branching h={human_prefix_count}, "
+                        f"attempt {attempt + 1}/{config.max_retries}: {exc}. "
+                        f"Retrying in {delay:.1f}s..."
+                    )
+                    time.sleep(delay)
+                else:
+                    print(
+                        f"❌ Entry {entry_idx}, branching h={human_prefix_count}: "
+                        f"Failed after {config.max_retries} attempts: {exc}"
+                    )
+
+        if not success:
+            raise RuntimeError(
+                f"Failed branching generation for entry={entry_idx}, h={human_prefix_count}, "
+                f"column={column_name} after {config.max_retries} retries"
+            )
+
+
 def augment_dataset(
     dataset_path: Path,
     config: GenerationConfig,
@@ -225,6 +337,9 @@ def augment_dataset(
         final_dataset_dict = {}
         items = dataset.items()
         if splits:
+            missing_splits = sorted(set(splits) - set(dataset.keys()))
+            if missing_splits:
+                raise ValueError(f"Requested splits not found: {missing_splits}")
             items = [(k, v) for k, v in items if k in splits]
         for split_name, ds in items:
             print(f"\nProcessing split: {split_name}")
@@ -249,7 +364,10 @@ def augment_dataset(
 
 def augment_single_dataset(dataset: Dataset, config: GenerationConfig, limit: Optional[int] = None) -> Dataset:
     """Process a single Dataset through all augmentation modes (scratch, human-conditioned, model-conditioned)."""
-    client = get_client(config.model_name)
+    client_kwargs: Dict[str, Any] = {}
+    if config.model_provider == "openai" and config.reasoning_effort is not None:
+        client_kwargs["reasoning_effort"] = config.reasoning_effort
+    client = get_client(config.model_name, **client_kwargs)
     
     entries = list(dataset)
     if limit:
@@ -287,7 +405,7 @@ def augment_single_dataset(dataset: Dataset, config: GenerationConfig, limit: Op
         if not answer and new_entry.get("choices_answer"):
             answer = new_entry["choices_answer"][0]
         
-        human_distractors = new_entry.get("choices_human", [])
+        human_distractors = _require_column_list(new_entry, DistractorType.COND_HUMAN_Q_A.value)
         
         for mode in modes_to_run:
             prefix = mode_prefixes[mode]
@@ -330,6 +448,8 @@ def augment_single_dataset(dataset: Dataset, config: GenerationConfig, limit: Op
                     break
                     
                 except Exception as e:
+                    if isinstance(e, NonRetryableAugmentationError):
+                        raise
                     delay = config.retry_delay * (2 ** attempt)
                     if attempt < config.max_retries - 1:
                         print(f"⚠️ Entry {i}, mode {mode.value}, attempt {attempt+1}/{config.max_retries}: {e}. Retrying in {delay:.1f}s...")
@@ -338,13 +458,21 @@ def augment_single_dataset(dataset: Dataset, config: GenerationConfig, limit: Op
                         print(f"❌ Entry {i}, mode {mode.value}: Failed after {config.max_retries} attempts: {e}")
             
             if not success:
-                # Set typed defaults so schema stays consistent across splits
-                new_entry.setdefault(model_col, [])
-                new_entry.setdefault(f"{prefix}_options_randomized", [])
-                new_entry.setdefault(f"{prefix}_correct_answer_letter", "")
-                new_entry.setdefault(f"{prefix}_full_question", "")
-                new_entry.setdefault(f"{prefix}_model_input", "")
-                new_entry.setdefault(f"{prefix}_model_output", "")
+                raise RuntimeError(
+                    f"Failed generation for entry={i}, mode={mode.value} after {config.max_retries} retries"
+                )
+
+        # Branching prefix columns are expensive to generate; only do this when explicitly requested.
+        if config.generate_branching_prefix_columns:
+            _generate_branching_prefix_columns(
+                new_entry=new_entry,
+                client=client,
+                config=config,
+                question=new_entry.get("question", ""),
+                gold_answer=answer,
+                human_distractors=human_distractors,
+                entry_idx=i,
+            )
                 
         augmented_entries.append(new_entry)
         
@@ -381,4 +509,3 @@ if __name__ == "__main__":
         output_path=args.output,
         limit=args.limit
     )
-

@@ -84,3 +84,33 @@ model_id = "qwen3-8b"
 [aliases."Qwen/Qwen2.5-7B-Instruct"]
 provider = "local"
 model_id = "Qwen/Qwen2.5-7B-Instruct"
+
+[aliases."Nanbeige/Nanbeige4.1-3B"]
+provider = "local"
+model_id = "Nanbeige/Nanbeige4.1-3B"
+
+[aliases."Nanbeige/Nanbeige4.1-3B".defaults]
+# Model card uses a slow tokenizer plus explicit EOS token 166101.
+tokenizer_mode = "slow"
+trust_remote_code = true
+stop_token_ids = [166101]
+
+[aliases."Qwen/Qwen3-4B-Instruct-2507"]
+provider = "local"
+model_id = "Qwen/Qwen3-4B-Instruct-2507"
+
+[aliases."Qwen/Qwen3-4B-Instruct-2507".defaults]
+# Keep memory practical for local GPUs even though the model supports longer context.
+dtype = "bfloat16"
+max_model_len = 32768
+trust_remote_code = true
+
+[aliases."allenai/Olmo-3-7B-Instruct"]
+provider = "local"
+model_id = "allenai/Olmo-3-7B-Instruct"
+
+[aliases."allenai/Olmo-3-7B-Instruct".defaults]
+# OLMo-3 examples use BF16 inference; cap context for local footprint.
+dtype = "bfloat16"
+max_model_len = 32768
+trust_remote_code = true

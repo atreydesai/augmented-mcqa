@@ -1,10 +1,6 @@
-"""
-Local model client using vLLM for Augmented MCQA.
+"""Local model client using vLLM for Augmented MCQA."""
 
-Flash Attention is enabled by default in vLLM.
-"""
-
-from typing import Optional, List
+from typing import Optional, List, Any
 import os
 
 from .base import ModelClient, GenerationResult
@@ -26,6 +22,18 @@ class LocalClient(ModelClient):
         tensor_parallel_size: Optional[int] = None,
         seed: int = RANDOM_SEED,
         dtype: str = "auto",
+        max_model_len: Optional[int] = None,
+        tokenizer_mode: str = "auto",
+        trust_remote_code: bool = True,
+        temperature: float = 0.0,
+        top_p: Optional[float] = None,
+        top_k: Optional[int] = None,
+        min_p: Optional[float] = None,
+        repetition_penalty: Optional[float] = None,
+        presence_penalty: Optional[float] = None,
+        frequency_penalty: Optional[float] = None,
+        stop: Optional[str | list[str]] = None,
+        stop_token_ids: Optional[list[int]] = None,
     ):
         """
         Initialize local vLLM client.
@@ -36,11 +44,37 @@ class LocalClient(ModelClient):
             tensor_parallel_size: Number of GPUs for tensor parallelism (default: all available)
             seed: Random seed for reproducibility
             dtype: Data type ("auto", "float16", "bfloat16")
+            max_model_len: Optional maximum sequence length override
+            tokenizer_mode: vLLM tokenizer mode ("auto" or "slow")
+            trust_remote_code: Whether to trust model-provided custom code
+            temperature: Default generation temperature
+            top_p: Default top-p sampling value
+            top_k: Default top-k sampling value
+            min_p: Default min-p sampling value
+            repetition_penalty: Default repetition penalty
+            presence_penalty: Default presence penalty
+            frequency_penalty: Default frequency penalty
+            stop: Default stop string(s)
+            stop_token_ids: Default stop token IDs
         """
         self._model_id = model_id
         self._gpu_memory_utilization = gpu_memory_utilization
         self._seed = seed
         self._dtype = dtype
+        self._max_model_len = max_model_len
+        self._tokenizer_mode = tokenizer_mode
+        self._trust_remote_code = trust_remote_code
+        self._sampling_defaults: dict[str, Any] = {
+            "temperature": temperature,
+            "top_p": top_p,
+            "top_k": top_k,
+            "min_p": min_p,
+            "repetition_penalty": repetition_penalty,
+            "presence_penalty": presence_penalty,
+            "frequency_penalty": frequency_penalty,
+            "stop": stop,
+            "stop_token_ids": stop_token_ids,
+        }
         
         # Lazy init - don't load model until first generation
         self._llm = None
@@ -61,24 +95,31 @@ class LocalClient(ModelClient):
         
         # Determine tensor parallel size
         if self._tensor_parallel_size is None:
-            self._tensor_parallel_size = torch.cuda.device_count()
+            self._tensor_parallel_size = max(1, torch.cuda.device_count())
         
         print(f"Loading model: {self._model_id}")
         print(f"  GPU memory utilization: {self._gpu_memory_utilization}")
         print(f"  Tensor parallel size: {self._tensor_parallel_size}")
         print(f"  Seed: {self._seed}")
+        print(f"  Dtype: {self._dtype}")
+        print(f"  Tokenizer mode: {self._tokenizer_mode}")
+        if self._max_model_len is not None:
+            print(f"  Max model len: {self._max_model_len}")
         
         # vLLM automatically uses Flash Attention when available
-        # No need to explicitly enable it
-        self._llm = LLM(
+        llm_kwargs = dict(
             model=self._model_id,
             gpu_memory_utilization=self._gpu_memory_utilization,
             tensor_parallel_size=self._tensor_parallel_size,
             seed=self._seed,
             dtype=self._dtype,
             download_dir=str(MODEL_CACHE_DIR),
-            trust_remote_code=True,
+            trust_remote_code=self._trust_remote_code,
+            tokenizer_mode=self._tokenizer_mode,
         )
+        if self._max_model_len is not None:
+            llm_kwargs["max_model_len"] = self._max_model_len
+        self._llm = LLM(**llm_kwargs)
         
         print(f"  Model loaded successfully")
     
@@ -118,11 +159,31 @@ class LocalClient(ModelClient):
         
         self._ensure_loaded()
         
-        # Create sampling params
-        sampling_params = SamplingParams(
-            max_tokens=max_tokens,
-            seed=self._seed,
-        )
+        sampling_kwargs: dict[str, Any] = {
+            "max_tokens": max_tokens,
+            "seed": kwargs.get("seed", self._seed),
+        }
+        for key in (
+            "temperature",
+            "top_p",
+            "top_k",
+            "min_p",
+            "presence_penalty",
+            "frequency_penalty",
+            "repetition_penalty",
+            "stop",
+            "stop_token_ids",
+            "ignore_eos",
+        ):
+            value = kwargs.get(key, self._sampling_defaults.get(key))
+            if value is not None:
+                sampling_kwargs[key] = value
+
+        repeat_penalty = kwargs.get("repeat_penalty")
+        if repeat_penalty is not None and "repetition_penalty" not in sampling_kwargs:
+            sampling_kwargs["repetition_penalty"] = repeat_penalty
+
+        sampling_params = SamplingParams(**sampling_kwargs)
         
         # Generate
         outputs = self._llm.generate(prompts, sampling_params)

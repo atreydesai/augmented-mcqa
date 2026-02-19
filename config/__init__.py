@@ -22,8 +22,6 @@ from .settings import (
     
     # Distractor naming
     DistractorType,
-    LEGACY_COLUMN_MAPPING,
-    UNIFIED_TO_LEGACY,
     get_distractor_column,
     
     # Dataset types and schema
@@ -63,8 +61,6 @@ __all__ = [
     "RANDOM_SEED",
     "DEFAULT_LIMIT",
     "DistractorType",
-    "LEGACY_COLUMN_MAPPING",
-    "UNIFIED_TO_LEGACY",
     "get_distractor_column",
     "DatasetType",
     "DATASET_SCHEMA",
@@ -78,5 +74,4 @@ __all__ = [
     "DISTRACTOR_GENERATION_PROMPT_CONDITIONED",
     "get_api_key",
 ]
-
 

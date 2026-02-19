@@ -10,6 +10,8 @@ Evaluation orchestration is now centered on a deterministic matrix runner:
 - No in-process evaluation parallelization
 - Deterministic sharding for SLURM arrays (`--num-shards`, `--shard-index`)
 - Declarative model aliases in `config/model_aliases.toml`
+- Shared client/dataset reuse within a run (avoids reloading local model weights per config)
+- Fail-fast semantics for experiment integrity (no silent fallback to alternate splits/sources)
 
 ## Environment
 
@@ -41,6 +43,11 @@ uv run python scripts/generate_distractors.py \
   --output datasets/finished_sets/gpt-4.1
 ```
 
+Generation defaults:
+
+- OpenAI reasoning effort defaults to `minimal` (override with `--reasoning-effort`)
+- Branching prefix columns are **not** generated unless `--generate-branching-prefix-columns` is passed
+
 ### 3. Plan evaluation matrix
 
 ```bash
@@ -60,6 +67,13 @@ uv run python scripts/eval_matrix.py run \
   --dataset-path datasets/augmented/unified_processed_gpt-4.1_20260213_033916 \
   --skip-existing
 ```
+
+For local models, each shard run keeps one model client alive per model/settings key and reuses it
+across all configs in that run.
+
+The runner is strict about input schema/splits: missing required dataset split, missing
+branching columns, or missing gold-answer fields now raise errors instead of silently
+falling back.
 
 ### 5. Run sharded matrix for SLURM
 
@@ -95,8 +109,10 @@ uv run python scripts/analyze_all.py --dir results
 ## Matrix Presets
 
 - `core16`: historical label for the core matrix (15 unique configs after overlap dedupe)
-- `branching21`: full 1H..3H crossed with 0M..6M (21 configs per dataset/source pair)
-  - Uses cumulative branching sampling: per question, distractor selections are carried forward as `H`/`M` increase (prefix behavior), then options are re-shuffled per config.
+- `branching21`: human-prefix branching layout (21 configs per dataset/source pair)
+  - `0H+1..6M`, `1H+0..5M`, `2H+0..4M`, `3H+0..3M`
+  - Uses human-prefix cumulative sampling (`D1`, `D1+D2`, `D1+D2+D3`) and prefix model expansions.
+  - Requires branching columns (`cond_model_q_a_dhuman_h1/h2/h3`) and fails fast if missing.
 
 Difficulty is controlled by `--dataset-types` (`arc_easy`, `arc_challenge`, `mmlu_pro`, `supergpqa`), not a separate intrinsic-difficulty pipeline.
 
@@ -131,6 +147,20 @@ Supported providers in registry:
 - `gemini`
 - `deepseek`
 - `local`
+
+Added local-model aliases:
+
+- `Nanbeige/Nanbeige4.1-3B`
+- `Qwen/Qwen3-4B-Instruct-2507`
+- `allenai/Olmo-3-7B-Instruct`
+
+You can stage these checkpoints with:
+
+```bash
+uv run python scripts/download_local_models.py --scratch-dir /path/to/scratch
+```
+
+That command is a dry run by default. Add `--execute` to actually download.
 
 ## Additional Docs
 

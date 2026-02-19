@@ -269,7 +269,7 @@ def run_all(limit: Optional[int] = None):
     # This makes the Hugging Face viewer much easier to parse.
     ordered_columns = [
         "question", "options", "answer", "answer_index", "category",
-        "src", "subfield", "difficulty", "choices_answer", "choices_human", "legacy_choices_synthetic",
+        "src", "subfield", "difficulty", "choices_answer", "choices_human",
         # Scratch path
         "cond_model_q_a_scratch", "qa_options_randomized", "qa_correct_answer_letter", 
         "qa_full_question", "qa_model_input", "qa_model_output",

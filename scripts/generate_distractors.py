@@ -31,7 +31,7 @@ from pathlib import Path
 # Add parent to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from models import get_client, list_available_models
+from models import get_client, list_available_models, resolve_model
 from data.augmentor import augment_dataset, AugmentorMode
 
 
@@ -59,6 +59,18 @@ def parse_args():
     parser.add_argument("--num-distractors", type=int, default=9)
     parser.add_argument("--limit", type=int, help="Limit entries per split")
     parser.add_argument("--save-interval", type=int, default=5, help="Save intermediate results every N entries")
+    parser.add_argument(
+        "--reasoning-effort",
+        type=str,
+        choices=["minimal", "low", "medium", "high", "none"],
+        default="minimal",
+        help="Reasoning effort for OpenAI GPT-5 family models",
+    )
+    parser.add_argument(
+        "--generate-branching-prefix-columns",
+        action="store_true",
+        help="Generate branching prefix columns (cond_model_q_a_dhuman_h1/h2/h3). Off by default.",
+    )
     parser.add_argument("--skip-push", action="store_true", help="Skip pushing to HF Hub")
     parser.add_argument("--dry-run", action="store_true")
 
@@ -152,8 +164,11 @@ def run_parallel(args):
         "--mode", args.mode,
         "--num-distractors", str(args.num_distractors),
         "--save-interval", str(args.save_interval),
+        "--reasoning-effort", args.reasoning_effort,
         "--skip-push",  # Don't push individual splits
     ]
+    if args.generate_branching_prefix_columns:
+        base_cmd.append("--generate-branching-prefix-columns")
     if args.limit:
         base_cmd += ["--limit", str(args.limit)]
 
@@ -222,8 +237,13 @@ def main():
         return run_parallel(args)
 
     # Get client directly from models module
+    provider_name, _, _ = resolve_model(args.model)
+    client_kwargs = {}
+    if provider_name == "openai":
+        client_kwargs["reasoning_effort"] = args.reasoning_effort
+
     try:
-        client = get_client(args.model)
+        client = get_client(args.model, **client_kwargs)
     except ValueError as e:
         print(f"Error: {e}")
         print("Use --list-models to see available options")
@@ -259,6 +279,8 @@ def main():
     print(f"   Mode: {args.mode}")
     print(f"   Input: {input_path}")
     print(f"   Output: {output_path}")
+    print(f"   Reasoning effort: {args.reasoning_effort}")
+    print(f"   Branching prefix cols: {args.generate_branching_prefix_columns}")
     if args.split:
         print(f"   Split: {args.split}")
 
@@ -268,6 +290,8 @@ def main():
         model_name=args.model,
         num_distractors=args.num_distractors,
         save_interval=args.save_interval,
+        reasoning_effort=args.reasoning_effort,
+        generate_branching_prefix_columns=args.generate_branching_prefix_columns,
     )
 
     print(f"🚀 Starting generation for {input_path}...")

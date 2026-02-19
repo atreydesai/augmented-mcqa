@@ -19,6 +19,12 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from experiments import ExperimentConfig, run_experiment
 from config import DATASETS_DIR, RESULTS_DIR, DistractorType
 
+MODEL_TYPE_CHOICES = [
+    DistractorType.COND_MODEL_Q_A_SCRATCH.value,
+    DistractorType.COND_MODEL_Q_A_DHUMAN.value,
+    DistractorType.COND_MODEL_Q_A_DMODEL.value,
+]
+
 
 def main():
     parser = argparse.ArgumentParser(description="Run MCQA evaluation experiment")
@@ -41,8 +47,8 @@ def main():
     parser.add_argument(
         "--model-type",
         type=str,
-        choices=[t.value for t in DistractorType],
-        default="cond_model_q_a",
+        choices=MODEL_TYPE_CHOICES,
+        default=DistractorType.COND_MODEL_Q_A_SCRATCH.value,
         help="Type of model distractors",
     )
     

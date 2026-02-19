@@ -39,7 +39,17 @@ CORE16_DISTRACTOR_CONFIGS = _dedupe_ordered(
     + [(0, m) for m in range(1, 7)]
 )
 
-BRANCHING21_DISTRACTOR_CONFIGS = [(h, m) for h in range(1, 4) for m in range(0, 7)]
+# Branching layout (21 configs total):
+# - 0H + (1..6)M
+# - 1H + (0..5)M
+# - 2H + (0..4)M
+# - 3H + (0..3)M
+BRANCHING21_DISTRACTOR_CONFIGS = (
+    [(0, m) for m in range(1, 7)]
+    + [(1, m) for m in range(0, 6)]
+    + [(2, m) for m in range(0, 5)]
+    + [(3, m) for m in range(0, 4)]
+)
 
 MATRIX_PRESETS: dict[MatrixPreset, list[tuple[int, int]]] = {
     "core16": CORE16_DISTRACTOR_CONFIGS,
@@ -87,6 +97,7 @@ def build_matrix_configs(
     configs: list[ExperimentConfig] = []
     model_safe = model.replace("/", "_")
     sampling_strategy = "branching_cumulative" if preset == "branching21" else "independent"
+    branching_mode = "human_prefix" if preset == "branching21" else "shuffled_prefix"
 
     for dataset_type in dataset_types:
         for source_name in distractor_sources:
@@ -106,6 +117,7 @@ def build_matrix_configs(
                     model_distractor_type=distractor_type,
                     eval_mode=eval_mode,
                     sampling_strategy=sampling_strategy,
+                    branching_mode=branching_mode,
                     choices_only=choices_only,
                     limit=limit,
                     seed=seed,

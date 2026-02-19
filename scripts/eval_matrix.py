@@ -15,6 +15,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from config import RESULTS_DIR
 from experiments import run_experiment
+from models import get_client
 from experiments.matrix import (
     ALL_DATASET_TYPES,
     DISTRACTOR_SOURCE_MAP,
@@ -173,9 +174,52 @@ def _summary_path(model: str, output_base: Path, num_shards: int | None, shard_i
     return output_base / filename
 
 
-def _run_single_config(config) -> dict[str, Any]:
+def _client_cache_key(config) -> tuple[str, str | None, str | None]:
+    return (config.model_name, config.reasoning_effort, config.thinking_level)
+
+
+def _client_kwargs(config) -> dict[str, Any]:
+    kwargs: dict[str, Any] = {}
+    if config.reasoning_effort:
+        kwargs["reasoning_effort"] = config.reasoning_effort
+    if config.thinking_level:
+        kwargs["thinking_level"] = config.thinking_level
+    return kwargs
+
+
+def _get_or_create_shared_client(
+    config,
+    client_cache: dict[tuple[str, str | None, str | None], Any],
+):
+    key = _client_cache_key(config)
+    if key in client_cache:
+        return client_cache[key]
+
+    client = get_client(config.model_name, **_client_kwargs(config))
+    client_cache[key] = client
+    print(f"  Shared client initialized for: {config.model_name}")
+    return client
+
+
+def _unload_shared_clients(client_cache: dict[tuple[str, str | None, str | None], Any]) -> None:
+    for client in client_cache.values():
+        unload = getattr(client, "unload", None)
+        if callable(unload):
+            try:
+                unload()
+            except Exception as exc:
+                print(f"Warning: failed to unload client {client}: {exc}")
+
+
+def _run_single_config(
+    config,
+    *,
+    client_cache: dict[tuple[str, str | None, str | None], Any],
+    dataset_cache: dict[tuple[str, str], Any],
+) -> dict[str, Any]:
     try:
-        results = run_experiment(config)
+        client = _get_or_create_shared_client(config, client_cache)
+        results = run_experiment(config, client=client, dataset_cache=dataset_cache)
         return {
             "name": config.name,
             "config": config.distractor_config_str,
@@ -217,14 +261,23 @@ def cmd_run(args: argparse.Namespace) -> int:
     _print_summary("Run Set", configs)
 
     summaries = []
-    for idx, config in enumerate(configs, start=1):
-        print(f"\n[{idx}/{len(configs)}] {config.name}")
-        summary = _run_single_config(config)
-        summaries.append(summary)
-        if summary["status"] == "success":
-            print(f"  Accuracy: {summary['accuracy']:.2%}")
-        else:
-            print(f"  FAILED: {summary['status']}")
+    client_cache: dict[tuple[str, str | None, str | None], Any] = {}
+    dataset_cache: dict[tuple[str, str], Any] = {}
+    try:
+        for idx, config in enumerate(configs, start=1):
+            print(f"\n[{idx}/{len(configs)}] {config.name}")
+            summary = _run_single_config(
+                config,
+                client_cache=client_cache,
+                dataset_cache=dataset_cache,
+            )
+            summaries.append(summary)
+            if summary["status"] == "success":
+                print(f"  Accuracy: {summary['accuracy']:.2%}")
+            else:
+                print(f"  FAILED: {summary['status']}")
+    finally:
+        _unload_shared_clients(client_cache)
 
     model_name = configs[0].model_name
     output_base = Path(args.output_dir) if args.output_dir else RESULTS_DIR

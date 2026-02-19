@@ -6,7 +6,9 @@ from unittest.mock import MagicMock
 
 # Add project root to path
 PROJECT_ROOT = Path(__file__).parent.parent.absolute()
-sys.path.insert(0, str(PROJECT_ROOT))
+if str(PROJECT_ROOT) not in sys.path:
+    # Keep site-packages precedence so HuggingFace `datasets` doesn't get shadowed by ./datasets.
+    sys.path.append(str(PROJECT_ROOT))
 
 from config import (
     DistractorType,
@@ -25,7 +27,7 @@ def mock_entry_mmlu_pro():
         "category": "math",
         "src": "mmlu",
         DistractorType.COND_HUMAN_Q_A.value: ["3", "5", "6"], # 3 human
-        DistractorType.COND_MODEL_Q_A.value: ["7", "8", "9", "10", "11", "12"], # 6 synth
+        DistractorType.COND_MODEL_Q_A_SCRATCH.value: ["7", "8", "9", "10", "11", "12"], # 6 synth
     }
 
 @pytest.fixture
