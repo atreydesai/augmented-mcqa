@@ -1,7 +1,7 @@
 [project]
 name = "augmented-mcqa"
 version = "0.1.0"
-description = "Add your description here"
+description = "Augmented MCQA generation and evaluation tooling"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -18,4 +18,9 @@ dependencies = [
     "seaborn>=0.13.2",
     "tqdm>=4.67.3",
     "transformers>=5.1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
 ]

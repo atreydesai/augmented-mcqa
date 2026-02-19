@@ -5,6 +5,7 @@ Orchestrates evaluation runs using ExperimentConfig.
 """
 
 import json
+import random
 import time
 from pathlib import Path
 from typing import List, Dict, Optional, Any
@@ -14,12 +15,10 @@ from datetime import datetime
 from tqdm import tqdm
 
 from .config import ExperimentConfig
-from models import get_client, ModelClient, GenerationResult
+from models import get_client, ModelClient
 from config import (
     DistractorType,
     get_distractor_column,
-    get_options_from_entry,
-    get_answer_index,
 )
 from evaluation.evaluator import build_mcqa_prompt
 
@@ -33,6 +32,7 @@ class EvalResult:
     question_idx: int
     question: str
     gold_answer: str
+    gold_answer_letter: str
     gold_index: int
     model_answer: str
     model_prediction: str
@@ -45,6 +45,17 @@ class EvalResult:
     # Metadata
     response_text: str = ""
     latency_ms: float = 0.0
+
+    # Eval trace fields
+    eval_options_randomized: List[str] = field(default_factory=list)
+    eval_correct_answer_letter: str = ""
+    eval_full_question: str = ""
+    eval_model_input: str = ""
+    eval_model_output: str = ""
+    selected_human_distractors: List[str] = field(default_factory=list)
+    selected_model_distractors: List[str] = field(default_factory=list)
+    human_option_indices: List[int] = field(default_factory=list)
+    model_option_indices: List[int] = field(default_factory=list)
 
 
 @dataclass
@@ -118,6 +129,7 @@ class ExperimentResults:
                     "question_idx": r.question_idx,
                     "question": r.question[:100] + "..." if len(r.question) > 100 else r.question,
                     "gold_answer": r.gold_answer,
+                    "gold_answer_letter": r.gold_answer_letter,
                     "gold_index": r.gold_index,
                     "model_answer": r.model_answer,
                     "model_prediction": r.model_prediction,
@@ -125,6 +137,21 @@ class ExperimentResults:
                     "category": r.category,
                     "prediction_type": r.prediction_type,
                     "latency_ms": r.latency_ms,
+                    "eval_options_randomized": r.eval_options_randomized,
+                    "eval_correct_answer_letter": r.eval_correct_answer_letter,
+                    "eval_full_question": r.eval_full_question,
+                    "eval_model_input": r.eval_model_input,
+                    "eval_model_output": r.eval_model_output,
+                    # Aliases matching generation-style naming patterns.
+                    "options_randomized": r.eval_options_randomized,
+                    "correct_answer_letter": r.eval_correct_answer_letter,
+                    "full_question": r.eval_full_question,
+                    "model_input": r.eval_model_input,
+                    "model_output": r.eval_model_output,
+                    "selected_human_distractors": r.selected_human_distractors,
+                    "selected_model_distractors": r.selected_model_distractors,
+                    "human_option_indices": r.human_option_indices,
+                    "model_option_indices": r.model_option_indices,
                 }
                 for r in self.results
             ],
@@ -235,6 +262,94 @@ class ExperimentRunner:
 
             self._adapter = data
         return self._adapter
+
+    def _select_distractors(
+        self,
+        human_distractors: List[str],
+        model_distractors: List[str],
+        idx: int,
+    ) -> tuple[List[str], List[str]]:
+        """
+        Select distractors according to the configured sampling strategy.
+
+        - independent: sample per configuration
+        - branching_cumulative: use deterministic per-question order and take prefixes
+        """
+        if self.config.sampling_strategy == "branching_cumulative":
+            human_order = list(human_distractors)
+            model_order = list(model_distractors)
+
+            # Keep selection order stable across branching configs for the same question.
+            human_rng = random.Random(self.config.seed + idx + 10_000_019)
+            model_rng = random.Random(self.config.seed + idx + 20_000_033)
+            human_rng.shuffle(human_order)
+            model_rng.shuffle(model_order)
+
+            return human_order[: self.config.num_human], model_order[: self.config.num_model]
+
+        rng = random.Random(self.config.seed + idx)
+        return (
+            rng.sample(human_distractors, self.config.num_human),
+            rng.sample(model_distractors, self.config.num_model),
+        )
+
+    def _shuffle_options(
+        self,
+        all_options: List[str],
+        idx: int,
+        num_selected_human: int,
+    ) -> tuple[List[str], int, List[int], List[int]]:
+        """
+        Shuffle options deterministically and return new index mappings.
+
+        Shuffle seed is config-specific so branching configurations can carry
+        distractor membership while still re-randomizing option order.
+        """
+        gold_original_idx = 0
+        human_original_indices = list(range(1, 1 + num_selected_human))
+        model_original_indices = list(range(1 + num_selected_human, len(all_options)))
+
+        shuffle_seed = (
+            self.config.seed
+            + (idx * 104_729)
+            + (self.config.num_human * 1_009)
+            + (self.config.num_model * 9_173)
+        )
+        shuffle_rng = random.Random(shuffle_seed)
+        indices = list(range(len(all_options)))
+        shuffle_rng.shuffle(indices)
+
+        shuffled_options = [all_options[i] for i in indices]
+        new_gold_idx = indices.index(gold_original_idx)
+        new_human_indices = [indices.index(i) for i in human_original_indices]
+        new_model_indices = [indices.index(i) for i in model_original_indices]
+        return shuffled_options, new_gold_idx, new_human_indices, new_model_indices
+
+    @staticmethod
+    def _build_eval_full_question(question: str, options: List[str]) -> str:
+        lines = [f"{CHOICE_LABELS[i]}: {opt}" for i, opt in enumerate(options)]
+        return f"Question: {question}\n" + "\n".join(lines)
+
+    def _get_skip_reason(self, entry: Dict[str, Any]) -> str:
+        gold_answers = entry.get("choices_answer", [])
+        gold_answer = gold_answers[0] if gold_answers else ""
+        if not gold_answer:
+            options = entry.get("options", [])
+            answer_idx = entry.get("answer_index", 0)
+            if answer_idx < len(options):
+                gold_answer = options[answer_idx]
+        if not gold_answer:
+            return "missing_gold_answer"
+
+        human_distractors = get_distractor_column(entry, DistractorType.COND_HUMAN_Q_A)
+        if len(human_distractors) < self.config.num_human:
+            return "insufficient_human_distractors"
+
+        model_distractors = get_distractor_column(entry, self.config.model_distractor_type)
+        if len(model_distractors) < self.config.num_model:
+            return "insufficient_model_distractors"
+
+        return "unknown"
     
     def _prepare_entry(self, entry, idx: int) -> Optional[Dict[str, Any]]:
         """
@@ -244,8 +359,6 @@ class ExperimentRunner:
         
         Returns None if entry doesn't have enough distractors.
         """
-        import random
-        
         # Get gold answer
         gold_answers = entry.get("choices_answer", [])
         if gold_answers:
@@ -268,31 +381,19 @@ class ExperimentRunner:
             return None
         if len(model_distractors) < self.config.num_model:
             return None
-        
-        # Sample distractors deterministically
-        rng = random.Random(self.config.seed + idx)
-        
-        selected_human = rng.sample(human_distractors, self.config.num_human)
-        selected_model = rng.sample(model_distractors, self.config.num_model)
-        
-        # Combine all options
+
+        selected_human, selected_model = self._select_distractors(
+            human_distractors,
+            model_distractors,
+            idx,
+        )
+
         all_options = [gold_answer] + selected_human + selected_model
-        
-        # Track which indices are which
-        gold_original_idx = 0
-        human_original_indices = list(range(1, 1 + len(selected_human)))
-        model_original_indices = list(range(1 + len(selected_human), len(all_options)))
-        
-        # Shuffle deterministically
-        indices = list(range(len(all_options)))
-        rng.shuffle(indices)
-        
-        shuffled_options = [all_options[i] for i in indices]
-        
-        # Find new positions
-        new_gold_idx = indices.index(gold_original_idx)
-        new_human_indices = [indices.index(i) for i in human_original_indices]
-        new_model_indices = [indices.index(i) for i in model_original_indices]
+        shuffled_options, new_gold_idx, new_human_indices, new_model_indices = self._shuffle_options(
+            all_options,
+            idx,
+            num_selected_human=len(selected_human),
+        )
         
         return {
             "question": entry.get("question", ""),
@@ -301,6 +402,8 @@ class ExperimentRunner:
             "gold_answer": gold_answer,
             "human_indices": new_human_indices,
             "model_indices": new_model_indices,
+            "selected_human": selected_human,
+            "selected_model": selected_model,
             "category": entry.get("category", ""),
         }
     
@@ -325,7 +428,8 @@ class ExperimentRunner:
         if self.config.categories:
             entries = [
                 e for e in entries
-                if e.category.lower() in [c.lower() for c in self.config.categories]
+                if str(e.get("category", "")).lower()
+                in [c.lower() for c in self.config.categories]
             ]
         
         # Apply limit
@@ -342,6 +446,7 @@ class ExperimentRunner:
         
         # Run evaluations
         skipped = 0
+        skip_reasons: Dict[str, int] = {}
         quiet = getattr(self.config, '_quiet', False)
         iterator = enumerate(entries) if quiet else enumerate(tqdm(entries, desc="Evaluating"))
         for idx, entry in iterator:
@@ -349,6 +454,8 @@ class ExperimentRunner:
             prepared = self._prepare_entry(entry, idx)
             if prepared is None:
                 skipped += 1
+                reason = self._get_skip_reason(entry)
+                skip_reasons[reason] = skip_reasons.get(reason, 0) + 1
                 continue
             
             # Build prompt
@@ -356,6 +463,10 @@ class ExperimentRunner:
                 prepared["question"],
                 prepared["options"],
                 choices_only=self.config.choices_only,
+            )
+            eval_full_question = self._build_eval_full_question(
+                prepared["question"],
+                prepared["options"],
             )
             
             # Generate
@@ -390,14 +501,24 @@ class ExperimentRunner:
                 question_idx=idx,
                 question=prepared["question"],
                 gold_answer=prepared["gold_answer"],
+                gold_answer_letter=gold_letter,
                 gold_index=prepared["gold_idx"],
-                model_answer=gold_letter,
+                model_answer=model_answer,
                 model_prediction=model_answer,
                 is_correct=is_correct,
                 category=prepared["category"],
                 prediction_type=prediction_type,
                 response_text=response.text,
                 latency_ms=latency_ms,
+                eval_options_randomized=prepared["options"],
+                eval_correct_answer_letter=gold_letter,
+                eval_full_question=eval_full_question,
+                eval_model_input=prompt,
+                eval_model_output=response.text,
+                selected_human_distractors=prepared["selected_human"],
+                selected_model_distractors=prepared["selected_model"],
+                human_option_indices=prepared["human_indices"],
+                model_option_indices=prepared["model_indices"],
             )
             results.results.append(result)
         
@@ -405,6 +526,12 @@ class ExperimentRunner:
         
         if skipped > 0:
             print(f"  Skipped {skipped} entries (insufficient distractors)")
+            print(f"  Skip breakdown: {skip_reasons}")
+            if len(results.results) == 0 and skip_reasons.get("insufficient_model_distractors", 0) > 0:
+                print(
+                    "  Hint: selected model distractor column appears empty for this dataset path. "
+                    "Use an augmented dataset containing cond_model_q_a_* columns."
+                )
         
         print(f"\n=== Results ===")
         print(f"Accuracy: {results.accuracy:.2%}")

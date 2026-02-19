@@ -18,15 +18,21 @@ from .runner import (
     CHOICE_LABELS,
 )
 
-from .difficulty import (
-    DifficultyLevel,
-    DifficultyDataset,
-    DIFFICULTY_DATASETS,
-    load_difficulty_dataset,
-    prepare_difficulty_evaluation,
-    compute_difficulty_comparison,
-    save_difficulty_results,
-    get_dataset_stats,
+from .matrix import (
+    MatrixPreset,
+    ALL_DATASET_TYPES,
+    DISTRACTOR_SOURCE_MAP,
+    MATRIX_PRESETS,
+    get_preset_distractor_configs,
+    build_matrix_configs,
+    sort_configs_for_sharding,
+    select_shard,
+    maybe_select_shard,
+    summarize_configs,
+    build_manifest,
+    save_manifest,
+    load_manifest,
+    load_configs_from_manifest,
 )
 
 
@@ -45,13 +51,19 @@ __all__ = [
     "build_mcqa_prompt",
     "determine_prediction_type",
     "CHOICE_LABELS",
-    # Difficulty
-    "DifficultyLevel",
-    "DifficultyDataset",
-    "DIFFICULTY_DATASETS",
-    "load_difficulty_dataset",
-    "prepare_difficulty_evaluation",
-    "compute_difficulty_comparison",
-    "save_difficulty_results",
-    "get_dataset_stats",
+    # Matrix
+    "MatrixPreset",
+    "ALL_DATASET_TYPES",
+    "DISTRACTOR_SOURCE_MAP",
+    "MATRIX_PRESETS",
+    "get_preset_distractor_configs",
+    "build_matrix_configs",
+    "sort_configs_for_sharding",
+    "select_shard",
+    "maybe_select_shard",
+    "summarize_configs",
+    "build_manifest",
+    "save_manifest",
+    "load_manifest",
+    "load_configs_from_manifest",
 ]

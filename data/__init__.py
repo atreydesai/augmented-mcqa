@@ -1,104 +1,69 @@
-"""Data processing module for Augmented MCQA."""
+"""Data processing module for Augmented MCQA.
 
-from .downloader import (
-    download_dataset,
-    download_mmlu_pro,
-    download_mmlu_all_configs,
-    download_arc,
-    download_supergpqa,
-    get_dataset_info,
-    print_dataset_info,
-)
+Symbols are lazily imported to avoid loading optional dependencies at package
+import time.
+"""
 
-from .mmlu_pro_processor import (
-    process_mmlu_pro,
-    sort_distractors,
-    build_mmlu_lookup,
-    clean_whitespace,
-    clean_options,
-    verify_sorting,
-    WHITESPACE_BUG_CATEGORIES,
-)
+from importlib import import_module
 
-from .augmentor import (
-    AugmentorMode,
-    GenerationConfig,
-    augment_dataset,
-    build_prompt,
-    parse_generated_distractors,
-)
 
-from .filter import (
-    FilterConfig,
-    filter_dataset,
-    create_standard_subsets,
-    shuffle_options_deterministic,
-    get_answer_letter,
-    CHOICE_LABELS,
-)
-
-from .arc_processor import (
-    load_arc_dataset,
-    process_arc_for_experiments,
-    add_synthetic_distractors_to_arc,
-    get_arc_stats,
-)
-
-from .supergpqa_processor import (
-    load_supergpqa_dataset,
-    process_supergpqa_for_experiments,
-    add_synthetic_distractors_to_supergpqa,
-    get_supergpqa_stats,
-    filter_by_difficulty,
-    filter_by_discipline,
-)
-
-from .hub_utils import (
-    push_dataset_to_hub,
-)
-
-__all__ = [
+_SYMBOL_TO_MODULE = {
     # Downloader
-    "download_dataset",
-    "download_mmlu_pro",
-    "download_mmlu_all_configs",
-    "download_arc",
-    "download_supergpqa",
-    "get_dataset_info",
-    "print_dataset_info",
+    "download_dataset": "downloader",
+    "download_mmlu_pro": "downloader",
+    "download_mmlu_all_configs": "downloader",
+    "download_arc": "downloader",
+    "download_supergpqa": "downloader",
+    "get_dataset_info": "downloader",
+    "print_dataset_info": "downloader",
     # MMLU-Pro Processor
-    "process_mmlu_pro",
-    "sort_distractors",
-    "build_mmlu_lookup",
-    "clean_whitespace",
-    "clean_options",
-    "verify_sorting",
-    "WHITESPACE_BUG_CATEGORIES",
+    "process_mmlu_pro": "mmlu_pro_processor",
+    "sort_distractors": "mmlu_pro_processor",
+    "build_mmlu_lookup": "mmlu_pro_processor",
+    "clean_whitespace": "mmlu_pro_processor",
+    "clean_options": "mmlu_pro_processor",
+    "verify_sorting": "mmlu_pro_processor",
+    "WHITESPACE_BUG_CATEGORIES": "mmlu_pro_processor",
     # Augmentor
-    "AugmentorMode",
-    "GenerationConfig",
-    "augment_dataset",
-    "build_prompt",
-    "parse_generated_distractors",
+    "AugmentorMode": "augmentor",
+    "GenerationConfig": "augmentor",
+    "augment_dataset": "augmentor",
+    "build_prompt": "augmentor",
+    "parse_generated_distractors": "augmentor",
     # Filter
-    "FilterConfig",
-    "filter_dataset",
-    "create_standard_subsets",
-    "shuffle_options_deterministic",
-    "get_answer_letter",
-    "CHOICE_LABELS",
+    "FilterConfig": "filter",
+    "filter_dataset": "filter",
+    "create_standard_subsets": "filter",
+    "shuffle_options_deterministic": "filter",
+    "get_answer_letter": "filter",
+    "CHOICE_LABELS": "filter",
     # ARC Processor
-    "load_arc_dataset",
-    "process_arc_for_experiments",
-    "add_synthetic_distractors_to_arc",
-    "get_arc_stats",
+    "load_arc_dataset": "arc_processor",
+    "process_arc_for_experiments": "arc_processor",
+    "add_synthetic_distractors_to_arc": "arc_processor",
+    "get_arc_stats": "arc_processor",
     # SuperGPQA Processor
-    "load_supergpqa_dataset",
-    "process_supergpqa_for_experiments",
-    "add_synthetic_distractors_to_supergpqa",
-    "get_supergpqa_stats",
-    "filter_by_difficulty",
-    "filter_by_discipline",
+    "load_supergpqa_dataset": "supergpqa_processor",
+    "process_supergpqa_for_experiments": "supergpqa_processor",
+    "add_synthetic_distractors_to_supergpqa": "supergpqa_processor",
+    "get_supergpqa_stats": "supergpqa_processor",
+    "filter_by_difficulty": "supergpqa_processor",
+    "filter_by_discipline": "supergpqa_processor",
     # Hub Utils
-    "push_dataset_to_hub",
-]
+    "push_dataset_to_hub": "hub_utils",
+}
+
+__all__ = list(_SYMBOL_TO_MODULE.keys())
+
+
+def __getattr__(name: str):
+    if name not in _SYMBOL_TO_MODULE:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+    module_name = _SYMBOL_TO_MODULE[name]
+    module = import_module(f".{module_name}", __name__)
+    value = getattr(module, name)
+
+    # Cache resolved symbol for subsequent lookups.
+    globals()[name] = value
+    return value

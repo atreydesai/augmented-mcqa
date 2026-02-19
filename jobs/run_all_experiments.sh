@@ -1,85 +1,44 @@
 #!/bin/bash
+set -euo pipefail
 
-# Experiment Orchestration for Augmented MCQA
-# This script runs all experiments for RQ1, RQ2, and RQ3.
+# Sequential evaluation orchestration.
+# For sharded SLURM runs, prefer jobs/eval_matrix_array.sbatch.
 
-# Configuration
-MODELS=("gpt-4o")
-DATASETS=("mmlu_pro")
-LIMIT=5
-MAX_PARALLEL=8
-PYTHON_EXEC="python"
-SCRIPT_PATH="scripts/run_experiment.py"
-DATASET_BASE_DIR="/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/processed/unified_processed"
+MODEL="${MODEL:-gpt-4.1}"
+DATASET_PATH="${DATASET_PATH:-datasets/augmented/unified_processed}"
+OUTPUT_DIR="${OUTPUT_DIR:-results}"
+LIMIT="${LIMIT:-}"
+EVAL_MODE="${EVAL_MODE:-behavioral}"
 
-mkdir -p logs/experiments
+DATASET_TYPES=(mmlu_pro supergpqa arc_easy arc_challenge)
+DISTRACTOR_SOURCES=(scratch dhuman dmodel)
 
-# Function to run a single experiment
-run_exp() {
-    local name=$1
-    local dataset=$2
-    local model=$3
-    local nh=$4
-    local nm=$5
-    local mtype=$6
-    local choices_only=$7
-    
-    local cmd_args="--name $name --dataset $DATASET_BASE_DIR/$dataset --model $model --num-human $nh --num-model $nm --model-type $mtype --limit $LIMIT"
-    if [ "$choices_only" = "true" ]; then
-        cmd_args="$cmd_args --choices-only"
-    fi
-    
-    echo "Running: $name ($nh H, $nm M, $mtype, choices_only=$choices_only)"
-    $PYTHON_EXEC $SCRIPT_PATH $cmd_args > "logs/experiments/${name}.log" 2>&1 &
-    
-    # Wait if too many jobs
-    while [ $(jobs -r | wc -l) -ge $MAX_PARALLEL ]; do
-        sleep 2
-    done
-}
+echo "Running sequential eval matrix"
+echo "  Model: $MODEL"
+echo "  Dataset path: $DATASET_PATH"
+echo "  Output dir: $OUTPUT_DIR"
+echo "  Eval mode: $EVAL_MODE"
 
-# =============================================================================
-# RQ1 & RQ3: Distractor Sources & Scaling
-# =============================================================================
+CMD=(
+  uv run python scripts/eval_matrix.py run
+  --preset core16
+  --model "$MODEL"
+  --dataset-path "$DATASET_PATH"
+  --dataset-types "${DATASET_TYPES[@]}"
+  --distractor-source "${DISTRACTOR_SOURCES[@]}"
+  --eval-mode "$EVAL_MODE"
+  --output-dir "$OUTPUT_DIR"
+  --skip-existing
+)
 
-for model in "${MODELS[@]}"; do
-    for dataset in "${DATASETS[@]}"; do
-        # 1. Human Only (3H)
-        run_exp "RQ_human_only_${dataset}_${model}" "$dataset" "$model" 3 0 "cond_human_q_a" "false"
-        
-        # 2. Existing Synthetic (MMLU-Pro Only - 6M)
-        if [ "$dataset" = "mmlu_pro" ]; then
-            run_exp "RQ_existing_synthetic_${dataset}_${model}" "$dataset" "$model" 0 6 "cond_model_q_a" "false"
-        fi
-        
-        # 3. New Synthetic (From Scratch - 6M)
-        run_exp "RQ_scratch_synthetic_${dataset}_${model}" "$dataset" "$model" 0 6 "cond_model_q_a_scratch" "false"
-        
-        # 4. New Synthetic (Conditioned on Human - 3H+6M)
-        run_exp "RQ_dhuman_synthetic_${dataset}_${model}" "$dataset" "$model" 3 6 "cond_model_q_a_dhuman" "false"
-        
-        # 5. New Synthetic (Conditioned on Model - 3H+6M)
-        run_exp "RQ_dmodel_synthetic_${dataset}_${model}" "$dataset" "$model" 3 6 "cond_model_q_a_dmodel" "false"
-        
-        # Choices Only versions for key configs
-        run_exp "RQ_human_only_choices_${dataset}_${model}" "$dataset" "$model" 3 0 "cond_human_q_a" "true"
-        run_exp "RQ_dhuman_synthetic_choices_${dataset}_${model}" "$dataset" "$model" 3 6 "cond_model_q_a_dhuman" "true"
-    done
-done
+if [[ -n "$LIMIT" ]]; then
+  CMD+=(--limit "$LIMIT")
+fi
 
-# =============================================================================
-# RQ2: Human Distractor Benefit (1, 2, 3 H)
-# =============================================================================
+printf 'Command: %q ' "${CMD[@]}"
+printf '\n'
 
-for model in "${MODELS[@]}"; do
-    for dataset in "${DATASETS[@]}"; do
-        for nh in 1 2; do
-            run_exp "RQ2_human_benefit_${nh}H_${dataset}_${model}" "$dataset" "$model" $nh 0 "cond_human_q_a" "false"
-            run_exp "RQ2_human_benefit_${nh}H_3M_${dataset}_${model}" "$dataset" "$model" $nh 3 "cond_model_q_a_dhuman" "false"
-        done
-        # 3H is already covered in RQ1 above
-    done
-done
+"${CMD[@]}"
 
-wait
-echo "All experiments completed."
+echo "Done."
+echo "For SLURM arrays, use jobs/eval_matrix_array.sbatch + jobs/submit_eval_array.sh"

@@ -23,6 +23,7 @@ from config import (
 
 # Evaluation modes
 EvalMode = Literal["accuracy", "behavioral"]
+SamplingStrategy = Literal["independent", "branching_cumulative"]
 
 
 @dataclass
@@ -64,6 +65,7 @@ class ExperimentConfig:
     
     # Evaluation settings
     eval_mode: EvalMode = "accuracy"
+    sampling_strategy: SamplingStrategy = "independent"
     choices_only: bool = False
     limit: Optional[int] = None
     seed: int = RANDOM_SEED
@@ -104,6 +106,10 @@ class ExperimentConfig:
             raise ValueError("Must have at least 1 distractor (num_human + num_model >= 1)")
         if total > 9:
             raise ValueError("Cannot have more than 9 distractors (num_human + num_model <= 9)")
+        if self.sampling_strategy not in {"independent", "branching_cumulative"}:
+            raise ValueError(
+                "sampling_strategy must be 'independent' or 'branching_cumulative'"
+            )
     
     @property
     def config_id(self) -> str:
@@ -134,6 +140,7 @@ class ExperimentConfig:
             "num_model": self.num_model,
             "model_distractor_type": self.model_distractor_type.value,
             "eval_mode": self.eval_mode,
+            "sampling_strategy": self.sampling_strategy,
             "choices_only": self.choices_only,
             "limit": self.limit,
             "seed": self.seed,

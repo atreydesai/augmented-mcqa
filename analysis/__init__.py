@@ -24,24 +24,6 @@ from .visualize import (
     DISTRACTOR_SOURCE_LABELS,
 )
 
-from .difficulty_visualize import (
-    load_difficulty_results,
-    plot_arc_comparison,
-    plot_supergpqa_by_difficulty,
-    plot_difficulty_combined,
-    plot_distractor_effect_scaling,
-    plot_all_difficulty,
-    DIFFICULTY_COLORS,
-    DATASET_COLORS,
-)
-
-from .branching_analysis import (
-    load_branching_results,
-    plot_human_distractor_branching,
-    plot_human_benefit_comparison,
-    HUMAN_COLORS,
-)
-
 from .category_analysis import (
     compute_accuracy_by_category,
     compute_accuracy_by_dataset_type,
@@ -76,20 +58,6 @@ __all__ = [
     "plot_all_rq",
     "DATASET_TYPE_STYLES",
     "DISTRACTOR_SOURCE_LABELS",
-    # Difficulty visualization
-    "load_difficulty_results",
-    "plot_arc_comparison",
-    "plot_supergpqa_by_difficulty",
-    "plot_difficulty_combined",
-    "plot_distractor_effect_scaling",
-    "plot_all_difficulty",
-    "DIFFICULTY_COLORS",
-    "DATASET_COLORS",
-    # Branching analysis
-    "load_branching_results",
-    "plot_human_distractor_branching",
-    "plot_human_benefit_comparison",
-    "HUMAN_COLORS",
     # Category analysis
     "compute_accuracy_by_category",
     "compute_accuracy_by_dataset_type",

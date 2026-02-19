@@ -6,99 +6,34 @@ from .anthropic_client import AnthropicClient
 from .gemini_client import GeminiClient
 from .deepseek_client import DeepSeekClient
 from .local_client import LocalClient
-
-
-# Client registry for factory function
-_CLIENT_REGISTRY = {
-    # OpenAI models
-    "gpt-4.1": OpenAIClient,
-    "gpt-4.1-2025-04-14": OpenAIClient,
-    "gpt-5-mini": OpenAIClient,
-    "gpt-5-mini-2025-08-07": OpenAIClient,
-    "gpt-5.2": OpenAIClient,
-    "gpt-5.2-2025-12-11": OpenAIClient,
-    "openai": OpenAIClient,
-    
-    # Anthropic models
-    "claude-opus-4-6": AnthropicClient,
-    "claude-sonnet-4-5": AnthropicClient,
-    "claude-sonnet-4-5-20250929": AnthropicClient,
-    "claude-haiku-4-5": AnthropicClient,
-    "claude-haiku-4-5-20251001": AnthropicClient,
-    "anthropic": AnthropicClient,
-    
-    # Google Gemini models
-    "gemini-3-pro-preview": GeminiClient,
-    "gemini-3-flash-preview": GeminiClient,
-    "gemini-2.5-flash-lite": GeminiClient,
-    "gemini": GeminiClient,
-    
-    # DeepSeek models
-    "deepseek-chat": DeepSeekClient,
-    "deepseek-reasoner": DeepSeekClient,
-    "deepseek": DeepSeekClient,
-    
-    # Local models
-    "local": LocalClient,
-    "qwen3-8b": LocalClient,
-    "Qwen/Qwen2.5-7B-Instruct": LocalClient,
-}
+from .registry import (
+    AliasSpec,
+    create_client,
+    resolve_model,
+    list_model_aliases,
+    load_model_aliases,
+    clear_model_alias_cache,
+    get_provider_registry,
+)
 
 
 def get_client(model_name: str, **kwargs) -> ModelClient:
-    """
-    Factory function to get a model client.
-    
+    """Factory function to get a model client.
+
     Args:
-        model_name: Model name or provider identifier
-        **kwargs: Additional arguments passed to client constructor
-            - reasoning_effort: For OpenAI GPT-5 models ("minimal"/"low"/"medium"/"high"/"none")
-            - thinking_level: For Anthropic/Gemini ("off"/"low"/"medium"/"high")
-        
+        model_name: Alias, provider name, or direct model identifier.
+        **kwargs: Additional constructor arguments. Explicit kwargs override
+            alias defaults from config/model_aliases.toml.
+
     Returns:
-        Configured ModelClient instance
-        
-    Examples:
-        >>> client = get_client("gpt-5.2-2025-12-11")
-        >>> client = get_client("gpt-5.2-2025-12-11", reasoning_effort="high")
-        >>> client = get_client("claude-sonnet-4-5-20250929", thinking_level="medium")
-        >>> client = get_client("gemini-3-flash-preview", thinking_level="high")
-        >>> client = get_client("deepseek-reasoner")
-        >>> client = get_client("Qwen/Qwen2.5-7B-Instruct")
+        Configured ModelClient instance.
     """
-    # Look up in registry
-    if model_name in _CLIENT_REGISTRY:
-        client_class = _CLIENT_REGISTRY[model_name]
-        
-        # For specific model names, pass as model_id
-        if "model_id" not in kwargs and model_name not in ["openai", "anthropic", "gemini", "deepseek", "local"]:
-            kwargs["model_id"] = model_name
-        
-        return client_class(**kwargs)
-    
-    # Try to infer provider from model name
-    model_lower = model_name.lower()
-    
-    if "gpt" in model_lower or "openai" in model_lower:
-        return OpenAIClient(model_id=model_name, **kwargs)
-    
-    if "claude" in model_lower or "anthropic" in model_lower:
-        return AnthropicClient(model_id=model_name, **kwargs)
-    
-    if "gemini" in model_lower:
-        return GeminiClient(model_id=model_name, **kwargs)
-    
-    if "deepseek" in model_lower:
-        return DeepSeekClient(model_id=model_name, **kwargs)
-    
-    # Default to local for HuggingFace model IDs (contain /)
-    if "/" in model_name:
-        return LocalClient(model_id=model_name, **kwargs)
-    
-    raise ValueError(
-        f"Unknown model: {model_name}. "
-        f"Available: {list(_CLIENT_REGISTRY.keys())}"
-    )
+    return create_client(model_name, **kwargs)
+
+
+def list_available_models(include_providers: bool = True) -> list[str]:
+    """List declared model aliases (and providers by default)."""
+    return list_model_aliases(include_providers=include_providers)
 
 
 __all__ = [
@@ -111,6 +46,14 @@ __all__ = [
     "GeminiClient",
     "DeepSeekClient",
     "LocalClient",
-    # Factory
+    # Alias/registry types
+    "AliasSpec",
+    # Factory and helpers
     "get_client",
+    "list_available_models",
+    "resolve_model",
+    "list_model_aliases",
+    "load_model_aliases",
+    "clear_model_alias_cache",
+    "get_provider_registry",
 ]
