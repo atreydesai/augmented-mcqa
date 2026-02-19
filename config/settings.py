@@ -31,6 +31,19 @@ DATASETS_DIR = Path(os.getenv("DATASETS_DIR", PROJECT_ROOT / "datasets"))
 RESULTS_DIR = Path(os.getenv("RESULTS_DIR", PROJECT_ROOT / "results"))
 MODEL_CACHE_DIR = Path(os.getenv("MODEL_CACHE_DIR", "/fs/nexus-scratch/adesai10/hub"))
 
+def _ensure_writable_dir(path: Path, fallback: Path, name: str) -> Path:
+    try:
+        path.mkdir(parents=True, exist_ok=True)
+        return path
+    except OSError:
+        print(f"⚠️ {name} not writable at {path}; falling back to {fallback}")
+        fallback.mkdir(parents=True, exist_ok=True)
+        return fallback
+
+
+DATASETS_DIR = _ensure_writable_dir(DATASETS_DIR, PROJECT_ROOT / "datasets", "DATASETS_DIR")
+RESULTS_DIR = _ensure_writable_dir(RESULTS_DIR, PROJECT_ROOT / "results", "RESULTS_DIR")
+
 # Additional Dataset Paths
 RAW_DATASETS_DIR = DATASETS_DIR / "raw"
 PROCESSED_DATASETS_DIR = DATASETS_DIR / "processed"
@@ -38,11 +51,6 @@ AUGMENTED_DATASETS_DIR = DATASETS_DIR / "augmented"
 AUGMENTED_FROM_SCRATCH_DIR = AUGMENTED_DATASETS_DIR / "from_scratch"
 AUGMENTED_CONDITIONED_HUMAN_DIR = AUGMENTED_DATASETS_DIR / "conditioned_human"
 AUGMENTED_CONDITIONED_SYNTHETIC_DIR = AUGMENTED_DATASETS_DIR / "conditioned_synthetic"
-
-
-# Ensure directories exist
-DATASETS_DIR.mkdir(parents=True, exist_ok=True)
-RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
 
 # =============================================================================
@@ -56,10 +64,25 @@ DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
 HF_TOKEN = os.getenv("HF_TOKEN", "")
 
 # HuggingFace settings
-HF_HOME = os.getenv("HF_HOME", str(MODEL_CACHE_DIR))
+_hf_home_env = os.getenv("HF_HOME")
+if _hf_home_env:
+    HF_HOME = _hf_home_env
+else:
+    default_hf_home = Path(MODEL_CACHE_DIR)
+    if str(default_hf_home).startswith("/fs"):
+        HF_HOME = str(PROJECT_ROOT / ".hf_cache")
+    else:
+        HF_HOME = str(default_hf_home)
 HF_SKIP_PUSH = os.getenv("HF_SKIP_PUSH", "0").lower() in ("1", "true", "yes")
 
 # Set HF environment variables
+try:
+    Path(HF_HOME).mkdir(parents=True, exist_ok=True)
+except OSError:
+    fallback_hf_home = PROJECT_ROOT / ".hf_cache"
+    print(f"⚠️ HF_HOME not writable at {HF_HOME}; falling back to {fallback_hf_home}")
+    fallback_hf_home.mkdir(parents=True, exist_ok=True)
+    HF_HOME = str(fallback_hf_home)
 os.environ["HF_HOME"] = HF_HOME
 os.environ["TRANSFORMERS_CACHE"] = str(Path(HF_HOME) / "transformers")
 os.environ["HF_DATASETS_CACHE"] = str(Path(HF_HOME) / "datasets")
@@ -91,12 +114,12 @@ class DistractorType(Enum):
     - In results and analysis
     
     IMPORTANT DISTINCTION:
-    - choices_human: 3 human distractors from original MMLU/ARC/SuperGPQA
+    - choices_human: 3 human distractors from original MMLU/ARC/GPQA
     - cond_model_q_a_scratch: NEWLY GENERATED from Q+A only (no conditioning)
     - cond_model_q_a_dhuman: NEWLY GENERATED conditioned on 3 human distractors
     - cond_model_q_a_dmodel: NEWLY GENERATED conditioned on 3 random scratch distractors
     """
-    # Human distractors from original MMLU/ARC/SuperGPQA (up to 3)
+    # Human distractors from original MMLU/ARC/GPQA (up to 3)
     COND_HUMAN_Q_A = "choices_human"
     
     # NEWLY GENERATED distractors from Q+A only (no conditioning)
@@ -141,7 +164,7 @@ class DatasetType(Enum):
     MMLU_PRO = "mmlu_pro"
     ARC_EASY = "arc_easy"
     ARC_CHALLENGE = "arc_challenge"
-    SUPERGPQA = "supergpqa"
+    GPQA = "gpqa"
 
 
 # Exact column mappings for each dataset type (based on HuggingFace analysis)
@@ -203,24 +226,24 @@ DATASET_SCHEMA = {
         "hf_config": "ARC-Challenge",
         "splits": ["test", "validation", "train"],
     },
-    DatasetType.SUPERGPQA: {
-        # m-a-p/SuperGPQA - Graduate-level questions
-        # columns: ['uuid', 'question', 'options', 'answer', 'answer_letter',
-        #           'discipline', 'field', 'subfield', 'difficulty', 'is_calculation']
-        # Filter to 10-option questions only (87.3% of dataset)
-        "question": "question",
-        "options": "options",           # list of strings (filter to 10)
-        "answer_text": "answer",        # full text of correct answer
-        "answer_letter": "answer_letter", # 'A'-'J'
-        "answer_index": None,           # compute from answer_letter
-        "category": "field",            # e.g., 'Electronic Science'
-        "discipline": "discipline",     # e.g., 'Engineering'
-        "subfield": "subfield",
-        "difficulty": "difficulty",     # 'middle' / 'hard'
-        "num_options": 10,              # filter to 10 only
-        "hf_path": "m-a-p/SuperGPQA",
-        "hf_config": None,
-        "splits": ["train"],            # only train split available
+    DatasetType.GPQA: {
+        # Idavidrein/gpqa (subset=gpqa_main, split=train)
+        # columns include:
+        # ['Question', 'Correct Answer', 'Incorrect Answer 1', 'Incorrect Answer 2',
+        #  'Incorrect Answer 3', 'Subdomain', ...]
+        "question": "Question",
+        "options": None,                # no pre-bundled options column in source
+        "answer_text": "Correct Answer",
+        "answer_letter": None,
+        "answer_index": None,           # not provided directly in source
+        "category": None,
+        "discipline": None,
+        "subfield": "Subdomain",
+        "difficulty": None,
+        "num_options": 4,
+        "hf_path": "Idavidrein/gpqa",
+        "hf_config": "gpqa_main",
+        "splits": ["train"],
     },
 }
 
@@ -246,6 +269,9 @@ def get_options_from_entry(entry: dict, dataset_type: DatasetType) -> List[str]:
     """Get options list from entry based on dataset type."""
     schema = DATASET_SCHEMA[dataset_type]
     options_key = schema["options"]
+
+    if not options_key:
+        return []
     
     # Handle nested dict access (e.g., 'choices.text')
     if "." in options_key:
@@ -306,11 +332,11 @@ DATASET_CONFIGS = {
         splits=["test"],
         dataset_type=DatasetType.ARC_CHALLENGE,
     ),
-    "supergpqa": DatasetConfig(
-        name="supergpqa",
-        hf_path="m-a-p/SuperGPQA",
+    "gpqa": DatasetConfig(
+        name="gpqa",
+        hf_path="Idavidrein/gpqa",
         splits=["train"],
-        dataset_type=DatasetType.SUPERGPQA,
+        dataset_type=DatasetType.GPQA,
     ),
 }
 

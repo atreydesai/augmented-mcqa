@@ -8,7 +8,7 @@ import json
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from data.arc_processor import load_arc_dataset
-from data.supergpqa_processor import load_supergpqa_dataset
+from data.gpqa_processor import load_gpqa_dataset
 from data.mmlu_pro_processor import process_mmlu_pro
 
 def analyze_dataset(name, entries, is_dict=False):
@@ -58,13 +58,13 @@ def main():
     except Exception as e:
         print(f"Error loading ARC-Challenge: {e}")
 
-    # SuperGPQA
+    # GPQA
     try:
-        print("\nLoading SuperGPQA...")
-        supergpqa = load_supergpqa_dataset(limit=5, filter_10_options=True)
-        analyze_dataset("SuperGPQA", supergpqa)
+        print("\nLoading GPQA...")
+        gpqa = load_gpqa_dataset(limit=5)
+        analyze_dataset("GPQA", gpqa)
     except Exception as e:
-        print(f"Error loading SuperGPQA: {e}")
+        print(f"Error loading GPQA: {e}")
 
     # MMLU-Pro (using existing processed if available, or raw)
     try:

@@ -1,0 +1,106 @@
+---
+dataset_info:
+  features:
+  - name: question
+    dtype: string
+  - name: options
+    list: string
+  - name: answer
+    dtype: string
+  - name: answer_index
+    dtype: int64
+  - name: category
+    dtype: string
+  - name: src
+    dtype: string
+  - name: subfield
+    dtype: string
+  - name: difficulty
+    dtype: string
+  - name: choices_answer
+    list: string
+  - name: choices_human
+    list: string
+  - name: legacy_choices_synthetic
+    list: string
+  - name: cond_model_q_a_scratch
+    list: string
+  - name: qa_options_randomized
+    list: string
+  - name: qa_correct_answer_letter
+    dtype: string
+  - name: qa_full_question
+    dtype: string
+  - name: qa_model_input
+    dtype: string
+  - name: qa_model_output
+    dtype: string
+  - name: cond_model_q_a_dhuman
+    list: string
+  - name: qadh_options_randomized
+    list: string
+  - name: qadh_correct_answer_letter
+    dtype: string
+  - name: qadh_full_question
+    dtype: string
+  - name: qadh_model_input
+    dtype: string
+  - name: qadh_model_output
+    dtype: string
+  - name: cond_model_q_a_dmodel
+    list: string
+  - name: qadm_options_randomized
+    list: string
+  - name: qadm_correct_answer_letter
+    dtype: string
+  - name: qadm_full_question
+    dtype: string
+  - name: qadm_model_input
+    dtype: string
+  - name: qadm_model_output
+    dtype: string
+  - name: is_calculation
+    dtype: bool
+  - name: id
+    dtype: string
+  - name: question_id
+    dtype: int64
+  - name: whitespace_bug_fixed
+    dtype: bool
+  - name: discipline
+    dtype: string
+  - name: dataset_type
+    dtype: string
+  - name: cot_content
+    dtype: string
+  - name: answer_letter
+    dtype: string
+  - name: labels
+    list: string
+  splits:
+  - name: arc_challenge
+    num_bytes: 5098711
+    num_examples: 750
+  - name: arc_easy
+    num_bytes: 4405837
+    num_examples: 750
+  - name: mmlu_pro
+    num_bytes: 12347742
+    num_examples: 750
+  - name: supergpqa
+    num_bytes: 5404858
+    num_examples: 750
+  download_size: 12159247
+  dataset_size: 27257148
+configs:
+- config_name: default
+  data_files:
+  - split: arc_challenge
+    path: data/arc_challenge-*
+  - split: arc_easy
+    path: data/arc_easy-*
+  - split: mmlu_pro
+    path: data/mmlu_pro-*
+  - split: supergpqa
+    path: data/supergpqa-*
+---

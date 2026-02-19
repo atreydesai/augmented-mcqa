@@ -13,7 +13,7 @@ _SYMBOL_TO_MODULE = {
     "download_mmlu_pro": "downloader",
     "download_mmlu_all_configs": "downloader",
     "download_arc": "downloader",
-    "download_supergpqa": "downloader",
+    "download_gpqa": "downloader",
     "get_dataset_info": "downloader",
     "print_dataset_info": "downloader",
     # MMLU-Pro Processor
@@ -42,13 +42,10 @@ _SYMBOL_TO_MODULE = {
     "process_arc_for_experiments": "arc_processor",
     "add_synthetic_distractors_to_arc": "arc_processor",
     "get_arc_stats": "arc_processor",
-    # SuperGPQA Processor
-    "load_supergpqa_dataset": "supergpqa_processor",
-    "process_supergpqa_for_experiments": "supergpqa_processor",
-    "add_synthetic_distractors_to_supergpqa": "supergpqa_processor",
-    "get_supergpqa_stats": "supergpqa_processor",
-    "filter_by_difficulty": "supergpqa_processor",
-    "filter_by_discipline": "supergpqa_processor",
+    # GPQA Processor
+    "load_gpqa_dataset": "gpqa_processor",
+    "process_gpqa_for_experiments": "gpqa_processor",
+    "get_gpqa_stats": "gpqa_processor",
     # Hub Utils
     "push_dataset_to_hub": "hub_utils",
 }

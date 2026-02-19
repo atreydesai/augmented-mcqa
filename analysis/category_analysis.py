@@ -17,7 +17,7 @@ MMLU_PRO_CATEGORY_GROUPS = {
     "Other": ["other"],
 }
 
-SUPERGPQA_DISCIPLINE_COLORS = {
+GPQA_DISCIPLINE_COLORS = {
     "Engineering": "#3498db",
     "Science": "#2ecc71",
     "Medicine": "#e74c3c",
@@ -31,7 +31,7 @@ SUPERGPQA_DISCIPLINE_COLORS = {
 # Dataset type colors for breakdown plots
 DATASET_TYPE_COLORS = {
     "mmlu_pro": "#3498db",
-    "supergpqa": "#e74c3c",
+    "gpqa": "#e74c3c",
     "arc_easy": "#2ecc71",
     "arc_challenge": "#9b59b6",
 }
@@ -87,7 +87,7 @@ def compute_accuracy_by_dataset_type(
     if distractor_sources is None:
         distractor_sources = ["scratch", "dhuman", "dmodel"]
     if dataset_types is None:
-        dataset_types = ["mmlu_pro", "supergpqa", "arc_easy", "arc_challenge"]
+        dataset_types = ["mmlu_pro", "gpqa", "arc_easy", "arc_challenge"]
 
     results = {}
     model_safe = model.replace("/", "_")
@@ -289,7 +289,7 @@ def plot_dataset_type_breakdown(
     if distractor_sources is None:
         distractor_sources = ["scratch"]
     if dataset_types is None:
-        dataset_types = ["mmlu_pro", "supergpqa", "arc_easy", "arc_challenge"]
+        dataset_types = ["mmlu_pro", "gpqa", "arc_easy", "arc_challenge"]
 
     # Collect data
     data = {}  # {config: {dataset_type: accuracy}}
@@ -329,7 +329,7 @@ def plot_dataset_type_breakdown(
 
     dt_labels = {
         "mmlu_pro": "MMLU-Pro",
-        "supergpqa": "SuperGPQA",
+        "gpqa": "GPQA",
         "arc_easy": "ARC-Easy",
         "arc_challenge": "ARC-Challenge",
     }
@@ -354,7 +354,7 @@ def plot_dataset_type_breakdown(
     return fig
 
 
-def plot_supergpqa_by_discipline(
+def plot_gpqa_by_discipline(
     results_path: Path,
     output_path: Optional[Path] = None,
     show: bool = False,
@@ -374,7 +374,7 @@ def plot_supergpqa_by_discipline(
         sorted_disc = sorted(by_discipline.items(), key=lambda x: -x[1]["accuracy"])
         disciplines = [d[0] for d in sorted_disc]
         accs = [d[1]["accuracy"] * 100 for d in sorted_disc]
-        colors = [SUPERGPQA_DISCIPLINE_COLORS.get(d, "#95a5a6") for d in disciplines]
+        colors = [GPQA_DISCIPLINE_COLORS.get(d, "#95a5a6") for d in disciplines]
 
         ax1.barh(range(len(disciplines)), accs, color=colors, edgecolor='black')
         ax1.set_yticks(range(len(disciplines)))
@@ -401,7 +401,7 @@ def plot_supergpqa_by_discipline(
         ax2.invert_yaxis()
         ax2.grid(axis='x', alpha=0.3)
 
-    plt.suptitle('SuperGPQA Performance Breakdown', fontsize=16, fontweight='bold', y=1.02)
+    plt.suptitle('GPQA Performance Breakdown', fontsize=16, fontweight='bold', y=1.02)
     plt.tight_layout()
 
     if output_path:
@@ -426,7 +426,7 @@ def generate_category_report(
         "by_category": compute_accuracy_by_category(entries, "category"),
     }
 
-    # Check for discipline (SuperGPQA)
+    # Check for discipline (GPQA)
     if any(e.get("discipline") for e in entries):
         report["by_discipline"] = compute_accuracy_by_category(entries, "discipline")
 

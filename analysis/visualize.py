@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 # Dataset type display names and colors
 DATASET_TYPE_STYLES = {
     "mmlu_pro": {"label": "MMLU-Pro", "color": "#3498db", "marker": "o"},
-    "supergpqa": {"label": "SuperGPQA", "color": "#e74c3c", "marker": "s"},
+    "gpqa": {"label": "GPQA", "color": "#e74c3c", "marker": "s"},
     "arc_easy": {"label": "ARC-Easy", "color": "#2ecc71", "marker": "^"},
     "arc_challenge": {"label": "ARC-Challenge", "color": "#9b59b6", "marker": "D"},
 }

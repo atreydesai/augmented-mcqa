@@ -5,7 +5,7 @@ Supports downloading and saving datasets from HuggingFace Hub:
 - MMLU-Pro (TIGER-Lab/MMLU-Pro)
 - MMLU (cais/mmlu)
 - ARC (allenai/ai2_arc)
-- SuperGPQA (m-a-p/SuperGPQA)
+- GPQA (Idavidrein/gpqa, subset=gpqa_main)
 """
 
 import os
@@ -17,7 +17,7 @@ import json
 from datasets import load_dataset, get_dataset_config_names, DatasetDict, Dataset
 from tqdm import tqdm
 
-from config import DATASETS_DIR, RAW_DATASETS_DIR, DATASET_CONFIGS, DatasetConfig
+from config import DATASETS_DIR, RAW_DATASETS_DIR, DATASET_CONFIGS, DatasetConfig, HF_TOKEN
 
 
 def download_dataset(
@@ -177,27 +177,32 @@ def download_arc(save_path: Optional[Path] = None) -> Dict[str, DatasetDict]:
     return results
 
 
-def download_supergpqa(save_path: Optional[Path] = None, force_redownload: bool = False) -> DatasetDict:
-    """Download SuperGPQA dataset."""
-    hf_path = "m-a-p/SuperGPQA"
+def download_gpqa(
+    save_path: Optional[Path] = None,
+    subset: str = "gpqa_main",
+    split: str = "train",
+    force_redownload: bool = False,
+) -> DatasetDict:
+    """Download GPQA dataset (subset=gpqa_main, split=train)."""
+    hf_path = "Idavidrein/gpqa"
     if save_path is None:
-        save_path = RAW_DATASETS_DIR / "supergpqa"
+        save_path = RAW_DATASETS_DIR / "gpqa"
     save_path = Path(save_path)
     
     if save_path.exists() and not force_redownload:
-        print(f"SuperGPQA already exists at {save_path}")
+        print(f"GPQA already exists at {save_path}")
         from datasets import load_from_disk
         return load_from_disk(str(save_path))
     
-    print(f"Downloading SuperGPQA...")
-    try:
-        # Try normal download first
-        dataset = load_dataset(hf_path)
-    except (TypeError, Exception) as e:
-        # Cache may be corrupted, force redownload
-        print(f"Cache error: {e}")
-        print("Forcing redownload with cache bypass...")
-        dataset = load_dataset(hf_path, download_mode="force_redownload")
+    print(f"Downloading GPQA ({subset}/{split})...")
+    load_kwargs: Dict[str, Any] = {}
+    if HF_TOKEN:
+        load_kwargs["token"] = HF_TOKEN
+    if force_redownload:
+        load_kwargs["download_mode"] = "force_redownload"
+
+    dataset_split = load_dataset(hf_path, subset, split=split, **load_kwargs)
+    dataset = DatasetDict({split: dataset_split})
     
     save_path.mkdir(parents=True, exist_ok=True)
     dataset.save_to_disk(str(save_path))
@@ -268,9 +273,9 @@ def download_all_datasets() -> Dict[str, Any]:
     results["arc"] = download_arc()
     
     print("\n" + "=" * 50)
-    print("Downloading SuperGPQA...")
+    print("Downloading GPQA...")
     print("=" * 50)
-    results["supergpqa"] = download_supergpqa()
+    results["gpqa"] = download_gpqa()
     
     print("\n" + "=" * 50)
     print("All datasets downloaded!")
@@ -286,7 +291,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--dataset",
         type=str,
-        choices=["mmlu_pro", "mmlu", "arc", "supergpqa", "all"],
+        choices=["mmlu_pro", "mmlu", "arc", "gpqa", "all"],
         default="all",
         help="Which dataset to download",
     )
@@ -318,7 +323,7 @@ if __name__ == "__main__":
             for name, ds in results.items():
                 print_dataset_info(ds, f"ARC-{name}")
     
-    if args.dataset in ["supergpqa", "all"]:
+    if args.dataset in ["gpqa", "all"]:
         if not args.info_only:
-            ds = download_supergpqa()
-            print_dataset_info(ds, "SuperGPQA")
+            ds = download_gpqa()
+            print_dataset_info(ds, "GPQA")

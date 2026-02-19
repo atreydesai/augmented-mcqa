@@ -10,7 +10,7 @@ OUTPUT_DIR="${OUTPUT_DIR:-results}"
 LIMIT="${LIMIT:-}"
 EVAL_MODE="${EVAL_MODE:-behavioral}"
 
-DATASET_TYPES=(mmlu_pro supergpqa arc_easy arc_challenge)
+DATASET_TYPES=(mmlu_pro gpqa arc_easy arc_challenge)
 DISTRACTOR_SOURCES=(scratch dhuman dmodel)
 
 echo "Running sequential eval matrix"

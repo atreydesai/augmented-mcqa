@@ -96,7 +96,7 @@ jobs/submit_eval_array.sh \
   gpt-4.1 \
   datasets/augmented/unified_processed_gpt-4.1_20260213_033916 \
   8 \
-  --dataset-types mmlu_pro,supergpqa \
+  --dataset-types mmlu_pro,gpqa \
   --distractor-source scratch,dhuman
 ```
 
@@ -114,7 +114,7 @@ uv run python scripts/analyze_all.py --dir results
   - Uses human-prefix cumulative sampling (`D1`, `D1+D2`, `D1+D2+D3`) and prefix model expansions.
   - Requires branching columns (`cond_model_q_a_dhuman_h1/h2/h3`) and fails fast if missing.
 
-Difficulty is controlled by `--dataset-types` (`arc_easy`, `arc_challenge`, `mmlu_pro`, `supergpqa`), not a separate intrinsic-difficulty pipeline.
+Difficulty is controlled by `--dataset-types` (`arc_easy`, `arc_challenge`, `mmlu_pro`, `gpqa`), not a separate intrinsic-difficulty pipeline.
 
 Results layout remains unchanged:
 

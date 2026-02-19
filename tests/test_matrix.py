@@ -18,7 +18,7 @@ def test_core16_matrix_count(tmp_path):
     configs = build_matrix_configs(
         model="gpt-4.1",
         dataset_path=Path("datasets/augmented/unified_processed_example"),
-        dataset_types=["mmlu_pro", "supergpqa"],
+        dataset_types=["mmlu_pro", "gpqa"],
         distractor_sources=["scratch", "dhuman"],
         preset="core16",
         output_base=tmp_path,
@@ -66,7 +66,7 @@ def test_sharding_is_deterministic_and_disjoint(tmp_path):
     configs = build_matrix_configs(
         model="gpt-4.1",
         dataset_path=Path("datasets/augmented/unified_processed_example"),
-        dataset_types=["mmlu_pro", "supergpqa"],
+        dataset_types=["mmlu_pro", "gpqa"],
         distractor_sources=["scratch"],
         preset="core16",
         output_base=tmp_path,
@@ -134,3 +134,15 @@ def test_manifest_round_trip(tmp_path):
     loaded = load_configs_from_manifest(manifest_path)
 
     assert [c.config_id for c in loaded] == [c.config_id for c in sort_configs_for_sharding(configs)]
+
+
+def test_supergpqa_dataset_type_is_rejected(tmp_path):
+    with pytest.raises(ValueError, match="Unknown dataset types"):
+        build_matrix_configs(
+            model="gpt-4.1",
+            dataset_path=Path("datasets/augmented/unified_processed_example"),
+            dataset_types=["supergpqa"],
+            distractor_sources=["scratch"],
+            preset="core16",
+            output_base=tmp_path,
+        )

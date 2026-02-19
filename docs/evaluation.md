@@ -75,7 +75,7 @@ Difficulty is represented by dataset type selection, not a separate pipeline:
 - `arc_easy`
 - `arc_challenge`
 - `mmlu_pro`
-- `supergpqa`
+- `gpqa`
 
 ## Sharding Semantics
 
@@ -114,7 +114,7 @@ jobs/submit_eval_array.sh \
   gpt-4.1 \
   datasets/augmented/unified_processed_gpt-4.1_20260213_033916 \
   8 \
-  --dataset-types mmlu_pro,supergpqa \
+  --dataset-types mmlu_pro,gpqa \
   --distractor-source scratch,dhuman
 ```
 

@@ -18,7 +18,7 @@ from data import (
     download_mmlu_pro,
     download_mmlu_all_configs,
     download_arc,
-    download_supergpqa,
+    download_gpqa,
 )
 from config import DATASETS_DIR
 
@@ -29,7 +29,7 @@ def main():
     parser.add_argument(
         "--dataset",
         type=str,
-        choices=["mmlu_pro", "mmlu", "arc", "supergpqa"],
+        choices=["mmlu_pro", "mmlu", "arc", "gpqa"],
         help="Download a specific dataset",
     )
     parser.add_argument(
@@ -53,7 +53,7 @@ def main():
     
     datasets_to_download = []
     if args.all:
-        datasets_to_download = ["mmlu_pro", "mmlu", "arc", "supergpqa"]
+        datasets_to_download = ["mmlu_pro", "mmlu", "arc", "gpqa"]
     else:
         datasets_to_download = [args.dataset]
     
@@ -69,8 +69,8 @@ def main():
                 download_mmlu_all_configs(output_dir / "mmlu")
             elif ds == "arc":
                 download_arc(output_dir / "arc")
-            elif ds == "supergpqa":
-                download_supergpqa(output_dir / "supergpqa")
+            elif ds == "gpqa":
+                download_gpqa(output_dir / "gpqa")
             
             print(f"✓ Downloaded: {ds}")
             

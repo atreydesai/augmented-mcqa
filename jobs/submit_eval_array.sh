@@ -20,7 +20,7 @@ Options:
 
 Example:
   jobs/submit_eval_array.sh gpt-4.1 datasets/augmented/unified_processed 8 \
-    --dataset-types mmlu_pro,supergpqa --distractor-source scratch,dhuman --limit 200
+    --dataset-types mmlu_pro,gpqa --distractor-source scratch,dhuman --limit 200
 USAGE
   exit 1
 fi

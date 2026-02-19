@@ -42,10 +42,7 @@ def test_branching_prefix_generation_is_opt_in():
 
     assert len(result) == 1
     branching_mock.assert_not_called()
-    get_client_mock.assert_called_once_with(
-        "gpt-5-mini-2025-08-07",
-        reasoning_effort="minimal",
-    )
+    get_client_mock.assert_called_once_with("gpt-5-mini-2025-08-07")
 
 
 def test_branching_prefix_generation_runs_when_enabled():
@@ -93,3 +90,27 @@ def test_reasoning_effort_not_forwarded_for_non_openai():
         augment_single_dataset(dataset, config, limit=1)
 
     get_client_mock.assert_called_once_with("Qwen/Qwen3-4B-Instruct-2507")
+
+
+def test_reasoning_effort_forwarded_when_explicit_for_openai():
+    dataset = [_build_entry()]
+    mock_client = MagicMock()
+    mock_client.generate.return_value.text = _fake_generation_text()
+
+    config = GenerationConfig(
+        mode=AugmentorMode.FROM_SCRATCH,
+        model_provider="openai",
+        model_name="gpt-5-mini-2025-08-07",
+        reasoning_effort="low",
+        max_retries=1,
+        save_interval=999,
+        generate_branching_prefix_columns=False,
+    )
+
+    with (
+        patch("data.augmentor.get_client", return_value=mock_client) as get_client_mock,
+        patch("data.augmentor._generate_branching_prefix_columns"),
+    ):
+        augment_single_dataset(dataset, config, limit=1)
+
+    get_client_mock.assert_called_once_with("gpt-5-mini-2025-08-07", reasoning_effort="low")

@@ -79,7 +79,7 @@ class GenerationConfig:
     max_retries: int = 3
     retry_delay: float = 1.0
     save_interval: int = 50  # Save intermediate results every N entries
-    reasoning_effort: Optional[str] = "minimal"
+    reasoning_effort: Optional[str] = None
     generate_branching_prefix_columns: bool = False
 
 

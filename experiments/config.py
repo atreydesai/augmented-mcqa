@@ -84,7 +84,7 @@ class ExperimentConfig:
     # Categories to include (None = all)
     categories: Optional[List[str]] = None
 
-    # Filter unified dataset by dataset_type field (e.g., "mmlu_pro", "supergpqa")
+    # Filter unified dataset by dataset_type field (e.g., "mmlu_pro", "gpqa")
     dataset_type_filter: Optional[str] = None
 
     # Track which distractor source this config uses (scratch/dhuman/dmodel)

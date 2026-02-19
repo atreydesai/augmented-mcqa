@@ -63,8 +63,8 @@ def parse_args():
         "--reasoning-effort",
         type=str,
         choices=["minimal", "low", "medium", "high", "none"],
-        default="minimal",
-        help="Reasoning effort for OpenAI GPT-5 family models",
+        default=None,
+        help="Reasoning effort for OpenAI GPT-5 family models (default: provider default)",
     )
     parser.add_argument(
         "--generate-branching-prefix-columns",
@@ -164,9 +164,10 @@ def run_parallel(args):
         "--mode", args.mode,
         "--num-distractors", str(args.num_distractors),
         "--save-interval", str(args.save_interval),
-        "--reasoning-effort", args.reasoning_effort,
         "--skip-push",  # Don't push individual splits
     ]
+    if args.reasoning_effort:
+        base_cmd += ["--reasoning-effort", args.reasoning_effort]
     if args.generate_branching_prefix_columns:
         base_cmd.append("--generate-branching-prefix-columns")
     if args.limit:
@@ -211,6 +212,8 @@ def run_parallel(args):
 
 def main():
     args = parse_args()
+    if args.reasoning_effort == "none":
+        args.reasoning_effort = None
 
     if args.list_models:
         print("\n📋 Available Models (from config/model_aliases.toml + providers):")
@@ -240,7 +243,8 @@ def main():
     provider_name, _, _ = resolve_model(args.model)
     client_kwargs = {}
     if provider_name == "openai":
-        client_kwargs["reasoning_effort"] = args.reasoning_effort
+        if args.reasoning_effort:
+            client_kwargs["reasoning_effort"] = args.reasoning_effort
 
     try:
         client = get_client(args.model, **client_kwargs)
@@ -279,7 +283,7 @@ def main():
     print(f"   Mode: {args.mode}")
     print(f"   Input: {input_path}")
     print(f"   Output: {output_path}")
-    print(f"   Reasoning effort: {args.reasoning_effort}")
+    print(f"   Reasoning effort: {args.reasoning_effort or 'provider default'}")
     print(f"   Branching prefix cols: {args.generate_branching_prefix_columns}")
     if args.split:
         print(f"   Split: {args.split}")

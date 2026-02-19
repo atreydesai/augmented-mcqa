@@ -13,7 +13,7 @@ from .config import ExperimentConfig
 
 MatrixPreset = Literal["core16", "branching21"]
 
-ALL_DATASET_TYPES = ["mmlu_pro", "supergpqa", "arc_easy", "arc_challenge"]
+ALL_DATASET_TYPES = ["mmlu_pro", "gpqa", "arc_easy", "arc_challenge"]
 
 DISTRACTOR_SOURCE_MAP = {
     "scratch": DistractorType.COND_MODEL_Q_A_SCRATCH,

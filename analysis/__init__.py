@@ -32,7 +32,7 @@ from .category_analysis import (
     plot_category_breakdown,
     plot_category_heatmap,
     plot_dataset_type_breakdown,
-    plot_supergpqa_by_discipline,
+    plot_gpqa_by_discipline,
     generate_category_report,
     MMLU_PRO_CATEGORY_GROUPS,
 )
@@ -68,7 +68,7 @@ __all__ = [
     "plot_category_breakdown",
     "plot_category_heatmap",
     "plot_dataset_type_breakdown",
-    "plot_supergpqa_by_discipline",
+    "plot_gpqa_by_discipline",
     "generate_category_report",
     "MMLU_PRO_CATEGORY_GROUPS",
 ]
