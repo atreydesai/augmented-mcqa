@@ -119,6 +119,8 @@ Use:
 
 - `jobs/eval_matrix_array.sbatch`
 - `jobs/submit_eval_array.sh`
+- `jobs/clip_local_eval_master.sh` (end-to-end orchestrator for local-model smoke+main runs)
+- `jobs/README_local_eval.md` (copy-paste remote commands and log/artifact locations)
 
 Submit example:
 
