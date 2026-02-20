@@ -31,9 +31,9 @@ def test_local_alias_defaults_are_loaded():
     assert defaults["trust_remote_code"] is True
 
 
-def test_nanbeige_alias_uses_slow_tokenizer_default():
+def test_nanbeige_alias_uses_auto_tokenizer_default():
     provider, model_id, defaults = resolve_model("Nanbeige/Nanbeige4.1-3B")
     assert provider == "local"
     assert model_id == "Nanbeige/Nanbeige4.1-3B"
-    assert defaults["tokenizer_mode"] == "slow"
+    assert defaults["tokenizer_mode"] == "auto"
     assert defaults["stop_token_ids"] == [166101]

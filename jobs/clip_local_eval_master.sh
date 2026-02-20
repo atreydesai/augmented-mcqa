@@ -48,6 +48,7 @@ CACHE_ROOT="/fs/nexus-scratch/adesai10/hub"
 DATASETS_REMOTE_ROOT_REL="datasets/finished_sets_remote"
 RESULTS_ROOT_REL="results/local_eval"
 LOG_ROOT_REL="logs/slurm/local_eval"
+LOCAL_EVAL_UV_PROJECT_REL="jobs/local_eval_env"
 
 EVAL_MODELS=(
   "Nanbeige/Nanbeige4.1-3B"
@@ -144,6 +145,7 @@ STATUS_ROOT="$RUN_ROOT/status"
 MANIFEST_ROOT="$RUN_ROOT/manifests"
 TMP_JOB_ROOT="$RUN_ROOT/tmp_jobs"
 DATASETS_REMOTE_ROOT="$REPO_ROOT/$DATASETS_REMOTE_ROOT_REL"
+LOCAL_EVAL_UV_PROJECT="$REPO_ROOT/$LOCAL_EVAL_UV_PROJECT_REL"
 
 HEARTBEAT_LOG="$STATUS_ROOT/heartbeat.log"
 DASHBOARD_JSON="$STATUS_ROOT/dashboard.json"
@@ -155,10 +157,18 @@ touch "$HEARTBEAT_LOG"
 
 LAST_HEARTBEAT_EPOCH=0
 declare -a ACTIVE_JOB_IDS=()
+declare -A JOB_SUBMIT_EPOCH=()
 POLL_CAPACITY_SECONDS=20
 POLL_WAIT_SECONDS=30
-VLLM_INSTALL_SPEC="${VLLM_INSTALL_SPEC:-vllm==0.11.2}"
-UV_SYNC_INEXACT="${UV_SYNC_INEXACT:-1}"
+UV_SYNC_INEXACT="${UV_SYNC_INEXACT:-0}"
+JOB_VISIBILITY_GRACE_SECONDS="${JOB_VISIBILITY_GRACE_SECONDS:-120}"
+
+job_state_map() {
+  local joined="$1"
+  local out
+  out="$(squeue -h -j "$joined" -o '%A|%T|%R' 2>/dev/null || true)"
+  echo "$out"
+}
 
 safe_name() {
   printf '%s' "$1" | tr '/ .:' '_' | tr -cd '[:alnum:]_-'
@@ -327,17 +337,39 @@ refresh_active_jobs() {
     return 0
   fi
 
+  local now_epoch
+  now_epoch="$(date +%s)"
   local joined
   joined="$(IFS=,; printf '%s' "${ACTIVE_JOB_IDS[*]}")"
-  local active_ids_raw
-  active_ids_raw="$(squeue -h -j "$joined" -o '%A' 2>/dev/null || true)"
-  local active_ids=" $(echo "$active_ids_raw" | tr '\n' ' ') "
+  local states_raw
+  states_raw="$(job_state_map "$joined")"
+  local states_blob
+  states_blob="$(printf '%s\n' "$states_raw")"
 
   local new_active=()
   local jid
   for jid in "${ACTIVE_JOB_IDS[@]:-}"; do
-    if [[ "$active_ids" == *" $jid "* ]]; then
+    local row
+    row="$(printf '%s\n' "$states_blob" | awk -F'|' -v id="$jid" '$1 == id {print $0; exit}')"
+    if [[ -n "$row" ]]; then
+      local state reason
+      state="$(printf '%s' "$row" | awk -F'|' '{print $2}')"
+      reason="$(printf '%s' "$row" | awk -F'|' '{print $3}')"
+      if [[ "$state" == "PENDING" && "$reason" == "launch_failed_requeued_held" ]]; then
+        unset "JOB_SUBMIT_EPOCH[$jid]"
+        continue
+      fi
       new_active+=("$jid")
+      continue
+    fi
+
+    # squeue can briefly miss just-submitted jobs; keep them for a grace window.
+    local submitted_at
+    submitted_at="${JOB_SUBMIT_EPOCH[$jid]:-0}"
+    if (( submitted_at > 0 && now_epoch - submitted_at < JOB_VISIBILITY_GRACE_SECONDS )); then
+      new_active+=("$jid")
+    else
+      unset "JOB_SUBMIT_EPOCH[$jid]"
     fi
   done
   ACTIVE_JOB_IDS=("${new_active[@]}")
@@ -364,14 +396,31 @@ wait_for_jobs() {
   while (( ${#pending[@]} > 0 )); do
     local joined
     joined="$(IFS=,; printf '%s' "${pending[*]}")"
-    local active_ids_raw
-    active_ids_raw="$(squeue -h -j "$joined" -o '%A' 2>/dev/null || true)"
-    local active_ids=" $(echo "$active_ids_raw" | tr '\n' ' ') "
+    local states_raw
+    states_raw="$(job_state_map "$joined")"
+    local states_blob
+    states_blob="$(printf '%s\n' "$states_raw")"
 
     local next_pending=()
     local jid
     for jid in "${pending[@]}"; do
-      if [[ "$active_ids" == *" $jid "* ]]; then
+      local row
+      row="$(printf '%s\n' "$states_blob" | awk -F'|' -v id="$jid" '$1 == id {print $0; exit}')"
+      if [[ -z "$row" ]]; then
+        unset "JOB_SUBMIT_EPOCH[$jid]"
+        continue
+      fi
+
+      local state reason
+      state="$(printf '%s' "$row" | awk -F'|' '{print $2}')"
+      reason="$(printf '%s' "$row" | awk -F'|' '{print $3}')"
+      if [[ "$state" == "PENDING" && "$reason" == "launch_failed_requeued_held" ]]; then
+        append_heartbeat "job_launch_failed_held job_id=$jid reason=$reason"
+        unset "JOB_SUBMIT_EPOCH[$jid]"
+        continue
+      fi
+
+      if [[ -n "$state" ]]; then
         next_pending+=("$jid")
       fi
     done
@@ -432,6 +481,16 @@ check_prereqs_and_env() {
 
   cd "$REPO_ROOT"
 
+  if [[ ! -f "$LOCAL_EVAL_UV_PROJECT/pyproject.toml" ]]; then
+    echo "Missing locked local-eval project: $LOCAL_EVAL_UV_PROJECT/pyproject.toml" >&2
+    exit 1
+  fi
+  if [[ ! -f "$LOCAL_EVAL_UV_PROJECT/uv.lock" ]]; then
+    echo "Missing lockfile for local-eval project: $LOCAL_EVAL_UV_PROJECT/uv.lock" >&2
+    exit 1
+  fi
+
+  export UV_PROJECT="$LOCAL_EVAL_UV_PROJECT"
   export MODEL_CACHE_DIR="$CACHE_ROOT"
   export HF_HOME="$CACHE_ROOT"
   export HF_DATASETS_CACHE="$CACHE_ROOT/datasets"
@@ -449,37 +508,23 @@ check_prereqs_and_env() {
   fi
 
   if [[ "$UV_SYNC_INEXACT" == "1" ]]; then
-    append_heartbeat "syncing uv environment mode=inexact"
+    append_heartbeat "syncing uv environment mode=inexact project=$UV_PROJECT"
     uv sync --inexact
   else
-    append_heartbeat "syncing uv environment mode=exact"
+    append_heartbeat "syncing uv environment mode=exact project=$UV_PROJECT"
     uv sync
   fi
 
-  # Local model eval requires vLLM; install a wheel-only build if missing.
+  # Local model eval requires vLLM (pinned in jobs/local_eval_env/uv.lock).
   if ! uv run python - <<'PY'
 import importlib.util
 import sys
 sys.exit(0 if importlib.util.find_spec("vllm") is not None else 1)
 PY
   then
-    append_heartbeat "vllm_missing installing_with_uv_pip spec=$VLLM_INSTALL_SPEC"
-    if ! uv pip install --only-binary=:all: "$VLLM_INSTALL_SPEC"; then
-      echo "Failed to install $VLLM_INSTALL_SPEC as a prebuilt wheel." >&2
-      echo "Set VLLM_INSTALL_SPEC to another wheel-backed version or install CUDA toolkit+nvcc for source builds." >&2
-      echo "Example retry: VLLM_INSTALL_SPEC='vllm==0.10.2' jobs/clip_local_eval_master.sh --phase smoke ..." >&2
-      exit 1
-    fi
-    if ! uv run python - <<'PY'
-import importlib.util
-import sys
-sys.exit(0 if importlib.util.find_spec("vllm") is not None else 1)
-PY
-    then
-      echo "Failed to install/import vllm in uv environment." >&2
-      exit 1
-    fi
-    append_heartbeat "vllm_install_complete"
+    echo "vllm is missing after sync in locked project: $UV_PROJECT" >&2
+    echo "Check jobs/local_eval_env/uv.lock and remote platform compatibility." >&2
+    exit 1
   fi
 }
 
@@ -739,6 +784,7 @@ EOF
 
   write_shard_status "$shard_status_file" "$phase" "$combo_id" "$shard_index" "submitted" "$jid" "$attempt" -1 "submitted_to_scheduler"
   ACTIVE_JOB_IDS+=("$jid")
+  JOB_SUBMIT_EPOCH["$jid"]="$(date +%s)"
   append_heartbeat "submitted phase=$phase combo=$combo_id shard=$shard_index attempt=$attempt job_id=$jid"
   update_dashboard >/dev/null
   printf '%s' "$jid"
@@ -1107,7 +1153,7 @@ PY
 
 main() {
   append_heartbeat "run_start run_tag=$RUN_TAG phase=$PHASE"
-  append_heartbeat "run_config repo_root=$REPO_ROOT max_concurrent_jobs=$MAX_CONCURRENT_JOBS num_shards_smoke=$NUM_SHARDS_SMOKE num_shards_main=$NUM_SHARDS_MAIN save_interval=$SAVE_INTERVAL keep_checkpoints=$KEEP_CHECKPOINTS max_tokens=$MAX_TOKENS force_refresh=$FORCE_REFRESH skip_push=$SKIP_PUSH"
+  append_heartbeat "run_config repo_root=$REPO_ROOT uv_project=$LOCAL_EVAL_UV_PROJECT max_concurrent_jobs=$MAX_CONCURRENT_JOBS num_shards_smoke=$NUM_SHARDS_SMOKE num_shards_main=$NUM_SHARDS_MAIN save_interval=$SAVE_INTERVAL keep_checkpoints=$KEEP_CHECKPOINTS max_tokens=$MAX_TOKENS force_refresh=$FORCE_REFRESH skip_push=$SKIP_PUSH"
 
   check_prereqs_and_env
   materialize_datasets

@@ -80,6 +80,7 @@ class LocalClient(ModelClient):
         self._llm = None
         self._tokenizer = None
         self._tensor_parallel_size = tensor_parallel_size
+        self._init_error: Optional[Exception] = None
         
         # Set HF cache directory
         os.environ["HF_HOME"] = str(MODEL_CACHE_DIR)
@@ -89,7 +90,11 @@ class LocalClient(ModelClient):
         """Load the model if not already loaded."""
         if self._llm is not None:
             return
-        
+        if self._init_error is not None:
+            raise RuntimeError(
+                f"Previous local model initialization failed for {self._model_id}"
+            ) from self._init_error
+
         import torch
         from vllm import LLM
         
@@ -119,7 +124,11 @@ class LocalClient(ModelClient):
         )
         if self._max_model_len is not None:
             llm_kwargs["max_model_len"] = self._max_model_len
-        self._llm = LLM(**llm_kwargs)
+        try:
+            self._llm = LLM(**llm_kwargs)
+        except Exception as exc:
+            self._init_error = exc
+            raise
         
         print(f"  Model loaded successfully")
     
@@ -213,3 +222,4 @@ class LocalClient(ModelClient):
             import torch
             torch.cuda.empty_cache()
             print(f"Model unloaded: {self._model_id}")
+        self._init_error = None
