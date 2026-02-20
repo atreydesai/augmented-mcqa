@@ -95,6 +95,7 @@ class LocalClient(ModelClient):
                 f"Previous local model initialization failed for {self._model_id}"
             ) from self._init_error
 
+        self._ensure_transformers_tokenizer_compat()
         import torch
         from vllm import LLM
         
@@ -149,6 +150,35 @@ class LocalClient(ModelClient):
                 raise
         
         print(f"  Model loaded successfully")
+
+    @staticmethod
+    def _ensure_transformers_tokenizer_compat() -> None:
+        """Patch TokenizersBackend for vLLM compatibility on newer Transformers."""
+        try:
+            from transformers.tokenization_utils_tokenizers import TokenizersBackend
+        except Exception:
+            return
+
+        patched = False
+
+        if not hasattr(TokenizersBackend, "all_special_tokens_extended"):
+            @property
+            def all_special_tokens_extended(self):  # type: ignore[override]
+                return list(self.all_special_tokens)
+
+            TokenizersBackend.all_special_tokens_extended = all_special_tokens_extended  # type: ignore[attr-defined]
+            patched = True
+
+        if not hasattr(TokenizersBackend, "special_tokens_map_extended"):
+            @property
+            def special_tokens_map_extended(self):  # type: ignore[override]
+                return dict(self.special_tokens_map)
+
+            TokenizersBackend.special_tokens_map_extended = special_tokens_map_extended  # type: ignore[attr-defined]
+            patched = True
+
+        if patched:
+            print("  Applied TokenizersBackend compatibility patch for vLLM")
     
     @property
     def name(self) -> str:
