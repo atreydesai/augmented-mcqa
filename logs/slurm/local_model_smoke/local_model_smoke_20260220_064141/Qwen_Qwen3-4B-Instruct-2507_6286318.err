@@ -1,38 +1,0 @@
-Resolved 82 packages in 2ms
-Uninstalled 4 packages in 9.96s
-Installed 4 packages in 11.44s
- - anthropic==0.71.0
- + anthropic==0.79.0
- - huggingface-hub==0.36.2
- + huggingface-hub==1.4.1
- - numpy==2.2.6
- + numpy==2.4.2
- - transformers==4.57.6
- + transformers==5.1.0
-Resolved 155 packages in 2.13s
-Uninstalled 4 packages in 9.14s
-Installed 4 packages in 15.03s
- - anthropic==0.79.0
- + anthropic==0.71.0
- - huggingface-hub==1.4.1
- + huggingface-hub==0.36.2
- - numpy==2.4.2
- + numpy==2.2.6
- - transformers==5.1.0
- + transformers==4.57.6
-/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/transformers/utils/hub.py:110: FutureWarning: Using `TRANSFORMERS_CACHE` is deprecated and will be removed in v5 of Transformers. Use `HF_HOME` instead.
-  warnings.warn(
-The argument `trust_remote_code` is to be used with Auto classes. It has no effect here and is ignored.
-[1;36m(EngineCore_DP0 pid=22012)[0;0m /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/tvm_ffi/_optional_torch_c_dlpack.py:174: UserWarning: Failed to JIT torch c dlpack extension, EnvTensorAllocator will not be enabled.
-[1;36m(EngineCore_DP0 pid=22012)[0;0m We recommend installing via `pip install torch-c-dlpack-ext`
-[1;36m(EngineCore_DP0 pid=22012)[0;0m   warnings.warn(
-[1;36m(EngineCore_DP0 pid=22012)[0;0m Loading safetensors checkpoint shards:   0% Completed | 0/3 [00:00<?, ?it/s]
-[1;36m(EngineCore_DP0 pid=22012)[0;0m Loading safetensors checkpoint shards:  33% Completed | 1/3 [00:06<00:13,  6.67s/it]
-[1;36m(EngineCore_DP0 pid=22012)[0;0m Loading safetensors checkpoint shards:  67% Completed | 2/3 [00:13<00:06,  6.63s/it]
-[1;36m(EngineCore_DP0 pid=22012)[0;0m Loading safetensors checkpoint shards: 100% Completed | 3/3 [00:13<00:00,  3.71s/it]
-[1;36m(EngineCore_DP0 pid=22012)[0;0m Loading safetensors checkpoint shards: 100% Completed | 3/3 [00:13<00:00,  4.50s/it]
-[1;36m(EngineCore_DP0 pid=22012)[0;0m 
-[1;36m(EngineCore_DP0 pid=22012)[0;0m Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):   0%|          | 0/51 [00:00<?, ?it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):   4%|▍         | 2/51 [00:00<00:02, 16.38it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):   8%|▊         | 4/51 [00:00<00:02, 16.52it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  12%|█▏        | 6/51 [00:00<00:02, 16.61it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  16%|█▌        | 8/51 [00:00<00:02, 16.62it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  20%|█▉        | 10/51 [00:00<00:02, 17.51it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  24%|██▎       | 12/51 [00:00<00:02, 17.57it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  27%|██▋       | 14/51 [00:00<00:02, 17.95it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  31%|███▏      | 16/51 [00:00<00:01, 18.27it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  37%|███▋      | 19/51 [00:01<00:01, 20.07it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  43%|████▎     | 22/51 [00:01<00:01, 21.10it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  49%|████▉     | 25/51 [00:01<00:01, 22.08it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  55%|█████▍    | 28/51 [00:01<00:01, 22.79it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  61%|██████    | 31/51 [00:01<00:00, 23.40it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  67%|██████▋   | 34/51 [00:01<00:00, 23.88it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  73%|███████▎  | 37/51 [00:01<00:00, 24.32it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  78%|███████▊  | 40/51 [00:01<00:00, 24.84it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  84%|████████▍ | 43/51 [00:02<00:00, 25.13it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  90%|█████████ | 46/51 [00:02<00:00, 25.63it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  96%|█████████▌| 49/51 [00:02<00:00, 26.12it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE): 100%|██████████| 51/51 [00:02<00:00, 22.04it/s]
-[1;36m(EngineCore_DP0 pid=22012)[0;0m Capturing CUDA graphs (decode, FULL):   0%|          | 0/35 [00:00<?, ?it/s]Capturing CUDA graphs (decode, FULL):   9%|▊         | 3/35 [00:00<00:01, 21.89it/s]Capturing CUDA graphs (decode, FULL):  17%|█▋        | 6/35 [00:00<00:01, 22.44it/s]Capturing CUDA graphs (decode, FULL):  26%|██▌       | 9/35 [00:00<00:01, 22.98it/s]Capturing CUDA graphs (decode, FULL):  34%|███▍      | 12/35 [00:00<00:00, 23.55it/s]Capturing CUDA graphs (decode, FULL):  43%|████▎     | 15/35 [00:00<00:00, 24.14it/s]Capturing CUDA graphs (decode, FULL):  51%|█████▏    | 18/35 [00:00<00:00, 24.62it/s]Capturing CUDA graphs (decode, FULL):  60%|██████    | 21/35 [00:00<00:00, 24.91it/s]Capturing CUDA graphs (decode, FULL):  69%|██████▊   | 24/35 [00:00<00:00, 25.27it/s]Capturing CUDA graphs (decode, FULL):  77%|███████▋  | 27/35 [00:01<00:00, 25.71it/s]Capturing CUDA graphs (decode, FULL):  86%|████████▌ | 30/35 [00:01<00:00, 25.95it/s]Capturing CUDA graphs (decode, FULL):  94%|█████████▍| 33/35 [00:01<00:00, 26.34it/s]Capturing CUDA graphs (decode, FULL): 100%|██████████| 35/35 [00:01<00:00, 25.05it/s]
-Adding requests:   0%|          | 0/1 [00:00<?, ?it/s]Adding requests: 100%|██████████| 1/1 [00:00<00:00, 242.43it/s]
-Processed prompts:   0%|          | 0/1 [00:00<?, ?it/s, est. speed input: 0.00 toks/s, output: 0.00 toks/s]Processed prompts: 100%|██████████| 1/1 [00:00<00:00, 13.11it/s, est. speed input: 472.43 toks/s, output: 65.59 toks/s]Processed prompts: 100%|██████████| 1/1 [00:00<00:00, 13.07it/s, est. speed input: 472.43 toks/s, output: 65.59 toks/s]
