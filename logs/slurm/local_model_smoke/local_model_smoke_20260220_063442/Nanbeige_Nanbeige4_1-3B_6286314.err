@@ -1,0 +1,98 @@
+Resolved 155 packages in 557ms
+Uninstalled 4 packages in 11.09s
+Installed 4 packages in 15.77s
+ - anthropic==0.79.0
+ + anthropic==0.71.0
+ - huggingface-hub==1.4.1
+ + huggingface-hub==0.36.2
+ - numpy==2.4.2
+ + numpy==2.2.6
+ - transformers==5.1.0
+ + transformers==4.57.6
+Uninstalled 4 packages in 9.70s
+Installed 4 packages in 14.43s
+The argument `trust_remote_code` is to be used with Auto classes. It has no effect here and is ignored.
+[1;36m(EngineCore_DP0 pid=20808)[0;0m Process EngineCore_DP0:
+[1;36m(EngineCore_DP0 pid=20808)[0;0m Traceback (most recent call last):
+[1;36m(EngineCore_DP0 pid=20808)[0;0m   File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/multiprocessing/process.py", line 314, in _bootstrap
+[1;36m(EngineCore_DP0 pid=20808)[0;0m     self.run()
+[1;36m(EngineCore_DP0 pid=20808)[0;0m   File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/multiprocessing/process.py", line 108, in run
+[1;36m(EngineCore_DP0 pid=20808)[0;0m     self._target(*self._args, **self._kwargs)
+[1;36m(EngineCore_DP0 pid=20808)[0;0m   File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/vllm/v1/engine/core.py", line 846, in run_engine_core
+[1;36m(EngineCore_DP0 pid=20808)[0;0m     raise e
+[1;36m(EngineCore_DP0 pid=20808)[0;0m   File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/vllm/v1/engine/core.py", line 833, in run_engine_core
+[1;36m(EngineCore_DP0 pid=20808)[0;0m     engine_core = EngineCoreProc(*args, **kwargs)
+[1;36m(EngineCore_DP0 pid=20808)[0;0m                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[1;36m(EngineCore_DP0 pid=20808)[0;0m   File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/vllm/v1/engine/core.py", line 606, in __init__
+[1;36m(EngineCore_DP0 pid=20808)[0;0m     super().__init__(
+[1;36m(EngineCore_DP0 pid=20808)[0;0m   File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/vllm/v1/engine/core.py", line 102, in __init__
+[1;36m(EngineCore_DP0 pid=20808)[0;0m     self.model_executor = executor_class(vllm_config)
+[1;36m(EngineCore_DP0 pid=20808)[0;0m                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[1;36m(EngineCore_DP0 pid=20808)[0;0m   File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/vllm/v1/executor/abstract.py", line 101, in __init__
+[1;36m(EngineCore_DP0 pid=20808)[0;0m     self._init_executor()
+[1;36m(EngineCore_DP0 pid=20808)[0;0m   File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/vllm/v1/executor/uniproc_executor.py", line 46, in _init_executor
+[1;36m(EngineCore_DP0 pid=20808)[0;0m     self.driver_worker.init_worker(all_kwargs=[kwargs])
+[1;36m(EngineCore_DP0 pid=20808)[0;0m   File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/vllm/v1/worker/worker_base.py", line 255, in init_worker
+[1;36m(EngineCore_DP0 pid=20808)[0;0m     worker_class = resolve_obj_by_qualname(
+[1;36m(EngineCore_DP0 pid=20808)[0;0m                    ^^^^^^^^^^^^^^^^^^^^^^^^
+[1;36m(EngineCore_DP0 pid=20808)[0;0m   File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/vllm/utils/import_utils.py", line 89, in resolve_obj_by_qualname
+[1;36m(EngineCore_DP0 pid=20808)[0;0m     module = importlib.import_module(module_name)
+[1;36m(EngineCore_DP0 pid=20808)[0;0m              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[1;36m(EngineCore_DP0 pid=20808)[0;0m   File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/importlib/__init__.py", line 90, in import_module
+[1;36m(EngineCore_DP0 pid=20808)[0;0m     return _bootstrap._gcd_import(name[level:], package, level)
+[1;36m(EngineCore_DP0 pid=20808)[0;0m            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[1;36m(EngineCore_DP0 pid=20808)[0;0m   File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+[1;36m(EngineCore_DP0 pid=20808)[0;0m   File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+[1;36m(EngineCore_DP0 pid=20808)[0;0m   File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+[1;36m(EngineCore_DP0 pid=20808)[0;0m   File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+[1;36m(EngineCore_DP0 pid=20808)[0;0m   File "<frozen importlib._bootstrap_external>", line 995, in exec_module
+[1;36m(EngineCore_DP0 pid=20808)[0;0m   File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+[1;36m(EngineCore_DP0 pid=20808)[0;0m   File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/vllm/v1/worker/gpu_worker.py", line 52, in <module>
+[1;36m(EngineCore_DP0 pid=20808)[0;0m     from vllm.v1.worker.gpu_model_runner import GPUModelRunner
+[1;36m(EngineCore_DP0 pid=20808)[0;0m   File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/vllm/v1/worker/gpu_model_runner.py", line 135, in <module>
+[1;36m(EngineCore_DP0 pid=20808)[0;0m     from vllm.v1.spec_decode.ngram_proposer import NgramProposer
+[1;36m(EngineCore_DP0 pid=20808)[0;0m   File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/vllm/v1/spec_decode/ngram_proposer.py", line 6, in <module>
+[1;36m(EngineCore_DP0 pid=20808)[0;0m     from numba import get_num_threads, jit, njit, prange, set_num_threads
+[1;36m(EngineCore_DP0 pid=20808)[0;0m   File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/numba/__init__.py", line 59, in <module>
+[1;36m(EngineCore_DP0 pid=20808)[0;0m     _ensure_critical_deps()
+[1;36m(EngineCore_DP0 pid=20808)[0;0m   File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/numba/__init__.py", line 45, in _ensure_critical_deps
+[1;36m(EngineCore_DP0 pid=20808)[0;0m     raise ImportError(msg)
+[1;36m(EngineCore_DP0 pid=20808)[0;0m ImportError: Numba needs NumPy 2.2 or less. Got NumPy 2.4.
+Traceback (most recent call last):
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/scripts/smoke_local_model.py", line 134, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/scripts/smoke_local_model.py", line 108, in main
+    result = client.generate(
+             ^^^^^^^^^^^^^^^^
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/models/local_client.py", line 200, in generate
+    results = self.generate_batch([prompt], max_tokens, **kwargs)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/models/local_client.py", line 217, in generate_batch
+    self._ensure_loaded()
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/models/local_client.py", line 129, in _ensure_loaded
+    self._llm = LLM(**llm_kwargs)
+                ^^^^^^^^^^^^^^^^^
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/vllm/entrypoints/llm.py", line 343, in __init__
+    self.llm_engine = LLMEngine.from_engine_args(
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/vllm/v1/engine/llm_engine.py", line 174, in from_engine_args
+    return cls(
+           ^^^^
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/vllm/v1/engine/llm_engine.py", line 108, in __init__
+    self.engine_core = EngineCoreClient.make_client(
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/vllm/v1/engine/core_client.py", line 93, in make_client
+    return SyncMPClient(vllm_config, executor_class, log_stats)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/vllm/v1/engine/core_client.py", line 640, in __init__
+    super().__init__(
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/vllm/v1/engine/core_client.py", line 469, in __init__
+    with launch_core_engines(vllm_config, executor_class, log_stats) as (
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/contextlib.py", line 144, in __exit__
+    next(self.gen)
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/vllm/v1/engine/utils.py", line 907, in launch_core_engines
+    wait_for_engine_startup(
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/vllm/v1/engine/utils.py", line 964, in wait_for_engine_startup
+    raise RuntimeError(
+RuntimeError: Engine core initialization failed. See root cause above. Failed core proc(s): {}

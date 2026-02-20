@@ -1,0 +1,16 @@
+Resolved cached snapshot for Nanbeige/Nanbeige4.1-3B: /fs/nexus-scratch/adesai10/hub/hub/models--Nanbeige--Nanbeige4.1-3B/snapshots/7e64fe9201798df23b4f15906be0c7376d6efc91
+=== Local Model Smoke Test ===
+Model key: Nanbeige/Nanbeige4.1-3B
+Client kwargs: {'gpu_memory_utilization': 0.9, 'tensor_parallel_size': 1, 'model_id': '/fs/nexus-scratch/adesai10/hub/hub/models--Nanbeige--Nanbeige4.1-3B/snapshots/7e64fe9201798df23b4f15906be0c7376d6efc91', 'tokenizer_mode': 'auto'}
+Cache root: /fs/nexus-scratch/adesai10/hub
+Client created in 0.00s: Local (/fs/nexus-scratch/adesai10/hub/hub/models--Nanbeige--Nanbeige4.1-3B/snapshots/7e64fe9201798df23b4f15906be0c7376d6efc91)
+Loading model: /fs/nexus-scratch/adesai10/hub/hub/models--Nanbeige--Nanbeige4.1-3B/snapshots/7e64fe9201798df23b4f15906be0c7376d6efc91
+  GPU memory utilization: 0.9
+  Tensor parallel size: 1
+  Seed: 12345
+  Dtype: auto
+  Tokenizer mode: auto
+INFO 02-20 01:19:24 [utils.py:253] non-default args: {'trust_remote_code': True, 'download_dir': '/fs/nexus-scratch/adesai10/hub', 'seed': 12345, 'disable_log_stats': True, 'model': '/fs/nexus-scratch/adesai10/hub/hub/models--Nanbeige--Nanbeige4.1-3B/snapshots/7e64fe9201798df23b4f15906be0c7376d6efc91'}
+INFO 02-20 01:19:24 [model.py:631] Resolved architecture: LlamaForCausalLM
+INFO 02-20 01:19:24 [model.py:1745] Using max model len 262144
+INFO 02-20 01:19:25 [scheduler.py:216] Chunked prefill is enabled with max_num_batched_tokens=8192.
