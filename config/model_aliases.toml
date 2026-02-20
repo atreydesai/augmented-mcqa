@@ -32,10 +32,6 @@ provider = "anthropic"
 provider = "anthropic"
 model_id = "claude-opus-4-6"
 
-[aliases."claude-sonnet-4-5"]
-provider = "anthropic"
-model_id = "claude-sonnet-4-5"
-
 [aliases."claude-sonnet-4-5-20250929"]
 provider = "anthropic"
 model_id = "claude-sonnet-4-5-20250929"
@@ -76,14 +72,6 @@ model_id = "deepseek-reasoner"
 
 [aliases.local]
 provider = "local"
-
-[aliases."qwen3-8b"]
-provider = "local"
-model_id = "qwen3-8b"
-
-[aliases."Qwen/Qwen2.5-7B-Instruct"]
-provider = "local"
-model_id = "Qwen/Qwen2.5-7B-Instruct"
 
 [aliases."Nanbeige/Nanbeige4.1-3B"]
 provider = "local"
