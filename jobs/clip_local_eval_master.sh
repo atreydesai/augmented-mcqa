@@ -11,23 +11,24 @@ Usage:
 Options:
   --phase <smoke|main|both>     Which phase(s) to run (default: both)
   --run-tag <tag>               Run tag (default: UTC timestamp)
-  --max-concurrent-jobs <int>   Max active shard jobs across all combos (default: 12)
+  --max-concurrent-jobs <int>   Max active shard jobs across all combos (default: 4)
   --num-shards-smoke <int>      Shards per combo for smoke phase (default: 3)
   --num-shards-main <int>       Shards per combo for main phase (default: 12)
-  --save-interval <int>         Mid-eval checkpoint interval (default: 50)
+  --save-interval <int>         Mid-eval checkpoint interval (default: 200)
   --keep-checkpoints <int>      Keep newest checkpoint files per root (default: 2)
-  --max-tokens <int>            Eval max_tokens (default: 2048)
+  --max-tokens <int>            Eval max_tokens (default: 150)
   --no-sync                     Skip `uv sync` (use current .venv as-is)
   --force-refresh               Redownload HF generator datasets to remote disk
   --skip-push                   Do not push final artifacts to HuggingFace Hub
   --repo-root <path>            Remote repo path (default: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa)
   --vllm-max-num-batched-tokens <int>  vLLM max_num_batched_tokens (default: 4096)
-  --vllm-max-num-seqs <int>             vLLM max_num_seqs (default: 8)
+  --vllm-max-num-seqs <int>             vLLM max_num_seqs (default: 1)
   --vllm-enable-chunked-prefill <0|1>   Enable chunked prefill (default: 1)
   --eval-workpack-format <parquet|arrow|none>  Runtime workpack format (default: parquet)
   --eval-workpack-root <path>           Shared workpack cache root (default: <run_root>/_workpacks)
   --eval-worker-mode <persistent|legacy>        Worker topology (default: persistent)
-  --eval-batch-size <int>             Runner batch size for generate_batch (default: 8)
+  --eval-worker-layout <flat|model_gen>         Persistent layout (default: model_gen)
+  --eval-batch-size <int>             Runner batch size for generate_batch (default: 1)
   --help                        Show this help text
 
 Examples:
@@ -42,23 +43,24 @@ USAGE
 
 PHASE="both"
 RUN_TAG="local_eval_$(date -u +%Y%m%d_%H%M%S)"
-MAX_CONCURRENT_JOBS=12
+MAX_CONCURRENT_JOBS=4
 NUM_SHARDS_SMOKE=3
 NUM_SHARDS_MAIN=12
-SAVE_INTERVAL=50
+SAVE_INTERVAL=200
 KEEP_CHECKPOINTS=2
-MAX_TOKENS=2048
+MAX_TOKENS=150
 FORCE_REFRESH=0
 SKIP_PUSH=0
 DO_SYNC=1
 REPO_ROOT="/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa"
 VLLM_MAX_NUM_BATCHED_TOKENS="${VLLM_MAX_NUM_BATCHED_TOKENS:-4096}"
-VLLM_MAX_NUM_SEQS="${VLLM_MAX_NUM_SEQS:-8}"
+VLLM_MAX_NUM_SEQS="${VLLM_MAX_NUM_SEQS:-1}"
 VLLM_ENABLE_CHUNKED_PREFILL="${VLLM_ENABLE_CHUNKED_PREFILL:-1}"
 EVAL_WORKPACK_FORMAT="${EVAL_WORKPACK_FORMAT:-parquet}"
 EVAL_WORKPACK_ROOT="${EVAL_WORKPACK_ROOT:-}"
 EVAL_WORKER_MODE="${EVAL_WORKER_MODE:-persistent}"
-EVAL_BATCH_SIZE="${EVAL_BATCH_SIZE:-8}"
+EVAL_WORKER_LAYOUT="${EVAL_WORKER_LAYOUT:-model_gen}"
+EVAL_BATCH_SIZE="${EVAL_BATCH_SIZE:-1}"
 
 CACHE_ROOT="/fs/nexus-scratch/adesai10/hub"
 DATASETS_REMOTE_ROOT_REL="datasets/finished_sets_remote"
@@ -66,14 +68,12 @@ RESULTS_ROOT_REL="results/local_eval"
 LOG_ROOT_REL="logs/slurm/local_eval"
 
 EVAL_MODELS=(
-  "Nanbeige/Nanbeige4.1-3B"
   "Qwen/Qwen3-4B-Instruct-2507"
   "allenai/Olmo-3-7B-Instruct"
 )
 
 GENERATOR_LABELS=(
   "opus"
-  "gpt-4.1"
   "gpt-5.2"
 )
 
@@ -137,6 +137,8 @@ while [[ $# -gt 0 ]]; do
       EVAL_WORKPACK_ROOT="${2:-}"; shift 2 ;;
     --eval-worker-mode)
       EVAL_WORKER_MODE="${2:-}"; shift 2 ;;
+    --eval-worker-layout)
+      EVAL_WORKER_LAYOUT="${2:-}"; shift 2 ;;
     --eval-batch-size)
       EVAL_BATCH_SIZE="${2:-}"; shift 2 ;;
     --help|-h)
@@ -178,6 +180,11 @@ fi
 
 if [[ "$EVAL_WORKER_MODE" != "persistent" && "$EVAL_WORKER_MODE" != "legacy" ]]; then
   echo "--eval-worker-mode must be persistent or legacy" >&2
+  exit 1
+fi
+
+if [[ "$EVAL_WORKER_LAYOUT" != "flat" && "$EVAL_WORKER_LAYOUT" != "model_gen" ]]; then
+  echo "--eval-worker-layout must be flat or model_gen" >&2
   exit 1
 fi
 
@@ -1080,6 +1087,7 @@ submit_persistent_worker_pool() {
   local phase="$1"
   local tasks_tsv="$2"
   local pool_tag="$3"
+  local worker_count_override="${4:-}"
   LAST_SUBMITTED_WORKER_IDS=()
 
   local task_count
@@ -1090,8 +1098,15 @@ submit_persistent_worker_pool() {
   fi
 
   local worker_count="$MAX_CONCURRENT_JOBS"
+  if [[ -n "$worker_count_override" ]]; then
+    worker_count="$worker_count_override"
+  fi
   if (( worker_count > task_count )); then
     worker_count="$task_count"
+  fi
+  if (( worker_count <= 0 )); then
+    append_heartbeat "worker_pool_skipped phase=$phase pool=$pool_tag reason=non_positive_worker_count"
+    return 0
   fi
   append_heartbeat \
     "worker_pool_start phase=$phase pool=$pool_tag tasks=$task_count workers=$worker_count"
@@ -1366,19 +1381,53 @@ run_phase() {
   # 2) Submit initial shard jobs for all combos
   local phase_job_ids=()
   if [[ "$EVAL_WORKER_MODE" == "persistent" ]]; then
-    local initial_tasks_tsv="$phase_status_dir/tasks_initial.tsv"
-    : >"$initial_tasks_tsv"
-    while IFS=$'\t' read -r combo_id combo_eval combo_gen combo_mode manifest_path combo_root results_base summary_dir combo_shards; do
-      local shard
-      for ((shard = 0; shard < combo_shards; shard++)); do
-        local shard_status_file="$STATUS_ROOT/shards/$phase/$combo_id/shard_${shard}.json"
-        write_shard_status "$shard_status_file" "$phase" "$combo_id" "$shard" "queued" "pending" 0 -1 "queued_for_worker_pool"
-        printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-          "$combo_id" "$combo_eval" "$combo_gen" "$combo_mode" "$manifest_path" "$combo_root" "$summary_dir" "$combo_shards" "$shard" 0 >>"$initial_tasks_tsv"
-      done
-    done <"$combos_tsv"
-    submit_persistent_worker_pool "$phase" "$initial_tasks_tsv" "initial"
-    phase_job_ids=("${LAST_SUBMITTED_WORKER_IDS[@]}")
+    if [[ "$EVAL_WORKER_LAYOUT" == "model_gen" ]]; then
+      local initial_tasks_dir="$phase_status_dir/tasks_initial_model_gen"
+      rm -rf "$initial_tasks_dir"
+      mkdir -p "$initial_tasks_dir"
+      declare -A pool_task_files=()
+
+      while IFS=$'\t' read -r combo_id combo_eval combo_gen combo_mode manifest_path combo_root results_base summary_dir combo_shards; do
+        local pool_key_safe
+        pool_key_safe="$(safe_name "${combo_eval}__${combo_gen}")"
+        local pool_tasks_tsv="$initial_tasks_dir/${pool_key_safe}.tsv"
+        if [[ -z "${pool_task_files[$pool_key_safe]+x}" ]]; then
+          : >"$pool_tasks_tsv"
+          pool_task_files[$pool_key_safe]="$pool_tasks_tsv"
+        fi
+        local shard
+        for ((shard = 0; shard < combo_shards; shard++)); do
+          local shard_status_file="$STATUS_ROOT/shards/$phase/$combo_id/shard_${shard}.json"
+          write_shard_status "$shard_status_file" "$phase" "$combo_id" "$shard" "queued" "pending" 0 -1 "queued_for_worker_pool"
+          printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+            "$combo_id" "$combo_eval" "$combo_gen" "$combo_mode" "$manifest_path" "$combo_root" "$summary_dir" "$combo_shards" "$shard" 0 >>"${pool_task_files[$pool_key_safe]}"
+        done
+      done <"$combos_tsv"
+
+      phase_job_ids=()
+      local sorted_pool_keys
+      sorted_pool_keys="$(printf '%s\n' "${!pool_task_files[@]}" | sort)"
+      while IFS= read -r pool_key; do
+        [[ -z "$pool_key" ]] && continue
+        local pool_tasks_tsv="${pool_task_files[$pool_key]}"
+        submit_persistent_worker_pool "$phase" "$pool_tasks_tsv" "initial_${pool_key}" 1
+        phase_job_ids+=("${LAST_SUBMITTED_WORKER_IDS[@]}")
+      done <<<"$sorted_pool_keys"
+    else
+      local initial_tasks_tsv="$phase_status_dir/tasks_initial.tsv"
+      : >"$initial_tasks_tsv"
+      while IFS=$'\t' read -r combo_id combo_eval combo_gen combo_mode manifest_path combo_root results_base summary_dir combo_shards; do
+        local shard
+        for ((shard = 0; shard < combo_shards; shard++)); do
+          local shard_status_file="$STATUS_ROOT/shards/$phase/$combo_id/shard_${shard}.json"
+          write_shard_status "$shard_status_file" "$phase" "$combo_id" "$shard" "queued" "pending" 0 -1 "queued_for_worker_pool"
+          printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+            "$combo_id" "$combo_eval" "$combo_gen" "$combo_mode" "$manifest_path" "$combo_root" "$summary_dir" "$combo_shards" "$shard" 0 >>"$initial_tasks_tsv"
+        done
+      done <"$combos_tsv"
+      submit_persistent_worker_pool "$phase" "$initial_tasks_tsv" "initial"
+      phase_job_ids=("${LAST_SUBMITTED_WORKER_IDS[@]}")
+    fi
   else
     while IFS=$'\t' read -r combo_id combo_eval combo_gen combo_mode manifest_path combo_root results_base summary_dir combo_shards; do
       local shard
@@ -1490,7 +1539,7 @@ PY
 
 main() {
   append_heartbeat "run_start run_tag=$RUN_TAG phase=$PHASE"
-  append_heartbeat "run_config repo_root=$REPO_ROOT max_concurrent_jobs=$MAX_CONCURRENT_JOBS num_shards_smoke=$NUM_SHARDS_SMOKE num_shards_main=$NUM_SHARDS_MAIN save_interval=$SAVE_INTERVAL keep_checkpoints=$KEEP_CHECKPOINTS max_tokens=$MAX_TOKENS force_refresh=$FORCE_REFRESH skip_push=$SKIP_PUSH do_sync=$DO_SYNC worker_mode=$EVAL_WORKER_MODE workpack_format=$EVAL_WORKPACK_FORMAT workpack_root=$EVAL_WORKPACK_ROOT eval_batch_size=$EVAL_BATCH_SIZE vllm_max_num_batched_tokens=$VLLM_MAX_NUM_BATCHED_TOKENS vllm_max_num_seqs=$VLLM_MAX_NUM_SEQS vllm_enable_chunked_prefill=$VLLM_ENABLE_CHUNKED_PREFILL"
+  append_heartbeat "run_config repo_root=$REPO_ROOT max_concurrent_jobs=$MAX_CONCURRENT_JOBS num_shards_smoke=$NUM_SHARDS_SMOKE num_shards_main=$NUM_SHARDS_MAIN save_interval=$SAVE_INTERVAL keep_checkpoints=$KEEP_CHECKPOINTS max_tokens=$MAX_TOKENS force_refresh=$FORCE_REFRESH skip_push=$SKIP_PUSH do_sync=$DO_SYNC worker_mode=$EVAL_WORKER_MODE worker_layout=$EVAL_WORKER_LAYOUT workpack_format=$EVAL_WORKPACK_FORMAT workpack_root=$EVAL_WORKPACK_ROOT eval_batch_size=$EVAL_BATCH_SIZE vllm_max_num_batched_tokens=$VLLM_MAX_NUM_BATCHED_TOKENS vllm_max_num_seqs=$VLLM_MAX_NUM_SEQS vllm_enable_chunked_prefill=$VLLM_ENABLE_CHUNKED_PREFILL"
 
   check_prereqs_and_env
   materialize_datasets
