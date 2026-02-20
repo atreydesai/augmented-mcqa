@@ -1,17 +1,0 @@
-Creating parquet from Arrow format:   0%|          | 0/1 [00:00<?, ?ba/s]Creating parquet from Arrow format: 100%|██████████| 1/1 [00:00<00:00, 42.73ba/s]
-Creating parquet from Arrow format:   0%|          | 0/1 [00:00<?, ?ba/s]Creating parquet from Arrow format: 100%|██████████| 1/1 [00:00<00:00, 168.83ba/s]
-Creating parquet from Arrow format:   0%|          | 0/1 [00:00<?, ?ba/s]Creating parquet from Arrow format: 100%|██████████| 1/1 [00:00<00:00, 183.92ba/s]
-Creating parquet from Arrow format:   0%|          | 0/1 [00:00<?, ?ba/s]Creating parquet from Arrow format: 100%|██████████| 1/1 [00:00<00:00, 59.36ba/s]
-Generating train split: 0 examples [00:00, ? examples/s]Generating train split: 750 examples [00:00, 27546.50 examples/s]
-Evaluating:   0%|          | 0/5 [00:00<?, ?it/s]Evaluating: 100%|██████████| 5/5 [00:00<00:00, 16033.27it/s]
-/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/transformers/utils/hub.py:110: FutureWarning: Using `TRANSFORMERS_CACHE` is deprecated and will be removed in v5 of Transformers. Use `HF_HOME` instead.
-  warnings.warn(
-The argument `trust_remote_code` is to be used with Auto classes. It has no effect here and is ignored.
-[1;36m(EngineCore_DP0 pid=39040)[0;0m /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/tvm_ffi/_optional_torch_c_dlpack.py:174: UserWarning: Failed to JIT torch c dlpack extension, EnvTensorAllocator will not be enabled.
-[1;36m(EngineCore_DP0 pid=39040)[0;0m We recommend installing via `pip install torch-c-dlpack-ext`
-[1;36m(EngineCore_DP0 pid=39040)[0;0m   warnings.warn(
-[1;36m(EngineCore_DP0 pid=39040)[0;0m Loading safetensors checkpoint shards:   0% Completed | 0/2 [00:00<?, ?it/s]
-[1;36m(EngineCore_DP0 pid=39040)[0;0m Loading safetensors checkpoint shards:  50% Completed | 1/2 [00:08<00:08,  8.82s/it]
-[1;36m(EngineCore_DP0 pid=39040)[0;0m Loading safetensors checkpoint shards: 100% Completed | 2/2 [00:14<00:00,  6.86s/it]
-[1;36m(EngineCore_DP0 pid=39040)[0;0m Loading safetensors checkpoint shards: 100% Completed | 2/2 [00:14<00:00,  7.16s/it]
-[1;36m(EngineCore_DP0 pid=39040)[0;0m 

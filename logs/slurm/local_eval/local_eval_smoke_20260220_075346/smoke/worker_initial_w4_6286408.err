@@ -1,27 +1,0 @@
-Creating parquet from Arrow format:   0%|          | 0/1 [00:00<?, ?ba/s]Creating parquet from Arrow format: 100%|██████████| 1/1 [00:00<00:00, 63.56ba/s]
-Creating parquet from Arrow format:   0%|          | 0/1 [00:00<?, ?ba/s]Creating parquet from Arrow format: 100%|██████████| 1/1 [00:00<00:00, 233.38ba/s]
-Creating parquet from Arrow format:   0%|          | 0/1 [00:00<?, ?ba/s]Creating parquet from Arrow format: 100%|██████████| 1/1 [00:00<00:00, 241.51ba/s]
-Creating parquet from Arrow format:   0%|          | 0/1 [00:00<?, ?ba/s]Creating parquet from Arrow format: 100%|██████████| 1/1 [00:00<00:00, 81.58ba/s]
-Generating train split: 0 examples [00:00, ? examples/s]Generating train split: 750 examples [00:00, 29858.65 examples/s]
-Evaluating:   0%|          | 0/5 [00:00<?, ?it/s]Evaluating: 100%|██████████| 5/5 [00:00<00:00, 19821.85it/s]
-/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/transformers/utils/hub.py:110: FutureWarning: Using `TRANSFORMERS_CACHE` is deprecated and will be removed in v5 of Transformers. Use `HF_HOME` instead.
-  warnings.warn(
-The argument `trust_remote_code` is to be used with Auto classes. It has no effect here and is ignored.
-[1;36m(EngineCore_DP0 pid=26056)[0;0m /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/tvm_ffi/_optional_torch_c_dlpack.py:174: UserWarning: Failed to JIT torch c dlpack extension, EnvTensorAllocator will not be enabled.
-[1;36m(EngineCore_DP0 pid=26056)[0;0m We recommend installing via `pip install torch-c-dlpack-ext`
-[1;36m(EngineCore_DP0 pid=26056)[0;0m   warnings.warn(
-[1;36m(EngineCore_DP0 pid=26056)[0;0m Loading safetensors checkpoint shards:   0% Completed | 0/2 [00:00<?, ?it/s]
-[1;36m(EngineCore_DP0 pid=26056)[0;0m Loading safetensors checkpoint shards:  50% Completed | 1/2 [00:12<00:12, 12.45s/it]
-[1;36m(EngineCore_DP0 pid=26056)[0;0m Loading safetensors checkpoint shards: 100% Completed | 2/2 [00:18<00:00,  8.73s/it]
-[1;36m(EngineCore_DP0 pid=26056)[0;0m Loading safetensors checkpoint shards: 100% Completed | 2/2 [00:18<00:00,  9.28s/it]
-[1;36m(EngineCore_DP0 pid=26056)[0;0m 
-[1;36m(EngineCore_DP0 pid=26056)[0;0m [rank0]:W0220 02:55:51.154000 26056 .venv/lib/python3.12/site-packages/torch/_inductor/triton_bundler.py:396] [0/0] Directory /tmp/torchinductor_adesai10/triton/0/tmp.1e30ed9f-90d3-4cb5-b67c-a072aef63ea1 is not empty - skipping!
-[1;36m(EngineCore_DP0 pid=26056)[0;0m [rank0]:W0220 02:55:51.155000 26056 .venv/lib/python3.12/site-packages/torch/_inductor/triton_bundler.py:396] [0/0] Directory /tmp/torchinductor_adesai10/triton/0/tmp.ec1ca0dc-81ca-41d1-970f-734e2f74d718 is not empty - skipping!
-[1;36m(EngineCore_DP0 pid=26056)[0;0m [rank0]:W0220 02:55:51.156000 26056 .venv/lib/python3.12/site-packages/torch/_inductor/triton_bundler.py:396] [0/0] Directory /tmp/torchinductor_adesai10/triton/0/tmp.d8d19178-a866-458b-a493-6864da8bcaaf is not empty - skipping!
-[1;36m(EngineCore_DP0 pid=26056)[0;0m [rank0]:W0220 02:55:51.157000 26056 .venv/lib/python3.12/site-packages/torch/_inductor/triton_bundler.py:396] [0/0] Directory /tmp/torchinductor_adesai10/triton/0/tmp.0ca98ead-a761-48e4-92a5-d0003e315cab is not empty - skipping!
-[1;36m(EngineCore_DP0 pid=26056)[0;0m [rank0]:W0220 02:55:51.158000 26056 .venv/lib/python3.12/site-packages/torch/_inductor/triton_bundler.py:396] [0/0] Directory /tmp/torchinductor_adesai10/triton/0/tmp.7f8a119c-6628-4ff5-ab03-6ac50324fb37 is not empty - skipping!
-[1;36m(EngineCore_DP0 pid=26056)[0;0m [rank0]:W0220 02:55:51.159000 26056 .venv/lib/python3.12/site-packages/torch/_inductor/triton_bundler.py:396] [0/0] Directory /tmp/torchinductor_adesai10/triton/0/tmp.7c6245fb-143d-45e3-af1d-0d1260f9d43e is not empty - skipping!
-[1;36m(EngineCore_DP0 pid=26056)[0;0m Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):   0%|          | 0/5 [00:00<?, ?it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  80%|████████  | 4/5 [00:00<00:00, 35.12it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE): 100%|██████████| 5/5 [00:00<00:00, 31.42it/s]
-[1;36m(EngineCore_DP0 pid=26056)[0;0m Capturing CUDA graphs (decode, FULL):   0%|          | 0/4 [00:00<?, ?it/s]Capturing CUDA graphs (decode, FULL):  50%|█████     | 2/4 [00:00<00:00, 19.76it/s]Capturing CUDA graphs (decode, FULL): 100%|██████████| 4/4 [00:00<00:00, 26.56it/s]
-Adding requests:   0%|          | 0/5 [00:00<?, ?it/s]Adding requests: 100%|██████████| 5/5 [00:00<00:00, 1920.64it/s]
-Processed prompts:   0%|          | 0/5 [00:00<?, ?it/s, est. speed input: 0.00 toks/s, output: 0.00 toks/s]
