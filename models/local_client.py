@@ -102,6 +102,7 @@ class LocalClient(ModelClient):
         self._tensor_parallel_size = tensor_parallel_size
         self._init_error: Optional[Exception] = None
         self._model_load_seconds: float = 0.0
+        self._model_load_count: int = 0
         
         # Set HF cache directory
         os.environ["HF_HOME"] = str(MODEL_CACHE_DIR)
@@ -203,6 +204,7 @@ class LocalClient(ModelClient):
                 raise
 
         self._model_load_seconds = max(0.0, time.perf_counter() - load_start)
+        self._model_load_count += 1
         print(f"  Model loaded successfully in {self._model_load_seconds:.2f}s")
 
     @staticmethod
@@ -245,6 +247,10 @@ class LocalClient(ModelClient):
     @property
     def model_load_seconds(self) -> float:
         return self._model_load_seconds
+
+    @property
+    def model_load_count(self) -> int:
+        return self._model_load_count
     
     def generate(
         self,

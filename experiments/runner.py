@@ -245,6 +245,8 @@ class ExperimentRunner:
         self._adapter: Optional[Any] = None
         self._timing_events: List[Dict[str, Any]] = []
         self._timing_log_paths = self._resolve_timing_log_paths()
+        verbose_logs_raw = os.getenv("AUGMCQA_VERBOSE_ENTRY_LOGS", "").strip().lower()
+        self._verbose_entry_logs = verbose_logs_raw in {"1", "true", "yes", "on"}
 
     def _resolve_timing_log_paths(self) -> List[Path]:
         paths = [self.config.output_dir / "timing_events.jsonl"]
@@ -854,6 +856,7 @@ class ExperimentRunner:
 
             prompts = [item["prompt"] for item in pending_items]
             generate_start = time.perf_counter()
+            load_count_before = getattr(client, "model_load_count", None)
             try:
                 responses = client.generate_batch(prompts, **generate_kwargs)
             except Exception as exc:
@@ -874,8 +877,18 @@ class ExperimentRunner:
             self._record_timing(results, "generate", generate_duration, count=len(prompts))
 
             if not model_load_recorded:
+                load_count_after = getattr(client, "model_load_count", None)
+                load_happened = (
+                    isinstance(load_count_before, int)
+                    and isinstance(load_count_after, int)
+                    and load_count_after > load_count_before
+                )
                 model_load_seconds = getattr(client, "model_load_seconds", None)
-                if isinstance(model_load_seconds, (int, float)) and model_load_seconds > 0:
+                if (
+                    load_happened
+                    and isinstance(model_load_seconds, (int, float))
+                    and model_load_seconds > 0
+                ):
                     self._record_timing(results, "model_load", float(model_load_seconds))
                     model_load_recorded = True
 
@@ -891,12 +904,14 @@ class ExperimentRunner:
 
             per_item_latency_ms = (generate_duration * 1000.0) / max(1, len(pending_items))
             score_start = time.perf_counter()
+            attempted_indices: List[int] = []
             for item, response in zip(pending_items, responses):
                 idx = item["idx"]
                 entry = item["entry"]
                 prepared = item["prepared"]
                 prompt = item["prompt"]
                 eval_full_question = item["eval_full_question"]
+                attempted_indices.append(idx)
                 try:
                     model_answer = response.extract_answer()
                     gold_letter = CHOICE_LABELS[prepared["gold_idx"]]
@@ -939,19 +954,20 @@ class ExperimentRunner:
                     results.successful_entries += 1
 
                     # Sanity-check print
-                    raw_preview = response.text[:500].replace("\n", " ")
-                    correct_mark = "✓" if is_correct else "✗"
-                    print(
-                        f"  [idx={idx}] gold={gold_letter} | pred={model_answer or '?'} "
-                        f"{correct_mark} | type={prediction_type} | "
-                        f"raw({len(response.text)}t): {raw_preview!r}"
-                    )
+                    if self._verbose_entry_logs:
+                        raw_preview = response.text[:500].replace("\n", " ")
+                        correct_mark = "✓" if is_correct else "✗"
+                        print(
+                            f"  [idx={idx}] gold={gold_letter} | pred={model_answer or '?'} "
+                            f"{correct_mark} | type={prediction_type} | "
+                            f"raw({len(response.text)}t): {raw_preview!r}"
+                        )
                 except Exception as exc:
                     _record_failure(idx, "score", exc, entry)
-                finally:
-                    _finalize_attempt(idx)
 
             self._record_timing(results, "score", time.perf_counter() - score_start, count=len(pending_items))
+            for idx in attempted_indices:
+                _finalize_attempt(idx)
             pending_items = []
 
         for idx, entry in iterator:
