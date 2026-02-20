@@ -23,6 +23,7 @@ uv sync --inexact
 
 The orchestrator defaults to `uv sync --inexact` (so extra runtime deps like `vllm` are not removed each run).
 If you need exact lockfile sync behavior, set `UV_SYNC_INEXACT=0`.
+If you already prepared the environment once and want faster startup, pass `--no-sync`.
 
 The orchestrator enforces a compatible local stack (`vllm` + `transformers<5` + `numpy<2.3`) and
 installs wheel-only packages if needed (defaults: `vllm==0.11.2`, `transformers<5`, `numpy<2.3`).
@@ -43,6 +44,12 @@ Single model:
 jobs/srun_local_model_smoke.sh --model Nanbeige/Nanbeige4.1-3B --tokenizer-mode auto
 jobs/srun_local_model_smoke.sh --model Qwen/Qwen3-4B-Instruct-2507
 jobs/srun_local_model_smoke.sh --model allenai/Olmo-3-7B-Instruct
+```
+
+After first successful install, add `--no-sync` to avoid repeated package churn:
+
+```bash
+jobs/srun_local_model_smoke.sh --model Nanbeige/Nanbeige4.1-3B --tokenizer-mode auto --no-sync
 ```
 
 All three (sequentially):

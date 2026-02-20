@@ -17,6 +17,7 @@ Options:
   --save-interval <int>         Mid-eval checkpoint interval (default: 50)
   --keep-checkpoints <int>      Keep newest checkpoint files per root (default: 2)
   --max-tokens <int>            Eval max_tokens (default: 2048)
+  --no-sync                     Skip `uv sync` (use current .venv as-is)
   --force-refresh               Redownload HF generator datasets to remote disk
   --skip-push                   Do not push final artifacts to HuggingFace Hub
   --repo-root <path>            Remote repo path (default: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa)
@@ -42,6 +43,7 @@ KEEP_CHECKPOINTS=2
 MAX_TOKENS=2048
 FORCE_REFRESH=0
 SKIP_PUSH=0
+DO_SYNC=1
 REPO_ROOT="/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa"
 
 CACHE_ROOT="/fs/nexus-scratch/adesai10/hub"
@@ -101,6 +103,8 @@ while [[ $# -gt 0 ]]; do
       KEEP_CHECKPOINTS="${2:-}"; shift 2 ;;
     --max-tokens)
       MAX_TOKENS="${2:-}"; shift 2 ;;
+    --no-sync)
+      DO_SYNC=0; shift ;;
     --force-refresh)
       FORCE_REFRESH=1; shift ;;
     --skip-push)
@@ -505,12 +509,16 @@ check_prereqs_and_env() {
     exit 1
   fi
 
-  if [[ "$UV_SYNC_INEXACT" == "1" ]]; then
-    append_heartbeat "syncing uv environment mode=inexact"
-    uv sync --inexact
+  if [[ "$DO_SYNC" == "1" ]]; then
+    if [[ "$UV_SYNC_INEXACT" == "1" ]]; then
+      append_heartbeat "syncing uv environment mode=inexact"
+      uv sync --inexact
+    else
+      append_heartbeat "syncing uv environment mode=exact"
+      uv sync
+    fi
   else
-    append_heartbeat "syncing uv environment mode=exact"
-    uv sync
+    append_heartbeat "skipping uv sync (--no-sync)"
   fi
   export UV_NO_SYNC=1
 
@@ -1200,7 +1208,7 @@ PY
 
 main() {
   append_heartbeat "run_start run_tag=$RUN_TAG phase=$PHASE"
-  append_heartbeat "run_config repo_root=$REPO_ROOT max_concurrent_jobs=$MAX_CONCURRENT_JOBS num_shards_smoke=$NUM_SHARDS_SMOKE num_shards_main=$NUM_SHARDS_MAIN save_interval=$SAVE_INTERVAL keep_checkpoints=$KEEP_CHECKPOINTS max_tokens=$MAX_TOKENS force_refresh=$FORCE_REFRESH skip_push=$SKIP_PUSH"
+  append_heartbeat "run_config repo_root=$REPO_ROOT max_concurrent_jobs=$MAX_CONCURRENT_JOBS num_shards_smoke=$NUM_SHARDS_SMOKE num_shards_main=$NUM_SHARDS_MAIN save_interval=$SAVE_INTERVAL keep_checkpoints=$KEEP_CHECKPOINTS max_tokens=$MAX_TOKENS force_refresh=$FORCE_REFRESH skip_push=$SKIP_PUSH do_sync=$DO_SYNC"
 
   check_prereqs_and_env
   materialize_datasets
