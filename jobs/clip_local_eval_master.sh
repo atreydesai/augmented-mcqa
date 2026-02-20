@@ -158,6 +158,7 @@ declare -a ACTIVE_JOB_IDS=()
 POLL_CAPACITY_SECONDS=20
 POLL_WAIT_SECONDS=30
 VLLM_INSTALL_SPEC="${VLLM_INSTALL_SPEC:-vllm==0.11.2}"
+UV_SYNC_INEXACT="${UV_SYNC_INEXACT:-1}"
 
 safe_name() {
   printf '%s' "$1" | tr '/ .:' '_' | tr -cd '[:alnum:]_-'
@@ -447,8 +448,13 @@ check_prereqs_and_env() {
     exit 1
   fi
 
-  append_heartbeat "syncing uv environment"
-  uv sync
+  if [[ "$UV_SYNC_INEXACT" == "1" ]]; then
+    append_heartbeat "syncing uv environment mode=inexact"
+    uv sync --inexact
+  else
+    append_heartbeat "syncing uv environment mode=exact"
+    uv sync
+  fi
 
   # Local model eval requires vLLM; install a wheel-only build if missing.
   if ! uv run python - <<'PY'

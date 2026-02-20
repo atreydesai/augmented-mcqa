@@ -18,8 +18,11 @@ The script orchestrates remote eval for local models across:
 cd /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa
 source ~/.bashrc
 export HF_TOKEN="<your_hf_token>"
-uv sync
+uv sync --inexact
 ```
+
+The orchestrator defaults to `uv sync --inexact` (so extra runtime deps like `vllm` are not removed each run).
+If you need exact lockfile sync behavior, set `UV_SYNC_INEXACT=0`.
 
 The orchestrator checks for `vllm` and installs a wheel-only build if missing (default: `vllm==0.11.2`).
 Override with `VLLM_INSTALL_SPEC`, for example:
