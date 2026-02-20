@@ -9,6 +9,9 @@ DATASET_PATH="${DATASET_PATH:-datasets/augmented/unified_processed}"
 OUTPUT_DIR="${OUTPUT_DIR:-results}"
 LIMIT="${LIMIT:-}"
 EVAL_MODE="${EVAL_MODE:-behavioral}"
+GENERATOR_DATASET_LABEL="${GENERATOR_DATASET_LABEL:-default}"
+SAVE_INTERVAL="${SAVE_INTERVAL:-50}"
+KEEP_CHECKPOINTS="${KEEP_CHECKPOINTS:-2}"
 
 DATASET_TYPES=(mmlu_pro gpqa arc_easy arc_challenge)
 DISTRACTOR_SOURCES=(scratch dhuman dmodel)
@@ -18,15 +21,19 @@ echo "  Model: $MODEL"
 echo "  Dataset path: $DATASET_PATH"
 echo "  Output dir: $OUTPUT_DIR"
 echo "  Eval mode: $EVAL_MODE"
+echo "  Generator dataset label: $GENERATOR_DATASET_LABEL"
 
 CMD=(
   uv run python scripts/eval_matrix.py run
   --preset core16
   --model "$MODEL"
   --dataset-path "$DATASET_PATH"
+  --generator-dataset-label "$GENERATOR_DATASET_LABEL"
   --dataset-types "${DATASET_TYPES[@]}"
   --distractor-source "${DISTRACTOR_SOURCES[@]}"
   --eval-mode "$EVAL_MODE"
+  --save-interval "$SAVE_INTERVAL"
+  --keep-checkpoints "$KEEP_CHECKPOINTS"
   --output-dir "$OUTPUT_DIR"
   --skip-existing
 )

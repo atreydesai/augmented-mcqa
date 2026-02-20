@@ -9,8 +9,8 @@ import random
 import time
 from pathlib import Path
 from typing import List, Dict, Optional, Any
-from dataclasses import dataclass, field
-from datetime import datetime
+from dataclasses import asdict, dataclass, field
+from datetime import datetime, timezone
 
 from tqdm import tqdm
 
@@ -64,6 +64,15 @@ class ExperimentResults:
     # Timing
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
+
+    # Robustness / resume bookkeeping
+    attempted_entries: int = 0
+    successful_entries: int = 0
+    failed_entries: int = 0
+    entry_failures: List[Dict[str, Any]] = field(default_factory=list)
+    resumed_from_checkpoint: bool = False
+    resumed_checkpoint_path: Optional[str] = None
+    resumed_next_index: int = 0
     
     # Aggregates (computed on demand)
     _accuracy: Optional[float] = None
@@ -112,6 +121,11 @@ class ExperimentResults:
                 "total": len(self.results),
                 "correct": sum(1 for r in self.results if r.is_correct),
                 "accuracy": self.accuracy,
+                "accuracy_success_only": self.accuracy,
+                "attempted_entries": self.attempted_entries,
+                "successful_entries": self.successful_entries,
+                "failed_entries": self.failed_entries,
+                "entry_failure_count": len(self.entry_failures),
                 "behavioral_counts": self.behavioral_counts,
                 "accuracy_by_category": self.accuracy_by_category,
             },
@@ -121,6 +135,12 @@ class ExperimentResults:
                 "duration_seconds": (self.end_time - self.start_time).total_seconds()
                     if self.start_time and self.end_time else None,
             },
+            "resume": {
+                "resumed_from_checkpoint": self.resumed_from_checkpoint,
+                "resumed_checkpoint_path": self.resumed_checkpoint_path,
+                "resumed_next_index": self.resumed_next_index,
+            },
+            "entry_failures": self.entry_failures,
             "results": [
                 {
                     "question_idx": r.question_idx,
@@ -399,6 +419,123 @@ class ExperimentRunner:
         lines = [f"{CHOICE_LABELS[i]}: {opt}" for i, opt in enumerate(options)]
         return f"Question: {question}\n" + "\n".join(lines)
 
+    @staticmethod
+    def _serialize_eval_result(result: EvalResult) -> Dict[str, Any]:
+        return asdict(result)
+
+    @staticmethod
+    def _deserialize_eval_result(data: Dict[str, Any]) -> EvalResult:
+        payload = dict(data)
+        required_defaults = {
+            "prediction_type": None,
+            "response_text": "",
+            "latency_ms": 0.0,
+            "eval_options_randomized": [],
+            "eval_correct_answer_letter": "",
+            "eval_full_question": "",
+            "eval_model_input": "",
+            "eval_model_output": "",
+            "selected_human_distractors": [],
+            "selected_model_distractors": [],
+            "human_option_indices": [],
+            "model_option_indices": [],
+        }
+        for key, default in required_defaults.items():
+            payload.setdefault(key, default)
+        return EvalResult(**payload)
+
+    def _checkpoint_dir(self) -> Path:
+        checkpoint_dir = self.config.checkpoint_dir or (self.config.output_dir / "checkpoints")
+        checkpoint_dir.mkdir(parents=True, exist_ok=True)
+        return checkpoint_dir
+
+    def _list_checkpoints(self) -> List[Path]:
+        checkpoint_dir = self._checkpoint_dir()
+        return sorted(
+            checkpoint_dir.glob("eval_checkpoint_*.json"),
+            key=lambda p: p.stat().st_mtime,
+        )
+
+    def _save_checkpoint(
+        self,
+        *,
+        results: ExperimentResults,
+        next_index: int,
+        total_entries: int,
+    ) -> Path:
+        ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        filename = f"eval_checkpoint_{next_index}_{ts}.json"
+        path = self._checkpoint_dir() / filename
+        payload = {
+            "checkpoint_version": 1,
+            "saved_at": datetime.now(timezone.utc).isoformat(),
+            "config_id": self.config.config_id,
+            "config_name": self.config.name,
+            "next_index": next_index,
+            "total_entries": total_entries,
+            "attempted_entries": results.attempted_entries,
+            "successful_entries": results.successful_entries,
+            "failed_entries": results.failed_entries,
+            "entry_failures": results.entry_failures,
+            "results": [self._serialize_eval_result(r) for r in results.results],
+        }
+        with open(path, "w") as f:
+            json.dump(payload, f, indent=2)
+        return path
+
+    def _load_latest_checkpoint(self) -> tuple[Optional[ExperimentResults], int, Optional[Path]]:
+        results_path = self.config.output_dir / "results.json"
+        if results_path.exists():
+            return None, 0, None
+
+        checkpoint_files = self._list_checkpoints()
+        if not checkpoint_files:
+            return None, 0, None
+
+        latest = checkpoint_files[-1]
+        try:
+            with open(latest, "r") as f:
+                payload = json.load(f)
+        except Exception as exc:
+            print(f"Warning: failed to read checkpoint {latest}: {exc}")
+            return None, 0, None
+
+        if payload.get("config_id") != self.config.config_id:
+            print(
+                "Warning: checkpoint config mismatch "
+                f"({payload.get('config_id')} != {self.config.config_id}); ignoring {latest}"
+            )
+            return None, 0, None
+
+        restored = ExperimentResults(config=self.config)
+        try:
+            restored.results = [
+                self._deserialize_eval_result(r) for r in payload.get("results", [])
+            ]
+        except Exception as exc:
+            print(f"Warning: invalid checkpoint results payload in {latest}: {exc}")
+            return None, 0, None
+
+        restored.entry_failures = list(payload.get("entry_failures", []))
+        attempted_raw = payload.get("attempted_entries")
+        successful_raw = payload.get("successful_entries")
+        failed_raw = payload.get("failed_entries")
+        restored.attempted_entries = (
+            int(attempted_raw) if attempted_raw is not None else len(restored.results)
+        )
+        restored.successful_entries = (
+            int(successful_raw) if successful_raw is not None else len(restored.results)
+        )
+        restored.failed_entries = (
+            int(failed_raw) if failed_raw is not None else len(restored.entry_failures)
+        )
+        restored.resumed_from_checkpoint = True
+        restored.resumed_checkpoint_path = str(latest)
+
+        next_index_raw = payload.get("next_index")
+        next_index = int(next_index_raw) if next_index_raw is not None else restored.attempted_entries
+        return restored, max(0, next_index), latest
+
     def _get_skip_reason(self, entry: Dict[str, Any]) -> str:
         gold_answers = entry.get("choices_answer", [])
         gold_answer = gold_answers[0] if gold_answers else ""
@@ -483,13 +620,13 @@ class ExperimentRunner:
         """
         results = ExperimentResults(config=self.config)
         results.start_time = datetime.now()
-        
+
         # Load data
         dataset = self._load_data()
-        
+
         # Get client
         client = self._get_client()
-        
+
         # Filter by categories if specified
         entries = list(dataset)
         if self.config.categories:
@@ -498,101 +635,169 @@ class ExperimentRunner:
                 if str(e.get("category", "")).lower()
                 in [c.lower() for c in self.config.categories]
             ]
-        
+
         # Apply limit
         if self.config.limit:
             entries = entries[:self.config.limit]
-        
+
+        start_index = 0
+        restored_results, restored_next_index, restored_path = self._load_latest_checkpoint()
+        if restored_results is not None:
+            results = restored_results
+            start_index = min(restored_next_index, len(entries))
+            results.start_time = datetime.now()
+            results.resumed_next_index = start_index
+            print(
+                f"Resuming from checkpoint: {restored_path} "
+                f"(next_index={start_index}/{len(entries)})"
+            )
+
         print(f"\n=== Running Experiment: {self.config.name} ===")
         print(f"Model: {client.name}")
         print(f"Config: {self.config.distractor_config_str}")
         print(f"Entries: {len(entries)}")
-        
+        print(f"Start index: {start_index}")
+        print(f"Checkpoint save interval: {self.config.save_interval}")
+
         # Save config
         self.config.save()
-        
+
         # Run evaluations
-        quiet = getattr(self.config, '_quiet', False)
-        iterator = enumerate(entries) if quiet else enumerate(tqdm(entries, desc="Evaluating"))
+        quiet = getattr(self.config, "_quiet", False)
+        run_entries = entries[start_index:]
+        iterator = (
+            ((start_index + i, entry) for i, entry in enumerate(run_entries))
+            if quiet
+            else enumerate(
+                tqdm(run_entries, desc="Evaluating", initial=start_index, total=len(entries)),
+                start=start_index,
+            )
+        )
         for idx, entry in iterator:
-            # Prepare entry
-            prepared = self._prepare_entry(entry, idx)
-            
-            # Build prompt
-            prompt = build_mcqa_prompt(
-                prepared["question"],
-                prepared["options"],
-                choices_only=self.config.choices_only,
-            )
-            eval_full_question = self._build_eval_full_question(
-                prepared["question"],
-                prepared["options"],
-            )
-            
-            # Generate
-            start_ms = time.time() * 1000
-            response = client.generate(
-                prompt,
-                temperature=self.config.temperature,
-                max_tokens=self.config.max_tokens,
-            )
-            latency_ms = time.time() * 1000 - start_ms
-            
-            # Extract answer
-            model_answer = response.extract_answer()
-            
-            # Check correctness
-            gold_letter = CHOICE_LABELS[prepared["gold_idx"]]
-            is_correct = model_answer == gold_letter
-            
-            # Determine prediction type for behavioral analysis
-            prediction_type = None
-            if self.config.eval_mode == "behavioral" and model_answer in CHOICE_LABELS:
-                predicted_idx = CHOICE_LABELS.index(model_answer)
-                prediction_type = determine_prediction_type(
-                    predicted_idx,
-                    prepared["gold_idx"],
-                    prepared["human_indices"],
-                    prepared["model_indices"],
+            stage = "prepare_entry"
+            try:
+                # Prepare entry
+                prepared = self._prepare_entry(entry, idx)
+
+                # Build prompt
+                stage = "build_prompt"
+                prompt = build_mcqa_prompt(
+                    prepared["question"],
+                    prepared["options"],
+                    choices_only=self.config.choices_only,
                 )
-            
-            # Create result
-            result = EvalResult(
-                question_idx=idx,
-                question=prepared["question"],
-                gold_answer=prepared["gold_answer"],
-                gold_answer_letter=gold_letter,
-                gold_index=prepared["gold_idx"],
-                model_answer=model_answer,
-                model_prediction=model_answer,
-                is_correct=is_correct,
-                category=prepared["category"],
-                prediction_type=prediction_type,
-                response_text=response.text,
-                latency_ms=latency_ms,
-                eval_options_randomized=prepared["options"],
-                eval_correct_answer_letter=gold_letter,
-                eval_full_question=eval_full_question,
-                eval_model_input=prompt,
-                eval_model_output=response.text,
-                selected_human_distractors=prepared["selected_human"],
-                selected_model_distractors=prepared["selected_model"],
-                human_option_indices=prepared["human_indices"],
-                model_option_indices=prepared["model_indices"],
-            )
-            results.results.append(result)
-        
+                eval_full_question = self._build_eval_full_question(
+                    prepared["question"],
+                    prepared["options"],
+                )
+
+                # Generate
+                stage = "model_generate"
+                start_ms = time.time() * 1000
+                generate_kwargs = {"max_tokens": self.config.max_tokens}
+                if self.config.temperature is not None:
+                    generate_kwargs["temperature"] = self.config.temperature
+                response = client.generate(prompt, **generate_kwargs)
+                latency_ms = time.time() * 1000 - start_ms
+
+                # Extract answer
+                stage = "extract_answer"
+                model_answer = response.extract_answer()
+
+                # Check correctness
+                gold_letter = CHOICE_LABELS[prepared["gold_idx"]]
+                is_correct = model_answer == gold_letter
+
+                # Determine prediction type for behavioral analysis
+                prediction_type = None
+                if self.config.eval_mode == "behavioral" and model_answer in CHOICE_LABELS:
+                    predicted_idx = CHOICE_LABELS.index(model_answer)
+                    prediction_type = determine_prediction_type(
+                        predicted_idx,
+                        prepared["gold_idx"],
+                        prepared["human_indices"],
+                        prepared["model_indices"],
+                    )
+
+                # Create result
+                result = EvalResult(
+                    question_idx=idx,
+                    question=prepared["question"],
+                    gold_answer=prepared["gold_answer"],
+                    gold_answer_letter=gold_letter,
+                    gold_index=prepared["gold_idx"],
+                    model_answer=model_answer,
+                    model_prediction=model_answer,
+                    is_correct=is_correct,
+                    category=prepared["category"],
+                    prediction_type=prediction_type,
+                    response_text=response.text,
+                    latency_ms=latency_ms,
+                    eval_options_randomized=prepared["options"],
+                    eval_correct_answer_letter=gold_letter,
+                    eval_full_question=eval_full_question,
+                    eval_model_input=prompt,
+                    eval_model_output=response.text,
+                    selected_human_distractors=prepared["selected_human"],
+                    selected_model_distractors=prepared["selected_model"],
+                    human_option_indices=prepared["human_indices"],
+                    model_option_indices=prepared["model_indices"],
+                )
+                results.results.append(result)
+                results.successful_entries += 1
+            except Exception as exc:
+                preview = str(entry.get("question", "")) if isinstance(entry, dict) else str(entry)
+                failure = {
+                    "config_name": self.config.name,
+                    "config_id": self.config.config_id,
+                    "question_idx": idx,
+                    "stage": stage,
+                    "error_type": type(exc).__name__,
+                    "error": str(exc),
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "question_preview": preview[:200],
+                }
+                results.entry_failures.append(failure)
+                results.failed_entries += 1
+                print(
+                    f"⚠️ Entry failed but continuing | idx={idx} stage={stage} "
+                    f"type={type(exc).__name__}: {exc}"
+                )
+            finally:
+                results.attempted_entries += 1
+                if results.attempted_entries % self.config.save_interval == 0:
+                    checkpoint_path = self._save_checkpoint(
+                        results=results,
+                        next_index=idx + 1,
+                        total_entries=len(entries),
+                    )
+                    print(f"💾 Checkpoint saved: {checkpoint_path}")
+
         results.end_time = datetime.now()
-        
+
+        # Save final checkpoint and final results
+        final_checkpoint = self._save_checkpoint(
+            results=results,
+            next_index=len(entries),
+            total_entries=len(entries),
+        )
+        print(f"💾 Final checkpoint saved: {final_checkpoint}")
+
         print(f"\n=== Results ===")
-        print(f"Accuracy: {results.accuracy:.2%}")
+        print(
+            "Accuracy (successful entries): "
+            f"{results.accuracy:.2%} | attempted={results.attempted_entries} "
+            f"successful={results.successful_entries} failed={results.failed_entries}"
+        )
         if self.config.eval_mode == "behavioral":
             print(f"Behavioral: {results.behavioral_counts}")
-        
+        if results.entry_failures:
+            print(f"Entry failures logged: {len(results.entry_failures)}")
+
         # Save results
         results.save()
         print(f"Saved to: {self.config.output_dir}")
-        
+
         return results
 
 

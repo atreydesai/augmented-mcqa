@@ -34,6 +34,7 @@ def _config(
         name=name,
         dataset_path=Path("datasets/augmented/unified_processed_example"),
         model_name="gpt-4.1",
+        generator_dataset_label="test-gen",
         num_human=num_h,
         num_model=num_m,
         model_distractor_type=DistractorType.COND_MODEL_Q_A_SCRATCH,

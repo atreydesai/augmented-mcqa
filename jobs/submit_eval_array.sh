@@ -1,10 +1,10 @@
 #!/bin/bash
 set -euo pipefail
 
-if [[ $# -lt 3 ]]; then
+if [[ $# -lt 4 ]]; then
   cat <<'USAGE'
 Usage:
-  jobs/submit_eval_array.sh <model> <dataset_path> <num_shards> [options]
+  jobs/submit_eval_array.sh <model> <dataset_path> <generator_dataset_label> <num_shards> [options]
 
 Options:
   --preset <name>                Matrix preset (default: core16)
@@ -17,9 +17,11 @@ Options:
   --thinking-level <value>       Anthropic/Gemini thinking level
   --temperature <float>          Generation temperature (default: 0.0)
   --max-tokens <int>             Max tokens (default: 100)
+  --save-interval <int>          Checkpoint save interval (default: 50)
+  --keep-checkpoints <int>       Keep newest checkpoints per root (default: 2)
 
 Example:
-  jobs/submit_eval_array.sh gpt-4.1 datasets/augmented/unified_processed 8 \
+  jobs/submit_eval_array.sh gpt-4.1 datasets/augmented/unified_processed my-gen-label 8 \
     --dataset-types mmlu_pro,gpqa --distractor-source scratch,dhuman --limit 200
 USAGE
   exit 1
@@ -27,8 +29,9 @@ fi
 
 MODEL="$1"
 DATASET_PATH="$2"
-NUM_SHARDS="$3"
-shift 3
+GENERATOR_DATASET_LABEL="$3"
+NUM_SHARDS="$4"
+shift 4
 
 PRESET="core16"
 OUTPUT_DIR="results"
@@ -40,6 +43,8 @@ REASONING_EFFORT=""
 THINKING_LEVEL=""
 TEMPERATURE="0.0"
 MAX_TOKENS="100"
+SAVE_INTERVAL="50"
+KEEP_CHECKPOINTS="2"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -63,6 +68,10 @@ while [[ $# -gt 0 ]]; do
       TEMPERATURE="$2"; shift 2 ;;
     --max-tokens)
       MAX_TOKENS="$2"; shift 2 ;;
+    --save-interval)
+      SAVE_INTERVAL="$2"; shift 2 ;;
+    --keep-checkpoints)
+      KEEP_CHECKPOINTS="$2"; shift 2 ;;
     *)
       echo "Unknown option: $1"
       exit 1 ;;
@@ -79,10 +88,11 @@ ARRAY_RANGE="0-$((NUM_SHARDS - 1))"
 echo "Submitting eval matrix array"
 echo "  model=$MODEL"
 echo "  dataset_path=$DATASET_PATH"
+echo "  generator_dataset_label=$GENERATOR_DATASET_LABEL"
 echo "  num_shards=$NUM_SHARDS"
 echo "  array=$ARRAY_RANGE"
 
 sbatch \
   --array="$ARRAY_RANGE" \
-  --export=ALL,MODEL="$MODEL",DATASET_PATH="$DATASET_PATH",NUM_SHARDS="$NUM_SHARDS",PRESET="$PRESET",OUTPUT_DIR="$OUTPUT_DIR",DATASET_TYPES="$DATASET_TYPES",DISTRACTOR_SOURCES="$DISTRACTOR_SOURCES",LIMIT="$LIMIT",EVAL_MODE="$EVAL_MODE",REASONING_EFFORT="$REASONING_EFFORT",THINKING_LEVEL="$THINKING_LEVEL",TEMPERATURE="$TEMPERATURE",MAX_TOKENS="$MAX_TOKENS" \
+  --export=ALL,MODEL="$MODEL",DATASET_PATH="$DATASET_PATH",GENERATOR_DATASET_LABEL="$GENERATOR_DATASET_LABEL",NUM_SHARDS="$NUM_SHARDS",PRESET="$PRESET",OUTPUT_DIR="$OUTPUT_DIR",DATASET_TYPES="$DATASET_TYPES",DISTRACTOR_SOURCES="$DISTRACTOR_SOURCES",LIMIT="$LIMIT",EVAL_MODE="$EVAL_MODE",REASONING_EFFORT="$REASONING_EFFORT",THINKING_LEVEL="$THINKING_LEVEL",TEMPERATURE="$TEMPERATURE",MAX_TOKENS="$MAX_TOKENS",SAVE_INTERVAL="$SAVE_INTERVAL",KEEP_CHECKPOINTS="$KEEP_CHECKPOINTS" \
   jobs/eval_matrix_array.sbatch

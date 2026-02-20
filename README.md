@@ -45,7 +45,7 @@ uv run python scripts/generate_distractors.py \
 
 Generation defaults:
 
-- OpenAI reasoning effort defaults to `minimal` (override with `--reasoning-effort`)
+- OpenAI reasoning effort uses provider/model default unless `--reasoning-effort` is set
 - Branching prefix columns are **not** generated unless `--generate-branching-prefix-columns` is passed
 
 ### 3. Plan evaluation matrix
@@ -54,6 +54,7 @@ Generation defaults:
 uv run python scripts/eval_matrix.py plan \
   --preset core16 \
   --model gpt-4.1 \
+  --generator-dataset-label gpt-4.1 \
   --dataset-path datasets/augmented/unified_processed_gpt-4.1_20260213_033916 \
   --print-configs
 ```
@@ -64,7 +65,10 @@ uv run python scripts/eval_matrix.py plan \
 uv run python scripts/eval_matrix.py run \
   --preset core16 \
   --model gpt-4.1 \
+  --generator-dataset-label gpt-4.1 \
   --dataset-path datasets/augmented/unified_processed_gpt-4.1_20260213_033916 \
+  --save-interval 50 \
+  --keep-checkpoints 2 \
   --skip-existing
 ```
 
@@ -83,9 +87,12 @@ Single shard (manual):
 uv run python scripts/eval_matrix.py run \
   --preset core16 \
   --model gpt-4.1 \
+  --generator-dataset-label gpt-4.1 \
   --dataset-path datasets/augmented/unified_processed_gpt-4.1_20260213_033916 \
   --num-shards 8 \
   --shard-index 3 \
+  --save-interval 50 \
+  --keep-checkpoints 2 \
   --skip-existing
 ```
 
@@ -95,6 +102,7 @@ Array helper:
 jobs/submit_eval_array.sh \
   gpt-4.1 \
   datasets/augmented/unified_processed_gpt-4.1_20260213_033916 \
+  gpt-4.1 \
   8 \
   --dataset-types mmlu_pro,gpqa \
   --distractor-source scratch,dhuman
@@ -119,7 +127,7 @@ Difficulty is controlled by `--dataset-types` (`arc_easy`, `arc_challenge`, `mml
 Results layout remains unchanged:
 
 ```text
-results/<model>_<dataset_type>_<distractor_source>/<nHnM>/results.json
+results/<generator_dataset_label>/<model>_<dataset_type>_<distractor_source>/<nHnM>/results.json
 ```
 
 ## Adding/Extending Models
@@ -137,7 +145,7 @@ model_id = "gpt-4.1"
 2. Use it anywhere a model name is accepted:
 
 ```bash
-uv run python scripts/eval_matrix.py run ... --model my-new-model
+uv run python scripts/eval_matrix.py run ... --model my-new-model --generator-dataset-label my-gen
 ```
 
 Supported providers in registry:

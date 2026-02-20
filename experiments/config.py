@@ -8,17 +8,12 @@ Defines ExperimentConfig for specifying evaluation parameters:
 - Evaluation modes
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Optional, List, Literal
 from pathlib import Path
 import json
 
-from config import (
-    DATASETS_DIR,
-    RESULTS_DIR,
-    RANDOM_SEED,
-    DistractorType,
-)
+from config import RESULTS_DIR, RANDOM_SEED, DistractorType
 
 
 # Evaluation modes
@@ -49,7 +44,7 @@ class ExperimentConfig:
         reasoning_effort: For OpenAI GPT-5 models
         thinking_level: For Anthropic/Gemini models
         
-        temperature: Sampling temperature
+        temperature: Optional sampling temperature (provider default if unset)
         max_tokens: Max tokens for response
         
         output_dir: Where to save results
@@ -58,6 +53,7 @@ class ExperimentConfig:
     name: str
     dataset_path: Path
     model_name: str
+    generator_dataset_label: str
     
     # Distractor configuration
     num_human: int = 3
@@ -75,11 +71,13 @@ class ExperimentConfig:
     # Model settings
     reasoning_effort: Optional[str] = None  # OpenAI GPT-5
     thinking_level: Optional[str] = None     # Anthropic/Gemini
-    temperature: float = 0.0
+    temperature: Optional[float] = None
     max_tokens: int = 100
     
     # Output
     output_dir: Optional[Path] = None
+    checkpoint_dir: Optional[Path] = None
+    save_interval: int = 50
     
     # Categories to include (None = all)
     categories: Optional[List[str]] = None
@@ -101,6 +99,17 @@ class ExperimentConfig:
             self.output_dir = RESULTS_DIR / self.name
         elif isinstance(self.output_dir, str):
             self.output_dir = Path(self.output_dir)
+
+        if not str(self.generator_dataset_label).strip():
+            raise ValueError("generator_dataset_label is required and cannot be blank")
+
+        if self.checkpoint_dir is None:
+            self.checkpoint_dir = self.output_dir / "checkpoints"
+        elif isinstance(self.checkpoint_dir, str):
+            self.checkpoint_dir = Path(self.checkpoint_dir)
+
+        if self.save_interval <= 0:
+            raise ValueError(f"save_interval must be > 0, got {self.save_interval}")
         
         # Validate distractor counts
         total = self.num_human + self.num_model
@@ -140,6 +149,7 @@ class ExperimentConfig:
             "name": self.name,
             "dataset_path": str(self.dataset_path),
             "model_name": self.model_name,
+            "generator_dataset_label": self.generator_dataset_label,
             "num_human": self.num_human,
             "num_model": self.num_model,
             "model_distractor_type": self.model_distractor_type.value,
@@ -154,6 +164,8 @@ class ExperimentConfig:
             "temperature": self.temperature,
             "max_tokens": self.max_tokens,
             "output_dir": str(self.output_dir),
+            "checkpoint_dir": str(self.checkpoint_dir),
+            "save_interval": self.save_interval,
             "categories": self.categories,
             "dataset_type_filter": self.dataset_type_filter,
             "distractor_source": self.distractor_source,
@@ -212,6 +224,7 @@ def create_batch_configs(
         List of ExperimentConfig objects
     """
     configs = []
+    generator_label = kwargs.pop("generator_dataset_label", base_name)
     
     for model in models:
         for num_human, num_model in distractor_configs:
@@ -221,6 +234,7 @@ def create_batch_configs(
                 name=name,
                 dataset_path=dataset_path,
                 model_name=model,
+                generator_dataset_label=generator_label,
                 num_human=num_human,
                 num_model=num_model,
                 **kwargs,

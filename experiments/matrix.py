@@ -67,6 +67,7 @@ def get_preset_distractor_configs(preset: MatrixPreset) -> list[tuple[int, int]]
 def build_matrix_configs(
     model: str,
     dataset_path: Path,
+    generator_dataset_label: str,
     dataset_types: list[str],
     distractor_sources: list[str],
     preset: MatrixPreset = "core16",
@@ -77,10 +78,15 @@ def build_matrix_configs(
     seed: int = 42,
     reasoning_effort: str | None = None,
     thinking_level: str | None = None,
-    temperature: float = 0.0,
+    temperature: float | None = None,
     max_tokens: int = 100,
+    save_interval: int = 50,
 ) -> list[ExperimentConfig]:
     """Build a deterministic experiment matrix."""
+    generator_label = str(generator_dataset_label).strip()
+    if not generator_label:
+        raise ValueError("generator_dataset_label is required and cannot be blank")
+
     if output_base is None:
         output_base = RESULTS_DIR
 
@@ -98,6 +104,7 @@ def build_matrix_configs(
     model_safe = model.replace("/", "_")
     sampling_strategy = "branching_cumulative" if preset == "branching21" else "independent"
     branching_mode = "human_prefix" if preset == "branching21" else "shuffled_prefix"
+    label_root = output_base if output_base.name == generator_label else output_base / generator_label
 
     for dataset_type in dataset_types:
         for source_name in distractor_sources:
@@ -105,13 +112,18 @@ def build_matrix_configs(
 
             for num_human, num_model in get_preset_distractor_configs(preset):
                 config_str = f"{num_human}H{num_model}M"
-                name = f"{model_safe}_{dataset_type}_{source_name}_{config_str}"
-                output_dir = output_base / f"{model_safe}_{dataset_type}_{source_name}" / config_str
+                name = f"{generator_label}_{model_safe}_{dataset_type}_{source_name}_{config_str}"
+                output_dir = (
+                    label_root
+                    / f"{model_safe}_{dataset_type}_{source_name}"
+                    / config_str
+                )
 
                 config = ExperimentConfig(
                     name=name,
                     dataset_path=dataset_path,
                     model_name=model,
+                    generator_dataset_label=generator_label,
                     num_human=num_human,
                     num_model=num_model,
                     model_distractor_type=distractor_type,
@@ -125,6 +137,7 @@ def build_matrix_configs(
                     thinking_level=thinking_level,
                     temperature=temperature,
                     max_tokens=max_tokens,
+                    save_interval=save_interval,
                     output_dir=output_dir,
                     dataset_type_filter=dataset_type,
                     distractor_source=source_name,
@@ -193,17 +206,34 @@ def build_manifest(
     preset: MatrixPreset,
     model: str,
     dataset_path: Path,
+    generator_dataset_label: str,
     dataset_types: list[str],
     distractor_sources: list[str],
     metadata: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Create a JSON-serializable manifest for reproducible reruns."""
+    generator_label = str(generator_dataset_label).strip()
+    if not generator_label:
+        raise ValueError("generator_dataset_label is required and cannot be blank")
+    config_labels = {
+        str(cfg.generator_dataset_label).strip() for cfg in configs if str(cfg.generator_dataset_label).strip()
+    }
+    if not config_labels:
+        raise ValueError("Configs are missing generator_dataset_label")
+    if len(config_labels) > 1:
+        raise ValueError(f"Mixed generator_dataset_label values in configs: {sorted(config_labels)}")
+    config_label = next(iter(config_labels))
+    if config_label != generator_label:
+        raise ValueError(
+            f"generator_dataset_label mismatch: configs='{config_label}' manifest='{generator_label}'"
+        )
     return {
         "manifest_version": 1,
         "created_at": datetime.now(timezone.utc).isoformat(),
         "preset": preset,
         "model": model,
         "dataset_path": str(dataset_path),
+        "generator_dataset_label": generator_label,
         "dataset_types": list(dataset_types),
         "distractor_sources": list(distractor_sources),
         "summary": summarize_configs(configs),

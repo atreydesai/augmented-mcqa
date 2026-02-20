@@ -19,6 +19,7 @@ Builds deterministic configs and writes a manifest.
 uv run python scripts/eval_matrix.py plan \
   --preset core16 \
   --model gpt-4.1 \
+  --generator-dataset-label gpt-4.1 \
   --dataset-path datasets/augmented/unified_processed_gpt-4.1_20260213_033916 \
   --manifest-out results/manifests/my_plan.json \
   --print-configs
@@ -32,26 +33,35 @@ Runs sequentially in deterministic order.
 uv run python scripts/eval_matrix.py run \
   --preset core16 \
   --model gpt-4.1 \
+  --generator-dataset-label gpt-4.1 \
   --dataset-path datasets/augmented/unified_processed_gpt-4.1_20260213_033916 \
+  --save-interval 50 \
+  --keep-checkpoints 2 \
   --skip-existing
 ```
 
 Or run from manifest:
 
 ```bash
-uv run python scripts/eval_matrix.py run --manifest results/manifests/my_plan.json --skip-existing
+uv run python scripts/eval_matrix.py run \
+  --manifest results/manifests/my_plan.json \
+  --generator-dataset-label gpt-4.1 \
+  --save-interval 50 \
+  --keep-checkpoints 2 \
+  --skip-existing
 ```
 
 During `run`, the process reuses a shared model client per model/settings key and caches
 dataset adapters across configs. For local/vLLM models this avoids reloading weights for
 every dataset/distractor configuration in the same shard/job.
 
-The evaluation runner is fail-fast by design:
+The evaluation runner is strict for config/schema integrity but tolerant of one-off entry failures:
 
 - no fallback to an arbitrary split when `dataset_type_filter` is missing/invalid
 - no fallback from branching-specific columns to generic model columns
 - no silent skip-on-missing distractor metadata
 - no compatibility-column fallback during runtime (canonical columns are required)
+- one failed entry is logged and skipped so the rest of the config run continues
 
 ## Presets
 
@@ -94,9 +104,12 @@ Example:
 uv run python scripts/eval_matrix.py run \
   --preset core16 \
   --model gpt-4.1 \
+  --generator-dataset-label gpt-4.1 \
   --dataset-path datasets/augmented/unified_processed_gpt-4.1_20260213_033916 \
   --num-shards 8 \
   --shard-index 0 \
+  --save-interval 50 \
+  --keep-checkpoints 2 \
   --skip-existing
 ```
 
@@ -113,6 +126,7 @@ Submit example:
 jobs/submit_eval_array.sh \
   gpt-4.1 \
   datasets/augmented/unified_processed_gpt-4.1_20260213_033916 \
+  gpt-4.1 \
   8 \
   --dataset-types mmlu_pro,gpqa \
   --distractor-source scratch,dhuman
@@ -120,16 +134,16 @@ jobs/submit_eval_array.sh \
 
 ## Outputs
 
-Result paths are unchanged:
+Result paths include generator-dataset isolation:
 
 ```text
-results/<model>_<dataset_type>_<distractor_source>/<nHnM>/results.json
+results/<generator_dataset_label>/<model>_<dataset_type>_<distractor_source>/<nHnM>/results.json
 ```
 
 Batch summary files:
 
-- Non-sharded: `results/batch_summary_<model>.json`
-- Sharded: `results/batch_summary_<model>_shard_<i>_of_<n>.json`
+- Non-sharded: `results/batch_summary_<generator_dataset_label>_<model>.json`
+- Sharded: `results/batch_summary_<generator_dataset_label>_<model>_shard_<i>_of_<n>.json`
 
 Per-question rows in `results.json` now also include evaluation trace fields aligned with generation-side transparency:
 
@@ -140,6 +154,7 @@ Per-question rows in `results.json` now also include evaluation trace fields ali
 - `eval_model_output` / `model_output`
 - `selected_human_distractors`, `selected_model_distractors`
 - `human_option_indices`, `model_option_indices`
+- `entry_failures` list and summary counters (`attempted_entries`, `successful_entries`, `failed_entries`)
 
 ## Failure/Restart Pattern
 

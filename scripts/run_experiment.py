@@ -40,6 +40,12 @@ def main():
     parser.add_argument("--name", type=str, help="Experiment name")
     parser.add_argument("--dataset", type=str, help="Path to dataset")
     parser.add_argument("--model", type=str, help="Model name")
+    parser.add_argument(
+        "--generator-dataset-label",
+        type=str,
+        default="manual",
+        help="Generator dataset label used for output isolation (default: manual)",
+    )
     
     # Distractor configuration
     parser.add_argument("--num-human", type=int, default=3, help="Number of human distractors")
@@ -61,7 +67,12 @@ def main():
     # Model settings
     parser.add_argument("--reasoning-effort", type=str, help="OpenAI reasoning effort")
     parser.add_argument("--thinking-level", type=str, help="Anthropic/Gemini thinking level")
-    parser.add_argument("--temperature", type=float, default=0.0, help="Temperature")
+    parser.add_argument(
+        "--temperature",
+        type=float,
+        default=None,
+        help="Sampling temperature (provider default if omitted)",
+    )
     parser.add_argument("--max-tokens", type=int, default=100, help="Max tokens")
     
     # Output
@@ -83,6 +94,7 @@ def main():
             name=args.name,
             dataset_path=Path(args.dataset),
             model_name=args.model,
+            generator_dataset_label=args.generator_dataset_label,
             num_human=args.num_human,
             num_model=args.num_model,
             model_distractor_type=model_type,

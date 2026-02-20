@@ -18,6 +18,7 @@ def test_core16_matrix_count(tmp_path):
     configs = build_matrix_configs(
         model="gpt-4.1",
         dataset_path=Path("datasets/augmented/unified_processed_example"),
+        generator_dataset_label="gpt-4.1",
         dataset_types=["mmlu_pro", "gpqa"],
         distractor_sources=["scratch", "dhuman"],
         preset="core16",
@@ -31,6 +32,7 @@ def test_branching21_matrix_count(tmp_path):
     configs = build_matrix_configs(
         model="gpt-4.1",
         dataset_path=Path("datasets/augmented/unified_processed_example"),
+        generator_dataset_label="gpt-4.1",
         dataset_types=["mmlu_pro"],
         distractor_sources=["scratch"],
         preset="branching21",
@@ -54,6 +56,7 @@ def test_core16_uses_independent_sampling(tmp_path):
     configs = build_matrix_configs(
         model="gpt-4.1",
         dataset_path=Path("datasets/augmented/unified_processed_example"),
+        generator_dataset_label="gpt-4.1",
         dataset_types=["mmlu_pro"],
         distractor_sources=["scratch"],
         preset="core16",
@@ -66,6 +69,7 @@ def test_sharding_is_deterministic_and_disjoint(tmp_path):
     configs = build_matrix_configs(
         model="gpt-4.1",
         dataset_path=Path("datasets/augmented/unified_processed_example"),
+        generator_dataset_label="gpt-4.1",
         dataset_types=["mmlu_pro", "gpqa"],
         distractor_sources=["scratch"],
         preset="core16",
@@ -96,6 +100,7 @@ def test_maybe_select_shard_requires_both_args(tmp_path):
     configs = build_matrix_configs(
         model="gpt-4.1",
         dataset_path=Path("datasets/augmented/unified_processed_example"),
+        generator_dataset_label="gpt-4.1",
         dataset_types=["mmlu_pro"],
         distractor_sources=["scratch"],
         preset="core16",
@@ -113,6 +118,7 @@ def test_manifest_round_trip(tmp_path):
     configs = build_matrix_configs(
         model="gpt-4.1",
         dataset_path=Path("datasets/augmented/unified_processed_example"),
+        generator_dataset_label="gpt-4.1",
         dataset_types=["mmlu_pro"],
         distractor_sources=["scratch"],
         preset="core16",
@@ -125,6 +131,7 @@ def test_manifest_round_trip(tmp_path):
         preset="core16",
         model="gpt-4.1",
         dataset_path=Path("datasets/augmented/unified_processed_example"),
+        generator_dataset_label="gpt-4.1",
         dataset_types=["mmlu_pro"],
         distractor_sources=["scratch"],
     )
@@ -141,8 +148,40 @@ def test_supergpqa_dataset_type_is_rejected(tmp_path):
         build_matrix_configs(
             model="gpt-4.1",
             dataset_path=Path("datasets/augmented/unified_processed_example"),
+            generator_dataset_label="gpt-4.1",
             dataset_types=["supergpqa"],
             distractor_sources=["scratch"],
             preset="core16",
             output_base=tmp_path,
         )
+
+
+def test_generator_label_is_required(tmp_path):
+    with pytest.raises(ValueError, match="generator_dataset_label"):
+        build_matrix_configs(
+            model="gpt-4.1",
+            dataset_path=Path("datasets/augmented/unified_processed_example"),
+            generator_dataset_label="",
+            dataset_types=["mmlu_pro"],
+            distractor_sources=["scratch"],
+            preset="core16",
+            output_base=tmp_path,
+        )
+
+
+def test_output_dirs_include_generator_label(tmp_path):
+    label = "opus"
+    configs = build_matrix_configs(
+        model="gpt-5-mini-2025-08-07",
+        dataset_path=Path("datasets/augmented/unified_processed_example"),
+        generator_dataset_label=label,
+        dataset_types=["mmlu_pro"],
+        distractor_sources=["scratch"],
+        preset="core16",
+        output_base=tmp_path,
+    )
+    assert configs
+    for cfg in configs:
+        rel = cfg.output_dir.relative_to(tmp_path)
+        assert rel.parts[0] == label
+        assert cfg.generator_dataset_label == label
