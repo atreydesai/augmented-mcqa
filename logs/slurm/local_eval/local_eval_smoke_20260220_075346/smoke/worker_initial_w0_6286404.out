@@ -1,0 +1,46 @@
+Prepared workpacks: format=parquet groups=4 root=/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/local_eval/local_eval_smoke_20260220_075346/smoke/smoke__Nanbeige_Nanbeige4_1-3B__opus__full/summaries/_workpacks
+
+=== Run Set ===
+Total configs: 60
+By dataset type: {'arc_challenge': 15, 'arc_easy': 15, 'gpqa': 15, 'mmlu_pro': 15}
+By distractor source: {'dhuman': 20, 'dmodel': 20, 'scratch': 20}
+
+[1/60] opus_Nanbeige_Nanbeige4.1-3B_arc_challenge_dhuman_0H1M
+  Shared client initialized for: Nanbeige/Nanbeige4.1-3B
+
+=== Running Experiment: opus_Nanbeige_Nanbeige4.1-3B_arc_challenge_dhuman_0H1M ===
+Model: Local (Nanbeige/Nanbeige4.1-3B)
+Config: 0H+1M
+Entries: 5
+Start index: 0
+Checkpoint save interval: 50
+Inference batch size: 8
+Loading model: Nanbeige/Nanbeige4.1-3B
+  GPU memory utilization: 0.9
+  Tensor parallel size: 1
+  Seed: 12345
+  Dtype: auto
+  Tokenizer mode: auto
+  Max num batched tokens: 4096
+  Max num seqs: 8
+  Chunked prefill: True
+INFO 02-20 02:55:16 [utils.py:253] non-default args: {'trust_remote_code': True, 'download_dir': '/fs/nexus-scratch/adesai10/hub', 'seed': 12345, 'max_num_batched_tokens': 4096, 'max_num_seqs': 8, 'disable_log_stats': True, 'enable_chunked_prefill': True, 'model': 'Nanbeige/Nanbeige4.1-3B'}
+INFO 02-20 02:55:17 [model.py:631] Resolved architecture: LlamaForCausalLM
+INFO 02-20 02:55:17 [model.py:1745] Using max model len 262144
+INFO 02-20 02:55:18 [scheduler.py:216] Chunked prefill is enabled with max_num_batched_tokens=4096.
+[1;36m(EngineCore_DP0 pid=39040)[0;0m INFO 02-20 02:55:20 [core.py:93] Initializing a V1 LLM engine (v0.11.2) with config: model='Nanbeige/Nanbeige4.1-3B', speculative_config=None, tokenizer='Nanbeige/Nanbeige4.1-3B', skip_tokenizer_init=False, tokenizer_mode=auto, revision=None, tokenizer_revision=None, trust_remote_code=True, dtype=torch.bfloat16, max_seq_len=262144, download_dir='/fs/nexus-scratch/adesai10/hub', load_format=auto, tensor_parallel_size=1, pipeline_parallel_size=1, data_parallel_size=1, disable_custom_all_reduce=False, quantization=None, enforce_eager=False, kv_cache_dtype=auto, device_config=cuda, structured_outputs_config=StructuredOutputsConfig(backend='auto', disable_fallback=False, disable_any_whitespace=False, disable_additional_properties=False, reasoning_parser='', reasoning_parser_plugin='', enable_in_reasoning=False), observability_config=ObservabilityConfig(show_hidden_metrics_for_version=None, otlp_traces_endpoint=None, collect_detailed_traces=None), seed=12345, served_model_name=Nanbeige/Nanbeige4.1-3B, enable_prefix_caching=True, enable_chunked_prefill=True, pooler_config=None, compilation_config={'level': None, 'mode': <CompilationMode.VLLM_COMPILE: 3>, 'debug_dump_path': None, 'cache_dir': '', 'compile_cache_save_format': 'binary', 'backend': 'inductor', 'custom_ops': ['none'], 'splitting_ops': ['vllm::unified_attention', 'vllm::unified_attention_with_output', 'vllm::unified_mla_attention', 'vllm::unified_mla_attention_with_output', 'vllm::mamba_mixer2', 'vllm::mamba_mixer', 'vllm::short_conv', 'vllm::linear_attention', 'vllm::plamo2_mamba_mixer', 'vllm::gdn_attention_core', 'vllm::kda_attention', 'vllm::sparse_attn_indexer'], 'compile_mm_encoder': False, 'use_inductor': None, 'compile_sizes': [], 'inductor_compile_config': {'enable_auto_functionalized_v2': False, 'combo_kernels': True, 'benchmark_combo_kernel': True}, 'inductor_passes': {}, 'cudagraph_mode': <CUDAGraphMode.FULL_AND_PIECEWISE: (2, 1)>, 'cudagraph_num_of_warmups': 1, 'cudagraph_capture_sizes': [1, 2, 4, 8, 16], 'cudagraph_copy_inputs': False, 'cudagraph_specialize_lora': True, 'use_inductor_graph_partition': False, 'pass_config': {}, 'max_cudagraph_capture_size': 16, 'local_cache_dir': None}
+[1;36m(EngineCore_DP0 pid=39040)[0;0m INFO 02-20 02:55:22 [parallel_state.py:1208] world_size=1 rank=0 local_rank=0 distributed_init_method=tcp://10.71.19.16:37965 backend=nccl
+[Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+[Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+[Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+[Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+[Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+[Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+[1;36m(EngineCore_DP0 pid=39040)[0;0m INFO 02-20 02:55:22 [parallel_state.py:1394] rank 0 in world size 1 is assigned as DP rank 0, PP rank 0, TP rank 0, EP rank 0
+[1;36m(EngineCore_DP0 pid=39040)[0;0m INFO 02-20 02:55:23 [gpu_model_runner.py:3259] Starting to load model Nanbeige/Nanbeige4.1-3B...
+[1;36m(EngineCore_DP0 pid=39040)[0;0m INFO 02-20 02:55:28 [cuda.py:418] Valid backends: ['FLASH_ATTN', 'FLASHINFER', 'TRITON_ATTN', 'FLEX_ATTENTION']
+[1;36m(EngineCore_DP0 pid=39040)[0;0m INFO 02-20 02:55:28 [cuda.py:427] Using FLASH_ATTN backend.
+[1;36m(EngineCore_DP0 pid=39040)[0;0m INFO 02-20 02:55:43 [default_loader.py:314] Loading weights took 14.35 seconds
+[1;36m(EngineCore_DP0 pid=39040)[0;0m INFO 02-20 02:55:43 [gpu_model_runner.py:3338] Model loading took 7.4286 GiB memory and 20.013004 seconds
+[1;36m(EngineCore_DP0 pid=39040)[0;0m INFO 02-20 02:55:53 [backends.py:631] Using cache directory: /nfshomes/adesai10/.cache/vllm/torch_compile_cache/21db6eb286/rank_0_0/backbone for vLLM's torch.compile
+[1;36m(EngineCore_DP0 pid=39040)[0;0m INFO 02-20 02:55:53 [backends.py:647] Dynamo bytecode transform time: 8.93 s
