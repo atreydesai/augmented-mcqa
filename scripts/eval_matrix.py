@@ -9,6 +9,7 @@ import json
 import os
 import shutil
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -500,7 +501,7 @@ def _prepare_workpacks(
     workpack_format: str,
     output_base: Path,
     *,
-    shard_suffix: int | None = None,
+    workpack_root: Path | None = None,
 ) -> dict[tuple[str, str], Path]:
     if workpack_format == "none":
         return {}
@@ -512,11 +513,13 @@ def _prepare_workpacks(
         key = (str(cfg.dataset_path), cfg.dataset_type_filter or "__all__")
         grouped.setdefault(key, []).append(cfg)
 
-    workpack_root = output_base / "_workpacks"
-    workpack_root.mkdir(parents=True, exist_ok=True)
+    effective_workpack_root = workpack_root or (output_base / "_workpacks")
+    effective_workpack_root.mkdir(parents=True, exist_ok=True)
 
     raw_dataset_cache: dict[str, Any] = {}
     produced: dict[tuple[str, str], Path] = {}
+    created_count = 0
+    reused_count = 0
 
     for (dataset_path, dataset_type_key), group in sorted(grouped.items()):
         dataset_type = None if dataset_type_key == "__all__" else dataset_type_key
@@ -524,28 +527,72 @@ def _prepare_workpacks(
         cache_key = f"{dataset_path}::{dataset_type_key}::{','.join(required_cols)}"
         suffix = ".parquet" if workpack_format == "parquet" else ".arrow"
         stem = hashlib.sha1(cache_key.encode("utf-8")).hexdigest()[:16]
-        shard_tag = f"_shard{shard_suffix}" if shard_suffix is not None else ""
-        out_name = f"{stem}_{dataset_type_key}{shard_tag}{suffix}"
-        out_path = workpack_root / out_name
+        out_name = f"{stem}_{dataset_type_key}{suffix}"
+        out_path = effective_workpack_root / out_name
+        lock_path = effective_workpack_root / f".{out_name}.lock"
 
-        if not out_path.exists():
-            dataset = raw_dataset_cache.get(dataset_path)
-            if dataset is None:
-                dataset = load_from_disk(dataset_path)
-                raw_dataset_cache[dataset_path] = dataset
+        if out_path.exists():
+            reused_count += 1
+            produced[(dataset_path, dataset_type_key)] = out_path
+            for cfg in group:
+                cfg.workpack_format = workpack_format
+                cfg.workpack_path = out_path
+            continue
 
-            split = _load_split_for_dataset_type(dataset, dataset_type, dataset_path)
-            existing_cols = set(split.column_names)
-            selected_cols = [col for col in required_cols if col in existing_cols]
-            if selected_cols and len(selected_cols) < len(split.column_names):
-                split = split.select_columns(selected_cols)
-
-            if workpack_format == "parquet":
-                split.to_parquet(str(out_path))
-            else:
+        lock_acquired = False
+        wait_deadline = time.monotonic() + 600.0
+        while True:
+            try:
+                lock_path.mkdir(parents=False, exist_ok=False)
+                lock_acquired = True
+                break
+            except FileExistsError:
                 if out_path.exists():
-                    shutil.rmtree(out_path)
-                split.save_to_disk(str(out_path))
+                    break
+                if time.monotonic() >= wait_deadline:
+                    raise TimeoutError(
+                        f"Timed out waiting for workpack lock: {lock_path}"
+                    )
+                time.sleep(0.25)
+
+        if lock_acquired:
+            try:
+                if not out_path.exists():
+                    dataset = raw_dataset_cache.get(dataset_path)
+                    if dataset is None:
+                        dataset = load_from_disk(dataset_path)
+                        raw_dataset_cache[dataset_path] = dataset
+
+                    split = _load_split_for_dataset_type(dataset, dataset_type, dataset_path)
+                    existing_cols = set(split.column_names)
+                    selected_cols = [col for col in required_cols if col in existing_cols]
+                    if selected_cols and len(selected_cols) < len(split.column_names):
+                        split = split.select_columns(selected_cols)
+
+                    if workpack_format == "parquet":
+                        tmp_path = out_path.with_suffix(f"{out_path.suffix}.tmp.{os.getpid()}")
+                        if tmp_path.exists():
+                            tmp_path.unlink()
+                        split.to_parquet(str(tmp_path))
+                        tmp_path.replace(out_path)
+                    else:
+                        tmp_path = out_path.parent / f"{out_path.name}.tmp.{os.getpid()}"
+                        if tmp_path.exists():
+                            shutil.rmtree(tmp_path)
+                        split.save_to_disk(str(tmp_path))
+                        if out_path.exists():
+                            shutil.rmtree(out_path)
+                        tmp_path.rename(out_path)
+                    created_count += 1
+                else:
+                    reused_count += 1
+            finally:
+                try:
+                    lock_path.rmdir()
+                except OSError:
+                    pass
+        else:
+            reused_count += 1
 
         produced[(dataset_path, dataset_type_key)] = out_path
         for cfg in group:
@@ -553,7 +600,9 @@ def _prepare_workpacks(
             cfg.workpack_path = out_path
 
     print(
-        f"Prepared workpacks: format={workpack_format} groups={len(grouped)} root={workpack_root}"
+        "Prepared workpacks: "
+        f"format={workpack_format} groups={len(grouped)} "
+        f"created={created_count} reused={reused_count} root={effective_workpack_root}"
     )
     return produced
 
@@ -587,11 +636,12 @@ def cmd_run(args: argparse.Namespace) -> int:
 
     output_base = Path(args.output_dir) if args.output_dir else RESULTS_DIR
     output_base.mkdir(parents=True, exist_ok=True)
+    workpack_root = Path(args.workpack_root).expanduser() if args.workpack_root else None
     _prepare_workpacks(
         configs,
         args.workpack_format,
         output_base,
-        shard_suffix=args.shard_index,
+        workpack_root=workpack_root,
     )
 
     _print_summary("Run Set", configs)
@@ -643,6 +693,7 @@ def cmd_run(args: argparse.Namespace) -> int:
         "num_shards": args.num_shards,
         "shard_index": args.shard_index,
         "workpack_format": args.workpack_format,
+        "workpack_root": args.workpack_root,
         "eval_batch_size": args.eval_batch_size,
         "vllm_max_num_batched_tokens": args.vllm_max_num_batched_tokens,
         "vllm_max_num_seqs": args.vllm_max_num_seqs,
@@ -696,6 +747,12 @@ def build_parser() -> argparse.ArgumentParser:
         choices=["none", "parquet", "arrow"],
         default=os.getenv("EVAL_WORKPACK_FORMAT", "parquet"),
         help="Precompute/read dataset workpacks for faster repeated loads",
+    )
+    run_parser.add_argument(
+        "--workpack-root",
+        type=str,
+        default=os.getenv("EVAL_WORKPACK_ROOT", ""),
+        help="Shared directory for reusable workpacks (default: output-dir/_workpacks)",
     )
     run_parser.add_argument(
         "--eval-batch-size",

@@ -25,6 +25,7 @@ Options:
   --vllm-max-num-seqs <int>             vLLM max_num_seqs (default: 8)
   --vllm-enable-chunked-prefill <0|1>   Enable chunked prefill (default: 1)
   --eval-workpack-format <parquet|arrow|none>  Runtime workpack format (default: parquet)
+  --eval-workpack-root <path>           Shared workpack cache root (default: <run_root>/_workpacks)
   --eval-worker-mode <persistent|legacy>        Worker topology (default: persistent)
   --eval-batch-size <int>             Runner batch size for generate_batch (default: 8)
   --help                        Show this help text
@@ -55,6 +56,7 @@ VLLM_MAX_NUM_BATCHED_TOKENS="${VLLM_MAX_NUM_BATCHED_TOKENS:-4096}"
 VLLM_MAX_NUM_SEQS="${VLLM_MAX_NUM_SEQS:-8}"
 VLLM_ENABLE_CHUNKED_PREFILL="${VLLM_ENABLE_CHUNKED_PREFILL:-1}"
 EVAL_WORKPACK_FORMAT="${EVAL_WORKPACK_FORMAT:-parquet}"
+EVAL_WORKPACK_ROOT="${EVAL_WORKPACK_ROOT:-}"
 EVAL_WORKER_MODE="${EVAL_WORKER_MODE:-persistent}"
 EVAL_BATCH_SIZE="${EVAL_BATCH_SIZE:-8}"
 
@@ -131,6 +133,8 @@ while [[ $# -gt 0 ]]; do
       VLLM_ENABLE_CHUNKED_PREFILL="${2:-}"; shift 2 ;;
     --eval-workpack-format)
       EVAL_WORKPACK_FORMAT="${2:-}"; shift 2 ;;
+    --eval-workpack-root)
+      EVAL_WORKPACK_ROOT="${2:-}"; shift 2 ;;
     --eval-worker-mode)
       EVAL_WORKER_MODE="${2:-}"; shift 2 ;;
     --eval-batch-size)
@@ -187,13 +191,16 @@ STATUS_ROOT="$RUN_ROOT/status"
 MANIFEST_ROOT="$RUN_ROOT/manifests"
 TMP_JOB_ROOT="$RUN_ROOT/tmp_jobs"
 DATASETS_REMOTE_ROOT="$REPO_ROOT/$DATASETS_REMOTE_ROOT_REL"
+if [[ -z "$EVAL_WORKPACK_ROOT" ]]; then
+  EVAL_WORKPACK_ROOT="$RUN_ROOT/_workpacks"
+fi
 
 HEARTBEAT_LOG="$STATUS_ROOT/heartbeat.log"
 DASHBOARD_JSON="$STATUS_ROOT/dashboard.json"
 DASHBOARD_TSV="$STATUS_ROOT/dashboard.tsv"
 FINAL_MANIFEST_JSON="$STATUS_ROOT/final_manifest.json"
 
-mkdir -p "$RUN_ROOT" "$LOG_ROOT" "$STATUS_ROOT" "$MANIFEST_ROOT" "$TMP_JOB_ROOT" "$DATASETS_REMOTE_ROOT"
+mkdir -p "$RUN_ROOT" "$LOG_ROOT" "$STATUS_ROOT" "$MANIFEST_ROOT" "$TMP_JOB_ROOT" "$DATASETS_REMOTE_ROOT" "$EVAL_WORKPACK_ROOT"
 touch "$HEARTBEAT_LOG"
 
 LAST_HEARTBEAT_EPOCH=0
@@ -797,6 +804,7 @@ VLLM_MAX_NUM_BATCHED_TOKENS="$VLLM_MAX_NUM_BATCHED_TOKENS"
 VLLM_MAX_NUM_SEQS="$VLLM_MAX_NUM_SEQS"
 VLLM_ENABLE_CHUNKED_PREFILL="$VLLM_ENABLE_CHUNKED_PREFILL"
 EVAL_WORKPACK_FORMAT="$EVAL_WORKPACK_FORMAT"
+EVAL_WORKPACK_ROOT="$EVAL_WORKPACK_ROOT"
 EVAL_BATCH_SIZE="$EVAL_BATCH_SIZE"
 TIMING_DIR="$timing_dir"
 
@@ -858,6 +866,7 @@ cmd=(
   --save-interval "\$SAVE_INTERVAL"
   --keep-checkpoints "\$KEEP_CHECKPOINTS"
   --workpack-format "\$EVAL_WORKPACK_FORMAT"
+  --workpack-root "\$EVAL_WORKPACK_ROOT"
   --eval-batch-size "\$EVAL_BATCH_SIZE"
   --vllm-max-num-batched-tokens "\$VLLM_MAX_NUM_BATCHED_TOKENS"
   --vllm-max-num-seqs "\$VLLM_MAX_NUM_SEQS"
@@ -937,6 +946,7 @@ SAVE_INTERVAL="$SAVE_INTERVAL"
 KEEP_CHECKPOINTS="$KEEP_CHECKPOINTS"
 CACHE_ROOT="$CACHE_ROOT"
 EVAL_WORKPACK_FORMAT="$EVAL_WORKPACK_FORMAT"
+EVAL_WORKPACK_ROOT="$EVAL_WORKPACK_ROOT"
 EVAL_BATCH_SIZE="$EVAL_BATCH_SIZE"
 VLLM_MAX_NUM_BATCHED_TOKENS="$VLLM_MAX_NUM_BATCHED_TOKENS"
 VLLM_MAX_NUM_SEQS="$VLLM_MAX_NUM_SEQS"
@@ -1018,6 +1028,7 @@ while IFS=$'\t' read -r combo_id combo_eval combo_gen combo_mode manifest_path c
     --save-interval "\$SAVE_INTERVAL"
     --keep-checkpoints "\$KEEP_CHECKPOINTS"
     --workpack-format "\$EVAL_WORKPACK_FORMAT"
+    --workpack-root "\$EVAL_WORKPACK_ROOT"
     --eval-batch-size "\$EVAL_BATCH_SIZE"
     --vllm-max-num-batched-tokens "\$VLLM_MAX_NUM_BATCHED_TOKENS"
     --vllm-max-num-seqs "\$VLLM_MAX_NUM_SEQS"
@@ -1479,7 +1490,7 @@ PY
 
 main() {
   append_heartbeat "run_start run_tag=$RUN_TAG phase=$PHASE"
-  append_heartbeat "run_config repo_root=$REPO_ROOT max_concurrent_jobs=$MAX_CONCURRENT_JOBS num_shards_smoke=$NUM_SHARDS_SMOKE num_shards_main=$NUM_SHARDS_MAIN save_interval=$SAVE_INTERVAL keep_checkpoints=$KEEP_CHECKPOINTS max_tokens=$MAX_TOKENS force_refresh=$FORCE_REFRESH skip_push=$SKIP_PUSH do_sync=$DO_SYNC worker_mode=$EVAL_WORKER_MODE workpack_format=$EVAL_WORKPACK_FORMAT eval_batch_size=$EVAL_BATCH_SIZE vllm_max_num_batched_tokens=$VLLM_MAX_NUM_BATCHED_TOKENS vllm_max_num_seqs=$VLLM_MAX_NUM_SEQS vllm_enable_chunked_prefill=$VLLM_ENABLE_CHUNKED_PREFILL"
+  append_heartbeat "run_config repo_root=$REPO_ROOT max_concurrent_jobs=$MAX_CONCURRENT_JOBS num_shards_smoke=$NUM_SHARDS_SMOKE num_shards_main=$NUM_SHARDS_MAIN save_interval=$SAVE_INTERVAL keep_checkpoints=$KEEP_CHECKPOINTS max_tokens=$MAX_TOKENS force_refresh=$FORCE_REFRESH skip_push=$SKIP_PUSH do_sync=$DO_SYNC worker_mode=$EVAL_WORKER_MODE workpack_format=$EVAL_WORKPACK_FORMAT workpack_root=$EVAL_WORKPACK_ROOT eval_batch_size=$EVAL_BATCH_SIZE vllm_max_num_batched_tokens=$VLLM_MAX_NUM_BATCHED_TOKENS vllm_max_num_seqs=$VLLM_MAX_NUM_SEQS vllm_enable_chunked_prefill=$VLLM_ENABLE_CHUNKED_PREFILL"
 
   check_prereqs_and_env
   materialize_datasets
