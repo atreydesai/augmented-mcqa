@@ -59,6 +59,7 @@ TOKENIZER_MODE=""
 USE_LOCAL_SNAPSHOT=1
 DO_SYNC=1
 VLLM_INSTALL_SPEC="${VLLM_INSTALL_SPEC:-vllm==0.11.2}"
+VLLM_TRANSFORMERS_SPEC="${VLLM_TRANSFORMERS_SPEC:-transformers<5}"
 declare -a STOP_TOKEN_IDS=()
 
 while [[ $# -gt 0 ]]; do
@@ -137,10 +138,17 @@ fi
 if ! uv run python - <<'PY'
 import importlib.util
 import sys
-sys.exit(0 if importlib.util.find_spec("vllm") is not None else 1)
+if importlib.util.find_spec("vllm") is None:
+    sys.exit(1)
+try:
+    import transformers  # type: ignore
+    major = int(str(transformers.__version__).split(".")[0])
+except Exception:
+    sys.exit(2)
+sys.exit(0 if major < 5 else 3)
 PY
 then
-  uv pip install --only-binary=:all: "$VLLM_INSTALL_SPEC"
+  uv pip install --only-binary=:all: "$VLLM_INSTALL_SPEC" "$VLLM_TRANSFORMERS_SPEC"
 fi
 
 cmd=(

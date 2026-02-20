@@ -88,7 +88,7 @@ If unresolved, an explicit error is raised with known aliases/providers.
 
 The default alias file includes local entries for:
 
-- `Nanbeige/Nanbeige4.1-3B` (`tokenizer_mode = "slow"`, `stop_token_ids = [166101]`)
+- `Nanbeige/Nanbeige4.1-3B` (`tokenizer_mode = "auto"`, `stop_token_ids = [166101]`)
 - `Qwen/Qwen3-4B-Instruct-2507` (`dtype = "bfloat16"`, `max_model_len = 32768`)
 - `allenai/Olmo-3-7B-Instruct` (`dtype = "bfloat16"`, `max_model_len = 32768`)
 

@@ -127,8 +127,26 @@ class LocalClient(ModelClient):
         try:
             self._llm = LLM(**llm_kwargs)
         except Exception as exc:
-            self._init_error = exc
-            raise
+            # Some local-model tokenizers fail under slow mode in vLLM; retry once with auto.
+            retry_with_auto = (
+                self._tokenizer_mode != "auto"
+                and "all_special_tokens_extended" in str(exc)
+            )
+            if not retry_with_auto:
+                self._init_error = exc
+                raise
+
+            print(
+                "  Tokenizer initialization failed with current mode; "
+                "retrying once with tokenizer_mode=auto"
+            )
+            llm_kwargs["tokenizer_mode"] = "auto"
+            self._tokenizer_mode = "auto"
+            try:
+                self._llm = LLM(**llm_kwargs)
+            except Exception as retry_exc:
+                self._init_error = retry_exc
+                raise
         
         print(f"  Model loaded successfully")
     

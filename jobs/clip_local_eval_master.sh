@@ -159,6 +159,7 @@ declare -A JOB_SUBMIT_EPOCH=()
 POLL_CAPACITY_SECONDS=20
 POLL_WAIT_SECONDS=30
 VLLM_INSTALL_SPEC="${VLLM_INSTALL_SPEC:-vllm==0.11.2}"
+VLLM_TRANSFORMERS_SPEC="${VLLM_TRANSFORMERS_SPEC:-transformers<5}"
 UV_SYNC_INEXACT="${UV_SYNC_INEXACT:-1}"
 JOB_VISIBILITY_GRACE_SECONDS="${JOB_VISIBILITY_GRACE_SECONDS:-120}"
 
@@ -355,7 +356,15 @@ refresh_active_jobs() {
       state="$(printf '%s' "$row" | awk -F'|' '{print $2}')"
       reason="$(printf '%s' "$row" | awk -F'|' '{print $3}')"
       if [[ "$state" == "PENDING" && "$reason" == "launch_failed_requeued_held" ]]; then
-        unset "JOB_SUBMIT_EPOCH[$jid]"
+        # Treat launch-failed held jobs as active for a grace period so they
+        # still consume a submission slot and do not trigger a submission burst.
+        local submitted_at
+        submitted_at="${JOB_SUBMIT_EPOCH[$jid]:-0}"
+        if (( submitted_at > 0 && now_epoch - submitted_at < JOB_VISIBILITY_GRACE_SECONDS )); then
+          new_active+=("$jid")
+        else
+          unset "JOB_SUBMIT_EPOCH[$jid]"
+        fi
         continue
       fi
       new_active+=("$jid")
@@ -503,30 +512,45 @@ check_prereqs_and_env() {
     uv sync
   fi
 
-  # Local model eval requires vLLM; install a wheel-only build if missing.
+  # Local model eval requires a compatible vLLM + transformers stack.
+  # vLLM 0.11.2 is incompatible with transformers>=5.
   if ! uv run python - <<'PY'
 import importlib.util
 import sys
-sys.exit(0 if importlib.util.find_spec("vllm") is not None else 1)
+if importlib.util.find_spec("vllm") is None:
+    sys.exit(1)
+try:
+    import transformers  # type: ignore
+    major = int(str(transformers.__version__).split(".")[0])
+except Exception:
+    sys.exit(2)
+sys.exit(0 if major < 5 else 3)
 PY
   then
-    append_heartbeat "vllm_missing installing_with_uv_pip spec=$VLLM_INSTALL_SPEC"
-    if ! uv pip install --only-binary=:all: "$VLLM_INSTALL_SPEC"; then
-      echo "Failed to install $VLLM_INSTALL_SPEC as a prebuilt wheel." >&2
-      echo "Set VLLM_INSTALL_SPEC to another wheel-backed version or install CUDA toolkit+nvcc for source builds." >&2
-      echo "Example retry: VLLM_INSTALL_SPEC='vllm==0.10.2' jobs/clip_local_eval_master.sh --phase smoke ..." >&2
+    append_heartbeat "vllm_stack_fix installing_with_uv_pip vllm=$VLLM_INSTALL_SPEC transformers=$VLLM_TRANSFORMERS_SPEC"
+    if ! uv pip install --only-binary=:all: "$VLLM_INSTALL_SPEC" "$VLLM_TRANSFORMERS_SPEC"; then
+      echo "Failed to install compatible vLLM stack ($VLLM_INSTALL_SPEC, $VLLM_TRANSFORMERS_SPEC)." >&2
+      echo "Set VLLM_INSTALL_SPEC / VLLM_TRANSFORMERS_SPEC to wheel-backed versions as needed." >&2
+      echo "Example retry: VLLM_INSTALL_SPEC='vllm==0.10.2' VLLM_TRANSFORMERS_SPEC='transformers<5' jobs/clip_local_eval_master.sh --phase smoke ..." >&2
       exit 1
     fi
     if ! uv run python - <<'PY'
 import importlib.util
 import sys
-sys.exit(0 if importlib.util.find_spec("vllm") is not None else 1)
+if importlib.util.find_spec("vllm") is None:
+    sys.exit(1)
+try:
+    import transformers  # type: ignore
+    major = int(str(transformers.__version__).split(".")[0])
+except Exception:
+    sys.exit(2)
+sys.exit(0 if major < 5 else 3)
 PY
     then
-      echo "Failed to install/import vllm in uv environment." >&2
+      echo "Failed to install/import compatible vLLM stack in uv environment." >&2
       exit 1
     fi
-    append_heartbeat "vllm_install_complete"
+    append_heartbeat "vllm_stack_fix_complete"
   fi
 }
 
