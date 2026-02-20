@@ -121,6 +121,8 @@ Use:
 - `jobs/submit_eval_array.sh`
 - `jobs/clip_local_eval_master.sh` (end-to-end orchestrator for local-model smoke+main runs)
 - `jobs/README_local_eval.md` (copy-paste remote commands and log/artifact locations)
+- `jobs/srun_local_model_smoke.sh` (single local model bring-up check on one GPU)
+- `jobs/srun_all_local_models_smoke.sh` (run the three local model smoke checks sequentially)
 
 Submit example:
 

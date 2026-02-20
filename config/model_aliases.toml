@@ -78,8 +78,8 @@ provider = "local"
 model_id = "Nanbeige/Nanbeige4.1-3B"
 
 [aliases."Nanbeige/Nanbeige4.1-3B".defaults]
-# Model card uses a slow tokenizer plus explicit EOS token 166101.
-tokenizer_mode = "slow"
+# vLLM 0.11.x fails with Nanbeige when tokenizer_mode=slow; keep auto.
+tokenizer_mode = "auto"
 trust_remote_code = true
 stop_token_ids = [166101]
 
