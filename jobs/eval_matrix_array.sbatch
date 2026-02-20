@@ -20,16 +20,16 @@ GENERATOR_DATASET_LABEL="${GENERATOR_DATASET_LABEL:?GENERATOR_DATASET_LABEL is r
 NUM_SHARDS="${NUM_SHARDS:?NUM_SHARDS is required}"
 SHARD_INDEX="${SLURM_ARRAY_TASK_ID}"
 
-PRESET="${PRESET:-core16}"
+PRESET="${PRESET:-}"
 OUTPUT_DIR="${OUTPUT_DIR:-results}"
-EVAL_MODE="${EVAL_MODE:-behavioral}"
+EVAL_MODE="${EVAL_MODE:-}"
 LIMIT="${LIMIT:-}"
 REASONING_EFFORT="${REASONING_EFFORT:-}"
 THINKING_LEVEL="${THINKING_LEVEL:-}"
-TEMPERATURE="${TEMPERATURE:-0.0}"
-MAX_TOKENS="${MAX_TOKENS:-100}"
-SAVE_INTERVAL="${SAVE_INTERVAL:-50}"
-KEEP_CHECKPOINTS="${KEEP_CHECKPOINTS:-2}"
+TEMPERATURE="${TEMPERATURE:-}"
+MAX_TOKENS="${MAX_TOKENS:-}"
+SAVE_INTERVAL="${SAVE_INTERVAL:-}"
+KEEP_CHECKPOINTS="${KEEP_CHECKPOINTS:-}"
 DATASET_TYPES="${DATASET_TYPES:-}"
 DISTRACTOR_SOURCES="${DISTRACTOR_SOURCES:-}"
 
@@ -40,15 +40,9 @@ mkdir -p logs/eval_matrix
 
 CMD=(
   uv run python scripts/eval_matrix.py run
-  --preset "$PRESET"
   --model "$MODEL"
   --dataset-path "$DATASET_PATH"
   --generator-dataset-label "$GENERATOR_DATASET_LABEL"
-  --eval-mode "$EVAL_MODE"
-  --temperature "$TEMPERATURE"
-  --max-tokens "$MAX_TOKENS"
-  --save-interval "$SAVE_INTERVAL"
-  --keep-checkpoints "$KEEP_CHECKPOINTS"
   --output-dir "$OUTPUT_DIR"
   --num-shards "$NUM_SHARDS"
   --shard-index "$SHARD_INDEX"
@@ -58,11 +52,29 @@ CMD=(
 if [[ -n "$LIMIT" ]]; then
   CMD+=(--limit "$LIMIT")
 fi
+if [[ -n "$PRESET" ]]; then
+  CMD+=(--preset "$PRESET")
+fi
+if [[ -n "$EVAL_MODE" ]]; then
+  CMD+=(--eval-mode "$EVAL_MODE")
+fi
 if [[ -n "$REASONING_EFFORT" ]]; then
   CMD+=(--reasoning-effort "$REASONING_EFFORT")
 fi
 if [[ -n "$THINKING_LEVEL" ]]; then
   CMD+=(--thinking-level "$THINKING_LEVEL")
+fi
+if [[ -n "$TEMPERATURE" ]]; then
+  CMD+=(--temperature "$TEMPERATURE")
+fi
+if [[ -n "$MAX_TOKENS" ]]; then
+  CMD+=(--max-tokens "$MAX_TOKENS")
+fi
+if [[ -n "$SAVE_INTERVAL" ]]; then
+  CMD+=(--save-interval "$SAVE_INTERVAL")
+fi
+if [[ -n "$KEEP_CHECKPOINTS" ]]; then
+  CMD+=(--keep-checkpoints "$KEEP_CHECKPOINTS")
 fi
 if [[ -n "$DATASET_TYPES" ]]; then
   IFS=',' read -r -a DATASET_TYPE_ARR <<< "$DATASET_TYPES"

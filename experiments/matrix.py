@@ -5,10 +5,18 @@ from __future__ import annotations
 import json
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 from config import DistractorType, RESULTS_DIR
 from .config import ExperimentConfig
+from .defaults import (
+    DEFAULT_EVAL_MAX_TOKENS,
+    DEFAULT_EVAL_MODE,
+    DEFAULT_EVAL_SAVE_INTERVAL,
+    DEFAULT_EVAL_SEED,
+    DEFAULT_EVAL_TEMPERATURE,
+    DEFAULT_MATRIX_PRESET,
+)
 
 
 MatrixPreset = Literal["core16", "branching21"]
@@ -70,17 +78,17 @@ def build_matrix_configs(
     generator_dataset_label: str,
     dataset_types: list[str],
     distractor_sources: list[str],
-    preset: MatrixPreset = "core16",
+    preset: MatrixPreset = cast(MatrixPreset, DEFAULT_MATRIX_PRESET),
     output_base: Path | None = None,
     limit: int | None = None,
-    eval_mode: str = "behavioral",
+    eval_mode: str = DEFAULT_EVAL_MODE,
     choices_only: bool = False,
-    seed: int = 42,
+    seed: int = DEFAULT_EVAL_SEED,
     reasoning_effort: str | None = None,
     thinking_level: str | None = None,
-    temperature: float | None = None,
-    max_tokens: int = 100,
-    save_interval: int = 50,
+    temperature: float | None = DEFAULT_EVAL_TEMPERATURE,
+    max_tokens: int = DEFAULT_EVAL_MAX_TOKENS,
+    save_interval: int = DEFAULT_EVAL_SAVE_INTERVAL,
 ) -> list[ExperimentConfig]:
     """Build a deterministic experiment matrix."""
     generator_label = str(generator_dataset_label).strip()

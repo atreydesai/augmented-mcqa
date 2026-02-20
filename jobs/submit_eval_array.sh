@@ -7,18 +7,18 @@ Usage:
   jobs/submit_eval_array.sh <model> <dataset_path> <generator_dataset_label> <num_shards> [options]
 
 Options:
-  --preset <name>                Matrix preset (default: core16)
+  --preset <name>                Matrix preset (default: eval_matrix.py default)
   --output-dir <path>            Output base directory (default: results)
   --dataset-types <csv>          Comma-separated dataset types
   --distractor-source <csv>      Comma-separated distractor sources
   --limit <int>                  Entry limit per config
-  --eval-mode <mode>             accuracy|behavioral (default: behavioral)
+  --eval-mode <mode>             accuracy|behavioral (default: eval_matrix.py default)
   --reasoning-effort <value>     OpenAI reasoning effort
   --thinking-level <value>       Anthropic/Gemini thinking level
-  --temperature <float>          Generation temperature (default: 0.0)
-  --max-tokens <int>             Max tokens (default: 100)
-  --save-interval <int>          Checkpoint save interval (default: 50)
-  --keep-checkpoints <int>       Keep newest checkpoints per root (default: 2)
+  --temperature <float>          Generation temperature (default: eval_matrix.py default)
+  --max-tokens <int>             Max tokens (default: eval_matrix.py default)
+  --save-interval <int>          Checkpoint save interval (default: eval_matrix.py default)
+  --keep-checkpoints <int>       Keep newest checkpoints per root (default: eval_matrix.py default)
 
 Example:
   jobs/submit_eval_array.sh gpt-4.1 datasets/augmented/unified_processed my-gen-label 8 \
@@ -33,18 +33,18 @@ GENERATOR_DATASET_LABEL="$3"
 NUM_SHARDS="$4"
 shift 4
 
-PRESET="core16"
+PRESET=""
 OUTPUT_DIR="results"
 DATASET_TYPES=""
 DISTRACTOR_SOURCES=""
 LIMIT=""
-EVAL_MODE="behavioral"
+EVAL_MODE=""
 REASONING_EFFORT=""
 THINKING_LEVEL=""
-TEMPERATURE="0.0"
-MAX_TOKENS="100"
-SAVE_INTERVAL="50"
-KEEP_CHECKPOINTS="2"
+TEMPERATURE=""
+MAX_TOKENS=""
+SAVE_INTERVAL=""
+KEEP_CHECKPOINTS=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in

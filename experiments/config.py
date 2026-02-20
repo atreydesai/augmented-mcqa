@@ -13,7 +13,16 @@ from typing import Optional, List, Literal
 from pathlib import Path
 import json
 
-from config import RESULTS_DIR, RANDOM_SEED, DistractorType
+from config import RESULTS_DIR, DistractorType
+from .defaults import (
+    DEFAULT_EVAL_MAX_TOKENS,
+    DEFAULT_EVAL_MODE,
+    DEFAULT_EVAL_SAVE_INTERVAL,
+    DEFAULT_EVAL_SEED,
+    DEFAULT_EVAL_TEMPERATURE,
+    DEFAULT_NUM_HUMAN_DISTRACTORS,
+    DEFAULT_NUM_MODEL_DISTRACTORS,
+)
 
 
 # Evaluation modes
@@ -56,28 +65,28 @@ class ExperimentConfig:
     generator_dataset_label: str
     
     # Distractor configuration
-    num_human: int = 3
-    num_model: int = 0
+    num_human: int = DEFAULT_NUM_HUMAN_DISTRACTORS
+    num_model: int = DEFAULT_NUM_MODEL_DISTRACTORS
     model_distractor_type: DistractorType = DistractorType.COND_MODEL_Q_A_SCRATCH
     
     # Evaluation settings
-    eval_mode: EvalMode = "accuracy"
+    eval_mode: EvalMode = DEFAULT_EVAL_MODE
     sampling_strategy: SamplingStrategy = "independent"
     branching_mode: BranchingMode = "shuffled_prefix"
     choices_only: bool = False
     limit: Optional[int] = None
-    seed: int = RANDOM_SEED
+    seed: int = DEFAULT_EVAL_SEED
     
     # Model settings
     reasoning_effort: Optional[str] = None  # OpenAI GPT-5
     thinking_level: Optional[str] = None     # Anthropic/Gemini
-    temperature: Optional[float] = None
-    max_tokens: int = 100
+    temperature: Optional[float] = DEFAULT_EVAL_TEMPERATURE
+    max_tokens: int = DEFAULT_EVAL_MAX_TOKENS
     
     # Output
     output_dir: Optional[Path] = None
     checkpoint_dir: Optional[Path] = None
-    save_interval: int = 50
+    save_interval: int = DEFAULT_EVAL_SAVE_INTERVAL
     
     # Categories to include (None = all)
     categories: Optional[List[str]] = None

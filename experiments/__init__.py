@@ -34,6 +34,18 @@ from .matrix import (
     load_manifest,
     load_configs_from_manifest,
 )
+from .defaults import (
+    DEFAULT_MATRIX_PRESET,
+    DEFAULT_EVAL_MODE,
+    DEFAULT_EVAL_SEED,
+    DEFAULT_EVAL_TEMPERATURE,
+    DEFAULT_EVAL_MAX_TOKENS,
+    DEFAULT_EVAL_SAVE_INTERVAL,
+    DEFAULT_EVAL_KEEP_CHECKPOINTS,
+    DEFAULT_GENERATOR_DATASET_LABEL,
+    DEFAULT_NUM_HUMAN_DISTRACTORS,
+    DEFAULT_NUM_MODEL_DISTRACTORS,
+)
 
 
 __all__ = [
@@ -66,4 +78,15 @@ __all__ = [
     "save_manifest",
     "load_manifest",
     "load_configs_from_manifest",
+    # Shared defaults
+    "DEFAULT_MATRIX_PRESET",
+    "DEFAULT_EVAL_MODE",
+    "DEFAULT_EVAL_SEED",
+    "DEFAULT_EVAL_TEMPERATURE",
+    "DEFAULT_EVAL_MAX_TOKENS",
+    "DEFAULT_EVAL_SAVE_INTERVAL",
+    "DEFAULT_EVAL_KEEP_CHECKPOINTS",
+    "DEFAULT_GENERATOR_DATASET_LABEL",
+    "DEFAULT_NUM_HUMAN_DISTRACTORS",
+    "DEFAULT_NUM_MODEL_DISTRACTORS",
 ]

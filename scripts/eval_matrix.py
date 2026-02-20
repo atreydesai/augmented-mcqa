@@ -28,6 +28,15 @@ from experiments.matrix import (
     save_manifest,
     summarize_configs,
 )
+from experiments.defaults import (
+    DEFAULT_EVAL_KEEP_CHECKPOINTS,
+    DEFAULT_EVAL_MAX_TOKENS,
+    DEFAULT_EVAL_MODE,
+    DEFAULT_EVAL_SAVE_INTERVAL,
+    DEFAULT_EVAL_SEED,
+    DEFAULT_EVAL_TEMPERATURE,
+    DEFAULT_MATRIX_PRESET,
+)
 
 
 def _require_generator_label(raw: str | None) -> str:
@@ -42,7 +51,7 @@ def _add_common_build_args(parser: argparse.ArgumentParser, required_inputs: boo
         "--preset",
         type=str,
         choices=sorted(MATRIX_PRESETS.keys()),
-        default="core16",
+        default=DEFAULT_MATRIX_PRESET,
         help="Matrix preset to build",
     )
     parser.add_argument("--model", type=str, required=required_inputs, help="Model name")
@@ -82,25 +91,28 @@ def _add_common_build_args(parser: argparse.ArgumentParser, required_inputs: boo
         "--eval-mode",
         type=str,
         choices=["accuracy", "behavioral"],
-        default="behavioral",
+        default=DEFAULT_EVAL_MODE,
     )
     parser.add_argument("--choices-only", action="store_true", help="Use choices-only prompt")
-    parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--seed", type=int, default=DEFAULT_EVAL_SEED)
 
     parser.add_argument("--reasoning-effort", type=str, help="OpenAI reasoning effort")
     parser.add_argument("--thinking-level", type=str, help="Anthropic/Gemini thinking level")
     parser.add_argument(
         "--temperature",
         type=float,
-        default=None,
+        default=DEFAULT_EVAL_TEMPERATURE,
         help="Sampling temperature (provider default if omitted)",
     )
-    parser.add_argument("--max-tokens", type=int, default=100)
+    parser.add_argument("--max-tokens", type=int, default=DEFAULT_EVAL_MAX_TOKENS)
     parser.add_argument(
         "--save-interval",
         type=int,
-        default=50,
-        help="Checkpoint interval in processed entries (default: 50)",
+        default=DEFAULT_EVAL_SAVE_INTERVAL,
+        help=(
+            "Checkpoint interval in processed entries "
+            f"(default: {DEFAULT_EVAL_SAVE_INTERVAL})"
+        ),
     )
 
     parser.add_argument("--output-dir", type=str, help="Base output directory")
@@ -475,7 +487,7 @@ def build_parser() -> argparse.ArgumentParser:
     run_parser.add_argument(
         "--keep-checkpoints",
         type=int,
-        default=2,
+        default=DEFAULT_EVAL_KEEP_CHECKPOINTS,
         help="After run completion, keep only this many newest checkpoint files per output root",
     )
     run_parser.set_defaults(handler=cmd_run)

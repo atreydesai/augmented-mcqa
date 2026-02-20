@@ -17,7 +17,16 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from experiments import ExperimentConfig, run_experiment
-from config import DATASETS_DIR, RESULTS_DIR, DistractorType
+from config import DistractorType
+from experiments.defaults import (
+    DEFAULT_EVAL_MAX_TOKENS,
+    DEFAULT_EVAL_MODE,
+    DEFAULT_EVAL_SEED,
+    DEFAULT_EVAL_TEMPERATURE,
+    DEFAULT_GENERATOR_DATASET_LABEL,
+    DEFAULT_NUM_HUMAN_DISTRACTORS,
+    DEFAULT_NUM_MODEL_DISTRACTORS,
+)
 
 MODEL_TYPE_CHOICES = [
     DistractorType.COND_MODEL_Q_A_SCRATCH.value,
@@ -43,13 +52,23 @@ def main():
     parser.add_argument(
         "--generator-dataset-label",
         type=str,
-        default="manual",
-        help="Generator dataset label used for output isolation (default: manual)",
+        default=DEFAULT_GENERATOR_DATASET_LABEL,
+        help="Generator dataset label used for output isolation",
     )
     
     # Distractor configuration
-    parser.add_argument("--num-human", type=int, default=3, help="Number of human distractors")
-    parser.add_argument("--num-model", type=int, default=0, help="Number of model distractors")
+    parser.add_argument(
+        "--num-human",
+        type=int,
+        default=DEFAULT_NUM_HUMAN_DISTRACTORS,
+        help="Number of human distractors",
+    )
+    parser.add_argument(
+        "--num-model",
+        type=int,
+        default=DEFAULT_NUM_MODEL_DISTRACTORS,
+        help="Number of model distractors",
+    )
     parser.add_argument(
         "--model-type",
         type=str,
@@ -59,10 +78,15 @@ def main():
     )
     
     # Evaluation settings
-    parser.add_argument("--eval-mode", type=str, choices=["accuracy", "behavioral"], default="behavioral")
+    parser.add_argument(
+        "--eval-mode",
+        type=str,
+        choices=["accuracy", "behavioral"],
+        default=DEFAULT_EVAL_MODE,
+    )
     parser.add_argument("--choices-only", action="store_true", help="Use choices-only prompt")
     parser.add_argument("--limit", type=int, help="Limit number of entries")
-    parser.add_argument("--seed", type=int, default=42, help="Random seed")
+    parser.add_argument("--seed", type=int, default=DEFAULT_EVAL_SEED, help="Random seed")
     
     # Model settings
     parser.add_argument("--reasoning-effort", type=str, help="OpenAI reasoning effort")
@@ -70,10 +94,10 @@ def main():
     parser.add_argument(
         "--temperature",
         type=float,
-        default=None,
+        default=DEFAULT_EVAL_TEMPERATURE,
         help="Sampling temperature (provider default if omitted)",
     )
-    parser.add_argument("--max-tokens", type=int, default=100, help="Max tokens")
+    parser.add_argument("--max-tokens", type=int, default=DEFAULT_EVAL_MAX_TOKENS, help="Max tokens")
     
     # Output
     parser.add_argument("--output-dir", type=str, help="Output directory")
