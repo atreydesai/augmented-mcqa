@@ -299,9 +299,14 @@ class LocalClient(ModelClient):
             sampling_kwargs["repetition_penalty"] = repeat_penalty
 
         sampling_params = SamplingParams(**sampling_kwargs)
-        
-        # Generate
-        outputs = self._llm.generate(prompts, sampling_params)
+
+        # Use chat() when available so instruct models receive their chat template.
+        # Without it, OLMo/Qwen etc. hit EOS immediately and return empty/single-token outputs.
+        if hasattr(self._llm, "chat"):
+            messages = [[{"role": "user", "content": p}] for p in prompts]
+            outputs = self._llm.chat(messages, sampling_params)
+        else:
+            outputs = self._llm.generate(prompts, sampling_params)
         
         # Convert to GenerationResults
         results = []

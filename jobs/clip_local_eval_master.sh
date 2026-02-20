@@ -53,8 +53,8 @@ FORCE_REFRESH=0
 SKIP_PUSH=0
 DO_SYNC=1
 REPO_ROOT="/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa"
-VLLM_MAX_NUM_BATCHED_TOKENS="${VLLM_MAX_NUM_BATCHED_TOKENS:-4096}"
-VLLM_MAX_NUM_SEQS="${VLLM_MAX_NUM_SEQS:-1}"
+VLLM_MAX_NUM_BATCHED_TOKENS="${VLLM_MAX_NUM_BATCHED_TOKENS:-32768}"
+VLLM_MAX_NUM_SEQS="${VLLM_MAX_NUM_SEQS:-8}"
 VLLM_ENABLE_CHUNKED_PREFILL="${VLLM_ENABLE_CHUNKED_PREFILL:-1}"
 EVAL_WORKPACK_FORMAT="${EVAL_WORKPACK_FORMAT:-parquet}"
 EVAL_WORKPACK_ROOT="${EVAL_WORKPACK_ROOT:-}"
@@ -1115,6 +1115,10 @@ submit_persistent_worker_pool() {
   for ((worker_index = 0; worker_index < worker_count; worker_index++)); do
     submit_worker_job "$phase" "$tasks_tsv" "$pool_tag" "$worker_index" "$worker_count"
     LAST_SUBMITTED_WORKER_IDS+=("$LAST_SUBMITTED_JOB_ID")
+    # Stagger submissions to avoid SLURM cgroup/tmp race (_exec_wait_child_wait_for_parent)
+    if (( worker_index + 1 < worker_count )); then
+      sleep 5
+    fi
   done
 }
 
