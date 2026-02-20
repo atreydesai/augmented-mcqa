@@ -18,6 +18,14 @@ The script orchestrates remote eval for local models across:
 cd /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa
 source ~/.bashrc
 export HF_TOKEN="<your_hf_token>"
+uv sync
+```
+
+The orchestrator checks for `vllm` and installs a wheel-only build if missing (default: `vllm==0.11.2`).
+Override with `VLLM_INSTALL_SPEC`, for example:
+
+```bash
+VLLM_INSTALL_SPEC='vllm==0.10.2' jobs/clip_local_eval_master.sh --phase smoke ...
 ```
 
 ## Smoke Run (recommended first)

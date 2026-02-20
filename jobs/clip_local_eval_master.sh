@@ -155,6 +155,9 @@ touch "$HEARTBEAT_LOG"
 
 LAST_HEARTBEAT_EPOCH=0
 declare -a ACTIVE_JOB_IDS=()
+POLL_CAPACITY_SECONDS=20
+POLL_WAIT_SECONDS=30
+VLLM_INSTALL_SPEC="${VLLM_INSTALL_SPEC:-vllm==0.11.2}"
 
 safe_name() {
   printf '%s' "$1" | tr '/ .:' '_' | tr -cd '[:alnum:]_-'
@@ -197,7 +200,8 @@ log_line() {
 
 append_heartbeat() {
   local msg="$1"
-  log_line "$msg" | tee -a "$HEARTBEAT_LOG"
+  # Log to file + stderr so command substitutions receive clean stdout.
+  log_line "$msg" | tee -a "$HEARTBEAT_LOG" >&2
 }
 
 require_cmd() {
@@ -317,14 +321,25 @@ maybe_heartbeat() {
 }
 
 refresh_active_jobs() {
+  if (( ${#ACTIVE_JOB_IDS[@]} == 0 )); then
+    ACTIVE_JOB_IDS=()
+    return 0
+  fi
+
+  local joined
+  joined="$(IFS=,; printf '%s' "${ACTIVE_JOB_IDS[*]}")"
+  local active_ids_raw
+  active_ids_raw="$(squeue -h -j "$joined" -o '%A' 2>/dev/null || true)"
+  local active_ids=" $(echo "$active_ids_raw" | tr '\n' ' ') "
+
   local new_active=()
   local jid
   for jid in "${ACTIVE_JOB_IDS[@]:-}"; do
-    if [[ -n "$(squeue -h -j "$jid" -o '%T' 2>/dev/null || true)" ]]; then
+    if [[ "$active_ids" == *" $jid "* ]]; then
       new_active+=("$jid")
     fi
   done
-  ACTIVE_JOB_IDS=("${new_active[@]:-}")
+  ACTIVE_JOB_IDS=("${new_active[@]}")
 }
 
 wait_for_capacity() {
@@ -334,7 +349,7 @@ wait_for_capacity() {
       break
     fi
     maybe_heartbeat
-    sleep 10
+    sleep "$POLL_CAPACITY_SECONDS"
   done
 }
 
@@ -346,17 +361,23 @@ wait_for_jobs() {
 
   local pending=("${job_ids[@]}")
   while (( ${#pending[@]} > 0 )); do
+    local joined
+    joined="$(IFS=,; printf '%s' "${pending[*]}")"
+    local active_ids_raw
+    active_ids_raw="$(squeue -h -j "$joined" -o '%A' 2>/dev/null || true)"
+    local active_ids=" $(echo "$active_ids_raw" | tr '\n' ' ') "
+
     local next_pending=()
     local jid
     for jid in "${pending[@]}"; do
-      if [[ -n "$(squeue -h -j "$jid" -o '%T' 2>/dev/null || true)" ]]; then
+      if [[ "$active_ids" == *" $jid "* ]]; then
         next_pending+=("$jid")
       fi
     done
     pending=("${next_pending[@]:-}")
     maybe_heartbeat
     if (( ${#pending[@]} > 0 )); then
-      sleep 15
+      sleep "$POLL_WAIT_SECONDS"
     fi
   done
   refresh_active_jobs
@@ -428,6 +449,32 @@ check_prereqs_and_env() {
 
   append_heartbeat "syncing uv environment"
   uv sync
+
+  # Local model eval requires vLLM; install a wheel-only build if missing.
+  if ! uv run python - <<'PY'
+import importlib.util
+import sys
+sys.exit(0 if importlib.util.find_spec("vllm") is not None else 1)
+PY
+  then
+    append_heartbeat "vllm_missing installing_with_uv_pip spec=$VLLM_INSTALL_SPEC"
+    if ! uv pip install --only-binary=:all: "$VLLM_INSTALL_SPEC"; then
+      echo "Failed to install $VLLM_INSTALL_SPEC as a prebuilt wheel." >&2
+      echo "Set VLLM_INSTALL_SPEC to another wheel-backed version or install CUDA toolkit+nvcc for source builds." >&2
+      echo "Example retry: VLLM_INSTALL_SPEC='vllm==0.10.2' jobs/clip_local_eval_master.sh --phase smoke ..." >&2
+      exit 1
+    fi
+    if ! uv run python - <<'PY'
+import importlib.util
+import sys
+sys.exit(0 if importlib.util.find_spec("vllm") is not None else 1)
+PY
+    then
+      echo "Failed to install/import vllm in uv environment." >&2
+      exit 1
+    fi
+    append_heartbeat "vllm_install_complete"
+  fi
 }
 
 materialize_single_dataset() {
@@ -547,7 +594,7 @@ plan_combo_manifest() {
     cmd+=(--limit "$limit_value")
   fi
 
-  log_line "planning combo=$combo_id phase=$phase model=$eval_model gen_label=$gen_label mode=$mode"
+  log_line "planning combo=$combo_id phase=$phase model=$eval_model gen_label=$gen_label mode=$mode" >&2
   "${cmd[@]}" >/dev/null
   cp "$manifest_path" "$combo_root/manifest.json"
 
@@ -712,12 +759,28 @@ with open(manifest_path, "r") as f:
 
 configs = sorted(manifest.get("configs", []), key=lambda x: x.get("config_id", ""))
 missing_indices = []
+invalid_indices = []
 for idx, cfg in enumerate(configs):
     output_dir = Path(cfg["output_dir"])
-    if not (output_dir / "results.json").exists():
+    results_path = output_dir / "results.json"
+    if not results_path.exists():
         missing_indices.append(idx)
+        continue
+    try:
+        with open(results_path, "r") as f:
+            payload = json.load(f)
+        summary = payload.get("summary", {})
+        successful = int(summary.get("successful_entries", 0))
+        attempted = int(summary.get("attempted_entries", 0))
+    except Exception:
+        invalid_indices.append(idx)
+        continue
+    # Structural validity: at least one successful eval entry should exist.
+    if attempted > 0 and successful <= 0:
+        invalid_indices.append(idx)
 
 missing_result_shards = sorted(set(i % num_shards for i in missing_indices))
+invalid_result_shards = sorted(set(i % num_shards for i in invalid_indices))
 non_success_shards = []
 missing_status_shards = []
 
@@ -735,7 +798,14 @@ for shard in range(num_shards):
     if state != "success":
         non_success_shards.append(shard)
 
-incomplete = sorted(set(missing_result_shards + non_success_shards + missing_status_shards))
+incomplete = sorted(
+    set(
+        missing_result_shards
+        + invalid_result_shards
+        + non_success_shards
+        + missing_status_shards
+    )
+)
 result = {
     "manifest_path": str(manifest_path),
     "num_shards": num_shards,
@@ -743,6 +813,9 @@ result = {
     "missing_result_indices": missing_indices,
     "missing_result_count": len(missing_indices),
     "missing_result_shards": missing_result_shards,
+    "invalid_result_indices": invalid_indices,
+    "invalid_result_count": len(invalid_indices),
+    "invalid_result_shards": invalid_result_shards,
     "non_success_shards": sorted(set(non_success_shards)),
     "missing_status_shards": missing_status_shards,
     "incomplete_shards": incomplete,

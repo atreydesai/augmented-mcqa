@@ -335,6 +335,21 @@ def _run_single_config(
     try:
         client = _get_or_create_shared_client(config, client_cache)
         results = run_experiment(config, client=client, dataset_cache=dataset_cache)
+        if results.attempted_entries > 0 and results.successful_entries == 0:
+            return {
+                "name": config.name,
+                "config": config.distractor_config_str,
+                "accuracy": 0.0,
+                "total": len(results.results),
+                "attempted_entries": results.attempted_entries,
+                "successful_entries": results.successful_entries,
+                "failed_entries": results.failed_entries,
+                "accuracy_success_only": 0.0,
+                "entry_failure_count": len(results.entry_failures),
+                "resumed_from_checkpoint": results.resumed_from_checkpoint,
+                "status": "error: zero successful entries",
+                "output_dir": str(config.output_dir),
+            }
         return {
             "name": config.name,
             "config": config.distractor_config_str,
