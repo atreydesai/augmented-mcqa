@@ -7,7 +7,7 @@ builders, and CLI entrypoints.
 from __future__ import annotations
 
 import os
-from typing import Optional
+from typing import List, Optional
 
 from config import RANDOM_SEED
 
@@ -36,7 +36,20 @@ DEFAULT_MATRIX_PRESET = os.getenv("AUGMCQA_DEFAULT_MATRIX_PRESET", "core16")
 DEFAULT_EVAL_MODE = os.getenv("AUGMCQA_DEFAULT_EVAL_MODE", "behavioral")
 DEFAULT_EVAL_SEED = _get_int_env("AUGMCQA_DEFAULT_EVAL_SEED", RANDOM_SEED)
 DEFAULT_EVAL_TEMPERATURE = _get_optional_float_env("AUGMCQA_DEFAULT_EVAL_TEMPERATURE", None)
-DEFAULT_EVAL_MAX_TOKENS = _get_int_env("AUGMCQA_DEFAULT_EVAL_MAX_TOKENS", 1024)
+DEFAULT_EVAL_MAX_TOKENS = _get_int_env("AUGMCQA_DEFAULT_EVAL_MAX_TOKENS", 100)
+
+# Stop sequences: halt generation when the model starts a new question block or
+# a repetitive pattern.  These apply to local (vLLM) inference only.
+_stop_env = os.getenv("AUGMCQA_DEFAULT_EVAL_STOP", "")
+DEFAULT_EVAL_STOP: List[str] = (
+    [s for s in _stop_env.split("|||") if s]
+    if _stop_env.strip()
+    else [
+        "\n\nQuestion:",
+        "\n\nThe following",
+        "\n\nAnswer:",
+    ]
+)
 DEFAULT_EVAL_SAVE_INTERVAL = _get_int_env("AUGMCQA_DEFAULT_EVAL_SAVE_INTERVAL", 50)
 DEFAULT_EVAL_KEEP_CHECKPOINTS = _get_int_env("AUGMCQA_DEFAULT_EVAL_KEEP_CHECKPOINTS", 2)
 DEFAULT_GENERATOR_DATASET_LABEL = os.getenv("AUGMCQA_DEFAULT_GENERATOR_LABEL", "manual")

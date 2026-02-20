@@ -17,8 +17,10 @@ from tqdm import tqdm
 
 from .config import ExperimentConfig
 from models import get_client, ModelClient
+from models.local_client import LocalClient
 from config import DistractorType
 from evaluation.evaluator import build_mcqa_prompt
+from .defaults import DEFAULT_EVAL_STOP
 
 
 CHOICE_LABELS = "ABCDEFGHIJ"
@@ -802,6 +804,11 @@ class ExperimentRunner:
         generate_kwargs = {"max_tokens": self.config.max_tokens}
         if self.config.temperature is not None:
             generate_kwargs["temperature"] = self.config.temperature
+        # For local models, apply stop sequences to prevent runaway generation.
+        if isinstance(client, LocalClient):
+            stop_seqs = self.config.stop if self.config.stop is not None else DEFAULT_EVAL_STOP
+            if stop_seqs:
+                generate_kwargs["stop"] = stop_seqs
         model_load_recorded = False
 
         def _record_failure(idx: int, stage: str, exc: Exception, entry: Any) -> None:
@@ -930,6 +937,15 @@ class ExperimentRunner:
                     )
                     results.results.append(result)
                     results.successful_entries += 1
+
+                    # Sanity-check print
+                    raw_preview = response.text[:500].replace("\n", " ")
+                    correct_mark = "✓" if is_correct else "✗"
+                    print(
+                        f"  [idx={idx}] gold={gold_letter} | pred={model_answer or '?'} "
+                        f"{correct_mark} | type={prediction_type} | "
+                        f"raw({len(response.text)}t): {raw_preview!r}"
+                    )
                 except Exception as exc:
                     _record_failure(idx, "score", exc, entry)
                 finally:

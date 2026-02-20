@@ -19,6 +19,7 @@ from .defaults import (
     DEFAULT_EVAL_MODE,
     DEFAULT_EVAL_SAVE_INTERVAL,
     DEFAULT_EVAL_SEED,
+    DEFAULT_EVAL_STOP,
     DEFAULT_EVAL_TEMPERATURE,
     DEFAULT_NUM_HUMAN_DISTRACTORS,
     DEFAULT_NUM_MODEL_DISTRACTORS,
@@ -103,10 +104,11 @@ class ExperimentConfig:
     workpack_path: Optional[Path] = None
 
     # Local inference acceleration / stability knobs
-    inference_batch_size: int = 8
+    inference_batch_size: int = 1
     vllm_max_num_batched_tokens: Optional[int] = None
     vllm_max_num_seqs: Optional[int] = None
     vllm_enable_chunked_prefill: Optional[bool] = None
+    stop: Optional[List[str]] = None  # None → use DEFAULT_EVAL_STOP for local models
     
     def __post_init__(self):
         """Validate and set defaults after initialization."""
@@ -206,6 +208,7 @@ class ExperimentConfig:
             "vllm_max_num_batched_tokens": self.vllm_max_num_batched_tokens,
             "vllm_max_num_seqs": self.vllm_max_num_seqs,
             "vllm_enable_chunked_prefill": self.vllm_enable_chunked_prefill,
+            "stop": self.stop,
             "config_id": self.config_id,
         }
     
