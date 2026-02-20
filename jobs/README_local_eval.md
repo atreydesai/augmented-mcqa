@@ -18,15 +18,18 @@ The script orchestrates remote eval for local models across:
 cd /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa
 source ~/.bashrc
 export HF_TOKEN="<your_hf_token>"
-uv sync --project jobs/local_eval_env
+uv sync --inexact
 ```
 
-The orchestrator now uses a dedicated locked uv project:
-- `/Users/ndesai-air/Documents/GitHub/augmented-mcqa/jobs/local_eval_env/pyproject.toml`
-- `/Users/ndesai-air/Documents/GitHub/augmented-mcqa/jobs/local_eval_env/uv.lock`
+The orchestrator defaults to `uv sync --inexact` (so extra runtime deps like `vllm` are not removed each run).
+If you need exact lockfile sync behavior, set `UV_SYNC_INEXACT=0`.
 
-This isolates local-model SLURM runtime dependencies (including `vllm`) from the repo-root `uv.lock`.
-Default behavior is exact sync on this local-eval project; set `UV_SYNC_INEXACT=1` only if you intentionally want inexact sync.
+The orchestrator checks for `vllm` and installs a wheel-only build if missing (default: `vllm==0.11.2`).
+Override with `VLLM_INSTALL_SPEC`, for example:
+
+```bash
+VLLM_INSTALL_SPEC='vllm==0.10.2' jobs/clip_local_eval_master.sh --phase smoke ...
+```
 
 ## Per-Model srun Smoke Tests (Recommended Before Full Matrix)
 

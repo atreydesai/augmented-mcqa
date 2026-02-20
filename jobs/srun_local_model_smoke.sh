@@ -58,6 +58,7 @@ MAX_MODEL_LEN=""
 TOKENIZER_MODE=""
 USE_LOCAL_SNAPSHOT=1
 DO_SYNC=1
+VLLM_INSTALL_SPEC="${VLLM_INSTALL_SPEC:-vllm==0.11.2}"
 declare -a STOP_TOKEN_IDS=()
 
 while [[ $# -gt 0 ]]; do
@@ -122,7 +123,6 @@ if [[ -f .env ]]; then
   set +a
 fi
 
-export UV_PROJECT="$REPO_ROOT/jobs/local_eval_env"
 export UV_LINK_MODE="\${UV_LINK_MODE:-copy}"
 export MODEL_CACHE_DIR="/fs/nexus-scratch/adesai10/hub"
 export HF_HOME="/fs/nexus-scratch/adesai10/hub"
@@ -131,7 +131,16 @@ export TRANSFORMERS_CACHE="/fs/nexus-scratch/adesai10/hub/transformers"
 export PYTHONUNBUFFERED=1
 
 if [[ "$DO_SYNC" == "1" ]]; then
-  uv sync
+  uv sync --inexact
+fi
+
+if ! uv run python - <<'PY'
+import importlib.util
+import sys
+sys.exit(0 if importlib.util.find_spec("vllm") is not None else 1)
+PY
+then
+  uv pip install --only-binary=:all: "$VLLM_INSTALL_SPEC"
 fi
 
 cmd=(

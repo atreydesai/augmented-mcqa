@@ -48,7 +48,6 @@ CACHE_ROOT="/fs/nexus-scratch/adesai10/hub"
 DATASETS_REMOTE_ROOT_REL="datasets/finished_sets_remote"
 RESULTS_ROOT_REL="results/local_eval"
 LOG_ROOT_REL="logs/slurm/local_eval"
-LOCAL_EVAL_UV_PROJECT_REL="jobs/local_eval_env"
 
 EVAL_MODELS=(
   "Nanbeige/Nanbeige4.1-3B"
@@ -145,7 +144,6 @@ STATUS_ROOT="$RUN_ROOT/status"
 MANIFEST_ROOT="$RUN_ROOT/manifests"
 TMP_JOB_ROOT="$RUN_ROOT/tmp_jobs"
 DATASETS_REMOTE_ROOT="$REPO_ROOT/$DATASETS_REMOTE_ROOT_REL"
-LOCAL_EVAL_UV_PROJECT="$REPO_ROOT/$LOCAL_EVAL_UV_PROJECT_REL"
 
 HEARTBEAT_LOG="$STATUS_ROOT/heartbeat.log"
 DASHBOARD_JSON="$STATUS_ROOT/dashboard.json"
@@ -160,7 +158,8 @@ declare -a ACTIVE_JOB_IDS=()
 declare -A JOB_SUBMIT_EPOCH=()
 POLL_CAPACITY_SECONDS=20
 POLL_WAIT_SECONDS=30
-UV_SYNC_INEXACT="${UV_SYNC_INEXACT:-0}"
+VLLM_INSTALL_SPEC="${VLLM_INSTALL_SPEC:-vllm==0.11.2}"
+UV_SYNC_INEXACT="${UV_SYNC_INEXACT:-1}"
 JOB_VISIBILITY_GRACE_SECONDS="${JOB_VISIBILITY_GRACE_SECONDS:-120}"
 
 job_state_map() {
@@ -480,17 +479,6 @@ check_prereqs_and_env() {
   fi
 
   cd "$REPO_ROOT"
-
-  if [[ ! -f "$LOCAL_EVAL_UV_PROJECT/pyproject.toml" ]]; then
-    echo "Missing locked local-eval project: $LOCAL_EVAL_UV_PROJECT/pyproject.toml" >&2
-    exit 1
-  fi
-  if [[ ! -f "$LOCAL_EVAL_UV_PROJECT/uv.lock" ]]; then
-    echo "Missing lockfile for local-eval project: $LOCAL_EVAL_UV_PROJECT/uv.lock" >&2
-    exit 1
-  fi
-
-  export UV_PROJECT="$LOCAL_EVAL_UV_PROJECT"
   export MODEL_CACHE_DIR="$CACHE_ROOT"
   export HF_HOME="$CACHE_ROOT"
   export HF_DATASETS_CACHE="$CACHE_ROOT/datasets"
@@ -508,23 +496,37 @@ check_prereqs_and_env() {
   fi
 
   if [[ "$UV_SYNC_INEXACT" == "1" ]]; then
-    append_heartbeat "syncing uv environment mode=inexact project=$UV_PROJECT"
+    append_heartbeat "syncing uv environment mode=inexact"
     uv sync --inexact
   else
-    append_heartbeat "syncing uv environment mode=exact project=$UV_PROJECT"
+    append_heartbeat "syncing uv environment mode=exact"
     uv sync
   fi
 
-  # Local model eval requires vLLM (pinned in jobs/local_eval_env/uv.lock).
+  # Local model eval requires vLLM; install a wheel-only build if missing.
   if ! uv run python - <<'PY'
 import importlib.util
 import sys
 sys.exit(0 if importlib.util.find_spec("vllm") is not None else 1)
 PY
   then
-    echo "vllm is missing after sync in locked project: $UV_PROJECT" >&2
-    echo "Check jobs/local_eval_env/uv.lock and remote platform compatibility." >&2
-    exit 1
+    append_heartbeat "vllm_missing installing_with_uv_pip spec=$VLLM_INSTALL_SPEC"
+    if ! uv pip install --only-binary=:all: "$VLLM_INSTALL_SPEC"; then
+      echo "Failed to install $VLLM_INSTALL_SPEC as a prebuilt wheel." >&2
+      echo "Set VLLM_INSTALL_SPEC to another wheel-backed version or install CUDA toolkit+nvcc for source builds." >&2
+      echo "Example retry: VLLM_INSTALL_SPEC='vllm==0.10.2' jobs/clip_local_eval_master.sh --phase smoke ..." >&2
+      exit 1
+    fi
+    if ! uv run python - <<'PY'
+import importlib.util
+import sys
+sys.exit(0 if importlib.util.find_spec("vllm") is not None else 1)
+PY
+    then
+      echo "Failed to install/import vllm in uv environment." >&2
+      exit 1
+    fi
+    append_heartbeat "vllm_install_complete"
   fi
 }
 
@@ -1153,7 +1155,7 @@ PY
 
 main() {
   append_heartbeat "run_start run_tag=$RUN_TAG phase=$PHASE"
-  append_heartbeat "run_config repo_root=$REPO_ROOT uv_project=$LOCAL_EVAL_UV_PROJECT max_concurrent_jobs=$MAX_CONCURRENT_JOBS num_shards_smoke=$NUM_SHARDS_SMOKE num_shards_main=$NUM_SHARDS_MAIN save_interval=$SAVE_INTERVAL keep_checkpoints=$KEEP_CHECKPOINTS max_tokens=$MAX_TOKENS force_refresh=$FORCE_REFRESH skip_push=$SKIP_PUSH"
+  append_heartbeat "run_config repo_root=$REPO_ROOT max_concurrent_jobs=$MAX_CONCURRENT_JOBS num_shards_smoke=$NUM_SHARDS_SMOKE num_shards_main=$NUM_SHARDS_MAIN save_interval=$SAVE_INTERVAL keep_checkpoints=$KEEP_CHECKPOINTS max_tokens=$MAX_TOKENS force_refresh=$FORCE_REFRESH skip_push=$SKIP_PUSH"
 
   check_prereqs_and_env
   materialize_datasets
