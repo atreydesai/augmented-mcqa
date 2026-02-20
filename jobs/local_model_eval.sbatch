@@ -1,13 +1,14 @@
 #!/bin/bash
-#SBATCH --job-name=eval_matrix
-#SBATCH --output=logs/eval_matrix/slurm_%A_%a.out
-#SBATCH --error=logs/eval_matrix/slurm_%A_%a.err
+#SBATCH --job-name=local_eval
+#SBATCH --output=logs/local_eval/slurm_%A_%a.out
+#SBATCH --error=logs/local_eval/slurm_%A_%a.err
 #SBATCH --partition=clip
 #SBATCH --account=clip
 #SBATCH --qos=high
 #SBATCH --time=12:00:00
 #SBATCH --mem=32G
 #SBATCH --cpus-per-task=4
+#SBATCH --gres=gpu:rtxa6000:1
 
 set -euo pipefail
 
@@ -20,22 +21,19 @@ GENERATOR_DATASET_LABEL="${GENERATOR_DATASET_LABEL:?GENERATOR_DATASET_LABEL is r
 NUM_SHARDS="${NUM_SHARDS:?NUM_SHARDS is required}"
 SHARD_INDEX="${SLURM_ARRAY_TASK_ID}"
 
-PRESET="${PRESET:-}"
+PRESET="${PRESET:-core16}"
 OUTPUT_DIR="${OUTPUT_DIR:-results}"
 EVAL_MODE="${EVAL_MODE:-}"
 LIMIT="${LIMIT:-}"
-REASONING_EFFORT="${REASONING_EFFORT:-}"
-THINKING_LEVEL="${THINKING_LEVEL:-}"
-TEMPERATURE="${TEMPERATURE:-}"
-MAX_TOKENS="${MAX_TOKENS:-}"
-SAVE_INTERVAL="${SAVE_INTERVAL:-}"
-KEEP_CHECKPOINTS="${KEEP_CHECKPOINTS:-}"
+MAX_TOKENS="${MAX_TOKENS:-150}"
+SAVE_INTERVAL="${SAVE_INTERVAL:-200}"
+KEEP_CHECKPOINTS="${KEEP_CHECKPOINTS:-2}"
 DATASET_TYPES="${DATASET_TYPES:-}"
 DISTRACTOR_SOURCES="${DISTRACTOR_SOURCES:-}"
 
 cd "$SLURM_SUBMIT_DIR"
 source .venv/bin/activate
-mkdir -p logs/eval_matrix
+mkdir -p logs/local_eval
 
 CMD=(
   uv run python scripts/eval_matrix.py run
@@ -48,33 +46,13 @@ CMD=(
   --skip-existing
 )
 
-if [[ -n "$LIMIT" ]]; then
-  CMD+=(--limit "$LIMIT")
-fi
-if [[ -n "$PRESET" ]]; then
-  CMD+=(--preset "$PRESET")
-fi
-if [[ -n "$EVAL_MODE" ]]; then
-  CMD+=(--eval-mode "$EVAL_MODE")
-fi
-if [[ -n "$REASONING_EFFORT" ]]; then
-  CMD+=(--reasoning-effort "$REASONING_EFFORT")
-fi
-if [[ -n "$THINKING_LEVEL" ]]; then
-  CMD+=(--thinking-level "$THINKING_LEVEL")
-fi
-if [[ -n "$TEMPERATURE" ]]; then
-  CMD+=(--temperature "$TEMPERATURE")
-fi
-if [[ -n "$MAX_TOKENS" ]]; then
-  CMD+=(--max-tokens "$MAX_TOKENS")
-fi
-if [[ -n "$SAVE_INTERVAL" ]]; then
-  CMD+=(--save-interval "$SAVE_INTERVAL")
-fi
-if [[ -n "$KEEP_CHECKPOINTS" ]]; then
-  CMD+=(--keep-checkpoints "$KEEP_CHECKPOINTS")
-fi
+[[ -n "$PRESET" ]]           && CMD+=(--preset "$PRESET")
+[[ -n "$EVAL_MODE" ]]        && CMD+=(--eval-mode "$EVAL_MODE")
+[[ -n "$LIMIT" ]]            && CMD+=(--limit "$LIMIT")
+[[ -n "$MAX_TOKENS" ]]       && CMD+=(--max-tokens "$MAX_TOKENS")
+[[ -n "$SAVE_INTERVAL" ]]    && CMD+=(--save-interval "$SAVE_INTERVAL")
+[[ -n "$KEEP_CHECKPOINTS" ]] && CMD+=(--keep-checkpoints "$KEEP_CHECKPOINTS")
+
 if [[ -n "$DATASET_TYPES" ]]; then
   IFS=',' read -r -a DATASET_TYPE_ARR <<< "$DATASET_TYPES"
   CMD+=(--dataset-types "${DATASET_TYPE_ARR[@]}")

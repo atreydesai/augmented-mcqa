@@ -1,137 +1,118 @@
-# Local-Model SLURM Orchestrator (Smoke + Main)
+# Local Model Evaluation (SLURM)
 
-This companion note is for:
+This documents the workflow for running local vLLM model evaluations on the cluster using `jobs/run_local_eval.sh` and `jobs/local_model_eval.sbatch`.
 
-- `/Users/ndesai-air/Documents/GitHub/augmented-mcqa/jobs/clip_local_eval_master.sh`
+## Prerequisites
 
-The script orchestrates remote eval for local models across:
-
-- Eval models: `Nanbeige/Nanbeige4.1-3B`, `Qwen/Qwen3-4B-Instruct-2507`, `allenai/Olmo-3-7B-Instruct`
-- Generator datasets: `opus`, `gpt-4.1`, `gpt-5.2`
-- Dataset types: `mmlu_pro`, `gpqa`, `arc_easy`, `arc_challenge`
-- Prompt modes: full-question and `--choices-only` matrix variants
-- Preset: `core16` (non-branching)
-
-## Remote Setup
+One-time setup from repo root:
 
 ```bash
-cd /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa
-source ~/.bashrc
-export HF_TOKEN="<your_hf_token>"
-uv sync --inexact
+uv sync
+uv pip install --no-build-isolation 'vllm==0.11.2' 'transformers<5' 'numpy<2.3'
 ```
 
-The orchestrator defaults to `uv sync --inexact` (so extra runtime deps like `vllm` are not removed each run).
-If you need exact lockfile sync behavior, set `UV_SYNC_INEXACT=0`.
-If you already prepared the environment once and want faster startup, pass `--no-sync`.
-
-The orchestrator enforces a compatible local stack (`vllm` + `transformers<5` + `numpy<2.3`) and
-installs wheel-only packages if needed (defaults: `vllm==0.11.2`, `transformers<5`, `numpy<2.3`).
-Override with `VLLM_INSTALL_SPEC`, `VLLM_TRANSFORMERS_SPEC`, and `VLLM_NUMPY_SPEC`, for example:
+Stage model weights:
 
 ```bash
-VLLM_INSTALL_SPEC='vllm==0.10.2' VLLM_TRANSFORMERS_SPEC='transformers<5' VLLM_NUMPY_SPEC='numpy<2.3' \
-  jobs/clip_local_eval_master.sh --phase smoke ...
+huggingface-cli download <model_id> --local-dir /path/to/cache
 ```
 
-## Per-Model srun Smoke Tests (Recommended Before Full Matrix)
+## Usage
 
-Use single-model smoke tests first to confirm model load + one short generation works on your SLURM setup.
+```
+jobs/run_local_eval.sh --model <model> --generator-dataset-label <label> \
+  --dataset-path <path> [options]
 
-Single model:
+Required:
+  --model <model>                    Model alias (must match config/model_aliases.toml)
+  --generator-dataset-label <label>  Generator label (e.g. gpt-4.1, opus)
+  --dataset-path <path>              Path to augmented dataset directory
 
-```bash
-jobs/srun_local_model_smoke.sh --model Nanbeige/Nanbeige4.1-3B --tokenizer-mode auto
-jobs/srun_local_model_smoke.sh --model Qwen/Qwen3-4B-Instruct-2507
-jobs/srun_local_model_smoke.sh --model allenai/Olmo-3-7B-Instruct
+Options:
+  --num-shards <int>         SLURM array shards (default: 8)
+  --phase <smoke|main|both>  Which phase(s) to run (default: both)
+  --smoke-limit <int>        Entries per config in smoke phase (default: 2)
+  --preset <name>            Matrix preset: core16 or branching21 (default: core16)
+  --dataset-types <csv>      Comma-separated dataset types (default: all)
+  --distractor-source <csv>  Comma-separated distractor sources (default: all)
+  --output-dir <path>        Results directory (default: results)
+  --save-interval <int>      Checkpoint save interval (default: 200)
+  --keep-checkpoints <int>   Checkpoints to keep per root (default: 2)
+  --max-tokens <int>         Max generation tokens (default: 150)
 ```
 
-After first successful install, add `--no-sync` to avoid repeated package churn:
+## Smoke + Main Workflow
+
+### Step 1: Smoke run
+
+Run a small subset (default 2 entries per config) to verify the model loads and produces valid output:
 
 ```bash
-jobs/srun_local_model_smoke.sh --model Nanbeige/Nanbeige4.1-3B --tokenizer-mode auto --no-sync
-```
-
-All three (sequentially):
-
-```bash
-jobs/srun_all_local_models_smoke.sh
-```
-
-The smoke runner uses:
-- `/Users/ndesai-air/Documents/GitHub/augmented-mcqa/scripts/smoke_local_model.py`
-- local snapshot resolution from cache by default (`--no-local-snapshot` to disable)
-
-Logs:
-- `/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/local_model_smoke/<run_tag>/`
-
-## Smoke Run (recommended first)
-
-```bash
-jobs/clip_local_eval_master.sh \
+jobs/run_local_eval.sh \
+  --model Qwen/Qwen3-4B-Instruct-2507 \
+  --generator-dataset-label gpt-4.1 \
+  --dataset-path datasets/augmented/unified_processed_gpt-4.1_20260213_033916 \
   --phase smoke \
-  --run-tag local_eval_smoke_$(date -u +%Y%m%d_%H%M%S) \
-  --max-concurrent-jobs 12 \
-  --num-shards-smoke 3 \
-  --eval-worker-mode persistent \
-  --eval-workpack-format parquet \
-  --vllm-max-num-batched-tokens 4096 \
-  --vllm-max-num-seqs 8 \
-  --vllm-enable-chunked-prefill 1 \
-  --eval-batch-size 8 \
-  --save-interval 50 \
-  --keep-checkpoints 2 \
-  --max-tokens 2048
+  --num-shards 3
 ```
 
-## Main Run (after smoke looks good)
+Check the smoke logs before proceeding:
 
-Reuse the same run tag if you want smoke/main under one run root:
+```
+logs/local_eval/slurm_<job_id>_<array_task>.out
+logs/local_eval/slurm_<job_id>_<array_task>.err
+```
+
+### Step 2: Main run
+
+After smoke looks good, submit the full evaluation:
 
 ```bash
-RUN_TAG="local_eval_prod_$(date -u +%Y%m%d_%H%M%S)"
-
-jobs/clip_local_eval_master.sh \
-  --phase smoke \
-  --run-tag "$RUN_TAG" \
-  --max-concurrent-jobs 12 \
-  --num-shards-smoke 3
-
-jobs/clip_local_eval_master.sh \
+jobs/run_local_eval.sh \
+  --model Qwen/Qwen3-4B-Instruct-2507 \
+  --generator-dataset-label gpt-4.1 \
+  --dataset-path datasets/augmented/unified_processed_gpt-4.1_20260213_033916 \
   --phase main \
-  --run-tag "$RUN_TAG" \
-  --max-concurrent-jobs 12 \
-  --num-shards-main 12 \
-  --save-interval 50 \
-  --keep-checkpoints 2 \
-  --max-tokens 2048
+  --num-shards 8
 ```
 
-Or run both phases in one call:
+Or run both phases in one call (smoke first, then main):
 
 ```bash
-jobs/clip_local_eval_master.sh --phase both --max-concurrent-jobs 12 --num-shards-main 12
+jobs/run_local_eval.sh \
+  --model Qwen/Qwen3-4B-Instruct-2507 \
+  --generator-dataset-label gpt-4.1 \
+  --dataset-path datasets/augmented/unified_processed_gpt-4.1_20260213_033916 \
+  --phase both \
+  --num-shards 8
 ```
 
-## Logs and Artifacts
+## Log Locations
 
-Given `RUN_TAG=<tag>`:
+| Item | Location |
+|---|---|
+| SLURM stdout | `logs/local_eval/slurm_<A>_<a>.out` |
+| SLURM stderr | `logs/local_eval/slurm_<A>_<a>.err` |
+| Results | `results/<generator_dataset_label>/<model>_<dataset_type>_<distractor_source>/<nHnM>/results.json` |
 
-- SLURM logs: `/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/local_eval/<tag>/`
-- Results root: `/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/local_eval/<tag>/`
-- Heartbeat: `/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/local_eval/<tag>/status/heartbeat.log`
-- Dashboard JSON: `/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/local_eval/<tag>/status/dashboard.json`
-- Dashboard TSV: `/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/local_eval/<tag>/status/dashboard.tsv`
-- Final manifest (includes HF URLs for successful pushes): `/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/local_eval/<tag>/status/final_manifest.json`
+## Restart / Resume
 
-## Notes
+All runs use `--skip-existing` by default. To resume a partial run, re-submit with the same arguments and SLURM will skip already-completed entries.
 
-- Default topology is `--eval-worker-mode persistent`: a fixed worker pool (up to `--max-concurrent-jobs`) processes many shard tasks each, which greatly reduces scheduler overhead.
-- Legacy topology remains available via `--eval-worker-mode legacy` (one SBATCH per shard).
-- Global active worker/job cap is controlled by `--max-concurrent-jobs`.
-- A6000-safe vLLM defaults are:
-  `--vllm-max-num-batched-tokens 4096 --vllm-max-num-seqs 8 --vllm-enable-chunked-prefill 1`
-- Workpack acceleration defaults to `--eval-workpack-format parquet` (switch to `arrow` or `none` if needed).
-- Incomplete shard sets are retried once automatically.
-- Plots generated are `RQ1`, `RQ2`, `RQ3` only (no branching plots).
-- Use `--skip-push` to keep outputs local only.
+If individual shards failed, re-submit targeting only failed shards using `--array` override:
+
+```bash
+sbatch --array=2,5,7 \
+  --export=ALL,MODEL=...,DATASET_PATH=...,GENERATOR_DATASET_LABEL=...,NUM_SHARDS=8,... \
+  jobs/local_model_eval.sbatch
+```
+
+## Default Models
+
+Models with pre-configured aliases in `config/model_aliases.toml`:
+
+- `Nanbeige/Nanbeige4.1-3B`
+- `Qwen/Qwen3-4B-Instruct-2507`
+- `allenai/Olmo-3-7B-Instruct`
+
+See `docs/models.md` for alias configuration details.

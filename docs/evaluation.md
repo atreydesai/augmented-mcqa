@@ -115,14 +115,7 @@ uv run python scripts/eval_matrix.py run \
 
 ## SLURM Array Workflow
 
-Use:
-
-- `jobs/eval_matrix_array.sbatch`
-- `jobs/submit_eval_array.sh`
-- `jobs/clip_local_eval_master.sh` (end-to-end orchestrator for local-model smoke+main runs)
-- `jobs/README_local_eval.md` (copy-paste remote commands and log/artifact locations)
-- `jobs/srun_local_model_smoke.sh` (single local model bring-up check on one GPU)
-- `jobs/srun_all_local_models_smoke.sh` (run the three local model smoke checks sequentially)
+**API models** — use `jobs/submit_eval_array.sh` + `jobs/eval_matrix_array.sbatch`:
 
 Submit example:
 
@@ -135,6 +128,19 @@ jobs/submit_eval_array.sh \
   --dataset-types mmlu_pro,gpqa \
   --distractor-source scratch,dhuman
 ```
+
+**Local models** — use `jobs/run_local_eval.sh` + `jobs/local_model_eval.sbatch`:
+
+```bash
+jobs/run_local_eval.sh \
+  --model Qwen/Qwen3-4B-Instruct-2507 \
+  --generator-dataset-label gpt-4.1 \
+  --dataset-path datasets/augmented/unified_processed_gpt-4.1_20260213_033916 \
+  --phase both \
+  --num-shards 8
+```
+
+See `jobs/README_local_eval.md` for full argument reference and log locations.
 
 ## Outputs
 

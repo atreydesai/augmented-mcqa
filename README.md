@@ -1,54 +1,72 @@
 # Augmented MCQA
 
-Tools for generating synthetic distractors and running MCQA evaluation experiments across dataset/distractor settings.
+A research toolkit for generating synthetic distractors for multiple-choice questions and evaluating language models across distractor configurations. Datasets are augmented with AI-generated distractors; models are then evaluated across a matrix of distractor counts and sources (human vs. model).
 
-## What Changed
+## Architecture
 
-Evaluation orchestration is now centered on a deterministic matrix runner:
+| Module | Description |
+|---|---|
+| `data/` | Dataset downloading, processing, and augmentation utilities |
+| `models/` | Multi-provider model clients (OpenAI, Anthropic, Gemini, DeepSeek, local/vLLM) |
+| `experiments/` | Experiment configuration, matrix definitions, and runner |
+| `evaluation/` | MCQA prompt building and answer extraction |
+| `analysis/` | Result aggregation, category breakdown, and visualization |
+| `scripts/` | CLI entry points for each pipeline stage |
+| `jobs/` | SLURM job scripts for running on the cluster |
+| `config/` | Settings and declarative model aliases (`model_aliases.toml`) |
 
-- Primary CLI: `scripts/eval_matrix.py`
-- No in-process evaluation parallelization
-- Deterministic sharding for SLURM arrays (`--num-shards`, `--shard-index`)
-- Declarative model aliases in `config/model_aliases.toml`
-- Shared client/dataset reuse within a run (avoids reloading local model weights per config)
-- Fail-fast semantics for experiment integrity (no silent fallback to alternate splits/sources)
-
-## Environment
-
-Canonical workflow uses `uv`:
+## Setup
 
 ```bash
 uv sync
 ```
 
-Then run commands with `uv run`.
+Copy `.env.example` to `.env` and fill in API keys for the providers you plan to use:
+
+```
+OPENAI_API_KEY=...
+ANTHROPIC_API_KEY=...
+GOOGLE_API_KEY=...
+DEEPSEEK_API_KEY=...
+```
+
+For local model evaluation, install vLLM separately after `uv sync`:
+
+```bash
+uv pip install --no-build-isolation 'vllm==0.11.2' 'transformers<5' 'numpy<2.3'
+```
+
+Stage model weights before running local eval:
+
+```bash
+huggingface-cli download <model_id> --local-dir /path/to/cache
+```
 
 ## End-to-End Workflow
 
-### 1. Download/process datasets
+### 1. Download datasets
 
 ```bash
 uv run python scripts/download_datasets.py
+```
+
+### 2. Process datasets
+
+```bash
 uv run python scripts/process_all.py --dataset all
 ```
 
-If a dataset is missing locally, you can pull from Hugging Face (for this project: `atreydesai/*` as needed).
-
-### 2. Generate distractors
+### 3. Generate distractors
 
 ```bash
 uv run python scripts/generate_distractors.py \
-  --input datasets/processed/unified_processed \
   --model gpt-4.1 \
-  --output datasets/finished_sets/gpt-4.1
+  --input datasets/processed/unified_processed \
+  --output datasets/finished_sets/gpt-4.1 \
+  --parallel
 ```
 
-Generation defaults:
-
-- OpenAI reasoning effort uses provider/model default unless `--reasoning-effort` is set
-- Branching prefix columns are **not** generated unless `--generate-branching-prefix-columns` is passed
-
-### 3. Plan evaluation matrix
+### 4. Plan evaluation matrix (optional preview)
 
 ```bash
 uv run python scripts/eval_matrix.py plan \
@@ -59,7 +77,7 @@ uv run python scripts/eval_matrix.py plan \
   --print-configs
 ```
 
-### 4. Run evaluation matrix (sequential within job)
+### 5. Run evaluation matrix
 
 ```bash
 uv run python scripts/eval_matrix.py run \
@@ -72,31 +90,15 @@ uv run python scripts/eval_matrix.py run \
   --skip-existing
 ```
 
-For local models, each shard run keeps one model client alive per model/settings key and reuses it
-across all configs in that run.
-
-The runner is strict about input schema/splits: missing required dataset split, missing
-branching columns, or missing gold-answer fields now raise errors instead of silently
-falling back.
-
-### 5. Run sharded matrix for SLURM
-
-Single shard (manual):
+### 6. Analyze results
 
 ```bash
-uv run python scripts/eval_matrix.py run \
-  --preset core16 \
-  --model gpt-4.1 \
-  --generator-dataset-label gpt-4.1 \
-  --dataset-path datasets/augmented/unified_processed_gpt-4.1_20260213_033916 \
-  --num-shards 8 \
-  --shard-index 3 \
-  --save-interval 50 \
-  --keep-checkpoints 2 \
-  --skip-existing
+uv run python scripts/analyze_all.py --dir results
 ```
 
-Array helper:
+## SLURM: API Models
+
+Submit a sharded array job using `jobs/submit_eval_array.sh` + `jobs/eval_matrix_array.sbatch`:
 
 ```bash
 jobs/submit_eval_array.sh \
@@ -108,69 +110,104 @@ jobs/submit_eval_array.sh \
   --distractor-source scratch,dhuman
 ```
 
-### 6. Analyze
+Arguments: `<model> <dataset_path> <generator_dataset_label> <num_shards> [options]`
+
+Submit from repo root. The sbatch script uses `$SLURM_SUBMIT_DIR` to set the working directory.
+
+## SLURM: Local Models
+
+Use `jobs/run_local_eval.sh`, which submits array jobs via `jobs/local_model_eval.sbatch`.
+
+Smoke run (2 entries per config, to verify model loads correctly):
 
 ```bash
-uv run python scripts/analyze_all.py --dir results
+jobs/run_local_eval.sh \
+  --model Qwen/Qwen3-4B-Instruct-2507 \
+  --generator-dataset-label gpt-4.1 \
+  --dataset-path datasets/augmented/unified_processed_gpt-4.1_20260213_033916 \
+  --phase smoke
 ```
+
+Full run:
+
+```bash
+jobs/run_local_eval.sh \
+  --model Qwen/Qwen3-4B-Instruct-2507 \
+  --generator-dataset-label gpt-4.1 \
+  --dataset-path datasets/augmented/unified_processed_gpt-4.1_20260213_033916 \
+  --phase main \
+  --num-shards 8
+```
+
+Both phases in sequence:
+
+```bash
+jobs/run_local_eval.sh \
+  --model Qwen/Qwen3-4B-Instruct-2507 \
+  --generator-dataset-label gpt-4.1 \
+  --dataset-path datasets/augmented/unified_processed_gpt-4.1_20260213_033916 \
+  --phase both \
+  --num-shards 8
+```
+
+See `jobs/README_local_eval.md` for full argument reference and log locations.
+
+**vLLM prerequisite:** Install vLLM before submitting local eval jobs (see Setup above). The job script does not install it automatically.
+
+## Distractor Generation on SLURM
+
+Use `jobs/aug.sh` for CPU-only distractor generation jobs:
+
+```bash
+sbatch jobs/aug.sh \
+  --model gpt-4.1 \
+  --input datasets/processed/unified_processed \
+  --output datasets/finished_sets/gpt-4.1
+```
+
+Optional flags: `--limit N`, `--save-interval N`.
 
 ## Matrix Presets
 
-- `core16`: historical label for the core matrix (15 unique configs after overlap dedupe)
-- `branching21`: human-prefix branching layout (21 configs per dataset/source pair)
-  - `0H+1..6M`, `1H+0..5M`, `2H+0..4M`, `3H+0..3M`
-  - Uses human-prefix cumulative sampling (`D1`, `D1+D2`, `D1+D2+D3`) and prefix model expansions.
-  - Requires branching columns (`cond_model_q_a_dhuman_h1/h2/h3`) and fails fast if missing.
+| Preset | Description |
+|---|---|
+| `core16` | Core evaluation matrix; 15 unique configs after deduplicating overlap (`3H0M` appears in two groups) |
+| `branching21` | Human-prefix branching layout: `0H+1..6M`, `1H+0..5M`, `2H+0..4M`, `3H+0..3M`. Requires branching generation columns (`cond_model_q_a_dhuman_h1/h2/h3`). |
 
-Difficulty is controlled by `--dataset-types` (`arc_easy`, `arc_challenge`, `mmlu_pro`, `gpqa`), not a separate intrinsic-difficulty pipeline.
+Difficulty is controlled via `--dataset-types` (`arc_easy`, `arc_challenge`, `mmlu_pro`, `gpqa`).
 
-Results layout remains unchanged:
+Results are stored at:
 
-```text
+```
 results/<generator_dataset_label>/<model>_<dataset_type>_<distractor_source>/<nHnM>/results.json
 ```
 
-## Adding/Extending Models
+## Adding Models
 
-Model aliases are defined in `config/model_aliases.toml`.
-
-1. Add an alias entry:
+Model aliases are defined in `config/model_aliases.toml`. Add an entry:
 
 ```toml
-[aliases."my-new-model"]
+[aliases."my-model"]
 provider = "openai"
 model_id = "gpt-4.1"
 ```
 
-2. Use it anywhere a model name is accepted:
+For local models with vLLM-specific defaults:
 
-```bash
-uv run python scripts/eval_matrix.py run ... --model my-new-model --generator-dataset-label my-gen
+```toml
+[aliases."Qwen/Qwen3-4B-Instruct-2507"]
+provider = "local"
+model_id = "Qwen/Qwen3-4B-Instruct-2507"
+
+[aliases."Qwen/Qwen3-4B-Instruct-2507".defaults]
+dtype = "bfloat16"
+max_model_len = 32768
 ```
 
-Supported providers in registry:
-
-- `openai`
-- `anthropic`
-- `gemini`
-- `deepseek`
-- `local`
-
-Added local-model aliases:
-
-- `Nanbeige/Nanbeige4.1-3B`
-- `Qwen/Qwen3-4B-Instruct-2507`
-- `allenai/Olmo-3-7B-Instruct`
-
-You can stage these checkpoints with:
-
-```bash
-uv run python scripts/download_local_models.py --scratch-dir /path/to/scratch
-```
-
-That command is a dry run by default. Add `--execute` to actually download.
+Supported providers: `openai`, `anthropic`, `gemini`, `deepseek`, `local`.
 
 ## Additional Docs
 
-- `docs/evaluation.md`
-- `docs/models.md`
+- `docs/evaluation.md` — evaluation matrix details, sharding semantics, preset definitions
+- `docs/models.md` — model registry, alias schema, resolution order
+- `jobs/README_local_eval.md` — local model SLURM workflow reference

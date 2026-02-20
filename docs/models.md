@@ -92,6 +92,12 @@ The default alias file includes local entries for:
 - `Qwen/Qwen3-4B-Instruct-2507` (`dtype = "bfloat16"`, `max_model_len = 32768`)
 - `allenai/Olmo-3-7B-Instruct` (`dtype = "bfloat16"`, `max_model_len = 32768`)
 
+Stage weights before running local eval:
+
+```bash
+huggingface-cli download <model_id> --local-dir /path/to/cache
+```
+
 ## Listing Available Models
 
 Use public helper APIs:

@@ -2,7 +2,6 @@ from typing import List, Dict, Optional, Tuple
 import re
 
 from config import MCQA_PROMPT_FULL, MCQA_PROMPT_CHOICES_ONLY
-#fixed the eval logic from last repo so local and api have the same but just routed diff at the end
 
 CHOICE_LABELS = "ABCDEFGHIJ"
 
@@ -45,7 +44,6 @@ def extract_answer(text: str) -> str:
         return match.group(1).upper()
     
     # Pattern 3: Last standalone letter in the response
-    # CHECK IF THIS IS GOOD???
     pattern3 = r"\b([A-J])\b"
     matches = re.findall(pattern3, text)
     if matches:
