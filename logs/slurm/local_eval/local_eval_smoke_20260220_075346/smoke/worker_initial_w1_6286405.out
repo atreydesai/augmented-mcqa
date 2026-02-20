@@ -44,3 +44,352 @@ INFO 02-20 02:55:18 [scheduler.py:216] Chunked prefill is enabled with max_num_b
 [1;36m(EngineCore_DP0 pid=27043)[0;0m INFO 02-20 02:55:29 [gpu_model_runner.py:3338] Model loading took 7.4286 GiB memory and 6.267279 seconds
 [1;36m(EngineCore_DP0 pid=27043)[0;0m INFO 02-20 02:55:38 [backends.py:631] Using cache directory: /nfshomes/adesai10/.cache/vllm/torch_compile_cache/21db6eb286/rank_0_0/backbone for vLLM's torch.compile
 [1;36m(EngineCore_DP0 pid=27043)[0;0m INFO 02-20 02:55:38 [backends.py:647] Dynamo bytecode transform time: 8.56 s
+[1;36m(EngineCore_DP0 pid=27043)[0;0m INFO 02-20 02:55:46 [backends.py:210] Directly load the compiled graph(s) for dynamic shape from the cache, took 7.326 s
+[1;36m(EngineCore_DP0 pid=27043)[0;0m INFO 02-20 02:55:47 [monitor.py:34] torch.compile takes 15.89 s in total
+[1;36m(EngineCore_DP0 pid=27043)[0;0m INFO 02-20 02:55:48 [gpu_worker.py:359] Available KV cache memory: 34.89 GiB
+[1;36m(EngineCore_DP0 pid=27043)[0;0m INFO 02-20 02:55:48 [kv_cache_utils.py:1229] GPU KV cache size: 571,680 tokens
+[1;36m(EngineCore_DP0 pid=27043)[0;0m INFO 02-20 02:55:48 [kv_cache_utils.py:1234] Maximum concurrency for 262,144 tokens per request: 2.18x
+[1;36m(EngineCore_DP0 pid=27043)[0;0m INFO 02-20 02:55:49 [gpu_model_runner.py:4244] Graph capturing finished in 1 secs, took 0.09 GiB
+[1;36m(EngineCore_DP0 pid=27043)[0;0m INFO 02-20 02:55:49 [core.py:250] init engine (profile, create kv cache, warmup model) took 19.97 seconds
+INFO 02-20 02:55:52 [llm.py:352] Supported tasks: ['generate']
+  Model loaded successfully in 34.95s
+💾 Final checkpoint saved: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/local_eval/local_eval_smoke_20260220_075346/smoke/smoke__Nanbeige_Nanbeige4_1-3B__opus__full/results/opus/Nanbeige_Nanbeige4.1-3B_arc_challenge_dhuman/0H2M/checkpoints/eval_checkpoint_5_20260220_075618.json
+
+=== Results ===
+Accuracy (successful entries): 60.00% | attempted=5 successful=5 failed=0
+Behavioral: {'G': 3, 'H': 0, 'M': 2, '?': 0}
+Saved to: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/local_eval/local_eval_smoke_20260220_075346/smoke/smoke__Nanbeige_Nanbeige4_1-3B__opus__full/results/opus/Nanbeige_Nanbeige4.1-3B_arc_challenge_dhuman/0H2M
+  Accuracy: 60.00%
+
+[2/60] opus_Nanbeige_Nanbeige4.1-3B_arc_challenge_dhuman_0H5M
+
+=== Running Experiment: opus_Nanbeige_Nanbeige4.1-3B_arc_challenge_dhuman_0H5M ===
+Model: Local (Nanbeige/Nanbeige4.1-3B)
+Config: 0H+5M
+Entries: 5
+Start index: 0
+Checkpoint save interval: 50
+Inference batch size: 8
+💾 Final checkpoint saved: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/local_eval/local_eval_smoke_20260220_075346/smoke/smoke__Nanbeige_Nanbeige4_1-3B__opus__full/results/opus/Nanbeige_Nanbeige4.1-3B_arc_challenge_dhuman/0H5M/checkpoints/eval_checkpoint_5_20260220_075644.json
+
+=== Results ===
+Accuracy (successful entries): 100.00% | attempted=5 successful=5 failed=0
+Behavioral: {'G': 5, 'H': 0, 'M': 0, '?': 0}
+Saved to: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/local_eval/local_eval_smoke_20260220_075346/smoke/smoke__Nanbeige_Nanbeige4_1-3B__opus__full/results/opus/Nanbeige_Nanbeige4.1-3B_arc_challenge_dhuman/0H5M
+  Accuracy: 100.00%
+
+[3/60] opus_Nanbeige_Nanbeige4.1-3B_arc_challenge_dhuman_2H0M
+
+=== Running Experiment: opus_Nanbeige_Nanbeige4.1-3B_arc_challenge_dhuman_2H0M ===
+Model: Local (Nanbeige/Nanbeige4.1-3B)
+Config: 2H+0M
+Entries: 5
+Start index: 0
+Checkpoint save interval: 50
+Inference batch size: 8
+💾 Final checkpoint saved: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/local_eval/local_eval_smoke_20260220_075346/smoke/smoke__Nanbeige_Nanbeige4_1-3B__opus__full/results/opus/Nanbeige_Nanbeige4.1-3B_arc_challenge_dhuman/2H0M/checkpoints/eval_checkpoint_5_20260220_075710.json
+
+=== Results ===
+Accuracy (successful entries): 60.00% | attempted=5 successful=5 failed=0
+Behavioral: {'G': 3, 'H': 0, 'M': 0, '?': 2}
+Saved to: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/local_eval/local_eval_smoke_20260220_075346/smoke/smoke__Nanbeige_Nanbeige4_1-3B__opus__full/results/opus/Nanbeige_Nanbeige4.1-3B_arc_challenge_dhuman/2H0M
+  Accuracy: 60.00%
+
+[4/60] opus_Nanbeige_Nanbeige4.1-3B_arc_challenge_dhuman_3H2M
+
+=== Running Experiment: opus_Nanbeige_Nanbeige4.1-3B_arc_challenge_dhuman_3H2M ===
+Model: Local (Nanbeige/Nanbeige4.1-3B)
+Config: 3H+2M
+Entries: 5
+Start index: 0
+Checkpoint save interval: 50
+Inference batch size: 8
+💾 Final checkpoint saved: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/local_eval/local_eval_smoke_20260220_075346/smoke/smoke__Nanbeige_Nanbeige4_1-3B__opus__full/results/opus/Nanbeige_Nanbeige4.1-3B_arc_challenge_dhuman/3H2M/checkpoints/eval_checkpoint_5_20260220_075736.json
+
+=== Results ===
+Accuracy (successful entries): 60.00% | attempted=5 successful=5 failed=0
+Behavioral: {'G': 3, 'H': 2, 'M': 0, '?': 0}
+Saved to: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/local_eval/local_eval_smoke_20260220_075346/smoke/smoke__Nanbeige_Nanbeige4_1-3B__opus__full/results/opus/Nanbeige_Nanbeige4.1-3B_arc_challenge_dhuman/3H2M
+  Accuracy: 60.00%
+
+[5/60] opus_Nanbeige_Nanbeige4.1-3B_arc_challenge_dhuman_3H5M
+
+=== Running Experiment: opus_Nanbeige_Nanbeige4.1-3B_arc_challenge_dhuman_3H5M ===
+Model: Local (Nanbeige/Nanbeige4.1-3B)
+Config: 3H+5M
+Entries: 5
+Start index: 0
+Checkpoint save interval: 50
+Inference batch size: 8
+💾 Final checkpoint saved: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/local_eval/local_eval_smoke_20260220_075346/smoke/smoke__Nanbeige_Nanbeige4_1-3B__opus__full/results/opus/Nanbeige_Nanbeige4.1-3B_arc_challenge_dhuman/3H5M/checkpoints/eval_checkpoint_5_20260220_075803.json
+
+=== Results ===
+Accuracy (successful entries): 60.00% | attempted=5 successful=5 failed=0
+Behavioral: {'G': 3, 'H': 0, 'M': 2, '?': 0}
+Saved to: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/local_eval/local_eval_smoke_20260220_075346/smoke/smoke__Nanbeige_Nanbeige4_1-3B__opus__full/results/opus/Nanbeige_Nanbeige4.1-3B_arc_challenge_dhuman/3H5M
+  Accuracy: 60.00%
+
+[6/60] opus_Nanbeige_Nanbeige4.1-3B_arc_challenge_dmodel_0H2M
+
+=== Running Experiment: opus_Nanbeige_Nanbeige4.1-3B_arc_challenge_dmodel_0H2M ===
+Model: Local (Nanbeige/Nanbeige4.1-3B)
+Config: 0H+2M
+Entries: 5
+Start index: 0
+Checkpoint save interval: 50
+Inference batch size: 8
+💾 Final checkpoint saved: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/local_eval/local_eval_smoke_20260220_075346/smoke/smoke__Nanbeige_Nanbeige4_1-3B__opus__full/results/opus/Nanbeige_Nanbeige4.1-3B_arc_challenge_dmodel/0H2M/checkpoints/eval_checkpoint_5_20260220_075829.json
+
+=== Results ===
+Accuracy (successful entries): 100.00% | attempted=5 successful=5 failed=0
+Behavioral: {'G': 5, 'H': 0, 'M': 0, '?': 0}
+Saved to: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/local_eval/local_eval_smoke_20260220_075346/smoke/smoke__Nanbeige_Nanbeige4_1-3B__opus__full/results/opus/Nanbeige_Nanbeige4.1-3B_arc_challenge_dmodel/0H2M
+  Accuracy: 100.00%
+
+[7/60] opus_Nanbeige_Nanbeige4.1-3B_arc_challenge_dmodel_0H5M
+
+=== Running Experiment: opus_Nanbeige_Nanbeige4.1-3B_arc_challenge_dmodel_0H5M ===
+Model: Local (Nanbeige/Nanbeige4.1-3B)
+Config: 0H+5M
+Entries: 5
+Start index: 0
+Checkpoint save interval: 50
+Inference batch size: 8
+💾 Final checkpoint saved: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/local_eval/local_eval_smoke_20260220_075346/smoke/smoke__Nanbeige_Nanbeige4_1-3B__opus__full/results/opus/Nanbeige_Nanbeige4.1-3B_arc_challenge_dmodel/0H5M/checkpoints/eval_checkpoint_5_20260220_075856.json
+
+=== Results ===
+Accuracy (successful entries): 100.00% | attempted=5 successful=5 failed=0
+Behavioral: {'G': 5, 'H': 0, 'M': 0, '?': 0}
+Saved to: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/local_eval/local_eval_smoke_20260220_075346/smoke/smoke__Nanbeige_Nanbeige4_1-3B__opus__full/results/opus/Nanbeige_Nanbeige4.1-3B_arc_challenge_dmodel/0H5M
+  Accuracy: 100.00%
+
+[8/60] opus_Nanbeige_Nanbeige4.1-3B_arc_challenge_dmodel_2H0M
+
+=== Running Experiment: opus_Nanbeige_Nanbeige4.1-3B_arc_challenge_dmodel_2H0M ===
+Model: Local (Nanbeige/Nanbeige4.1-3B)
+Config: 2H+0M
+Entries: 5
+Start index: 0
+Checkpoint save interval: 50
+Inference batch size: 8
+💾 Final checkpoint saved: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/local_eval/local_eval_smoke_20260220_075346/smoke/smoke__Nanbeige_Nanbeige4_1-3B__opus__full/results/opus/Nanbeige_Nanbeige4.1-3B_arc_challenge_dmodel/2H0M/checkpoints/eval_checkpoint_5_20260220_075922.json
+
+=== Results ===
+Accuracy (successful entries): 80.00% | attempted=5 successful=5 failed=0
+Behavioral: {'G': 4, 'H': 1, 'M': 0, '?': 0}
+Saved to: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/local_eval/local_eval_smoke_20260220_075346/smoke/smoke__Nanbeige_Nanbeige4_1-3B__opus__full/results/opus/Nanbeige_Nanbeige4.1-3B_arc_challenge_dmodel/2H0M
+  Accuracy: 80.00%
+
+[9/60] opus_Nanbeige_Nanbeige4.1-3B_arc_challenge_dmodel_3H2M
+
+=== Running Experiment: opus_Nanbeige_Nanbeige4.1-3B_arc_challenge_dmodel_3H2M ===
+Model: Local (Nanbeige/Nanbeige4.1-3B)
+Config: 3H+2M
+Entries: 5
+Start index: 0
+Checkpoint save interval: 50
+Inference batch size: 8
+💾 Final checkpoint saved: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/local_eval/local_eval_smoke_20260220_075346/smoke/smoke__Nanbeige_Nanbeige4_1-3B__opus__full/results/opus/Nanbeige_Nanbeige4.1-3B_arc_challenge_dmodel/3H2M/checkpoints/eval_checkpoint_5_20260220_075948.json
+
+=== Results ===
+Accuracy (successful entries): 100.00% | attempted=5 successful=5 failed=0
+Behavioral: {'G': 5, 'H': 0, 'M': 0, '?': 0}
+Saved to: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/local_eval/local_eval_smoke_20260220_075346/smoke/smoke__Nanbeige_Nanbeige4_1-3B__opus__full/results/opus/Nanbeige_Nanbeige4.1-3B_arc_challenge_dmodel/3H2M
+  Accuracy: 100.00%
+
+[10/60] opus_Nanbeige_Nanbeige4.1-3B_arc_challenge_dmodel_3H5M
+
+=== Running Experiment: opus_Nanbeige_Nanbeige4.1-3B_arc_challenge_dmodel_3H5M ===
+Model: Local (Nanbeige/Nanbeige4.1-3B)
+Config: 3H+5M
+Entries: 5
+Start index: 0
+Checkpoint save interval: 50
+Inference batch size: 8
+💾 Final checkpoint saved: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/local_eval/local_eval_smoke_20260220_075346/smoke/smoke__Nanbeige_Nanbeige4_1-3B__opus__full/results/opus/Nanbeige_Nanbeige4.1-3B_arc_challenge_dmodel/3H5M/checkpoints/eval_checkpoint_5_20260220_080015.json
+
+=== Results ===
+Accuracy (successful entries): 80.00% | attempted=5 successful=5 failed=0
+Behavioral: {'G': 4, 'H': 0, 'M': 1, '?': 0}
+Saved to: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/local_eval/local_eval_smoke_20260220_075346/smoke/smoke__Nanbeige_Nanbeige4_1-3B__opus__full/results/opus/Nanbeige_Nanbeige4.1-3B_arc_challenge_dmodel/3H5M
+  Accuracy: 80.00%
+
+[11/60] opus_Nanbeige_Nanbeige4.1-3B_arc_challenge_scratch_0H2M
+
+=== Running Experiment: opus_Nanbeige_Nanbeige4.1-3B_arc_challenge_scratch_0H2M ===
+Model: Local (Nanbeige/Nanbeige4.1-3B)
+Config: 0H+2M
+Entries: 5
+Start index: 0
+Checkpoint save interval: 50
+Inference batch size: 8
+💾 Final checkpoint saved: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/local_eval/local_eval_smoke_20260220_075346/smoke/smoke__Nanbeige_Nanbeige4_1-3B__opus__full/results/opus/Nanbeige_Nanbeige4.1-3B_arc_challenge_scratch/0H2M/checkpoints/eval_checkpoint_5_20260220_080040.json
+
+=== Results ===
+Accuracy (successful entries): 60.00% | attempted=5 successful=5 failed=0
+Behavioral: {'G': 3, 'H': 0, 'M': 2, '?': 0}
+Saved to: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/local_eval/local_eval_smoke_20260220_075346/smoke/smoke__Nanbeige_Nanbeige4_1-3B__opus__full/results/opus/Nanbeige_Nanbeige4.1-3B_arc_challenge_scratch/0H2M
+  Accuracy: 60.00%
+
+[12/60] opus_Nanbeige_Nanbeige4.1-3B_arc_challenge_scratch_0H5M
+
+=== Running Experiment: opus_Nanbeige_Nanbeige4.1-3B_arc_challenge_scratch_0H5M ===
+Model: Local (Nanbeige/Nanbeige4.1-3B)
+Config: 0H+5M
+Entries: 5
+Start index: 0
+Checkpoint save interval: 50
+Inference batch size: 8
+💾 Final checkpoint saved: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/local_eval/local_eval_smoke_20260220_075346/smoke/smoke__Nanbeige_Nanbeige4_1-3B__opus__full/results/opus/Nanbeige_Nanbeige4.1-3B_arc_challenge_scratch/0H5M/checkpoints/eval_checkpoint_5_20260220_080107.json
+
+=== Results ===
+Accuracy (successful entries): 60.00% | attempted=5 successful=5 failed=0
+Behavioral: {'G': 3, 'H': 0, 'M': 2, '?': 0}
+Saved to: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/local_eval/local_eval_smoke_20260220_075346/smoke/smoke__Nanbeige_Nanbeige4_1-3B__opus__full/results/opus/Nanbeige_Nanbeige4.1-3B_arc_challenge_scratch/0H5M
+  Accuracy: 60.00%
+
+[13/60] opus_Nanbeige_Nanbeige4.1-3B_arc_challenge_scratch_2H0M
+
+=== Running Experiment: opus_Nanbeige_Nanbeige4.1-3B_arc_challenge_scratch_2H0M ===
+Model: Local (Nanbeige/Nanbeige4.1-3B)
+Config: 2H+0M
+Entries: 5
+Start index: 0
+Checkpoint save interval: 50
+Inference batch size: 8
+💾 Final checkpoint saved: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/local_eval/local_eval_smoke_20260220_075346/smoke/smoke__Nanbeige_Nanbeige4_1-3B__opus__full/results/opus/Nanbeige_Nanbeige4.1-3B_arc_challenge_scratch/2H0M/checkpoints/eval_checkpoint_5_20260220_080133.json
+
+=== Results ===
+Accuracy (successful entries): 80.00% | attempted=5 successful=5 failed=0
+Behavioral: {'G': 4, 'H': 1, 'M': 0, '?': 0}
+Saved to: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/local_eval/local_eval_smoke_20260220_075346/smoke/smoke__Nanbeige_Nanbeige4_1-3B__opus__full/results/opus/Nanbeige_Nanbeige4.1-3B_arc_challenge_scratch/2H0M
+  Accuracy: 80.00%
+
+[14/60] opus_Nanbeige_Nanbeige4.1-3B_arc_challenge_scratch_3H2M
+
+=== Running Experiment: opus_Nanbeige_Nanbeige4.1-3B_arc_challenge_scratch_3H2M ===
+Model: Local (Nanbeige/Nanbeige4.1-3B)
+Config: 3H+2M
+Entries: 5
+Start index: 0
+Checkpoint save interval: 50
+Inference batch size: 8
+💾 Final checkpoint saved: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/local_eval/local_eval_smoke_20260220_075346/smoke/smoke__Nanbeige_Nanbeige4_1-3B__opus__full/results/opus/Nanbeige_Nanbeige4.1-3B_arc_challenge_scratch/3H2M/checkpoints/eval_checkpoint_5_20260220_080159.json
+
+=== Results ===
+Accuracy (successful entries): 60.00% | attempted=5 successful=5 failed=0
+Behavioral: {'G': 3, 'H': 2, 'M': 0, '?': 0}
+Saved to: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/local_eval/local_eval_smoke_20260220_075346/smoke/smoke__Nanbeige_Nanbeige4_1-3B__opus__full/results/opus/Nanbeige_Nanbeige4.1-3B_arc_challenge_scratch/3H2M
+  Accuracy: 60.00%
+
+[15/60] opus_Nanbeige_Nanbeige4.1-3B_arc_challenge_scratch_3H5M
+
+=== Running Experiment: opus_Nanbeige_Nanbeige4.1-3B_arc_challenge_scratch_3H5M ===
+Model: Local (Nanbeige/Nanbeige4.1-3B)
+Config: 3H+5M
+Entries: 5
+Start index: 0
+Checkpoint save interval: 50
+Inference batch size: 8
+💾 Final checkpoint saved: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/local_eval/local_eval_smoke_20260220_075346/smoke/smoke__Nanbeige_Nanbeige4_1-3B__opus__full/results/opus/Nanbeige_Nanbeige4.1-3B_arc_challenge_scratch/3H5M/checkpoints/eval_checkpoint_5_20260220_080226.json
+
+=== Results ===
+Accuracy (successful entries): 80.00% | attempted=5 successful=5 failed=0
+Behavioral: {'G': 4, 'H': 1, 'M': 0, '?': 0}
+Saved to: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/local_eval/local_eval_smoke_20260220_075346/smoke/smoke__Nanbeige_Nanbeige4_1-3B__opus__full/results/opus/Nanbeige_Nanbeige4.1-3B_arc_challenge_scratch/3H5M
+  Accuracy: 80.00%
+
+[16/60] opus_Nanbeige_Nanbeige4.1-3B_arc_easy_dhuman_0H2M
+
+=== Running Experiment: opus_Nanbeige_Nanbeige4.1-3B_arc_easy_dhuman_0H2M ===
+Model: Local (Nanbeige/Nanbeige4.1-3B)
+Config: 0H+2M
+Entries: 5
+Start index: 0
+Checkpoint save interval: 50
+Inference batch size: 8
+💾 Final checkpoint saved: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/local_eval/local_eval_smoke_20260220_075346/smoke/smoke__Nanbeige_Nanbeige4_1-3B__opus__full/results/opus/Nanbeige_Nanbeige4.1-3B_arc_easy_dhuman/0H2M/checkpoints/eval_checkpoint_5_20260220_080252.json
+
+=== Results ===
+Accuracy (successful entries): 80.00% | attempted=5 successful=5 failed=0
+Behavioral: {'G': 4, 'H': 0, 'M': 0, '?': 1}
+Saved to: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/local_eval/local_eval_smoke_20260220_075346/smoke/smoke__Nanbeige_Nanbeige4_1-3B__opus__full/results/opus/Nanbeige_Nanbeige4.1-3B_arc_easy_dhuman/0H2M
+  Accuracy: 80.00%
+
+[17/60] opus_Nanbeige_Nanbeige4.1-3B_arc_easy_dhuman_0H5M
+
+=== Running Experiment: opus_Nanbeige_Nanbeige4.1-3B_arc_easy_dhuman_0H5M ===
+Model: Local (Nanbeige/Nanbeige4.1-3B)
+Config: 0H+5M
+Entries: 5
+Start index: 0
+Checkpoint save interval: 50
+Inference batch size: 8
+💾 Final checkpoint saved: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/local_eval/local_eval_smoke_20260220_075346/smoke/smoke__Nanbeige_Nanbeige4_1-3B__opus__full/results/opus/Nanbeige_Nanbeige4.1-3B_arc_easy_dhuman/0H5M/checkpoints/eval_checkpoint_5_20260220_080319.json
+
+=== Results ===
+Accuracy (successful entries): 60.00% | attempted=5 successful=5 failed=0
+Behavioral: {'G': 3, 'H': 0, 'M': 1, '?': 1}
+Saved to: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/local_eval/local_eval_smoke_20260220_075346/smoke/smoke__Nanbeige_Nanbeige4_1-3B__opus__full/results/opus/Nanbeige_Nanbeige4.1-3B_arc_easy_dhuman/0H5M
+  Accuracy: 60.00%
+
+[18/60] opus_Nanbeige_Nanbeige4.1-3B_arc_easy_dhuman_2H0M
+
+=== Running Experiment: opus_Nanbeige_Nanbeige4.1-3B_arc_easy_dhuman_2H0M ===
+Model: Local (Nanbeige/Nanbeige4.1-3B)
+Config: 2H+0M
+Entries: 5
+Start index: 0
+Checkpoint save interval: 50
+Inference batch size: 8
+💾 Final checkpoint saved: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/local_eval/local_eval_smoke_20260220_075346/smoke/smoke__Nanbeige_Nanbeige4_1-3B__opus__full/results/opus/Nanbeige_Nanbeige4.1-3B_arc_easy_dhuman/2H0M/checkpoints/eval_checkpoint_5_20260220_080335.json
+
+=== Results ===
+Accuracy (successful entries): 100.00% | attempted=5 successful=5 failed=0
+Behavioral: {'G': 5, 'H': 0, 'M': 0, '?': 0}
+Saved to: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/local_eval/local_eval_smoke_20260220_075346/smoke/smoke__Nanbeige_Nanbeige4_1-3B__opus__full/results/opus/Nanbeige_Nanbeige4.1-3B_arc_easy_dhuman/2H0M
+  Accuracy: 100.00%
+
+[19/60] opus_Nanbeige_Nanbeige4.1-3B_arc_easy_dhuman_3H2M
+
+=== Running Experiment: opus_Nanbeige_Nanbeige4.1-3B_arc_easy_dhuman_3H2M ===
+Model: Local (Nanbeige/Nanbeige4.1-3B)
+Config: 3H+2M
+Entries: 5
+Start index: 0
+Checkpoint save interval: 50
+Inference batch size: 8
+💾 Final checkpoint saved: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/local_eval/local_eval_smoke_20260220_075346/smoke/smoke__Nanbeige_Nanbeige4_1-3B__opus__full/results/opus/Nanbeige_Nanbeige4.1-3B_arc_easy_dhuman/3H2M/checkpoints/eval_checkpoint_5_20260220_080401.json
+
+=== Results ===
+Accuracy (successful entries): 80.00% | attempted=5 successful=5 failed=0
+Behavioral: {'G': 4, 'H': 1, 'M': 0, '?': 0}
+Saved to: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/local_eval/local_eval_smoke_20260220_075346/smoke/smoke__Nanbeige_Nanbeige4_1-3B__opus__full/results/opus/Nanbeige_Nanbeige4.1-3B_arc_easy_dhuman/3H2M
+  Accuracy: 80.00%
+
+[20/60] opus_Nanbeige_Nanbeige4.1-3B_arc_easy_dhuman_3H5M
+
+=== Running Experiment: opus_Nanbeige_Nanbeige4.1-3B_arc_easy_dhuman_3H5M ===
+Model: Local (Nanbeige/Nanbeige4.1-3B)
+Config: 3H+5M
+Entries: 5
+Start index: 0
+Checkpoint save interval: 50
+Inference batch size: 8
+💾 Final checkpoint saved: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/local_eval/local_eval_smoke_20260220_075346/smoke/smoke__Nanbeige_Nanbeige4_1-3B__opus__full/results/opus/Nanbeige_Nanbeige4.1-3B_arc_easy_dhuman/3H5M/checkpoints/eval_checkpoint_5_20260220_080427.json
+
+=== Results ===
+Accuracy (successful entries): 60.00% | attempted=5 successful=5 failed=0
+Behavioral: {'G': 3, 'H': 1, 'M': 1, '?': 0}
+Saved to: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/local_eval/local_eval_smoke_20260220_075346/smoke/smoke__Nanbeige_Nanbeige4_1-3B__opus__full/results/opus/Nanbeige_Nanbeige4.1-3B_arc_easy_dhuman/3H5M
+  Accuracy: 60.00%
+
+[21/60] opus_Nanbeige_Nanbeige4.1-3B_arc_easy_dmodel_0H2M
+
+=== Running Experiment: opus_Nanbeige_Nanbeige4.1-3B_arc_easy_dmodel_0H2M ===
+Model: Local (Nanbeige/Nanbeige4.1-3B)
+Config: 0H+2M
+Entries: 5
+Start index: 0
+Checkpoint save interval: 50
+Inference batch size: 8
