@@ -1,0 +1,24 @@
+
+=== Run Set ===
+Total configs: 60
+By dataset type: {'arc_challenge': 15, 'arc_easy': 15, 'gpqa': 15, 'mmlu_pro': 15}
+By distractor source: {'dhuman': 20, 'dmodel': 20, 'scratch': 20}
+
+[1/60] opus_Nanbeige_Nanbeige4.1-3B_arc_challenge_dhuman_0H2M
+  Shared client initialized for: Nanbeige/Nanbeige4.1-3B
+
+=== Running Experiment: opus_Nanbeige_Nanbeige4.1-3B_arc_challenge_dhuman_0H2M ===
+Model: Local (Nanbeige/Nanbeige4.1-3B)
+Config: 0H+2M
+Entries: 5
+Start index: 0
+Checkpoint save interval: 50
+Loading model: Nanbeige/Nanbeige4.1-3B
+  GPU memory utilization: 0.9
+  Tensor parallel size: 1
+  Seed: 12345
+  Dtype: auto
+  Tokenizer mode: slow
+INFO 02-20 00:47:20 [utils.py:253] non-default args: {'tokenizer_mode': 'slow', 'trust_remote_code': True, 'download_dir': '/fs/nexus-scratch/adesai10/hub', 'seed': 12345, 'disable_log_stats': True, 'model': 'Nanbeige/Nanbeige4.1-3B'}
+INFO 02-20 00:47:37 [model.py:631] Resolved architecture: LlamaForCausalLM
+INFO 02-20 00:47:37 [model.py:1745] Using max model len 262144

@@ -1,0 +1,59 @@
+
+🚀 Parallel mode: spawning 4 processes
+   Model: gpt-4.1
+   Splits: ['arc_easy', 'arc_challenge', 'mmlu_pro', 'supergpqa']
+   Output: datasets/finished_sets/gpt-4.1_20260213_041705
+   Starting arc_easy...
+   Starting arc_challenge...
+   Starting mmlu_pro...
+   Starting supergpqa...
+
+⏳ Waiting for 4 processes...
+
+✅ arc_easy (exit code 0)
+   Saving the dataset (1/1 shards): 100%|██████████| 750/750 [00:00<00:00, 25903.56 examples/s]
+   Saving the dataset (1/1 shards): 100%|██████████| 750/750 [00:00<00:00, 25726.88 examples/s]
+   Saved to datasets/finished_sets/gpt-4.1_20260213_041705/split_arc_easy_20260213_041708
+   
+   ✅ Done. Augmented dataset saved to datasets/finished_sets/gpt-4.1_20260213_041705/split_arc_easy_20260213_041708
+
+✅ arc_challenge (exit code 0)
+   Saving the dataset (1/1 shards): 100%|██████████| 750/750 [00:00<00:00, 24422.22 examples/s]
+   Saving the dataset (1/1 shards): 100%|██████████| 750/750 [00:00<00:00, 24249.76 examples/s]
+   Saved to datasets/finished_sets/gpt-4.1_20260213_041705/split_arc_challenge_20260213_041708
+   
+   ✅ Done. Augmented dataset saved to datasets/finished_sets/gpt-4.1_20260213_041705/split_arc_challenge_20260213_041708
+
+✅ mmlu_pro (exit code 0)
+   Saving the dataset (1/1 shards): 100%|██████████| 750/750 [00:00<00:00, 15483.00 examples/s]
+   Saving the dataset (1/1 shards): 100%|██████████| 750/750 [00:00<00:00, 15407.47 examples/s]
+   Saved to datasets/finished_sets/gpt-4.1_20260213_041705/split_mmlu_pro_20260213_041708
+   
+   ✅ Done. Augmented dataset saved to datasets/finished_sets/gpt-4.1_20260213_041705/split_mmlu_pro_20260213_041708
+
+✅ supergpqa (exit code 0)
+   Saving the dataset (1/1 shards): 100%|██████████| 750/750 [00:00<00:00, 21773.66 examples/s]
+   Saving the dataset (1/1 shards): 100%|██████████| 750/750 [00:00<00:00, 21638.86 examples/s]
+   Saved to datasets/finished_sets/gpt-4.1_20260213_041705/split_supergpqa_20260213_041708
+   
+   ✅ Done. Augmented dataset saved to datasets/finished_sets/gpt-4.1_20260213_041705/split_supergpqa_20260213_041708
+
+
+📦 All splits done. Combining...
+
+📦 Combining 4 split directories from datasets/finished_sets/gpt-4.1_20260213_041705
+  Loading arc_challenge_20260213_041708 from datasets/finished_sets/gpt-4.1_20260213_041705/split_arc_challenge_20260213_041708...
+  Loading arc_easy_20260213_041708 from datasets/finished_sets/gpt-4.1_20260213_041705/split_arc_easy_20260213_041708...
+  Loading mmlu_pro_20260213_041708 from datasets/finished_sets/gpt-4.1_20260213_041705/split_mmlu_pro_20260213_041708...
+  Loading supergpqa_20260213_041708 from datasets/finished_sets/gpt-4.1_20260213_041705/split_supergpqa_20260213_041708...
+
+✅ Combined dataset saved to datasets/finished_sets/gpt-4.1_20260213_041705/combined
+   Splits: ['arc_challenge', 'arc_easy', 'mmlu_pro', 'supergpqa']
+   - arc_challenge: 750 rows
+   - arc_easy: 750 rows
+   - mmlu_pro: 750 rows
+   - supergpqa: 750 rows
+
+Pushing to Hub as gpt-4.1_20260213_041705...
+Pushing dataset to Hugging Face: atreydesai/qgqa-gpt-4.1-20260213-041705...
+✅ Successfully pushed dataset to https://huggingface.co/datasets/atreydesai/qgqa-gpt-4.1-20260213-041705
