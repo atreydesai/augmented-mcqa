@@ -160,6 +160,7 @@ POLL_CAPACITY_SECONDS=20
 POLL_WAIT_SECONDS=30
 VLLM_INSTALL_SPEC="${VLLM_INSTALL_SPEC:-vllm==0.11.2}"
 VLLM_TRANSFORMERS_SPEC="${VLLM_TRANSFORMERS_SPEC:-transformers<5}"
+VLLM_NUMPY_SPEC="${VLLM_NUMPY_SPEC:-numpy<2.3}"
 UV_SYNC_INEXACT="${UV_SYNC_INEXACT:-1}"
 JOB_VISIBILITY_GRACE_SECONDS="${JOB_VISIBILITY_GRACE_SECONDS:-120}"
 
@@ -224,7 +225,7 @@ require_cmd() {
 }
 
 update_dashboard() {
-  uv run python - "$STATUS_ROOT" "$DASHBOARD_JSON" "$DASHBOARD_TSV" <<'PY'
+  uv run --no-sync python - "$STATUS_ROOT" "$DASHBOARD_JSON" "$DASHBOARD_TSV" <<'PY'
 import json
 import sys
 from datetime import datetime, timezone
@@ -454,7 +455,7 @@ write_shard_status() {
   local message="$9"
 
   mkdir -p "$(dirname "$status_file")"
-  uv run python - "$status_file" "$phase" "$combo" "$shard_index" "$state" "$job_id" "$attempt" "$exit_code" "$message" <<'PY'
+  uv run --no-sync python - "$status_file" "$phase" "$combo" "$shard_index" "$state" "$job_id" "$attempt" "$exit_code" "$message" <<'PY'
 import json
 import sys
 from datetime import datetime, timezone
@@ -511,10 +512,11 @@ check_prereqs_and_env() {
     append_heartbeat "syncing uv environment mode=exact"
     uv sync
   fi
+  export UV_NO_SYNC=1
 
-  # Local model eval requires a compatible vLLM + transformers stack.
+  # Local model eval requires a compatible vLLM + transformers + numpy stack.
   # vLLM 0.11.2 is incompatible with transformers>=5.
-  if ! uv run python - <<'PY'
+  if ! uv run --no-sync python - <<'PY'
 import importlib.util
 import sys
 if importlib.util.find_spec("vllm") is None:
@@ -524,17 +526,26 @@ try:
     major = int(str(transformers.__version__).split(".")[0])
 except Exception:
     sys.exit(2)
-sys.exit(0 if major < 5 else 3)
+if major >= 5:
+    sys.exit(3)
+try:
+    import numpy as np  # type: ignore
+    parts = str(np.__version__).split(".")
+    n_major = int(parts[0])
+    n_minor = int(parts[1]) if len(parts) > 1 else 0
+except Exception:
+    sys.exit(4)
+sys.exit(0 if (n_major < 2 or (n_major == 2 and n_minor < 3)) else 5)
 PY
   then
-    append_heartbeat "vllm_stack_fix installing_with_uv_pip vllm=$VLLM_INSTALL_SPEC transformers=$VLLM_TRANSFORMERS_SPEC"
-    if ! uv pip install --only-binary=:all: "$VLLM_INSTALL_SPEC" "$VLLM_TRANSFORMERS_SPEC"; then
-      echo "Failed to install compatible vLLM stack ($VLLM_INSTALL_SPEC, $VLLM_TRANSFORMERS_SPEC)." >&2
-      echo "Set VLLM_INSTALL_SPEC / VLLM_TRANSFORMERS_SPEC to wheel-backed versions as needed." >&2
-      echo "Example retry: VLLM_INSTALL_SPEC='vllm==0.10.2' VLLM_TRANSFORMERS_SPEC='transformers<5' jobs/clip_local_eval_master.sh --phase smoke ..." >&2
+    append_heartbeat "vllm_stack_fix installing_with_uv_pip vllm=$VLLM_INSTALL_SPEC transformers=$VLLM_TRANSFORMERS_SPEC numpy=$VLLM_NUMPY_SPEC"
+    if ! uv pip install --only-binary=:all: "$VLLM_INSTALL_SPEC" "$VLLM_TRANSFORMERS_SPEC" "$VLLM_NUMPY_SPEC"; then
+      echo "Failed to install compatible vLLM stack ($VLLM_INSTALL_SPEC, $VLLM_TRANSFORMERS_SPEC, $VLLM_NUMPY_SPEC)." >&2
+      echo "Set VLLM_INSTALL_SPEC / VLLM_TRANSFORMERS_SPEC / VLLM_NUMPY_SPEC to wheel-backed versions as needed." >&2
+      echo "Example retry: VLLM_INSTALL_SPEC='vllm==0.10.2' VLLM_TRANSFORMERS_SPEC='transformers<5' VLLM_NUMPY_SPEC='numpy<2.3' jobs/clip_local_eval_master.sh --phase smoke ..." >&2
       exit 1
     fi
-    if ! uv run python - <<'PY'
+    if ! uv run --no-sync python - <<'PY'
 import importlib.util
 import sys
 if importlib.util.find_spec("vllm") is None:
@@ -544,7 +555,16 @@ try:
     major = int(str(transformers.__version__).split(".")[0])
 except Exception:
     sys.exit(2)
-sys.exit(0 if major < 5 else 3)
+if major >= 5:
+    sys.exit(3)
+try:
+    import numpy as np  # type: ignore
+    parts = str(np.__version__).split(".")
+    n_major = int(parts[0])
+    n_minor = int(parts[1]) if len(parts) > 1 else 0
+except Exception:
+    sys.exit(4)
+sys.exit(0 if (n_major < 2 or (n_major == 2 and n_minor < 3)) else 5)
 PY
     then
       echo "Failed to install/import compatible vLLM stack in uv environment." >&2
@@ -561,7 +581,7 @@ materialize_single_dataset() {
 
   append_heartbeat "dataset_sync label=$label repo=$repo_id target=$target_dir force_refresh=$FORCE_REFRESH"
 
-  uv run python - "$repo_id" "$target_dir" "$FORCE_REFRESH" <<'PY'
+  uv run --no-sync python - "$repo_id" "$target_dir" "$FORCE_REFRESH" <<'PY'
 import json
 import shutil
 import sys
@@ -651,7 +671,7 @@ plan_combo_manifest() {
   mkdir -p "$combo_root" "$results_base" "$summary_dir" "$(dirname "$manifest_path")"
 
   local cmd=(
-    uv run python scripts/eval_matrix.py plan
+    uv run --no-sync python scripts/eval_matrix.py plan
     --preset core16
     --model "$eval_model"
     --dataset-path "$dataset_path"
@@ -761,11 +781,12 @@ export HF_HOME="\$CACHE_ROOT"
 export HF_DATASETS_CACHE="\$CACHE_ROOT/datasets"
 export TRANSFORMERS_CACHE="\$CACHE_ROOT/transformers"
 export PYTHONUNBUFFERED=1
+export UV_NO_SYNC=1
 
 write_status "running" -1 "started"
 
 cmd=(
-  uv run python scripts/eval_matrix.py run
+  uv run --no-sync python scripts/eval_matrix.py run
   --manifest "\$MANIFEST_PATH"
   --generator-dataset-label "\$GEN_LABEL"
   --output-dir "\$SUMMARY_DIR"
@@ -822,7 +843,7 @@ compute_combo_incomplete_shards() {
   local shard_status_dir="$3"
   local check_out="$4"
 
-  uv run python - "$manifest_path" "$num_shards" "$shard_status_dir" "$check_out" <<'PY'
+  uv run --no-sync python - "$manifest_path" "$num_shards" "$shard_status_dir" "$check_out" <<'PY'
 import json
 import sys
 from pathlib import Path
@@ -920,7 +941,7 @@ generate_combo_plots() {
   for dt in "${DATASET_TYPES[@]}"; do
     local plot_dir="$combo_root/plots/$dt"
     mkdir -p "$plot_dir"
-    uv run python - "$results_base" "$eval_model" "$plot_dir" "$dt" "$generator_display" <<'PY'
+    uv run --no-sync python - "$results_base" "$eval_model" "$plot_dir" "$dt" "$generator_display" <<'PY'
 import sys
 from pathlib import Path
 
@@ -970,7 +991,7 @@ PY
 push_combo_to_hub() {
   local combo_root="$1"
   local repo_name="$2"
-  uv run python - "$combo_root" "$repo_name" <<'PY'
+  uv run --no-sync python - "$combo_root" "$repo_name" <<'PY'
 import os
 import sys
 from pathlib import Path
@@ -1013,7 +1034,7 @@ append_final_manifest_entry() {
   local hf_url="${10}"
   local notes="${11}"
 
-  uv run python - "$FINAL_MANIFEST_JSON" "$phase" "$combo_id" "$eval_model" "$gen_label" "$mode" "$combo_root" "$results_base" "$manifest_path" "$complete" "$hf_url" "$notes" <<'PY'
+  uv run --no-sync python - "$FINAL_MANIFEST_JSON" "$phase" "$combo_id" "$eval_model" "$gen_label" "$mode" "$combo_root" "$results_base" "$manifest_path" "$complete" "$hf_url" "$notes" <<'PY'
 import json
 import sys
 from datetime import datetime, timezone
@@ -1150,7 +1171,7 @@ run_phase() {
       "$combo_root" "$results_base" "$manifest_path" "$combo_complete" "$hf_url" "$notes"
   done <"$combos_tsv"
 
-  uv run python - "$phase_summary_json" "$phase" "$complete_count" "$failed_count" "$combos_tsv" <<'PY'
+  uv run --no-sync python - "$phase_summary_json" "$phase" "$complete_count" "$failed_count" "$combos_tsv" <<'PY'
 import json
 import sys
 from datetime import datetime, timezone

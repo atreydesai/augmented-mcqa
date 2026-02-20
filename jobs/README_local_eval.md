@@ -24,12 +24,12 @@ uv sync --inexact
 The orchestrator defaults to `uv sync --inexact` (so extra runtime deps like `vllm` are not removed each run).
 If you need exact lockfile sync behavior, set `UV_SYNC_INEXACT=0`.
 
-The orchestrator enforces a compatible local stack (`vllm` + `transformers<5`) and
-installs wheel-only packages if needed (defaults: `vllm==0.11.2`, `transformers<5`).
-Override with `VLLM_INSTALL_SPEC` and `VLLM_TRANSFORMERS_SPEC`, for example:
+The orchestrator enforces a compatible local stack (`vllm` + `transformers<5` + `numpy<2.3`) and
+installs wheel-only packages if needed (defaults: `vllm==0.11.2`, `transformers<5`, `numpy<2.3`).
+Override with `VLLM_INSTALL_SPEC`, `VLLM_TRANSFORMERS_SPEC`, and `VLLM_NUMPY_SPEC`, for example:
 
 ```bash
-VLLM_INSTALL_SPEC='vllm==0.10.2' VLLM_TRANSFORMERS_SPEC='transformers<5' \
+VLLM_INSTALL_SPEC='vllm==0.10.2' VLLM_TRANSFORMERS_SPEC='transformers<5' VLLM_NUMPY_SPEC='numpy<2.3' \
   jobs/clip_local_eval_master.sh --phase smoke ...
 ```
 

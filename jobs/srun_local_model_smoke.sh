@@ -60,6 +60,7 @@ USE_LOCAL_SNAPSHOT=1
 DO_SYNC=1
 VLLM_INSTALL_SPEC="${VLLM_INSTALL_SPEC:-vllm==0.11.2}"
 VLLM_TRANSFORMERS_SPEC="${VLLM_TRANSFORMERS_SPEC:-transformers<5}"
+VLLM_NUMPY_SPEC="${VLLM_NUMPY_SPEC:-numpy<2.3}"
 declare -a STOP_TOKEN_IDS=()
 
 while [[ $# -gt 0 ]]; do
@@ -130,12 +131,13 @@ export HF_HOME="/fs/nexus-scratch/adesai10/hub"
 export HF_DATASETS_CACHE="/fs/nexus-scratch/adesai10/hub/datasets"
 export TRANSFORMERS_CACHE="/fs/nexus-scratch/adesai10/hub/transformers"
 export PYTHONUNBUFFERED=1
+export UV_NO_SYNC=1
 
 if [[ "$DO_SYNC" == "1" ]]; then
   uv sync --inexact
 fi
 
-if ! uv run python - <<'PY'
+if ! uv run --no-sync python - <<'PY'
 import importlib.util
 import sys
 if importlib.util.find_spec("vllm") is None:
@@ -145,14 +147,23 @@ try:
     major = int(str(transformers.__version__).split(".")[0])
 except Exception:
     sys.exit(2)
-sys.exit(0 if major < 5 else 3)
+if major >= 5:
+    sys.exit(3)
+try:
+    import numpy as np  # type: ignore
+    parts = str(np.__version__).split(".")
+    n_major = int(parts[0])
+    n_minor = int(parts[1]) if len(parts) > 1 else 0
+except Exception:
+    sys.exit(4)
+sys.exit(0 if (n_major < 2 or (n_major == 2 and n_minor < 3)) else 5)
 PY
 then
-  uv pip install --only-binary=:all: "$VLLM_INSTALL_SPEC" "$VLLM_TRANSFORMERS_SPEC"
+  uv pip install --only-binary=:all: "$VLLM_INSTALL_SPEC" "$VLLM_TRANSFORMERS_SPEC" "$VLLM_NUMPY_SPEC"
 fi
 
 cmd=(
-  uv run python scripts/smoke_local_model.py
+  uv run --no-sync python scripts/smoke_local_model.py
   --model "$MODEL"
   --max-tokens "$MAX_TOKENS"
   --temperature "$TEMPERATURE"
