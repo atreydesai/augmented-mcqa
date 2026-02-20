@@ -29,6 +29,7 @@ from .defaults import (
 EvalMode = Literal["accuracy", "behavioral"]
 SamplingStrategy = Literal["independent", "branching_cumulative"]
 BranchingMode = Literal["shuffled_prefix", "human_prefix"]
+WorkpackFormat = Literal["none", "parquet", "arrow"]
 
 
 @dataclass
@@ -96,6 +97,16 @@ class ExperimentConfig:
 
     # Track which distractor source this config uses (scratch/dhuman/dmodel)
     distractor_source: Optional[str] = None
+
+    # Data loading acceleration
+    workpack_format: WorkpackFormat = "none"
+    workpack_path: Optional[Path] = None
+
+    # Local inference acceleration / stability knobs
+    inference_batch_size: int = 8
+    vllm_max_num_batched_tokens: Optional[int] = None
+    vllm_max_num_seqs: Optional[int] = None
+    vllm_enable_chunked_prefill: Optional[bool] = None
     
     def __post_init__(self):
         """Validate and set defaults after initialization."""
@@ -117,8 +128,19 @@ class ExperimentConfig:
         elif isinstance(self.checkpoint_dir, str):
             self.checkpoint_dir = Path(self.checkpoint_dir)
 
+        if isinstance(self.workpack_path, str):
+            self.workpack_path = Path(self.workpack_path)
+
         if self.save_interval <= 0:
             raise ValueError(f"save_interval must be > 0, got {self.save_interval}")
+        if self.inference_batch_size <= 0:
+            raise ValueError(
+                f"inference_batch_size must be > 0, got {self.inference_batch_size}"
+            )
+        if self.workpack_format not in {"none", "parquet", "arrow"}:
+            raise ValueError(
+                f"workpack_format must be one of none|parquet|arrow, got {self.workpack_format}"
+            )
         
         # Validate distractor counts
         total = self.num_human + self.num_model
@@ -178,6 +200,12 @@ class ExperimentConfig:
             "categories": self.categories,
             "dataset_type_filter": self.dataset_type_filter,
             "distractor_source": self.distractor_source,
+            "workpack_format": self.workpack_format,
+            "workpack_path": str(self.workpack_path) if self.workpack_path else None,
+            "inference_batch_size": self.inference_batch_size,
+            "vllm_max_num_batched_tokens": self.vllm_max_num_batched_tokens,
+            "vllm_max_num_seqs": self.vllm_max_num_seqs,
+            "vllm_enable_chunked_prefill": self.vllm_enable_chunked_prefill,
             "config_id": self.config_id,
         }
     

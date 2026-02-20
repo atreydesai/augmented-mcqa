@@ -4,7 +4,10 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import os
+import shutil
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -44,6 +47,25 @@ def _require_generator_label(raw: str | None) -> str:
     if not label:
         raise ValueError("generator_dataset_label is required and cannot be blank")
     return label
+
+
+def _env_int(name: str, default: int | None = None) -> int | None:
+    value = os.getenv(name)
+    if value is None or str(value).strip() == "":
+        return default
+    return int(value)
+
+
+def _env_bool(name: str, default: bool | None = None) -> bool | None:
+    value = os.getenv(name)
+    if value is None or str(value).strip() == "":
+        return default
+    lowered = value.strip().lower()
+    if lowered in {"1", "true", "yes", "on"}:
+        return True
+    if lowered in {"0", "false", "no", "off"}:
+        return False
+    raise ValueError(f"Invalid boolean value for {name}: {value}")
 
 
 def _add_common_build_args(parser: argparse.ArgumentParser, required_inputs: bool) -> None:
@@ -124,14 +146,26 @@ def _add_shard_args(parser: argparse.ArgumentParser) -> None:
 
 
 def _resolve_configs(args: argparse.Namespace) -> list:
+    def _apply_runtime_overrides(cfg) -> None:
+        cfg.save_interval = args.save_interval
+        cfg.inference_batch_size = int(getattr(args, "eval_batch_size", cfg.inference_batch_size))
+        cfg.workpack_format = str(getattr(args, "workpack_format", cfg.workpack_format))
+        cfg.vllm_max_num_batched_tokens = getattr(
+            args, "vllm_max_num_batched_tokens", cfg.vllm_max_num_batched_tokens
+        )
+        cfg.vllm_max_num_seqs = getattr(args, "vllm_max_num_seqs", cfg.vllm_max_num_seqs)
+        cfg.vllm_enable_chunked_prefill = getattr(
+            args, "vllm_enable_chunked_prefill", cfg.vllm_enable_chunked_prefill
+        )
+
     if getattr(args, "manifest", None):
         configs = load_configs_from_manifest(Path(args.manifest))
         for cfg in configs:
-            cfg.save_interval = args.save_interval
+            _apply_runtime_overrides(cfg)
         return configs
 
     output_base = Path(args.output_dir) if args.output_dir else RESULTS_DIR
-    return build_matrix_configs(
+    configs = build_matrix_configs(
         model=args.model,
         dataset_path=Path(args.dataset_path),
         generator_dataset_label=args.generator_dataset_label,
@@ -149,6 +183,9 @@ def _resolve_configs(args: argparse.Namespace) -> list:
         max_tokens=args.max_tokens,
         save_interval=args.save_interval,
     )
+    for cfg in configs:
+        _apply_runtime_overrides(cfg)
+    return configs
 
 
 def _print_summary(label: str, configs: list) -> None:
@@ -289,8 +326,21 @@ def _prune_checkpoint_files(checkpoint_roots: set[Path], keep: int) -> dict[str,
     }
 
 
-def _client_cache_key(config) -> tuple[str, str | None, str | None]:
-    return (config.model_name, config.reasoning_effort, config.thinking_level)
+def _is_local_model_name(model_name: str) -> bool:
+    return model_name == "local" or "/" in model_name
+
+
+def _client_cache_key(
+    config,
+) -> tuple[str, str | None, str | None, int | None, int | None, bool | None]:
+    return (
+        config.model_name,
+        config.reasoning_effort,
+        config.thinking_level,
+        config.vllm_max_num_batched_tokens,
+        config.vllm_max_num_seqs,
+        config.vllm_enable_chunked_prefill,
+    )
 
 
 def _client_kwargs(config) -> dict[str, Any]:
@@ -299,12 +349,21 @@ def _client_kwargs(config) -> dict[str, Any]:
         kwargs["reasoning_effort"] = config.reasoning_effort
     if config.thinking_level:
         kwargs["thinking_level"] = config.thinking_level
+    if _is_local_model_name(config.model_name):
+        if config.vllm_max_num_batched_tokens is not None:
+            kwargs["max_num_batched_tokens"] = config.vllm_max_num_batched_tokens
+        if config.vllm_max_num_seqs is not None:
+            kwargs["max_num_seqs"] = config.vllm_max_num_seqs
+        if config.vllm_enable_chunked_prefill is not None:
+            kwargs["enable_chunked_prefill"] = config.vllm_enable_chunked_prefill
     return kwargs
 
 
 def _get_or_create_shared_client(
     config,
-    client_cache: dict[tuple[str, str | None, str | None], Any],
+    client_cache: dict[
+        tuple[str, str | None, str | None, int | None, int | None, bool | None], Any
+    ],
 ):
     key = _client_cache_key(config)
     if key in client_cache:
@@ -329,8 +388,10 @@ def _unload_shared_clients(client_cache: dict[tuple[str, str | None, str | None]
 def _run_single_config(
     config,
     *,
-    client_cache: dict[tuple[str, str | None, str | None], Any],
-    dataset_cache: dict[tuple[str, str], Any],
+    client_cache: dict[
+        tuple[str, str | None, str | None, int | None, int | None, bool | None], Any
+    ],
+    dataset_cache: dict[tuple[Any, ...], Any],
 ) -> dict[str, Any]:
     try:
         client = _get_or_create_shared_client(config, client_cache)
@@ -381,6 +442,122 @@ def _run_single_config(
         }
 
 
+def _required_workpack_columns(configs: list) -> list[str]:
+    columns = {
+        "question",
+        "choices_answer",
+        "category",
+        "choices_human",
+        "dataset_type",
+    }
+    for cfg in configs:
+        columns.add(str(cfg.model_distractor_type.value))
+        if cfg.branching_mode == "human_prefix":
+            columns.update(
+                {
+                    "cond_model_q_a_dhuman_h1",
+                    "cond_model_q_a_dhuman_h2",
+                    "cond_model_q_a_dhuman_h3",
+                }
+            )
+    return sorted(columns)
+
+
+def _load_split_for_dataset_type(dataset: Any, dataset_type: str | None, dataset_path: str) -> Any:
+    if dataset_type:
+        if hasattr(dataset, "keys") and dataset_type in dataset:
+            data = dataset[dataset_type]
+        elif hasattr(dataset, "column_names") and "dataset_type" in dataset.column_names:
+            data = dataset.filter(lambda x: x["dataset_type"] == dataset_type)
+            if len(data) == 0:
+                raise ValueError(
+                    f"dataset_type_filter='{dataset_type}' matched zero rows in {dataset_path}"
+                )
+        else:
+            available_splits = list(dataset.keys()) if hasattr(dataset, "keys") else []
+            raise ValueError(
+                f"dataset_type_filter='{dataset_type}' not found in {dataset_path}. "
+                f"Available splits: {available_splits}"
+            )
+    else:
+        if hasattr(dataset, "keys"):
+            if "test" in dataset:
+                data = dataset["test"]
+            elif len(dataset.keys()) == 1:
+                data = next(iter(dataset.values()))
+            else:
+                raise ValueError(
+                    f"Dataset has multiple splits {list(dataset.keys())}; "
+                    "set dataset_type_filter explicitly."
+                )
+        else:
+            data = dataset
+    return data
+
+
+def _prepare_workpacks(
+    configs: list,
+    workpack_format: str,
+    output_base: Path,
+    *,
+    shard_suffix: int | None = None,
+) -> dict[tuple[str, str], Path]:
+    if workpack_format == "none":
+        return {}
+
+    from datasets import load_from_disk
+
+    grouped: dict[tuple[str, str], list] = {}
+    for cfg in configs:
+        key = (str(cfg.dataset_path), cfg.dataset_type_filter or "__all__")
+        grouped.setdefault(key, []).append(cfg)
+
+    workpack_root = output_base / "_workpacks"
+    workpack_root.mkdir(parents=True, exist_ok=True)
+
+    raw_dataset_cache: dict[str, Any] = {}
+    produced: dict[tuple[str, str], Path] = {}
+
+    for (dataset_path, dataset_type_key), group in sorted(grouped.items()):
+        dataset_type = None if dataset_type_key == "__all__" else dataset_type_key
+        required_cols = _required_workpack_columns(group)
+        cache_key = f"{dataset_path}::{dataset_type_key}::{','.join(required_cols)}"
+        suffix = ".parquet" if workpack_format == "parquet" else ".arrow"
+        stem = hashlib.sha1(cache_key.encode("utf-8")).hexdigest()[:16]
+        shard_tag = f"_shard{shard_suffix}" if shard_suffix is not None else ""
+        out_name = f"{stem}_{dataset_type_key}{shard_tag}{suffix}"
+        out_path = workpack_root / out_name
+
+        if not out_path.exists():
+            dataset = raw_dataset_cache.get(dataset_path)
+            if dataset is None:
+                dataset = load_from_disk(dataset_path)
+                raw_dataset_cache[dataset_path] = dataset
+
+            split = _load_split_for_dataset_type(dataset, dataset_type, dataset_path)
+            existing_cols = set(split.column_names)
+            selected_cols = [col for col in required_cols if col in existing_cols]
+            if selected_cols and len(selected_cols) < len(split.column_names):
+                split = split.select_columns(selected_cols)
+
+            if workpack_format == "parquet":
+                split.to_parquet(str(out_path))
+            else:
+                if out_path.exists():
+                    shutil.rmtree(out_path)
+                split.save_to_disk(str(out_path))
+
+        produced[(dataset_path, dataset_type_key)] = out_path
+        for cfg in group:
+            cfg.workpack_format = workpack_format
+            cfg.workpack_path = out_path
+
+    print(
+        f"Prepared workpacks: format={workpack_format} groups={len(grouped)} root={workpack_root}"
+    )
+    return produced
+
+
 def cmd_run(args: argparse.Namespace) -> int:
     requested_label = _require_generator_label(args.generator_dataset_label)
     configs = _resolve_configs(args)
@@ -408,12 +585,23 @@ def cmd_run(args: argparse.Namespace) -> int:
         print("No configs to run after filters/shard/skip-existing.")
         return 0
 
+    output_base = Path(args.output_dir) if args.output_dir else RESULTS_DIR
+    output_base.mkdir(parents=True, exist_ok=True)
+    _prepare_workpacks(
+        configs,
+        args.workpack_format,
+        output_base,
+        shard_suffix=args.shard_index,
+    )
+
     _print_summary("Run Set", configs)
 
     summaries = []
     checkpoint_roots: set[Path] = set()
-    client_cache: dict[tuple[str, str | None, str | None], Any] = {}
-    dataset_cache: dict[tuple[str, str], Any] = {}
+    client_cache: dict[
+        tuple[str, str | None, str | None, int | None, int | None, bool | None], Any
+    ] = {}
+    dataset_cache: dict[tuple[Any, ...], Any] = {}
     try:
         for idx, config in enumerate(configs, start=1):
             print(f"\n[{idx}/{len(configs)}] {config.name}")
@@ -432,8 +620,6 @@ def cmd_run(args: argparse.Namespace) -> int:
         _unload_shared_clients(client_cache)
 
     model_name = configs[0].model_name
-    output_base = Path(args.output_dir) if args.output_dir else RESULTS_DIR
-    output_base.mkdir(parents=True, exist_ok=True)
     summary_path = _summary_path(
         model_name,
         requested_label,
@@ -456,6 +642,11 @@ def cmd_run(args: argparse.Namespace) -> int:
         "manifest": args.manifest,
         "num_shards": args.num_shards,
         "shard_index": args.shard_index,
+        "workpack_format": args.workpack_format,
+        "eval_batch_size": args.eval_batch_size,
+        "vllm_max_num_batched_tokens": args.vllm_max_num_batched_tokens,
+        "vllm_max_num_seqs": args.vllm_max_num_seqs,
+        "vllm_enable_chunked_prefill": args.vllm_enable_chunked_prefill,
         "total_configs": len(summaries),
         "successful": sum(1 for s in summaries if s["status"] == "success"),
         "failed": sum(1 for s in summaries if s["status"] != "success"),
@@ -500,6 +691,37 @@ def build_parser() -> argparse.ArgumentParser:
     run_parser.add_argument("--manifest", type=str, help="Load configs from existing manifest")
     run_parser.add_argument("--skip-existing", action="store_true", help="Skip configs with results.json")
     run_parser.add_argument(
+        "--workpack-format",
+        type=str,
+        choices=["none", "parquet", "arrow"],
+        default=os.getenv("EVAL_WORKPACK_FORMAT", "parquet"),
+        help="Precompute/read dataset workpacks for faster repeated loads",
+    )
+    run_parser.add_argument(
+        "--eval-batch-size",
+        type=int,
+        default=_env_int("EVAL_BATCH_SIZE", 8),
+        help="Inference batch size used by runner when calling generate_batch",
+    )
+    run_parser.add_argument(
+        "--vllm-max-num-batched-tokens",
+        type=int,
+        default=_env_int("VLLM_MAX_NUM_BATCHED_TOKENS", None),
+        help="Local vLLM max_num_batched_tokens override",
+    )
+    run_parser.add_argument(
+        "--vllm-max-num-seqs",
+        type=int,
+        default=_env_int("VLLM_MAX_NUM_SEQS", None),
+        help="Local vLLM max_num_seqs override",
+    )
+    run_parser.add_argument(
+        "--vllm-enable-chunked-prefill",
+        type=lambda v: bool(int(v)),
+        default=_env_bool("VLLM_ENABLE_CHUNKED_PREFILL", None),
+        help="Local vLLM enable_chunked_prefill override (0/1)",
+    )
+    run_parser.add_argument(
         "--keep-checkpoints",
         type=int,
         default=DEFAULT_EVAL_KEEP_CHECKPOINTS,
@@ -516,6 +738,8 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.subcommand == "run" and args.keep_checkpoints < 0:
         parser.error("--keep-checkpoints must be >= 0")
+    if args.subcommand == "run" and args.eval_batch_size <= 0:
+        parser.error("--eval-batch-size must be > 0")
 
     if args.subcommand == "run" and not args.manifest:
         missing = [flag for flag in ["model", "dataset_path"] if getattr(args, flag) is None]
