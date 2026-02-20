@@ -21,6 +21,12 @@ Options:
   --force-refresh               Redownload HF generator datasets to remote disk
   --skip-push                   Do not push final artifacts to HuggingFace Hub
   --repo-root <path>            Remote repo path (default: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa)
+  --vllm-max-num-batched-tokens <int>  vLLM max_num_batched_tokens (default: 4096)
+  --vllm-max-num-seqs <int>             vLLM max_num_seqs (default: 8)
+  --vllm-enable-chunked-prefill <0|1>   Enable chunked prefill (default: 1)
+  --eval-workpack-format <parquet|arrow|none>  Runtime workpack format (default: parquet)
+  --eval-worker-mode <persistent|legacy>        Worker topology (default: persistent)
+  --eval-batch-size <int>             Runner batch size for generate_batch (default: 8)
   --help                        Show this help text
 
 Examples:
@@ -45,6 +51,12 @@ FORCE_REFRESH=0
 SKIP_PUSH=0
 DO_SYNC=1
 REPO_ROOT="/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa"
+VLLM_MAX_NUM_BATCHED_TOKENS="${VLLM_MAX_NUM_BATCHED_TOKENS:-4096}"
+VLLM_MAX_NUM_SEQS="${VLLM_MAX_NUM_SEQS:-8}"
+VLLM_ENABLE_CHUNKED_PREFILL="${VLLM_ENABLE_CHUNKED_PREFILL:-1}"
+EVAL_WORKPACK_FORMAT="${EVAL_WORKPACK_FORMAT:-parquet}"
+EVAL_WORKER_MODE="${EVAL_WORKER_MODE:-persistent}"
+EVAL_BATCH_SIZE="${EVAL_BATCH_SIZE:-8}"
 
 CACHE_ROOT="/fs/nexus-scratch/adesai10/hub"
 DATASETS_REMOTE_ROOT_REL="datasets/finished_sets_remote"
@@ -111,6 +123,18 @@ while [[ $# -gt 0 ]]; do
       SKIP_PUSH=1; shift ;;
     --repo-root)
       REPO_ROOT="${2:-}"; shift 2 ;;
+    --vllm-max-num-batched-tokens)
+      VLLM_MAX_NUM_BATCHED_TOKENS="${2:-}"; shift 2 ;;
+    --vllm-max-num-seqs)
+      VLLM_MAX_NUM_SEQS="${2:-}"; shift 2 ;;
+    --vllm-enable-chunked-prefill)
+      VLLM_ENABLE_CHUNKED_PREFILL="${2:-}"; shift 2 ;;
+    --eval-workpack-format)
+      EVAL_WORKPACK_FORMAT="${2:-}"; shift 2 ;;
+    --eval-worker-mode)
+      EVAL_WORKER_MODE="${2:-}"; shift 2 ;;
+    --eval-batch-size)
+      EVAL_BATCH_SIZE="${2:-}"; shift 2 ;;
     --help|-h)
       usage; exit 0 ;;
     *)
@@ -126,15 +150,30 @@ if [[ "$PHASE" != "smoke" && "$PHASE" != "main" && "$PHASE" != "both" ]]; then
   exit 1
 fi
 
-for n in "$MAX_CONCURRENT_JOBS" "$NUM_SHARDS_SMOKE" "$NUM_SHARDS_MAIN" "$SAVE_INTERVAL" "$KEEP_CHECKPOINTS" "$MAX_TOKENS"; do
+for n in "$MAX_CONCURRENT_JOBS" "$NUM_SHARDS_SMOKE" "$NUM_SHARDS_MAIN" "$SAVE_INTERVAL" "$KEEP_CHECKPOINTS" "$MAX_TOKENS" "$VLLM_MAX_NUM_BATCHED_TOKENS" "$VLLM_MAX_NUM_SEQS" "$VLLM_ENABLE_CHUNKED_PREFILL" "$EVAL_BATCH_SIZE"; do
   if ! [[ "$n" =~ ^[0-9]+$ ]]; then
     echo "Numeric option expected integer but got: $n" >&2
     exit 1
   fi
 done
 
-if [[ "$MAX_CONCURRENT_JOBS" -le 0 || "$NUM_SHARDS_SMOKE" -le 0 || "$NUM_SHARDS_MAIN" -le 0 || "$SAVE_INTERVAL" -le 0 || "$MAX_TOKENS" -le 0 ]]; then
+if [[ "$MAX_CONCURRENT_JOBS" -le 0 || "$NUM_SHARDS_SMOKE" -le 0 || "$NUM_SHARDS_MAIN" -le 0 || "$SAVE_INTERVAL" -le 0 || "$MAX_TOKENS" -le 0 || "$VLLM_MAX_NUM_BATCHED_TOKENS" -le 0 || "$VLLM_MAX_NUM_SEQS" -le 0 || "$EVAL_BATCH_SIZE" -le 0 ]]; then
   echo "Expected positive integers for jobs/shards/save-interval/max-tokens" >&2
+  exit 1
+fi
+
+if [[ "$VLLM_ENABLE_CHUNKED_PREFILL" != "0" && "$VLLM_ENABLE_CHUNKED_PREFILL" != "1" ]]; then
+  echo "--vllm-enable-chunked-prefill must be 0 or 1" >&2
+  exit 1
+fi
+
+if [[ "$EVAL_WORKPACK_FORMAT" != "parquet" && "$EVAL_WORKPACK_FORMAT" != "arrow" && "$EVAL_WORKPACK_FORMAT" != "none" ]]; then
+  echo "--eval-workpack-format must be one of parquet|arrow|none" >&2
+  exit 1
+fi
+
+if [[ "$EVAL_WORKER_MODE" != "persistent" && "$EVAL_WORKER_MODE" != "legacy" ]]; then
+  echo "--eval-worker-mode must be persistent or legacy" >&2
   exit 1
 fi
 
@@ -167,6 +206,9 @@ VLLM_TRANSFORMERS_SPEC="${VLLM_TRANSFORMERS_SPEC:-transformers<5}"
 VLLM_NUMPY_SPEC="${VLLM_NUMPY_SPEC:-numpy<2.3}"
 UV_SYNC_INEXACT="${UV_SYNC_INEXACT:-1}"
 JOB_VISIBILITY_GRACE_SECONDS="${JOB_VISIBILITY_GRACE_SECONDS:-120}"
+LAUNCH_FAILED_BACKOFF_SECONDS="${LAUNCH_FAILED_BACKOFF_SECONDS:-5}"
+LAST_SUBMITTED_JOB_ID=""
+declare -a LAST_SUBMITTED_WORKER_IDS=()
 
 job_state_map() {
   local joined="$1"
@@ -429,7 +471,9 @@ wait_for_jobs() {
       reason="$(printf '%s' "$row" | awk -F'|' '{print $3}')"
       if [[ "$state" == "PENDING" && "$reason" == "launch_failed_requeued_held" ]]; then
         append_heartbeat "job_launch_failed_held job_id=$jid reason=$reason"
+        scancel "$jid" >/dev/null 2>&1 || true
         unset "JOB_SUBMIT_EPOCH[$jid]"
+        sleep "$LAUNCH_FAILED_BACKOFF_SECONDS"
         continue
       fi
 
@@ -722,12 +766,13 @@ submit_shard_job() {
 
   local shard_status_file="$STATUS_ROOT/shards/$phase/$combo_id/shard_${shard_index}.json"
   local phase_log_dir="$LOG_ROOT/$phase"
+  local timing_dir="$phase_log_dir/timings"
   local job_script="$TMP_JOB_ROOT/${combo_id}_shard${shard_index}_attempt${attempt}.sh"
   local job_name="qgqa_$(safe_name "$phase")_$(safe_name "$combo_id")_s${shard_index}_a${attempt}"
   local out_log="$phase_log_dir/${combo_id}_shard${shard_index}_attempt${attempt}_%j.out"
   local err_log="$phase_log_dir/${combo_id}_shard${shard_index}_attempt${attempt}_%j.err"
 
-  mkdir -p "$(dirname "$shard_status_file")" "$phase_log_dir" "$(dirname "$job_script")" "$summary_dir"
+  mkdir -p "$(dirname "$shard_status_file")" "$phase_log_dir" "$timing_dir" "$(dirname "$job_script")" "$summary_dir"
 
   write_shard_status "$shard_status_file" "$phase" "$combo_id" "$shard_index" "submitted" "pending" "$attempt" -1 "submitted_to_scheduler"
 
@@ -748,6 +793,12 @@ SAVE_INTERVAL="$SAVE_INTERVAL"
 KEEP_CHECKPOINTS="$KEEP_CHECKPOINTS"
 NUM_SHARDS="$num_shards"
 CACHE_ROOT="$CACHE_ROOT"
+VLLM_MAX_NUM_BATCHED_TOKENS="$VLLM_MAX_NUM_BATCHED_TOKENS"
+VLLM_MAX_NUM_SEQS="$VLLM_MAX_NUM_SEQS"
+VLLM_ENABLE_CHUNKED_PREFILL="$VLLM_ENABLE_CHUNKED_PREFILL"
+EVAL_WORKPACK_FORMAT="$EVAL_WORKPACK_FORMAT"
+EVAL_BATCH_SIZE="$EVAL_BATCH_SIZE"
+TIMING_DIR="$timing_dir"
 
 write_status() {
   local state="\$1"
@@ -790,6 +841,10 @@ export HF_DATASETS_CACHE="\$CACHE_ROOT/datasets"
 export TRANSFORMERS_CACHE="\$CACHE_ROOT/transformers"
 export PYTHONUNBUFFERED=1
 export UV_NO_SYNC=1
+export VLLM_MAX_NUM_BATCHED_TOKENS="\$VLLM_MAX_NUM_BATCHED_TOKENS"
+export VLLM_MAX_NUM_SEQS="\$VLLM_MAX_NUM_SEQS"
+export VLLM_ENABLE_CHUNKED_PREFILL="\$VLLM_ENABLE_CHUNKED_PREFILL"
+export EVAL_TIMING_LOG_DIR="\$TIMING_DIR"
 
 write_status "running" -1 "started"
 
@@ -802,6 +857,11 @@ cmd=(
   --shard-index "\$SHARD_INDEX"
   --save-interval "\$SAVE_INTERVAL"
   --keep-checkpoints "\$KEEP_CHECKPOINTS"
+  --workpack-format "\$EVAL_WORKPACK_FORMAT"
+  --eval-batch-size "\$EVAL_BATCH_SIZE"
+  --vllm-max-num-batched-tokens "\$VLLM_MAX_NUM_BATCHED_TOKENS"
+  --vllm-max-num-seqs "\$VLLM_MAX_NUM_SEQS"
+  --vllm-enable-chunked-prefill "\$VLLM_ENABLE_CHUNKED_PREFILL"
   --skip-existing
 )
 
@@ -840,9 +900,196 @@ EOF
   write_shard_status "$shard_status_file" "$phase" "$combo_id" "$shard_index" "submitted" "$jid" "$attempt" -1 "submitted_to_scheduler"
   ACTIVE_JOB_IDS+=("$jid")
   JOB_SUBMIT_EPOCH["$jid"]="$(date +%s)"
+  LAST_SUBMITTED_JOB_ID="$jid"
   append_heartbeat "submitted phase=$phase combo=$combo_id shard=$shard_index attempt=$attempt job_id=$jid"
   update_dashboard >/dev/null
-  printf '%s' "$jid"
+}
+
+submit_worker_job() {
+  local phase="$1"
+  local tasks_tsv="$2"
+  local pool_tag="$3"
+  local worker_index="$4"
+  local worker_count="$5"
+
+  local phase_log_dir="$LOG_ROOT/$phase"
+  local timing_dir="$phase_log_dir/timings"
+  local job_script="$TMP_JOB_ROOT/worker_${phase}_${pool_tag}_w${worker_index}.sh"
+  local pool_tag_safe
+  pool_tag_safe="$(safe_name "$pool_tag")"
+  pool_tag_safe="${pool_tag_safe:0:40}"
+  local job_name="qgqa_${phase}_worker_${pool_tag_safe}_w${worker_index}"
+  local out_log="$phase_log_dir/worker_${pool_tag}_w${worker_index}_%j.out"
+  local err_log="$phase_log_dir/worker_${pool_tag}_w${worker_index}_%j.err"
+
+  mkdir -p "$phase_log_dir" "$timing_dir" "$(dirname "$job_script")"
+
+  cat >"$job_script" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+
+PHASE="$phase"
+TASKS_TSV="$tasks_tsv"
+WORKER_INDEX="$worker_index"
+WORKER_COUNT="$worker_count"
+REPO_ROOT="$REPO_ROOT"
+SAVE_INTERVAL="$SAVE_INTERVAL"
+KEEP_CHECKPOINTS="$KEEP_CHECKPOINTS"
+CACHE_ROOT="$CACHE_ROOT"
+EVAL_WORKPACK_FORMAT="$EVAL_WORKPACK_FORMAT"
+EVAL_BATCH_SIZE="$EVAL_BATCH_SIZE"
+VLLM_MAX_NUM_BATCHED_TOKENS="$VLLM_MAX_NUM_BATCHED_TOKENS"
+VLLM_MAX_NUM_SEQS="$VLLM_MAX_NUM_SEQS"
+VLLM_ENABLE_CHUNKED_PREFILL="$VLLM_ENABLE_CHUNKED_PREFILL"
+TIMING_DIR="$timing_dir"
+STATUS_ROOT="$STATUS_ROOT"
+
+write_status() {
+  local status_file="\$1"
+  local phase="\$2"
+  local combo_id="\$3"
+  local shard_index="\$4"
+  local state="\$5"
+  local attempt="\$6"
+  local exit_code="\$7"
+  local message="\$8"
+  python - "\$status_file" "\$phase" "\$combo_id" "\$shard_index" "\$state" "\${SLURM_JOB_ID:-unknown}" "\$attempt" "\$exit_code" "\$message" <<'PY'
+import json
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+path = Path(sys.argv[1])
+path.parent.mkdir(parents=True, exist_ok=True)
+payload = {
+    "updated_at": datetime.now(timezone.utc).isoformat(),
+    "phase": sys.argv[2],
+    "combo_id": sys.argv[3],
+    "shard_index": int(sys.argv[4]),
+    "state": sys.argv[5],
+    "job_id": sys.argv[6],
+    "attempt": int(sys.argv[7]),
+    "exit_code": int(sys.argv[8]),
+    "message": sys.argv[9],
+}
+with open(path, "w") as f:
+    json.dump(payload, f, indent=2)
+PY
+}
+
+if [[ -f "\$HOME/.bashrc" ]]; then
+  # shellcheck disable=SC1090
+  source "\$HOME/.bashrc" || true
+fi
+
+cd "\$REPO_ROOT"
+
+export MODEL_CACHE_DIR="\$CACHE_ROOT"
+export HF_HOME="\$CACHE_ROOT"
+export HF_DATASETS_CACHE="\$CACHE_ROOT/datasets"
+export TRANSFORMERS_CACHE="\$CACHE_ROOT/transformers"
+export PYTHONUNBUFFERED=1
+export UV_NO_SYNC=1
+export VLLM_MAX_NUM_BATCHED_TOKENS="\$VLLM_MAX_NUM_BATCHED_TOKENS"
+export VLLM_MAX_NUM_SEQS="\$VLLM_MAX_NUM_SEQS"
+export VLLM_ENABLE_CHUNKED_PREFILL="\$VLLM_ENABLE_CHUNKED_PREFILL"
+export EVAL_TIMING_LOG_DIR="\$TIMING_DIR"
+
+task_line=0
+while IFS=$'\t' read -r combo_id combo_eval combo_gen combo_mode manifest_path combo_root summary_dir combo_shards shard_index attempt; do
+  if [[ -z "\$combo_id" ]]; then
+    continue
+  fi
+  task_line=\$((task_line + 1))
+  if (( (task_line - 1) % WORKER_COUNT != WORKER_INDEX )); then
+    continue
+  fi
+
+  status_file="\$STATUS_ROOT/shards/\$PHASE/\$combo_id/shard_\${shard_index}.json"
+  write_status "\$status_file" "\$PHASE" "\$combo_id" "\$shard_index" "running" "\$attempt" -1 "started"
+
+  cmd=(
+    uv run --no-sync python scripts/eval_matrix.py run
+    --manifest "\$manifest_path"
+    --generator-dataset-label "\$combo_gen"
+    --output-dir "\$summary_dir"
+    --num-shards "\$combo_shards"
+    --shard-index "\$shard_index"
+    --save-interval "\$SAVE_INTERVAL"
+    --keep-checkpoints "\$KEEP_CHECKPOINTS"
+    --workpack-format "\$EVAL_WORKPACK_FORMAT"
+    --eval-batch-size "\$EVAL_BATCH_SIZE"
+    --vllm-max-num-batched-tokens "\$VLLM_MAX_NUM_BATCHED_TOKENS"
+    --vllm-max-num-seqs "\$VLLM_MAX_NUM_SEQS"
+    --vllm-enable-chunked-prefill "\$VLLM_ENABLE_CHUNKED_PREFILL"
+    --skip-existing
+  )
+
+  set +e
+  "\${cmd[@]}"
+  rc=\$?
+  set -e
+
+  if [[ \$rc -eq 0 ]]; then
+    write_status "\$status_file" "\$PHASE" "\$combo_id" "\$shard_index" "success" "\$attempt" "\$rc" "completed"
+  else
+    write_status "\$status_file" "\$PHASE" "\$combo_id" "\$shard_index" "failed" "\$attempt" "\$rc" "eval_matrix_run_failed"
+  fi
+done <"\$TASKS_TSV"
+EOF
+  chmod +x "$job_script"
+
+  wait_for_capacity
+  local jid
+  jid="$(
+    sbatch \
+      --parsable \
+      --job-name "$job_name" \
+      --output "$out_log" \
+      --error "$err_log" \
+      --partition=clip \
+      --account=clip \
+      --qos=high \
+      --gres=gpu:rtxa6000:1 \
+      --time=12:00:00 \
+      --mem=32G \
+      --cpus-per-task=4 \
+      "$job_script"
+  )"
+
+  ACTIVE_JOB_IDS+=("$jid")
+  JOB_SUBMIT_EPOCH["$jid"]="$(date +%s)"
+  LAST_SUBMITTED_JOB_ID="$jid"
+  append_heartbeat \
+    "submitted_worker phase=$phase pool=$pool_tag worker=$worker_index/$worker_count job_id=$jid tasks_tsv=$tasks_tsv"
+  update_dashboard >/dev/null
+}
+
+submit_persistent_worker_pool() {
+  local phase="$1"
+  local tasks_tsv="$2"
+  local pool_tag="$3"
+  LAST_SUBMITTED_WORKER_IDS=()
+
+  local task_count
+  task_count="$(grep -cve '^[[:space:]]*$' "$tasks_tsv" || true)"
+  if [[ -z "$task_count" || "$task_count" -eq 0 ]]; then
+    append_heartbeat "worker_pool_empty phase=$phase pool=$pool_tag tasks_tsv=$tasks_tsv"
+    return 0
+  fi
+
+  local worker_count="$MAX_CONCURRENT_JOBS"
+  if (( worker_count > task_count )); then
+    worker_count="$task_count"
+  fi
+  append_heartbeat \
+    "worker_pool_start phase=$phase pool=$pool_tag tasks=$task_count workers=$worker_count"
+
+  local worker_index
+  for ((worker_index = 0; worker_index < worker_count; worker_index++)); do
+    submit_worker_job "$phase" "$tasks_tsv" "$pool_tag" "$worker_index" "$worker_count"
+    LAST_SUBMITTED_WORKER_IDS+=("$LAST_SUBMITTED_JOB_ID")
+  done
 }
 
 compute_combo_incomplete_shards() {
@@ -1107,18 +1354,31 @@ run_phase() {
 
   # 2) Submit initial shard jobs for all combos
   local phase_job_ids=()
-  while IFS=$'\t' read -r combo_id combo_eval combo_gen combo_mode manifest_path combo_root results_base summary_dir combo_shards; do
-    local shard
-    for ((shard = 0; shard < combo_shards; shard++)); do
-      local jid
-      jid="$(
+  if [[ "$EVAL_WORKER_MODE" == "persistent" ]]; then
+    local initial_tasks_tsv="$phase_status_dir/tasks_initial.tsv"
+    : >"$initial_tasks_tsv"
+    while IFS=$'\t' read -r combo_id combo_eval combo_gen combo_mode manifest_path combo_root results_base summary_dir combo_shards; do
+      local shard
+      for ((shard = 0; shard < combo_shards; shard++)); do
+        local shard_status_file="$STATUS_ROOT/shards/$phase/$combo_id/shard_${shard}.json"
+        write_shard_status "$shard_status_file" "$phase" "$combo_id" "$shard" "queued" "pending" 0 -1 "queued_for_worker_pool"
+        printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+          "$combo_id" "$combo_eval" "$combo_gen" "$combo_mode" "$manifest_path" "$combo_root" "$summary_dir" "$combo_shards" "$shard" 0 >>"$initial_tasks_tsv"
+      done
+    done <"$combos_tsv"
+    submit_persistent_worker_pool "$phase" "$initial_tasks_tsv" "initial"
+    phase_job_ids=("${LAST_SUBMITTED_WORKER_IDS[@]}")
+  else
+    while IFS=$'\t' read -r combo_id combo_eval combo_gen combo_mode manifest_path combo_root results_base summary_dir combo_shards; do
+      local shard
+      for ((shard = 0; shard < combo_shards; shard++)); do
         submit_shard_job \
           "$phase" "$combo_id" "$combo_eval" "$combo_gen" "$combo_mode" \
           "$manifest_path" "$combo_root" "$summary_dir" "$combo_shards" "$shard" 0
-      )"
-      phase_job_ids+=("$jid")
-    done
-  done <"$combos_tsv"
+        phase_job_ids+=("$LAST_SUBMITTED_JOB_ID")
+      done
+    done <"$combos_tsv"
+  fi
 
   append_heartbeat "phase_initial_submissions_done phase=$phase submitted_jobs=${#phase_job_ids[@]}"
   wait_for_jobs "${phase_job_ids[@]}"
@@ -1137,16 +1397,27 @@ run_phase() {
     if [[ -n "$incomplete_shards" ]]; then
       append_heartbeat "combo_retry phase=$phase combo=$combo_id shards=$incomplete_shards"
       local retry_job_ids=()
-      local retry_shard
-      for retry_shard in $incomplete_shards; do
-        local retry_jid
-        retry_jid="$(
+      if [[ "$EVAL_WORKER_MODE" == "persistent" ]]; then
+        local retry_tasks_tsv="$phase_status_dir/tasks_retry_$(safe_name "$combo_id").tsv"
+        : >"$retry_tasks_tsv"
+        local retry_shard
+        for retry_shard in $incomplete_shards; do
+          local retry_status_file="$STATUS_ROOT/shards/$phase/$combo_id/shard_${retry_shard}.json"
+          write_shard_status "$retry_status_file" "$phase" "$combo_id" "$retry_shard" "queued" "pending" 1 -1 "queued_for_worker_pool_retry"
+          printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+            "$combo_id" "$combo_eval" "$combo_gen" "$combo_mode" "$manifest_path" "$combo_root" "$summary_dir" "$combo_shards" "$retry_shard" 1 >>"$retry_tasks_tsv"
+        done
+        submit_persistent_worker_pool "$phase" "$retry_tasks_tsv" "retry_$(safe_name "$combo_id")"
+        retry_job_ids=("${LAST_SUBMITTED_WORKER_IDS[@]}")
+      else
+        local retry_shard
+        for retry_shard in $incomplete_shards; do
           submit_shard_job \
             "$phase" "$combo_id" "$combo_eval" "$combo_gen" "$combo_mode" \
             "$manifest_path" "$combo_root" "$summary_dir" "$combo_shards" "$retry_shard" 1
-        )"
-        retry_job_ids+=("$retry_jid")
-      done
+          retry_job_ids+=("$LAST_SUBMITTED_JOB_ID")
+        done
+      fi
       wait_for_jobs "${retry_job_ids[@]}"
       incomplete_shards="$(compute_combo_incomplete_shards "$manifest_path" "$combo_shards" "$shard_status_dir" "$check_file")"
     fi
@@ -1208,7 +1479,7 @@ PY
 
 main() {
   append_heartbeat "run_start run_tag=$RUN_TAG phase=$PHASE"
-  append_heartbeat "run_config repo_root=$REPO_ROOT max_concurrent_jobs=$MAX_CONCURRENT_JOBS num_shards_smoke=$NUM_SHARDS_SMOKE num_shards_main=$NUM_SHARDS_MAIN save_interval=$SAVE_INTERVAL keep_checkpoints=$KEEP_CHECKPOINTS max_tokens=$MAX_TOKENS force_refresh=$FORCE_REFRESH skip_push=$SKIP_PUSH do_sync=$DO_SYNC"
+  append_heartbeat "run_config repo_root=$REPO_ROOT max_concurrent_jobs=$MAX_CONCURRENT_JOBS num_shards_smoke=$NUM_SHARDS_SMOKE num_shards_main=$NUM_SHARDS_MAIN save_interval=$SAVE_INTERVAL keep_checkpoints=$KEEP_CHECKPOINTS max_tokens=$MAX_TOKENS force_refresh=$FORCE_REFRESH skip_push=$SKIP_PUSH do_sync=$DO_SYNC worker_mode=$EVAL_WORKER_MODE workpack_format=$EVAL_WORKPACK_FORMAT eval_batch_size=$EVAL_BATCH_SIZE vllm_max_num_batched_tokens=$VLLM_MAX_NUM_BATCHED_TOKENS vllm_max_num_seqs=$VLLM_MAX_NUM_SEQS vllm_enable_chunked_prefill=$VLLM_ENABLE_CHUNKED_PREFILL"
 
   check_prereqs_and_env
   materialize_datasets

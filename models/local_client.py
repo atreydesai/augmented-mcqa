@@ -2,6 +2,7 @@
 
 from typing import Optional, List, Any
 import os
+import time
 
 from .base import ModelClient, GenerationResult
 from config import MODEL_CACHE_DIR, RANDOM_SEED
@@ -25,6 +26,9 @@ class LocalClient(ModelClient):
         max_model_len: Optional[int] = None,
         tokenizer_mode: str = "auto",
         trust_remote_code: bool = True,
+        max_num_batched_tokens: Optional[int] = None,
+        max_num_seqs: Optional[int] = None,
+        enable_chunked_prefill: Optional[bool] = None,
         temperature: float = 0.0,
         top_p: Optional[float] = None,
         top_k: Optional[int] = None,
@@ -47,6 +51,9 @@ class LocalClient(ModelClient):
             max_model_len: Optional maximum sequence length override
             tokenizer_mode: vLLM tokenizer mode ("auto" or "slow")
             trust_remote_code: Whether to trust model-provided custom code
+            max_num_batched_tokens: vLLM scheduler token budget cap
+            max_num_seqs: vLLM scheduler sequence cap
+            enable_chunked_prefill: Enable/disable chunked prefill in vLLM
             temperature: Default generation temperature
             top_p: Default top-p sampling value
             top_k: Default top-k sampling value
@@ -64,6 +71,19 @@ class LocalClient(ModelClient):
         self._max_model_len = max_model_len
         self._tokenizer_mode = tokenizer_mode
         self._trust_remote_code = trust_remote_code
+        self._max_num_batched_tokens = (
+            max_num_batched_tokens
+            if max_num_batched_tokens is not None
+            else self._env_int("VLLM_MAX_NUM_BATCHED_TOKENS")
+        )
+        self._max_num_seqs = (
+            max_num_seqs if max_num_seqs is not None else self._env_int("VLLM_MAX_NUM_SEQS")
+        )
+        self._enable_chunked_prefill = (
+            enable_chunked_prefill
+            if enable_chunked_prefill is not None
+            else self._env_bool("VLLM_ENABLE_CHUNKED_PREFILL")
+        )
         self._sampling_defaults: dict[str, Any] = {
             "temperature": temperature,
             "top_p": top_p,
@@ -81,10 +101,30 @@ class LocalClient(ModelClient):
         self._tokenizer = None
         self._tensor_parallel_size = tensor_parallel_size
         self._init_error: Optional[Exception] = None
+        self._model_load_seconds: float = 0.0
         
         # Set HF cache directory
         os.environ["HF_HOME"] = str(MODEL_CACHE_DIR)
         os.environ["TRANSFORMERS_CACHE"] = str(MODEL_CACHE_DIR / "transformers")
+
+    @staticmethod
+    def _env_int(name: str) -> Optional[int]:
+        raw = os.getenv(name)
+        if raw is None or str(raw).strip() == "":
+            return None
+        return int(raw)
+
+    @staticmethod
+    def _env_bool(name: str) -> Optional[bool]:
+        raw = os.getenv(name)
+        if raw is None or str(raw).strip() == "":
+            return None
+        lowered = raw.strip().lower()
+        if lowered in {"1", "true", "yes", "on"}:
+            return True
+        if lowered in {"0", "false", "no", "off"}:
+            return False
+        raise ValueError(f"Invalid boolean value for {name}: {raw}")
     
     def _ensure_loaded(self):
         """Load the model if not already loaded."""
@@ -111,6 +151,12 @@ class LocalClient(ModelClient):
         print(f"  Tokenizer mode: {self._tokenizer_mode}")
         if self._max_model_len is not None:
             print(f"  Max model len: {self._max_model_len}")
+        if self._max_num_batched_tokens is not None:
+            print(f"  Max num batched tokens: {self._max_num_batched_tokens}")
+        if self._max_num_seqs is not None:
+            print(f"  Max num seqs: {self._max_num_seqs}")
+        if self._enable_chunked_prefill is not None:
+            print(f"  Chunked prefill: {self._enable_chunked_prefill}")
         
         # vLLM automatically uses Flash Attention when available
         llm_kwargs = dict(
@@ -125,6 +171,13 @@ class LocalClient(ModelClient):
         )
         if self._max_model_len is not None:
             llm_kwargs["max_model_len"] = self._max_model_len
+        if self._max_num_batched_tokens is not None:
+            llm_kwargs["max_num_batched_tokens"] = self._max_num_batched_tokens
+        if self._max_num_seqs is not None:
+            llm_kwargs["max_num_seqs"] = self._max_num_seqs
+        if self._enable_chunked_prefill is not None:
+            llm_kwargs["enable_chunked_prefill"] = self._enable_chunked_prefill
+        load_start = time.perf_counter()
         try:
             self._llm = LLM(**llm_kwargs)
         except Exception as exc:
@@ -148,8 +201,9 @@ class LocalClient(ModelClient):
             except Exception as retry_exc:
                 self._init_error = retry_exc
                 raise
-        
-        print(f"  Model loaded successfully")
+
+        self._model_load_seconds = max(0.0, time.perf_counter() - load_start)
+        print(f"  Model loaded successfully in {self._model_load_seconds:.2f}s")
 
     @staticmethod
     def _ensure_transformers_tokenizer_compat() -> None:
@@ -187,6 +241,10 @@ class LocalClient(ModelClient):
     @property
     def model_id(self) -> str:
         return self._model_id
+
+    @property
+    def model_load_seconds(self) -> float:
+        return self._model_load_seconds
     
     def generate(
         self,

@@ -5,6 +5,7 @@ Orchestrates evaluation runs using ExperimentConfig.
 """
 
 import json
+import os
 import random
 import time
 from pathlib import Path
@@ -73,6 +74,7 @@ class ExperimentResults:
     resumed_from_checkpoint: bool = False
     resumed_checkpoint_path: Optional[str] = None
     resumed_next_index: int = 0
+    stage_timing_seconds: Dict[str, float] = field(default_factory=dict)
     
     # Aggregates (computed on demand)
     _accuracy: Optional[float] = None
@@ -134,6 +136,7 @@ class ExperimentResults:
                 "end": self.end_time.isoformat() if self.end_time else None,
                 "duration_seconds": (self.end_time - self.start_time).total_seconds()
                     if self.start_time and self.end_time else None,
+                "stage_seconds": self.stage_timing_seconds,
             },
             "resume": {
                 "resumed_from_checkpoint": self.resumed_from_checkpoint,
@@ -226,7 +229,7 @@ class ExperimentRunner:
         self,
         config: ExperimentConfig,
         client: Optional[ModelClient] = None,
-        dataset_cache: Optional[Dict[tuple[str, str], Any]] = None,
+        dataset_cache: Optional[Dict[tuple[Any, ...], Any]] = None,
     ):
         """
         Initialize runner with configuration.
@@ -238,6 +241,49 @@ class ExperimentRunner:
         self._client: Optional[ModelClient] = client
         self._dataset_cache = dataset_cache
         self._adapter: Optional[Any] = None
+        self._timing_events: List[Dict[str, Any]] = []
+        self._timing_log_paths = self._resolve_timing_log_paths()
+
+    def _resolve_timing_log_paths(self) -> List[Path]:
+        paths = [self.config.output_dir / "timing_events.jsonl"]
+        mirror_dir = os.getenv("EVAL_TIMING_LOG_DIR", "").strip()
+        if mirror_dir:
+            safe_name = self.config.name.replace("/", "_")
+            paths.append(Path(mirror_dir) / f"{safe_name}_timing_events.jsonl")
+        return paths
+
+    def _record_timing(
+        self,
+        results: ExperimentResults,
+        stage: str,
+        duration_s: float,
+        *,
+        count: int = 1,
+        meta: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        duration_s = max(0.0, float(duration_s))
+        results.stage_timing_seconds[stage] = results.stage_timing_seconds.get(stage, 0.0) + duration_s
+        payload: Dict[str, Any] = {
+            "ts": datetime.now(timezone.utc).isoformat(),
+            "config_name": self.config.name,
+            "config_id": self.config.config_id,
+            "stage": stage,
+            "duration_s": duration_s,
+            "count": count,
+        }
+        if meta:
+            payload.update(meta)
+        self._timing_events.append(payload)
+
+    def _flush_timing_events(self) -> None:
+        if not self._timing_events:
+            return
+        for path in self._timing_log_paths:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            with open(path, "a") as f:
+                for event in self._timing_events:
+                    f.write(json.dumps(event) + "\n")
+        self._timing_events = []
     
     def _get_client(self) -> ModelClient:
         """Get or create model client."""
@@ -247,6 +293,13 @@ class ExperimentRunner:
                 kwargs["reasoning_effort"] = self.config.reasoning_effort
             if self.config.thinking_level:
                 kwargs["thinking_level"] = self.config.thinking_level
+            if self.config.model_name == "local" or "/" in self.config.model_name:
+                if self.config.vllm_max_num_batched_tokens is not None:
+                    kwargs["max_num_batched_tokens"] = self.config.vllm_max_num_batched_tokens
+                if self.config.vllm_max_num_seqs is not None:
+                    kwargs["max_num_seqs"] = self.config.vllm_max_num_seqs
+                if self.config.vllm_enable_chunked_prefill is not None:
+                    kwargs["enable_chunked_prefill"] = self.config.vllm_enable_chunked_prefill
             
             self._client = get_client(self.config.model_name, **kwargs)
         return self._client
@@ -255,6 +308,40 @@ class ExperimentRunner:
         """Load and optionally filter dataset by dataset_type."""
         if self._adapter is not None:
             return self._adapter
+
+        workpack_path = (
+            Path(self.config.workpack_path)
+            if self.config.workpack_path is not None
+            else None
+        )
+        if workpack_path is not None:
+            workpack_key = ("__workpack__", str(workpack_path), self.config.workpack_format)
+            if self._dataset_cache is not None and workpack_key in self._dataset_cache:
+                self._adapter = self._dataset_cache[workpack_key]
+                return self._adapter
+
+            if not workpack_path.exists():
+                raise FileNotFoundError(f"Configured workpack_path does not exist: {workpack_path}")
+
+            if self.config.workpack_format == "parquet":
+                from datasets import load_dataset
+                data = load_dataset("parquet", data_files=str(workpack_path), split="train")
+            elif self.config.workpack_format == "arrow":
+                from datasets import load_from_disk
+                data = load_from_disk(str(workpack_path))
+            elif self.config.workpack_format == "none":
+                data = None
+            else:
+                raise ValueError(
+                    f"Unsupported workpack_format={self.config.workpack_format} "
+                    "expected one of none|parquet|arrow"
+                )
+
+            if data is not None:
+                self._adapter = data
+                if self._dataset_cache is not None:
+                    self._dataset_cache[workpack_key] = data
+                return self._adapter
 
         dataset_path_key = str(self.config.dataset_path)
         dataset_type_key = self.config.dataset_type_filter or "__all__"
@@ -477,6 +564,7 @@ class ExperimentRunner:
             "successful_entries": results.successful_entries,
             "failed_entries": results.failed_entries,
             "entry_failures": results.entry_failures,
+            "stage_timing_seconds": results.stage_timing_seconds,
             "results": [self._serialize_eval_result(r) for r in results.results],
         }
         with open(path, "w") as f:
@@ -529,6 +617,7 @@ class ExperimentRunner:
         restored.failed_entries = (
             int(failed_raw) if failed_raw is not None else len(restored.entry_failures)
         )
+        restored.stage_timing_seconds = dict(payload.get("stage_timing_seconds", {}))
         restored.resumed_from_checkpoint = True
         restored.resumed_checkpoint_path = str(latest)
 
@@ -622,19 +711,51 @@ class ExperimentRunner:
         results.start_time = datetime.now()
 
         # Load data
+        data_start = time.perf_counter()
         dataset = self._load_data()
+        self._record_timing(results, "data_load", time.perf_counter() - data_start)
 
         # Get client
+        client_init_start = time.perf_counter()
         client = self._get_client()
+        self._record_timing(results, "client_init", time.perf_counter() - client_init_start)
 
         # Filter by categories if specified
-        entries = list(dataset)
-        if self.config.categories:
-            entries = [
-                e for e in entries
-                if str(e.get("category", "")).lower()
-                in [c.lower() for c in self.config.categories]
-            ]
+        dataset_path_key = str(self.config.dataset_path)
+        dataset_type_key = self.config.dataset_type_filter or "__all__"
+        workpack_key = (
+            str(self.config.workpack_path)
+            if self.config.workpack_path is not None
+            else ""
+        )
+        category_filter = tuple(sorted(c.lower() for c in (self.config.categories or [])))
+        entries_cache_key = (
+            "__entries__",
+            dataset_path_key,
+            dataset_type_key,
+            workpack_key,
+            category_filter,
+        )
+
+        entries_materialize_start = time.perf_counter()
+        if self._dataset_cache is not None and entries_cache_key in self._dataset_cache:
+            entries = self._dataset_cache[entries_cache_key]
+        else:
+            entries = list(dataset)
+            if self.config.categories:
+                allowed_categories = {c.lower() for c in self.config.categories}
+                entries = [
+                    e for e in entries
+                    if str(e.get("category", "")).lower() in allowed_categories
+                ]
+            if self._dataset_cache is not None:
+                self._dataset_cache[entries_cache_key] = entries
+        self._record_timing(
+            results,
+            "data_materialize",
+            time.perf_counter() - entries_materialize_start,
+            count=len(entries),
+        )
 
         # Apply limit
         if self.config.limit:
@@ -658,9 +779,12 @@ class ExperimentRunner:
         print(f"Entries: {len(entries)}")
         print(f"Start index: {start_index}")
         print(f"Checkpoint save interval: {self.config.save_interval}")
+        print(f"Inference batch size: {self.config.inference_batch_size}")
 
         # Save config
+        save_config_start = time.perf_counter()
         self.config.save()
+        self._record_timing(results, "write", time.perf_counter() - save_config_start, meta={"artifact": "config"})
 
         # Run evaluations
         quiet = getattr(self.config, "_quiet", False)
@@ -668,18 +792,157 @@ class ExperimentRunner:
         iterator = (
             ((start_index + i, entry) for i, entry in enumerate(run_entries))
             if quiet
-            else enumerate(
-                tqdm(run_entries, desc="Evaluating", initial=start_index, total=len(entries)),
-                start=start_index,
-            )
+                else enumerate(
+                    tqdm(run_entries, desc="Evaluating", initial=start_index, total=len(entries)),
+                    start=start_index,
+                )
         )
+        batch_size = max(1, int(self.config.inference_batch_size))
+        pending_items: List[Dict[str, Any]] = []
+        generate_kwargs = {"max_tokens": self.config.max_tokens}
+        if self.config.temperature is not None:
+            generate_kwargs["temperature"] = self.config.temperature
+        model_load_recorded = False
+
+        def _record_failure(idx: int, stage: str, exc: Exception, entry: Any) -> None:
+            preview = str(entry.get("question", "")) if isinstance(entry, dict) else str(entry)
+            failure = {
+                "config_name": self.config.name,
+                "config_id": self.config.config_id,
+                "question_idx": idx,
+                "stage": stage,
+                "error_type": type(exc).__name__,
+                "error": str(exc),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "question_preview": preview[:200],
+            }
+            results.entry_failures.append(failure)
+            results.failed_entries += 1
+            print(
+                f"⚠️ Entry failed but continuing | idx={idx} stage={stage} "
+                f"type={type(exc).__name__}: {exc}"
+            )
+
+        def _finalize_attempt(idx: int) -> None:
+            results.attempted_entries += 1
+            if results.attempted_entries % self.config.save_interval == 0:
+                checkpoint_start = time.perf_counter()
+                checkpoint_path = self._save_checkpoint(
+                    results=results,
+                    next_index=idx + 1,
+                    total_entries=len(entries),
+                )
+                self._record_timing(
+                    results,
+                    "write",
+                    time.perf_counter() - checkpoint_start,
+                    meta={"artifact": "checkpoint", "path": str(checkpoint_path)},
+                )
+                print(f"💾 Checkpoint saved: {checkpoint_path}")
+
+        def _flush_pending() -> None:
+            nonlocal pending_items, model_load_recorded
+            if not pending_items:
+                return
+
+            prompts = [item["prompt"] for item in pending_items]
+            generate_start = time.perf_counter()
+            try:
+                responses = client.generate_batch(prompts, **generate_kwargs)
+            except Exception as exc:
+                self._record_timing(
+                    results,
+                    "generate",
+                    time.perf_counter() - generate_start,
+                    count=len(prompts),
+                    meta={"status": "batch_error"},
+                )
+                for item in pending_items:
+                    _record_failure(item["idx"], "model_generate", exc, item["entry"])
+                    _finalize_attempt(item["idx"])
+                pending_items = []
+                return
+
+            generate_duration = time.perf_counter() - generate_start
+            self._record_timing(results, "generate", generate_duration, count=len(prompts))
+
+            if not model_load_recorded:
+                model_load_seconds = getattr(client, "model_load_seconds", None)
+                if isinstance(model_load_seconds, (int, float)) and model_load_seconds > 0:
+                    self._record_timing(results, "model_load", float(model_load_seconds))
+                    model_load_recorded = True
+
+            if len(responses) != len(pending_items):
+                mismatch_exc = RuntimeError(
+                    f"Batch response size mismatch: prompts={len(pending_items)} responses={len(responses)}"
+                )
+                for item in pending_items:
+                    _record_failure(item["idx"], "model_generate", mismatch_exc, item["entry"])
+                    _finalize_attempt(item["idx"])
+                pending_items = []
+                return
+
+            per_item_latency_ms = (generate_duration * 1000.0) / max(1, len(pending_items))
+            score_start = time.perf_counter()
+            for item, response in zip(pending_items, responses):
+                idx = item["idx"]
+                entry = item["entry"]
+                prepared = item["prepared"]
+                prompt = item["prompt"]
+                eval_full_question = item["eval_full_question"]
+                try:
+                    model_answer = response.extract_answer()
+                    gold_letter = CHOICE_LABELS[prepared["gold_idx"]]
+                    is_correct = model_answer == gold_letter
+
+                    prediction_type = None
+                    if self.config.eval_mode == "behavioral" and model_answer in CHOICE_LABELS:
+                        predicted_idx = CHOICE_LABELS.index(model_answer)
+                        prediction_type = determine_prediction_type(
+                            predicted_idx,
+                            prepared["gold_idx"],
+                            prepared["human_indices"],
+                            prepared["model_indices"],
+                        )
+
+                    result = EvalResult(
+                        question_idx=idx,
+                        question=prepared["question"],
+                        gold_answer=prepared["gold_answer"],
+                        gold_answer_letter=gold_letter,
+                        gold_index=prepared["gold_idx"],
+                        model_answer=model_answer,
+                        model_prediction=model_answer,
+                        is_correct=is_correct,
+                        category=prepared["category"],
+                        prediction_type=prediction_type,
+                        response_text=response.text,
+                        latency_ms=per_item_latency_ms,
+                        eval_options_randomized=prepared["options"],
+                        eval_correct_answer_letter=gold_letter,
+                        eval_full_question=eval_full_question,
+                        eval_model_input=prompt,
+                        eval_model_output=response.text,
+                        selected_human_distractors=prepared["selected_human"],
+                        selected_model_distractors=prepared["selected_model"],
+                        human_option_indices=prepared["human_indices"],
+                        model_option_indices=prepared["model_indices"],
+                    )
+                    results.results.append(result)
+                    results.successful_entries += 1
+                except Exception as exc:
+                    _record_failure(idx, "score", exc, entry)
+                finally:
+                    _finalize_attempt(idx)
+
+            self._record_timing(results, "score", time.perf_counter() - score_start, count=len(pending_items))
+            pending_items = []
+
         for idx, entry in iterator:
             stage = "prepare_entry"
             try:
-                # Prepare entry
+                prepare_start = time.perf_counter()
                 prepared = self._prepare_entry(entry, idx)
-
-                # Build prompt
                 stage = "build_prompt"
                 prompt = build_mcqa_prompt(
                     prepared["question"],
@@ -690,96 +953,43 @@ class ExperimentRunner:
                     prepared["question"],
                     prepared["options"],
                 )
-
-                # Generate
-                stage = "model_generate"
-                start_ms = time.time() * 1000
-                generate_kwargs = {"max_tokens": self.config.max_tokens}
-                if self.config.temperature is not None:
-                    generate_kwargs["temperature"] = self.config.temperature
-                response = client.generate(prompt, **generate_kwargs)
-                latency_ms = time.time() * 1000 - start_ms
-
-                # Extract answer
-                stage = "extract_answer"
-                model_answer = response.extract_answer()
-
-                # Check correctness
-                gold_letter = CHOICE_LABELS[prepared["gold_idx"]]
-                is_correct = model_answer == gold_letter
-
-                # Determine prediction type for behavioral analysis
-                prediction_type = None
-                if self.config.eval_mode == "behavioral" and model_answer in CHOICE_LABELS:
-                    predicted_idx = CHOICE_LABELS.index(model_answer)
-                    prediction_type = determine_prediction_type(
-                        predicted_idx,
-                        prepared["gold_idx"],
-                        prepared["human_indices"],
-                        prepared["model_indices"],
-                    )
-
-                # Create result
-                result = EvalResult(
-                    question_idx=idx,
-                    question=prepared["question"],
-                    gold_answer=prepared["gold_answer"],
-                    gold_answer_letter=gold_letter,
-                    gold_index=prepared["gold_idx"],
-                    model_answer=model_answer,
-                    model_prediction=model_answer,
-                    is_correct=is_correct,
-                    category=prepared["category"],
-                    prediction_type=prediction_type,
-                    response_text=response.text,
-                    latency_ms=latency_ms,
-                    eval_options_randomized=prepared["options"],
-                    eval_correct_answer_letter=gold_letter,
-                    eval_full_question=eval_full_question,
-                    eval_model_input=prompt,
-                    eval_model_output=response.text,
-                    selected_human_distractors=prepared["selected_human"],
-                    selected_model_distractors=prepared["selected_model"],
-                    human_option_indices=prepared["human_indices"],
-                    model_option_indices=prepared["model_indices"],
+                self._record_timing(
+                    results,
+                    "prompt_build",
+                    time.perf_counter() - prepare_start,
+                    count=1,
                 )
-                results.results.append(result)
-                results.successful_entries += 1
+                pending_items.append(
+                    {
+                        "idx": idx,
+                        "entry": entry,
+                        "prepared": prepared,
+                        "prompt": prompt,
+                        "eval_full_question": eval_full_question,
+                    }
+                )
+                if len(pending_items) >= batch_size:
+                    _flush_pending()
             except Exception as exc:
-                preview = str(entry.get("question", "")) if isinstance(entry, dict) else str(entry)
-                failure = {
-                    "config_name": self.config.name,
-                    "config_id": self.config.config_id,
-                    "question_idx": idx,
-                    "stage": stage,
-                    "error_type": type(exc).__name__,
-                    "error": str(exc),
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
-                    "question_preview": preview[:200],
-                }
-                results.entry_failures.append(failure)
-                results.failed_entries += 1
-                print(
-                    f"⚠️ Entry failed but continuing | idx={idx} stage={stage} "
-                    f"type={type(exc).__name__}: {exc}"
-                )
-            finally:
-                results.attempted_entries += 1
-                if results.attempted_entries % self.config.save_interval == 0:
-                    checkpoint_path = self._save_checkpoint(
-                        results=results,
-                        next_index=idx + 1,
-                        total_entries=len(entries),
-                    )
-                    print(f"💾 Checkpoint saved: {checkpoint_path}")
+                _record_failure(idx, stage, exc, entry)
+                _finalize_attempt(idx)
+
+        _flush_pending()
 
         results.end_time = datetime.now()
 
         # Save final checkpoint and final results
+        final_checkpoint_start = time.perf_counter()
         final_checkpoint = self._save_checkpoint(
             results=results,
             next_index=len(entries),
             total_entries=len(entries),
+        )
+        self._record_timing(
+            results,
+            "write",
+            time.perf_counter() - final_checkpoint_start,
+            meta={"artifact": "final_checkpoint", "path": str(final_checkpoint)},
         )
         print(f"💾 Final checkpoint saved: {final_checkpoint}")
 
@@ -795,7 +1005,15 @@ class ExperimentRunner:
             print(f"Entry failures logged: {len(results.entry_failures)}")
 
         # Save results
+        results_write_start = time.perf_counter()
         results.save()
+        self._record_timing(
+            results,
+            "write",
+            time.perf_counter() - results_write_start,
+            meta={"artifact": "results_json"},
+        )
+        self._flush_timing_events()
         print(f"Saved to: {self.config.output_dir}")
 
         return results
@@ -804,7 +1022,7 @@ class ExperimentRunner:
 def run_experiment(
     config: ExperimentConfig,
     client: Optional[ModelClient] = None,
-    dataset_cache: Optional[Dict[tuple[str, str], Any]] = None,
+    dataset_cache: Optional[Dict[tuple[Any, ...], Any]] = None,
 ) -> ExperimentResults:
     """
     Convenience function to run an experiment.

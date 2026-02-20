@@ -73,6 +73,12 @@ jobs/clip_local_eval_master.sh \
   --run-tag local_eval_smoke_$(date -u +%Y%m%d_%H%M%S) \
   --max-concurrent-jobs 12 \
   --num-shards-smoke 3 \
+  --eval-worker-mode persistent \
+  --eval-workpack-format parquet \
+  --vllm-max-num-batched-tokens 4096 \
+  --vllm-max-num-seqs 8 \
+  --vllm-enable-chunked-prefill 1 \
+  --eval-batch-size 8 \
   --save-interval 50 \
   --keep-checkpoints 2 \
   --max-tokens 2048
@@ -120,8 +126,12 @@ Given `RUN_TAG=<tag>`:
 
 ## Notes
 
-- One shard job = one SBATCH job = one A6000 GPU.
-- Global active shard-job cap is controlled by `--max-concurrent-jobs`.
+- Default topology is `--eval-worker-mode persistent`: a fixed worker pool (up to `--max-concurrent-jobs`) processes many shard tasks each, which greatly reduces scheduler overhead.
+- Legacy topology remains available via `--eval-worker-mode legacy` (one SBATCH per shard).
+- Global active worker/job cap is controlled by `--max-concurrent-jobs`.
+- A6000-safe vLLM defaults are:
+  `--vllm-max-num-batched-tokens 4096 --vllm-max-num-seqs 8 --vllm-enable-chunked-prefill 1`
+- Workpack acceleration defaults to `--eval-workpack-format parquet` (switch to `arrow` or `none` if needed).
 - Incomplete shard sets are retried once automatically.
 - Plots generated are `RQ1`, `RQ2`, `RQ3` only (no branching plots).
 - Use `--skip-push` to keep outputs local only.
