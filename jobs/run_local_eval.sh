@@ -18,16 +18,15 @@ Usage:
 
 Required:
   --model <model>                    Model alias (must match config/model_aliases.toml)
-  --generator-dataset-label <label>  Generator label (e.g. gpt-4.1, opus)
+  --generator-dataset-label <label>  Generator label (e.g. gpt-5.2-2025-12-11)
   --dataset-path <path>              Path to augmented dataset directory
 
 Options:
   --num-shards <int>         Number of SLURM array shards (default: 8)
   --phase <smoke|main|both>  Which phase(s) to run (default: both)
   --smoke-limit <int>        Entry limit per config in smoke phase (default: 2)
-  --preset <name>            Matrix preset: core16 or branching21 (default: core16)
+  --preset <name>            Matrix preset (default: final5)
   --dataset-types <csv>      Comma-separated dataset types (default: all)
-  --distractor-source <csv>  Comma-separated distractor sources (default: all)
   --output-dir <path>        Results output directory (default: results)
   --save-interval <int>      Checkpoint save interval (default: 200)
   --keep-checkpoints <int>   Number of checkpoints to keep (default: 2)
@@ -38,21 +37,21 @@ Examples:
   # Smoke + main run (default):
   jobs/run_local_eval.sh \
     --model Qwen/Qwen3-4B-Instruct-2507 \
-    --generator-dataset-label gpt-4.1 \
-    --dataset-path datasets/augmented/unified_processed_gpt-4.1_20260213_033916
+    --generator-dataset-label gpt-5.2-2025-12-11 \
+    --dataset-path datasets/augmented/gpt-5.2-2025-12-11
 
   # Smoke only, 3 shards:
   jobs/run_local_eval.sh \
     --model Qwen/Qwen3-4B-Instruct-2507 \
-    --generator-dataset-label gpt-4.1 \
-    --dataset-path datasets/augmented/unified_processed_gpt-4.1_20260213_033916 \
+    --generator-dataset-label gpt-5.2-2025-12-11 \
+    --dataset-path datasets/augmented/gpt-5.2-2025-12-11 \
     --phase smoke --num-shards 3
 
   # Main only, specific dataset types:
   jobs/run_local_eval.sh \
     --model allenai/Olmo-3-7B-Instruct \
-    --generator-dataset-label opus \
-    --dataset-path datasets/augmented/unified_processed_opus_20260213_041708 \
+    --generator-dataset-label claude-opus-4-6 \
+    --dataset-path datasets/augmented/claude-opus-4-6 \
     --phase main --num-shards 8 \
     --dataset-types mmlu_pro,gpqa
 USAGE
@@ -65,9 +64,8 @@ DATASET_PATH=""
 NUM_SHARDS=8
 PHASE="both"
 SMOKE_LIMIT=2
-PRESET="core16"
+PRESET="final5"
 DATASET_TYPES=""
-DISTRACTOR_SOURCES=""
 OUTPUT_DIR="results"
 SAVE_INTERVAL=200
 KEEP_CHECKPOINTS=2
@@ -83,7 +81,6 @@ while [[ $# -gt 0 ]]; do
     --smoke-limit)              SMOKE_LIMIT="$2";              shift 2 ;;
     --preset)                   PRESET="$2";                   shift 2 ;;
     --dataset-types)            DATASET_TYPES="$2";            shift 2 ;;
-    --distractor-source)        DISTRACTOR_SOURCES="$2";       shift 2 ;;
     --output-dir)               OUTPUT_DIR="$2";               shift 2 ;;
     --save-interval)            SAVE_INTERVAL="$2";            shift 2 ;;
     --keep-checkpoints)         KEEP_CHECKPOINTS="$2";         shift 2 ;;
@@ -109,13 +106,12 @@ COMMON_EXPORTS=(
   DATASET_PATH="$DATASET_PATH"
   GENERATOR_DATASET_LABEL="$GENERATOR_DATASET_LABEL"
   NUM_SHARDS="$NUM_SHARDS"
-  PRESET="$PRESET"
+  PRESET="${PRESET:-final5}"
   OUTPUT_DIR="$OUTPUT_DIR"
   SAVE_INTERVAL="$SAVE_INTERVAL"
   KEEP_CHECKPOINTS="$KEEP_CHECKPOINTS"
   MAX_TOKENS="$MAX_TOKENS"
   DATASET_TYPES="$DATASET_TYPES"
-  DISTRACTOR_SOURCES="$DISTRACTOR_SOURCES"
 )
 
 submit_phase() {

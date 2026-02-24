@@ -30,8 +30,7 @@ TEMPERATURE="${TEMPERATURE:-}"
 MAX_TOKENS="${MAX_TOKENS:-}"
 SAVE_INTERVAL="${SAVE_INTERVAL:-}"
 KEEP_CHECKPOINTS="${KEEP_CHECKPOINTS:-}"
-DATASET_TYPES="${DATASET_TYPES:-}"
-DISTRACTOR_SOURCES="${DISTRACTOR_SOURCES:-}"
+DATASET_TYPES="${DATASET_TYPES:-arc_challenge,mmlu_pro,gpqa}"
 
 cd "$SLURM_SUBMIT_DIR"
 source .venv/bin/activate
@@ -78,10 +77,6 @@ fi
 if [[ -n "$DATASET_TYPES" ]]; then
   IFS=',' read -r -a DATASET_TYPE_ARR <<< "$DATASET_TYPES"
   CMD+=(--dataset-types "${DATASET_TYPE_ARR[@]}")
-fi
-if [[ -n "$DISTRACTOR_SOURCES" ]]; then
-  IFS=',' read -r -a DISTRACTOR_SOURCE_ARR <<< "$DISTRACTOR_SOURCES"
-  CMD+=(--distractor-source "${DISTRACTOR_SOURCE_ARR[@]}")
 fi
 
 printf 'Running shard %s/%s with command: %q ' "$SHARD_INDEX" "$((NUM_SHARDS - 1))" "${CMD[@]}"

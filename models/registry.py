@@ -11,7 +11,6 @@ import tomllib
 from config import PROJECT_ROOT
 
 from .anthropic_client import AnthropicClient
-from .deepseek_client import DeepSeekClient
 from .gemini_client import GeminiClient
 from .local_client import LocalClient
 from .openai_client import OpenAIClient
@@ -23,7 +22,6 @@ PROVIDER_REGISTRY = {
     "openai": OpenAIClient,
     "anthropic": AnthropicClient,
     "gemini": GeminiClient,
-    "deepseek": DeepSeekClient,
     "local": LocalClient,
 }
 
@@ -116,9 +114,6 @@ def _resolve_by_heuristic(model_name: str) -> tuple[str, str | None, dict[str, A
         return "anthropic", model_name, {}
     if "gemini" in model_lower:
         return "gemini", model_name, {}
-    if "deepseek" in model_lower:
-        return "deepseek", model_name, {}
-
     available = ", ".join(list_model_aliases(include_providers=True))
     raise ValueError(f"Unknown model: {model_name}. Available aliases/providers: {available}")
 

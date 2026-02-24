@@ -1,0 +1,66 @@
+import json
+from pathlib import Path
+
+from analysis.visualize import collect_final5_results, plot_final5_pairwise
+
+
+def _write_result(path: Path, *, total: int, correct: int) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "config": {"name": "cfg"},
+        "summary": {
+            "total": total,
+            "correct": correct,
+            "accuracy": correct / total,
+            "attempted_entries": total,
+            "successful_entries": total,
+            "failed_entries": 0,
+            "entry_failure_count": 0,
+            "behavioral_counts": {"G": correct, "H": total - correct, "M": 0, "?": 0},
+            "accuracy_by_category": {"cat": correct / total},
+        },
+        "timing": {"start": "2026-01-01T00:00:00Z", "end": "2026-01-01T00:00:10Z"},
+        "entry_failures": [],
+        "results": [],
+    }
+    path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+
+
+def test_collect_and_plot_final5_outputs_include_random_baseline_and_ci(tmp_path):
+    root = tmp_path / "results"
+    generator = "gpt-5.2-2025-12-11"
+    dataset = "mmlu_pro"
+    mode = "full_question"
+    eval_models = ["Qwen_Qwen3-4B-Instruct-2507", "allenai_Olmo-3-7B-Instruct"]
+
+    settings = [
+        "human_from_scratch",
+        "model_from_scratch",
+        "augment_human",
+        "augment_model",
+        "augment_ablation",
+    ]
+
+    for model_idx, eval_model in enumerate(eval_models):
+        for setting_idx, setting in enumerate(settings):
+            total = 100
+            correct = 20 + model_idx * 5 + setting_idx
+            out = root / generator / eval_model / mode / dataset / setting / "results.json"
+            _write_result(out, total=total, correct=correct)
+
+    df = collect_final5_results(root)
+    assert not df.empty
+    assert {"random_baseline", "delta_over_random", "ci_low", "ci_high"}.issubset(df.columns)
+
+    # 3H+0M and 0H+3M both have 4 answer choices -> random 0.25
+    baseline_h = df[df["setting"] == "human_from_scratch"].iloc[0]["random_baseline"]
+    baseline_m = df[df["setting"] == "model_from_scratch"].iloc[0]["random_baseline"]
+    assert baseline_h == 0.25
+    assert baseline_m == 0.25
+
+    output_dir = tmp_path / "plots"
+    outputs = plot_final5_pairwise(root, output_dir, include_tables=True)
+
+    assert outputs
+    assert any(path.suffix == ".png" for path in outputs)
+    assert (output_dir / "final5_results_summary.csv").exists()

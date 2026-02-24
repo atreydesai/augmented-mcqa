@@ -1,11 +1,9 @@
 """
 ARC Dataset Processor.
 
-Processes ARC-Easy and ARC-Challenge datasets with:
+Processes ARC-Challenge dataset with:
 1. Exact column parsing based on HuggingFace structure
 2. Conversion to unified format
-3. Synthetic distractor generation (cond_model_q_a_scratch)
-4. Conditioned-on-synthetic distractor generation (cond_model_q_a_dmodel)
 """
 
 import json
@@ -26,7 +24,7 @@ from config import (
 
 
 def load_arc_dataset(
-    difficulty: str = "easy",
+    difficulty: str = "challenge",
     split: str = "test",
     limit: Optional[int] = None,
 ) -> List[Dict[str, Any]]:
@@ -34,14 +32,17 @@ def load_arc_dataset(
     Load ARC dataset with proper column parsing.
     
     Args:
-        difficulty: "easy" for ARC-Easy, "challenge" for ARC-Challenge
+        difficulty: Must be "challenge" (ARC-Easy is not active)
         split: Dataset split to load
         limit: Optional limit on number of entries
         
     Returns:
         List of entries in unified format
     """
-    dataset_type = DatasetType.ARC_EASY if difficulty == "easy" else DatasetType.ARC_CHALLENGE
+    if difficulty != "challenge":
+        raise ValueError("Only difficulty='challenge' is supported in active Final5 pipeline")
+
+    dataset_type = DatasetType.ARC_CHALLENGE
     schema = DATASET_SCHEMA[dataset_type]
     
     # Load from HuggingFace
@@ -58,7 +59,7 @@ def load_arc_dataset(
     # Convert to unified format
     entries = []
     skipped_count = 0
-    for entry in tqdm(ds, desc=f"Loading ARC-{difficulty.capitalize()}"):
+    for entry in tqdm(ds, desc="Loading ARC-Challenge"):
         # Extract options from nested dict
         options = entry["choices"]["text"]
         labels = entry["choices"]["label"]
@@ -101,7 +102,7 @@ def load_arc_dataset(
 
 
 def process_arc_for_experiments(
-    difficulty: str = "easy",
+    difficulty: str = "challenge",
     split: str = "test",
     limit: Optional[int] = None,
     output_dir: Optional[Path] = None,
@@ -111,7 +112,7 @@ def process_arc_for_experiments(
     Process ARC dataset and save as HF Dataset for experiments.
     
     Args:
-        difficulty: "easy" or "challenge"
+        difficulty: Must be "challenge"
         split: Dataset split
         limit: Optional limit
         output_dir: Output base directory
@@ -130,8 +131,8 @@ def process_arc_for_experiments(
         if output_dir is None:
             output_dir = PROCESSED_DATASETS_DIR
         
-        # Default path structure: output_dir/arc_processed/arc_easy
-        output_path = output_dir / "arc_processed" / f"arc_{difficulty}"
+        # Default path structure: output_dir/arc_processed/arc_challenge
+        output_path = output_dir / "arc_processed" / "arc_challenge"
     
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -142,7 +143,7 @@ def process_arc_for_experiments(
     
     # Push to Hugging Face
     from data.hub_utils import push_dataset_to_hub
-    repo_id = f"atreydesai/qgqa-arc-{difficulty}-processed"
+    repo_id = "atreydesai/qgqa-arc-challenge-processed"
     push_dataset_to_hub(dataset, repo_id=repo_id)
     
     return dataset
@@ -194,14 +195,7 @@ def get_arc_stats(entries: List[Dict[str, Any]]) -> Dict[str, Any]:
 
 if __name__ == "__main__":
     # Test loading
-    print("Testing ARC-Easy loading...")
-    easy_entries = load_arc_dataset("easy", limit=5)
-    print(f"Loaded {len(easy_entries)} entries")
-    print(f"Sample entry keys: {list(easy_entries[0].keys())}")
-    print(f"Sample question: {easy_entries[0]['question'][:100]}...")
-    print(f"Sample options: {easy_entries[0]['options']}")
-    print(f"Gold answer: {easy_entries[0]['gold_answer']}")
-    
-    print("\nTesting ARC-Challenge loading...")
+    print("Testing ARC-Challenge loading...")
     challenge_entries = load_arc_dataset("challenge", limit=5)
     print(f"Loaded {len(challenge_entries)} entries")
+    print(f"Sample entry keys: {list(challenge_entries[0].keys())}")

@@ -28,8 +28,8 @@ _SYMBOL_TO_MODULE = {
     "AugmentorMode": "augmentor",
     "GenerationConfig": "augmentor",
     "augment_dataset": "augmentor",
-    "build_prompt": "augmentor",
     "parse_generated_distractors": "augmentor",
+    "get_output_column": "augmentor",
     # Filter
     "FilterConfig": "filter",
     "filter_dataset": "filter",

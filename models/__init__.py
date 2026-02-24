@@ -4,7 +4,6 @@ from .base import ModelClient, GenerationResult
 from .openai_client import OpenAIClient
 from .anthropic_client import AnthropicClient
 from .gemini_client import GeminiClient
-from .deepseek_client import DeepSeekClient
 from .local_client import LocalClient
 from .registry import (
     AliasSpec,
@@ -44,7 +43,6 @@ __all__ = [
     "OpenAIClient",
     "AnthropicClient",
     "GeminiClient",
-    "DeepSeekClient",
     "LocalClient",
     # Alias/registry types
     "AliasSpec",

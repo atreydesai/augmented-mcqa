@@ -1,115 +1,71 @@
-# Model Registry and Aliases
+# Models
 
-## Overview
+## Active Models
 
-Model resolution now uses:
+### Generator models (API)
 
-- Provider registry: `models/registry.py`
-- Declarative aliases: `config/model_aliases.toml`
+- `gpt-5.2-2025-12-11`
+- `claude-opus-4-6`
+- `gemini-3.1-pro-preview`
 
-`models.get_client()` remains the stable public API.
+### Evaluation models (local/vLLM)
 
-## Provider Registry Contract
+- `Qwen/Qwen3-4B-Instruct-2507`
+- `allenai/Olmo-3-7B-Instruct`
+- `meta-llama/Llama-3.1-8B-Instruct`
 
-Providers currently supported:
+## Registry and Aliases
+
+Aliases are defined in `config/model_aliases.toml`.
+
+Provider registry is in `models/registry.py`.
+
+Supported active providers:
 
 - `openai`
 - `anthropic`
 - `gemini`
-- `deepseek`
 - `local`
 
-Each provider maps to a client class implementing `ModelClient`.
+## Generation Reasoning Policy (Hardcoded)
 
-## Alias Schema
+- GPT-5.2 generation requests use `reasoning_effort=medium`
+- Claude Opus 4.6 generation requests use `thinking={"type":"adaptive"}`
+- Gemini 3.1 generation uses provider defaults (no thinking knobs)
 
-Aliases are defined under `[aliases]`.
+Implementation points:
 
-Minimal alias:
+- `scripts/generate_distractors.py` (`_model_policy`)
+- `data/augmentor.py` (`GenerationConfig` + provider-specific kwargs)
+- `models/gemini_client.py` (guardrails)
 
-```toml
-[aliases."my-alias"]
-provider = "openai"
-```
+## Gemini 3 Guardrail
 
-Alias with explicit model ID:
+Gemini requests in this repo reject mixed thinking knobs in one request:
 
-```toml
-[aliases."my-eval-model"]
-provider = "openai"
-model_id = "gpt-4.1"
-```
+- cannot send both `thinking_level` and legacy `thinking_budget`
 
-Alias with defaults:
+Reference: [Gemini 3 docs](https://ai.google.dev/gemini-api/docs/gemini-3).
 
-```toml
-[aliases."my-reasoning-model"]
-provider = "openai"
-model_id = "gpt-5.2-2025-12-11"
+## Claude Adaptive Thinking
 
-[aliases."my-reasoning-model".defaults]
-reasoning_effort = "high"
-```
+Anthropic thinking payload for Opus is explicit:
 
-Notes:
+- `thinking={"type":"adaptive"}`
 
-- Explicit kwargs passed to `get_client()` override alias defaults.
-- Alias provider must exist in provider registry.
+Reference: [Anthropic thinking docs](https://docs.anthropic.com/en/docs/build-with-claude/extended-thinking).
 
-Local-model alias example with vLLM-specific defaults:
+## Local Weight Staging
 
-```toml
-[aliases."Qwen/Qwen3-4B-Instruct-2507"]
-provider = "local"
-model_id = "Qwen/Qwen3-4B-Instruct-2507"
-
-[aliases."Qwen/Qwen3-4B-Instruct-2507".defaults]
-dtype = "bfloat16"
-max_model_len = 32768
-trust_remote_code = true
-```
-
-## Resolution Order
-
-`get_client(model_name, **kwargs)` resolves in this order:
-
-1. Exact alias from `config/model_aliases.toml`
-2. Provider shortcut (`openai`, `anthropic`, etc.)
-3. Heuristic inference from model name
-   - `gpt*` -> `openai`
-   - `claude*` -> `anthropic`
-   - `gemini*` -> `gemini`
-   - `deepseek*` -> `deepseek`
-   - names containing `/` -> `local`
-
-If unresolved, an explicit error is raised with known aliases/providers.
-
-## Local Models Added
-
-The default alias file includes local entries for:
-
-- `Nanbeige/Nanbeige4.1-3B` (`tokenizer_mode = "auto"`, `stop_token_ids = [166101]`)
-- `Qwen/Qwen3-4B-Instruct-2507` (`dtype = "bfloat16"`, `max_model_len = 32768`)
-- `allenai/Olmo-3-7B-Instruct` (`dtype = "bfloat16"`, `max_model_len = 32768`)
-
-Stage weights before running local eval:
+Use:
 
 ```bash
-huggingface-cli download <model_id> --local-dir /path/to/cache
+jobs/install_local_model_weights.sh --dry-run
 ```
 
-## Listing Available Models
+Script behavior:
 
-Use public helper APIs:
-
-```python
-from models import list_available_models
-
-print(list_available_models())
-```
-
-And from CLI:
-
-```bash
-uv run python scripts/generate_distractors.py --list-models
-```
+- reads `.env`
+- resolves `MODEL_CACHE_DIR`/`HF_HOME`
+- stages all 3 local eval models into scratch cache
+- supports execute mode (default) and `--dry-run`

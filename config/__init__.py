@@ -12,7 +12,6 @@ from .settings import (
     OPENAI_API_KEY,
     ANTHROPIC_API_KEY,
     GOOGLE_API_KEY,
-    DEEPSEEK_API_KEY,
     HF_TOKEN,
     HF_SKIP_PUSH,
     
@@ -26,6 +25,7 @@ from .settings import (
     
     # Dataset types and schema
     DatasetType,
+    ACTIVE_DATASET_TYPES,
     DATASET_SCHEMA,
     get_answer_index,
     get_options_from_entry,
@@ -55,7 +55,6 @@ __all__ = [
     "OPENAI_API_KEY",
     "ANTHROPIC_API_KEY",
     "GOOGLE_API_KEY",
-    "DEEPSEEK_API_KEY",
     "HF_TOKEN",
     "HF_SKIP_PUSH",
     "RANDOM_SEED",
@@ -63,6 +62,7 @@ __all__ = [
     "DistractorType",
     "get_distractor_column",
     "DatasetType",
+    "ACTIVE_DATASET_TYPES",
     "DATASET_SCHEMA",
     "get_answer_index",
     "get_options_from_entry",
@@ -74,4 +74,3 @@ __all__ = [
     "DISTRACTOR_GENERATION_PROMPT_CONDITIONED",
     "get_api_key",
 ]
-

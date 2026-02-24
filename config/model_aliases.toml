@@ -1,26 +1,6 @@
 [aliases.openai]
 provider = "openai"
 
-[aliases."gpt-4.1"]
-provider = "openai"
-model_id = "gpt-4.1"
-
-[aliases."gpt-4.1-2025-04-14"]
-provider = "openai"
-model_id = "gpt-4.1-2025-04-14"
-
-[aliases."gpt-5-mini"]
-provider = "openai"
-model_id = "gpt-5-mini"
-
-[aliases."gpt-5-mini-2025-08-07"]
-provider = "openai"
-model_id = "gpt-5-mini-2025-08-07"
-
-[aliases."gpt-5.2"]
-provider = "openai"
-model_id = "gpt-5.2"
-
 [aliases."gpt-5.2-2025-12-11"]
 provider = "openai"
 model_id = "gpt-5.2-2025-12-11"
@@ -32,63 +12,21 @@ provider = "anthropic"
 provider = "anthropic"
 model_id = "claude-opus-4-6"
 
-[aliases."claude-sonnet-4-5-20250929"]
-provider = "anthropic"
-model_id = "claude-sonnet-4-5-20250929"
-
-[aliases."claude-haiku-4-5"]
-provider = "anthropic"
-model_id = "claude-haiku-4-5"
-
-[aliases."claude-haiku-4-5-20251001"]
-provider = "anthropic"
-model_id = "claude-haiku-4-5-20251001"
-
 [aliases.gemini]
 provider = "gemini"
 
-[aliases."gemini-3-pro-preview"]
+[aliases."gemini-3.1-pro-preview"]
 provider = "gemini"
-model_id = "gemini-3-pro-preview"
-
-[aliases."gemini-3-flash-preview"]
-provider = "gemini"
-model_id = "gemini-3-flash-preview"
-
-[aliases."gemini-2.5-flash-lite"]
-provider = "gemini"
-model_id = "gemini-2.5-flash-lite"
-
-[aliases.deepseek]
-provider = "deepseek"
-
-[aliases."deepseek-chat"]
-provider = "deepseek"
-model_id = "deepseek-chat"
-
-[aliases."deepseek-reasoner"]
-provider = "deepseek"
-model_id = "deepseek-reasoner"
+model_id = "gemini-3.1-pro-preview"
 
 [aliases.local]
 provider = "local"
-
-[aliases."Nanbeige/Nanbeige4.1-3B"]
-provider = "local"
-model_id = "Nanbeige/Nanbeige4.1-3B"
-
-[aliases."Nanbeige/Nanbeige4.1-3B".defaults]
-# vLLM 0.11.x fails with Nanbeige when tokenizer_mode=slow; keep auto.
-tokenizer_mode = "auto"
-trust_remote_code = true
-stop_token_ids = [166101]
 
 [aliases."Qwen/Qwen3-4B-Instruct-2507"]
 provider = "local"
 model_id = "Qwen/Qwen3-4B-Instruct-2507"
 
 [aliases."Qwen/Qwen3-4B-Instruct-2507".defaults]
-# Keep memory practical for local GPUs even though the model supports longer context.
 dtype = "bfloat16"
 max_model_len = 32768
 trust_remote_code = true
@@ -98,7 +36,13 @@ provider = "local"
 model_id = "allenai/Olmo-3-7B-Instruct"
 
 [aliases."allenai/Olmo-3-7B-Instruct".defaults]
-# OLMo-3 examples use BF16 inference; cap context for local footprint.
 dtype = "bfloat16"
 max_model_len = 32768
+trust_remote_code = true
+
+[aliases."meta-llama/Llama-3.1-8B-Instruct"]
+provider = "local"
+model_id = "meta-llama/Llama-3.1-8B-Instruct"
+
+[aliases."meta-llama/Llama-3.1-8B-Instruct".defaults]
 trust_remote_code = true

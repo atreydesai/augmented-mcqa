@@ -65,6 +65,7 @@ class ExperimentConfig:
     dataset_path: Path
     model_name: str
     generator_dataset_label: str
+    setting_id: str = "human_from_scratch"
     
     # Distractor configuration
     num_human: int = DEFAULT_NUM_HUMAN_DISTRACTORS
@@ -99,6 +100,10 @@ class ExperimentConfig:
     # Track which distractor source this config uses (scratch/dhuman/dmodel)
     distractor_source: Optional[str] = None
 
+    # Sub-sharding within config rows.
+    entry_shards: int = 1
+    entry_shard_index: int = 0
+
     # Data loading acceleration
     workpack_format: WorkpackFormat = "none"
     workpack_path: Optional[Path] = None
@@ -124,6 +129,8 @@ class ExperimentConfig:
 
         if not str(self.generator_dataset_label).strip():
             raise ValueError("generator_dataset_label is required and cannot be blank")
+        if not str(self.setting_id).strip():
+            raise ValueError("setting_id is required and cannot be blank")
 
         if self.checkpoint_dir is None:
             self.checkpoint_dir = self.output_dir / "checkpoints"
@@ -138,6 +145,12 @@ class ExperimentConfig:
         if self.inference_batch_size <= 0:
             raise ValueError(
                 f"inference_batch_size must be > 0, got {self.inference_batch_size}"
+            )
+        if self.entry_shards <= 0:
+            raise ValueError("entry_shards must be > 0")
+        if self.entry_shard_index < 0 or self.entry_shard_index >= self.entry_shards:
+            raise ValueError(
+                f"entry_shard_index must be in [0,{self.entry_shards - 1}], got {self.entry_shard_index}"
             )
         if self.workpack_format not in {"none", "parquet", "arrow"}:
             raise ValueError(
@@ -162,6 +175,7 @@ class ExperimentConfig:
         """Generate a unique ID for this configuration."""
         parts = [
             self.name,
+            self.setting_id,
             f"{self.num_human}H{self.num_model}M",
             self.model_name.replace("/", "_"),
         ]
@@ -183,6 +197,7 @@ class ExperimentConfig:
             "dataset_path": str(self.dataset_path),
             "model_name": self.model_name,
             "generator_dataset_label": self.generator_dataset_label,
+            "setting_id": self.setting_id,
             "num_human": self.num_human,
             "num_model": self.num_model,
             "model_distractor_type": self.model_distractor_type.value,
@@ -202,6 +217,8 @@ class ExperimentConfig:
             "categories": self.categories,
             "dataset_type_filter": self.dataset_type_filter,
             "distractor_source": self.distractor_source,
+            "entry_shards": self.entry_shards,
+            "entry_shard_index": self.entry_shard_index,
             "workpack_format": self.workpack_format,
             "workpack_path": str(self.workpack_path) if self.workpack_path else None,
             "inference_batch_size": self.inference_batch_size,

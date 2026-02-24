@@ -4,7 +4,7 @@ Dataset downloading utilities for Augmented MCQA.
 Supports downloading and saving datasets from HuggingFace Hub:
 - MMLU-Pro (TIGER-Lab/MMLU-Pro)
 - MMLU (cais/mmlu)
-- ARC (allenai/ai2_arc)
+- ARC-Challenge (allenai/ai2_arc, ARC-Challenge config)
 - GPQA (Idavidrein/gpqa, subset=gpqa_main)
 """
 
@@ -147,10 +147,10 @@ def download_mmlu_all_configs(save_path: Optional[Path] = None) -> Dict[str, Dat
 
 def download_arc(save_path: Optional[Path] = None) -> Dict[str, DatasetDict]:
     """
-    Download ARC dataset (both easy and challenge splits).
+    Download ARC-Challenge only.
     
     Returns:
-        Dict with 'easy' and 'challenge' DatasetDicts
+        Dict with key 'arc_challenge'
     """
     hf_path = "allenai/ai2_arc"
     if save_path is None:
@@ -158,21 +158,21 @@ def download_arc(save_path: Optional[Path] = None) -> Dict[str, DatasetDict]:
     save_path = Path(save_path)
     
     results = {}
-    for config in ["ARC-Easy", "ARC-Challenge"]:
-        config_key = config.lower().replace("-", "_")
-        config_path = save_path / config_key
-        
-        if config_path.exists():
-            print(f"  {config} already exists, loading from disk...")
-            from datasets import load_from_disk
-            results[config_key] = load_from_disk(str(config_path))
-            continue
-        
-        print(f"Downloading {config}...")
-        dataset = load_dataset(hf_path, config)
-        config_path.mkdir(parents=True, exist_ok=True)
-        dataset.save_to_disk(str(config_path))
-        results[config_key] = dataset
+    config = "ARC-Challenge"
+    config_key = "arc_challenge"
+    config_path = save_path / config_key
+
+    if config_path.exists():
+        print(f"  {config} already exists, loading from disk...")
+        from datasets import load_from_disk
+        results[config_key] = load_from_disk(str(config_path))
+        return results
+
+    print(f"Downloading {config}...")
+    dataset = load_dataset(hf_path, config)
+    config_path.mkdir(parents=True, exist_ok=True)
+    dataset.save_to_disk(str(config_path))
+    results[config_key] = dataset
     
     return results
 

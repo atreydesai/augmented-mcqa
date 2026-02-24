@@ -1,118 +1,56 @@
-# Local Model Evaluation (SLURM)
+# Local Eval on SLURM (Final5)
 
-This documents the workflow for running local vLLM model evaluations on the cluster using `jobs/run_local_eval.sh` and `jobs/local_model_eval.sbatch`.
+Primary flow is bundle-based generation of sbatch files, then manual submission.
 
-## Prerequisites
-
-One-time setup from repo root:
+## 1) Stage local model weights
 
 ```bash
-uv sync
-uv pip install --no-build-isolation 'vllm==0.11.2' 'transformers<5' 'numpy<2.3'
+jobs/install_local_model_weights.sh --dry-run
+# run without --dry-run on remote GPU server
 ```
 
-Stage model weights:
+## 2) Build eval bundle
 
 ```bash
-huggingface-cli download <model_id> --local-dir /path/to/cache
+uv run python scripts/build_eval_slurm_bundle.py \
+  --manifest datasets/augmented/<final5_regeneration_manifest>.json \
+  --num-gpus 8 \
+  --entry-shards 4
 ```
 
-## Usage
+Default output:
 
-```
-jobs/run_local_eval.sh --model <model> --generator-dataset-label <label> \
-  --dataset-path <path> [options]
-
-Required:
-  --model <model>                    Model alias (must match config/model_aliases.toml)
-  --generator-dataset-label <label>  Generator label (e.g. gpt-4.1, opus)
-  --dataset-path <path>              Path to augmented dataset directory
-
-Options:
-  --num-shards <int>         SLURM array shards (default: 8)
-  --phase <smoke|main|both>  Which phase(s) to run (default: both)
-  --smoke-limit <int>        Entries per config in smoke phase (default: 2)
-  --preset <name>            Matrix preset: core16 or branching21 (default: core16)
-  --dataset-types <csv>      Comma-separated dataset types (default: all)
-  --distractor-source <csv>  Comma-separated distractor sources (default: all)
-  --output-dir <path>        Results directory (default: results)
-  --save-interval <int>      Checkpoint save interval (default: 200)
-  --keep-checkpoints <int>   Checkpoints to keep per root (default: 2)
-  --max-tokens <int>         Max generation tokens (default: 150)
+```text
+jobs/generated/<timestamp>/
 ```
 
-## Smoke + Main Workflow
+Contains:
 
-### Step 1: Smoke run
+- per-group `.sbatch` files
+- `submit_all.sh`
+- `bundle_manifest.json`
+- README
 
-Run a small subset (default 2 entries per config) to verify the model loads and produces valid output:
+## 3) Submit jobs manually
 
 ```bash
-jobs/run_local_eval.sh \
-  --model Qwen/Qwen3-4B-Instruct-2507 \
-  --generator-dataset-label gpt-4.1 \
-  --dataset-path datasets/augmented/unified_processed_gpt-4.1_20260213_033916 \
-  --phase smoke \
-  --num-shards 3
+bash jobs/generated/<timestamp>/submit_all.sh
 ```
 
-Check the smoke logs before proceeding:
-
-```
-logs/local_eval/slurm_<job_id>_<array_task>.out
-logs/local_eval/slurm_<job_id>_<array_task>.err
-```
-
-### Step 2: Main run
-
-After smoke looks good, submit the full evaluation:
+## 4) Re-run failed array IDs
 
 ```bash
-jobs/run_local_eval.sh \
-  --model Qwen/Qwen3-4B-Instruct-2507 \
-  --generator-dataset-label gpt-4.1 \
-  --dataset-path datasets/augmented/unified_processed_gpt-4.1_20260213_033916 \
-  --phase main \
-  --num-shards 8
+sbatch --array=1,4,7 jobs/generated/<timestamp>/<specific>.sbatch
 ```
 
-Or run both phases in one call (smoke first, then main):
+## 5) Recombine sub-shards
 
 ```bash
-jobs/run_local_eval.sh \
-  --model Qwen/Qwen3-4B-Instruct-2507 \
-  --generator-dataset-label gpt-4.1 \
-  --dataset-path datasets/augmented/unified_processed_gpt-4.1_20260213_033916 \
-  --phase both \
-  --num-shards 8
+uv run python scripts/merge_eval_subshards.py \
+  --bundle-manifest jobs/generated/<timestamp>/bundle_manifest.json \
+  --strict
 ```
 
-## Log Locations
+## Optional legacy wrappers
 
-| Item | Location |
-|---|---|
-| SLURM stdout | `logs/local_eval/slurm_<A>_<a>.out` |
-| SLURM stderr | `logs/local_eval/slurm_<A>_<a>.err` |
-| Results | `results/<generator_dataset_label>/<model>_<dataset_type>_<distractor_source>/<nHnM>/results.json` |
-
-## Restart / Resume
-
-All runs use `--skip-existing` by default. To resume a partial run, re-submit with the same arguments and SLURM will skip already-completed entries.
-
-If individual shards failed, re-submit targeting only failed shards using `--array` override:
-
-```bash
-sbatch --array=2,5,7 \
-  --export=ALL,MODEL=...,DATASET_PATH=...,GENERATOR_DATASET_LABEL=...,NUM_SHARDS=8,... \
-  jobs/local_model_eval.sbatch
-```
-
-## Default Models
-
-Models with pre-configured aliases in `config/model_aliases.toml`:
-
-- `Nanbeige/Nanbeige4.1-3B`
-- `Qwen/Qwen3-4B-Instruct-2507`
-- `allenai/Olmo-3-7B-Instruct`
-
-See `docs/models.md` for alias configuration details.
+`jobs/run_local_eval.sh` and `jobs/local_model_eval.sbatch` remain available for direct array submission, but the bundle path above is the recommended Final5 workflow.

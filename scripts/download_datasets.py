@@ -20,7 +20,7 @@ from data import (
     download_arc,
     download_gpqa,
 )
-from config import DATASETS_DIR
+from config import RAW_DATASETS_DIR
 
 
 def main():
@@ -40,7 +40,7 @@ def main():
     parser.add_argument(
         "--output-dir",
         type=str,
-        default=str(DATASETS_DIR),
+        default=str(RAW_DATASETS_DIR),
         help="Output directory for datasets",
     )
     
@@ -66,7 +66,7 @@ def main():
             if ds == "mmlu_pro":
                 download_mmlu_pro(output_dir / "mmlu_pro")
             elif ds == "mmlu":
-                download_mmlu_all_configs(output_dir / "mmlu")
+                download_mmlu_all_configs(output_dir / "mmlu_all")
             elif ds == "arc":
                 download_arc(output_dir / "arc")
             elif ds == "gpqa":

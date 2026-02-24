@@ -32,7 +32,7 @@ def _get_optional_float_env(name: str, default: Optional[float]) -> Optional[flo
         raise ValueError(f"{name} must be a float, got {raw!r}") from exc
 
 
-DEFAULT_MATRIX_PRESET = os.getenv("AUGMCQA_DEFAULT_MATRIX_PRESET", "core16")
+DEFAULT_MATRIX_PRESET = os.getenv("AUGMCQA_DEFAULT_MATRIX_PRESET", "final5")
 DEFAULT_EVAL_MODE = os.getenv("AUGMCQA_DEFAULT_EVAL_MODE", "behavioral")
 DEFAULT_EVAL_SEED = _get_int_env("AUGMCQA_DEFAULT_EVAL_SEED", RANDOM_SEED)
 DEFAULT_EVAL_TEMPERATURE = _get_optional_float_env("AUGMCQA_DEFAULT_EVAL_TEMPERATURE", None)
@@ -67,4 +67,3 @@ if DEFAULT_EVAL_SAVE_INTERVAL <= 0:
     raise ValueError("AUGMCQA_DEFAULT_EVAL_SAVE_INTERVAL must be > 0")
 if DEFAULT_EVAL_KEEP_CHECKPOINTS < 0:
     raise ValueError("AUGMCQA_DEFAULT_EVAL_KEEP_CHECKPOINTS must be >= 0")
-

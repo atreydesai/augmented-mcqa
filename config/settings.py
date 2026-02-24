@@ -60,7 +60,6 @@ AUGMENTED_CONDITIONED_SYNTHETIC_DIR = AUGMENTED_DATASETS_DIR / "conditioned_synt
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "")
-DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
 HF_TOKEN = os.getenv("HF_TOKEN", "")
 
 # HuggingFace settings
@@ -160,11 +159,18 @@ class DatasetType(Enum):
     
     Each type has specific column mappings in DATASET_SCHEMA.
     """
+    # Internal support for MMLU is retained because MMLU-Pro filtering depends on it.
     MMLU = "mmlu"
     MMLU_PRO = "mmlu_pro"
-    ARC_EASY = "arc_easy"
     ARC_CHALLENGE = "arc_challenge"
     GPQA = "gpqa"
+
+
+ACTIVE_DATASET_TYPES = [
+    DatasetType.ARC_CHALLENGE.value,
+    DatasetType.MMLU_PRO.value,
+    DatasetType.GPQA.value,
+]
 
 
 # Exact column mappings for each dataset type (based on HuggingFace analysis)
@@ -196,21 +202,6 @@ DATASET_SCHEMA = {
         "hf_path": "TIGER-Lab/MMLU-Pro",
         "hf_config": None,
         "splits": ["test", "validation"],
-    },
-    DatasetType.ARC_EASY: {
-        # allenai/ai2_arc (ARC-Easy config)
-        # columns: ['id', 'question', 'choices', 'answerKey']
-        # choices = {'text': ['opt1',...], 'label': ['A','B','C','D']}
-        "question": "question",
-        "options": "choices.text",      # nested: choices['text']
-        "labels": "choices.label",      # nested: choices['label']
-        "answer_letter": "answerKey",   # 'A'-'D'
-        "answer_index": None,           # compute from answerKey
-        "category": None,               # not provided
-        "num_options": 4,
-        "hf_path": "allenai/ai2_arc",
-        "hf_config": "ARC-Easy",
-        "splits": ["test", "validation", "train"],
     },
     DatasetType.ARC_CHALLENGE: {
         # allenai/ai2_arc (ARC-Challenge config)
@@ -320,12 +311,6 @@ DATASET_CONFIGS = {
         splits=["test", "validation"],
         dataset_type=DatasetType.MMLU_PRO,
     ),
-    "arc_easy": DatasetConfig(
-        name="arc_easy",
-        hf_path="allenai/ai2_arc",
-        splits=["test"],
-        dataset_type=DatasetType.ARC_EASY,
-    ),
     "arc_challenge": DatasetConfig(
         name="arc_challenge",
         hf_path="allenai/ai2_arc",
@@ -389,7 +374,6 @@ def get_api_key(provider: str) -> str:
         "openai": OPENAI_API_KEY,
         "anthropic": ANTHROPIC_API_KEY,
         "google": GOOGLE_API_KEY,
-        "deepseek": DEEPSEEK_API_KEY,
     }
     key = keys.get(provider, "")
     if not key:

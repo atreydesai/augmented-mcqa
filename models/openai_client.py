@@ -1,7 +1,7 @@
 """
 OpenAI model client for Augmented MCQA.
 
-Supports GPT-4.1, GPT-5, and GPT-5-mini with reasoning effort control.
+    Supports GPT-5-family models with reasoning effort control.
 """
 
 import os
@@ -19,10 +19,7 @@ class OpenAIClient(ModelClient):
     """
     OpenAI model client using Chat Completions API.
     
-    Supports:
-    - GPT-4.1: Standard chat model (no reasoning effort)
-    - GPT-5, GPT-5-mini: Support reasoning_effort parameter for controlling
-      computational depth (minimal, low, medium, high, none)
+    Supports GPT-5-family models with reasoning_effort.
     """
     
     # Models that support reasoning_effort parameter
@@ -30,7 +27,7 @@ class OpenAIClient(ModelClient):
     
     def __init__(
         self,
-        model_id: str = "gpt-4.1-2025-04-14",
+        model_id: str = "gpt-5.2-2025-12-11",
         api_key: Optional[str] = None,
         reasoning_effort: Optional[ReasoningEffort] = None,
     ):
@@ -39,9 +36,7 @@ class OpenAIClient(ModelClient):
         
         Args:
             model_id: Model identifier
-                - "gpt-4.1-2025-04-14": Standard GPT-4.1
-                - "gpt-5-mini-2025-08-07": GPT-5 Mini with reasoning
-                - "gpt-5.2-2025-12-11": Latest GPT-5
+                - "gpt-5.2-2025-12-11": GPT-5.2
             api_key: API key (defaults to OPENAI_API_KEY env var)
             reasoning_effort: For GPT-5 models only. Controls reasoning depth:
                 - "minimal": Few/no reasoning tokens (fastest)

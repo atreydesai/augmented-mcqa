@@ -21,9 +21,9 @@ from .runner import (
 from .matrix import (
     MatrixPreset,
     ALL_DATASET_TYPES,
-    DISTRACTOR_SOURCE_MAP,
     MATRIX_PRESETS,
-    get_preset_distractor_configs,
+    SETTING_SPECS,
+    get_preset_setting_ids,
     build_matrix_configs,
     sort_configs_for_sharding,
     select_shard,
@@ -66,9 +66,9 @@ __all__ = [
     # Matrix
     "MatrixPreset",
     "ALL_DATASET_TYPES",
-    "DISTRACTOR_SOURCE_MAP",
     "MATRIX_PRESETS",
-    "get_preset_distractor_configs",
+    "SETTING_SPECS",
+    "get_preset_setting_ids",
     "build_matrix_configs",
     "sort_configs_for_sharding",
     "select_shard",

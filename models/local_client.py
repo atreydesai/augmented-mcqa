@@ -18,7 +18,7 @@ class LocalClient(ModelClient):
     
     def __init__(
         self,
-        model_id: str = "Qwen/Qwen2.5-7B-Instruct",
+        model_id: str = "Qwen/Qwen3-4B-Instruct-2507",
         gpu_memory_utilization: float = 0.9,
         tensor_parallel_size: Optional[int] = None,
         seed: int = RANDOM_SEED,

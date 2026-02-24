@@ -11,7 +11,7 @@ from config import get_api_key
 
 
 # Valid thinking budget presets
-ThinkingLevel = Literal["off", "low", "medium", "high"]
+ThinkingLevel = Literal["off", "low", "medium", "high", "adaptive"]
 
 
 class AnthropicClient(ModelClient):
@@ -35,6 +35,7 @@ class AnthropicClient(ModelClient):
         "low": 1024,
         "medium": 4096,
         "high": 16384,
+        "adaptive": 0,
     }
     
     def __init__(
@@ -106,14 +107,18 @@ class AnthropicClient(ModelClient):
             "messages": [{"role": "user", "content": prompt}],
         }
         
-        # Add extended thinking for supported models
+        # Add extended thinking for supported models, unless caller provided an
+        # explicit `thinking` payload.
         level = thinking_level or self._thinking_level
-        if self._supports_thinking and level != "off":
-            budget = self.THINKING_BUDGETS.get(level, 4096)
-            params["thinking"] = {
-                "type": "enabled",
-                "budget_tokens": budget,
-            }
+        if self._supports_thinking and "thinking" not in kwargs and level != "off":
+            if level == "adaptive":
+                params["thinking"] = {"type": "adaptive"}
+            else:
+                budget = self.THINKING_BUDGETS.get(level, 4096)
+                params["thinking"] = {
+                    "type": "enabled",
+                    "budget_tokens": budget,
+                }
         
         params.update(kwargs)
         

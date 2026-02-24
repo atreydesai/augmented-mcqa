@@ -10,8 +10,8 @@
 #SBATCH --cpus-per-task=4
 
 # Usage:
-#   sbatch jobs/aug.sh --model gpt-4.1 --input datasets/processed/unified_processed \
-#     --output datasets/finished_sets/gpt-4.1 [--limit N] [--save-interval N]
+#   sbatch jobs/aug.sh --model gpt-5.2-2025-12-11 --input datasets/processed/unified_processed_v2 \
+#     --output datasets/augmented/gpt-5.2-2025-12-11 [--limit N] [--save-interval N]
 #
 # Submit from repo root. All paths are relative to repo root.
 

@@ -17,9 +17,9 @@ from scripts import eval_matrix
 def test_experiment_config_defaults_use_shared_constants(tmp_path):
     cfg = ExperimentConfig(
         name="defaults",
-        dataset_path=Path("datasets/augmented/unified_processed_example"),
-        model_name="gpt-5-mini-2025-08-07",
-        generator_dataset_label="unit",
+        dataset_path=Path("datasets/augmented/final5"),
+        model_name="Qwen/Qwen3-4B-Instruct-2507",
+        generator_dataset_label="gpt-5.2-2025-12-11",
         output_dir=tmp_path / "defaults",
     )
     assert cfg.eval_mode == DEFAULT_EVAL_MODE
@@ -31,11 +31,10 @@ def test_experiment_config_defaults_use_shared_constants(tmp_path):
 
 def test_build_matrix_configs_defaults_use_shared_constants(tmp_path):
     cfg = build_matrix_configs(
-        model="gpt-5-mini-2025-08-07",
-        dataset_path=Path("datasets/augmented/unified_processed_example"),
-        generator_dataset_label="unit",
+        model="Qwen/Qwen3-4B-Instruct-2507",
+        dataset_path=Path("datasets/augmented/final5"),
+        generator_dataset_label="gpt-5.2-2025-12-11",
         dataset_types=["mmlu_pro"],
-        distractor_sources=["scratch"],
         output_base=tmp_path,
     )[0]
     assert cfg.eval_mode == DEFAULT_EVAL_MODE
@@ -51,11 +50,11 @@ def test_eval_matrix_parser_defaults_use_shared_constants():
         [
             "plan",
             "--model",
-            "gpt-5-mini-2025-08-07",
+            "Qwen/Qwen3-4B-Instruct-2507",
             "--dataset-path",
-            "datasets/augmented/unified_processed_example",
+            "datasets/augmented/final5",
             "--generator-dataset-label",
-            "unit",
+            "gpt-5.2-2025-12-11",
         ]
     )
     assert args.preset == DEFAULT_MATRIX_PRESET
@@ -71,7 +70,17 @@ def test_eval_matrix_parser_defaults_use_shared_constants():
             "--manifest",
             "manifest.json",
             "--generator-dataset-label",
-            "unit",
+            "gpt-5.2-2025-12-11",
         ]
     )
     assert run_args.keep_checkpoints == DEFAULT_EVAL_KEEP_CHECKPOINTS
+
+
+def test_legacy_presets_are_rejected():
+    for preset in ["core16", "branching21"]:
+        try:
+            eval_matrix._validate_preset(preset)
+        except ValueError as exc:
+            assert "archived" in str(exc)
+        else:
+            raise AssertionError(f"Expected ValueError for preset={preset}")

@@ -1,19 +1,31 @@
 # Augmented MCQA
 
-A research toolkit for generating synthetic distractors for multiple-choice questions and evaluating language models across distractor configurations. Datasets are augmented with AI-generated distractors; models are then evaluated across a matrix of distractor counts and sources (human vs. model).
+Final5 pipeline for distractor generation and evaluation.
 
-## Architecture
+## Active Scope
 
-| Module | Description |
-|---|---|
-| `data/` | Dataset downloading, processing, and augmentation utilities |
-| `models/` | Multi-provider model clients (OpenAI, Anthropic, Gemini, DeepSeek, local/vLLM) |
-| `experiments/` | Experiment configuration, matrix definitions, and runner |
-| `evaluation/` | MCQA prompt building and answer extraction |
-| `analysis/` | Result aggregation, category breakdown, and visualization |
-| `scripts/` | CLI entry points for each pipeline stage |
-| `jobs/` | SLURM job scripts for running on the cluster |
-| `config/` | Settings and declarative model aliases (`model_aliases.toml`) |
+- Datasets: `arc_challenge`, `mmlu_pro`, `gpqa`
+- Generator models:
+  - `gpt-5.2-2025-12-11`
+  - `claude-opus-4-6`
+  - `gemini-3.1-pro-preview`
+- Local evaluation models:
+  - `Qwen/Qwen3-4B-Instruct-2507`
+  - `allenai/Olmo-3-7B-Instruct`
+  - `meta-llama/Llama-3.1-8B-Instruct`
+- Eval preset: `final5` only
+
+Legacy experiment surfaces are archived in `archive/legacy_experiments/`.
+
+## Final5 Settings
+
+Generation/evaluation setting IDs:
+
+1. `human_from_scratch` (A): `Q + A -> 3H` (passthrough)
+2. `model_from_scratch` (B): `Q + A -> 3M`
+3. `augment_human` (A + C): `Q + A + 3H -> +6M`
+4. `augment_model` (B + D): `Q + A + 3M -> +6M` (stored as `augment_model_delta_6m` + combined `augment_model`)
+5. `augment_ablation` (E): `Q + A -> 9M`
 
 ## Setup
 
@@ -21,193 +33,88 @@ A research toolkit for generating synthetic distractors for multiple-choice ques
 uv sync
 ```
 
-Copy `.env.example` to `.env` and fill in API keys for the providers you plan to use:
-
-```
-OPENAI_API_KEY=...
-ANTHROPIC_API_KEY=...
-GOOGLE_API_KEY=...
-DEEPSEEK_API_KEY=...
-```
-
-For local model evaluation, install vLLM separately after `uv sync`:
+For local-model eval, install vLLM after sync:
 
 ```bash
 uv pip install --no-build-isolation 'vllm==0.11.2' 'transformers<5' 'numpy<2.3'
 ```
 
-Stage model weights before running local eval:
+Stage local model weights (script reads `.env` and targets scratch cache):
 
 ```bash
-huggingface-cli download <model_id> --local-dir /path/to/cache
+jobs/install_local_model_weights.sh --dry-run
+# then run without --dry-run on remote GPU host
 ```
 
-## End-to-End Workflow
+## End-to-End Commands
 
-### 1. Download datasets
+1. Download raw datasets:
 
 ```bash
-uv run python scripts/download_datasets.py
+uv run python scripts/download_datasets.py --all
 ```
 
-### 2. Process datasets
+2. Process to Final5 unified schema (deterministic first 1000 per dataset):
 
 ```bash
-uv run python scripts/process_all.py --dataset all
+uv run python scripts/process_all.py --output-path datasets/processed/unified_processed_v2
 ```
 
-### 3. Generate distractors
+`mmlu_pro` keeps the existing exact-match filtering behavior against `mmlu` (unchanged).
+
+3. Regenerate all generator datasets and write manifest:
 
 ```bash
-uv run python scripts/generate_distractors.py \
-  --model gpt-4.1 \
-  --input datasets/processed/unified_processed \
-  --output datasets/finished_sets/gpt-4.1 \
-  --parallel
+uv run python scripts/regenerate_experiments.py \
+  --processed-dataset datasets/processed/unified_processed_v2 \
+  --output-root datasets/augmented
 ```
 
-### 4. Plan evaluation matrix (optional preview)
+4. Build eval SLURM bundle (base 18 groups + entry sub-shards):
 
 ```bash
-uv run python scripts/eval_matrix.py plan \
-  --preset core16 \
-  --model gpt-4.1 \
-  --generator-dataset-label gpt-4.1 \
-  --dataset-path datasets/augmented/unified_processed_gpt-4.1_20260213_033916 \
-  --print-configs
+uv run python scripts/build_eval_slurm_bundle.py \
+  --manifest datasets/augmented/<manifest>.json \
+  --num-gpus 8 \
+  --entry-shards 4
 ```
 
-### 5. Run evaluation matrix
+5. Submit jobs:
 
 ```bash
-uv run python scripts/eval_matrix.py run \
-  --preset core16 \
-  --model gpt-4.1 \
-  --generator-dataset-label gpt-4.1 \
-  --dataset-path datasets/augmented/unified_processed_gpt-4.1_20260213_033916 \
-  --save-interval 50 \
-  --keep-checkpoints 2 \
-  --skip-existing
+bash jobs/generated/<timestamp>/submit_all.sh
 ```
 
-### 6. Analyze results
+6. Merge entry sub-shards into canonical results:
 
 ```bash
-uv run python scripts/analyze_all.py --dir results
+uv run python scripts/merge_eval_subshards.py \
+  --bundle-manifest jobs/generated/<timestamp>/bundle_manifest.json \
+  --strict
 ```
 
-## SLURM: API Models
-
-Submit a sharded array job using `jobs/submit_eval_array.sh` + `jobs/eval_matrix_array.sbatch`:
+7. Plot required Final5 pairwise comparisons:
 
 ```bash
-jobs/submit_eval_array.sh \
-  gpt-4.1 \
-  datasets/augmented/unified_processed_gpt-4.1_20260213_033916 \
-  gpt-4.1 \
-  8 \
-  --dataset-types mmlu_pro,gpqa \
-  --distractor-source scratch,dhuman
+uv run python scripts/plot_final5.py --results-root results --output-dir results/final5_plots
 ```
 
-Arguments: `<model> <dataset_path> <generator_dataset_label> <num_shards> [options]`
+## Sanity Counts
 
-Submit from repo root. The sbatch script uses `$SLURM_SUBMIT_DIR` to set the working directory.
+- Generation side target rows: `3 * 4 * 3 * 1000 = 36,000`
+- Eval side target rows: `3 * 5 * 3 * 2 * 1000 * 3 = 270,000`
 
-## SLURM: Local Models
+## Live API Smoke
 
-Use `jobs/run_local_eval.sh`, which submits array jobs via `jobs/local_model_eval.sbatch`.
-
-Smoke run (2 entries per config, to verify model loads correctly):
+Runs 1-2 rows per split through all 3 generator APIs:
 
 ```bash
-jobs/run_local_eval.sh \
-  --model Qwen/Qwen3-4B-Instruct-2507 \
-  --generator-dataset-label gpt-4.1 \
-  --dataset-path datasets/augmented/unified_processed_gpt-4.1_20260213_033916 \
-  --phase smoke
+uv run python scripts/live_api_smoke.py --limit 2 --dry-run
 ```
 
-Full run:
+## Documentation
 
-```bash
-jobs/run_local_eval.sh \
-  --model Qwen/Qwen3-4B-Instruct-2507 \
-  --generator-dataset-label gpt-4.1 \
-  --dataset-path datasets/augmented/unified_processed_gpt-4.1_20260213_033916 \
-  --phase main \
-  --num-shards 8
-```
-
-Both phases in sequence:
-
-```bash
-jobs/run_local_eval.sh \
-  --model Qwen/Qwen3-4B-Instruct-2507 \
-  --generator-dataset-label gpt-4.1 \
-  --dataset-path datasets/augmented/unified_processed_gpt-4.1_20260213_033916 \
-  --phase both \
-  --num-shards 8
-```
-
-See `jobs/README_local_eval.md` for full argument reference and log locations.
-
-**vLLM prerequisite:** Install vLLM before submitting local eval jobs (see Setup above). The job script does not install it automatically.
-
-## Distractor Generation on SLURM
-
-Use `jobs/aug.sh` for CPU-only distractor generation jobs:
-
-```bash
-sbatch jobs/aug.sh \
-  --model gpt-4.1 \
-  --input datasets/processed/unified_processed \
-  --output datasets/finished_sets/gpt-4.1
-```
-
-Optional flags: `--limit N`, `--save-interval N`.
-
-## Matrix Presets
-
-| Preset | Description |
-|---|---|
-| `core16` | Core evaluation matrix; 15 unique configs after deduplicating overlap (`3H0M` appears in two groups) |
-| `branching21` | Human-prefix branching layout: `0H+1..6M`, `1H+0..5M`, `2H+0..4M`, `3H+0..3M`. Requires branching generation columns (`cond_model_q_a_dhuman_h1/h2/h3`). |
-
-Difficulty is controlled via `--dataset-types` (`arc_easy`, `arc_challenge`, `mmlu_pro`, `gpqa`).
-
-Results are stored at:
-
-```
-results/<generator_dataset_label>/<model>_<dataset_type>_<distractor_source>/<nHnM>/results.json
-```
-
-## Adding Models
-
-Model aliases are defined in `config/model_aliases.toml`. Add an entry:
-
-```toml
-[aliases."my-model"]
-provider = "openai"
-model_id = "gpt-4.1"
-```
-
-For local models with vLLM-specific defaults:
-
-```toml
-[aliases."Qwen/Qwen3-4B-Instruct-2507"]
-provider = "local"
-model_id = "Qwen/Qwen3-4B-Instruct-2507"
-
-[aliases."Qwen/Qwen3-4B-Instruct-2507".defaults]
-dtype = "bfloat16"
-max_model_len = 32768
-```
-
-Supported providers: `openai`, `anthropic`, `gemini`, `deepseek`, `local`.
-
-## Additional Docs
-
-- `docs/evaluation.md` — evaluation matrix details, sharding semantics, preset definitions
-- `docs/models.md` — model registry, alias schema, resolution order
-- `jobs/README_local_eval.md` — local model SLURM workflow reference
+- `docs/models.md`
+- `docs/evaluation.md`
+- `docs/sharding_and_recombination.md`
+- `jobs/README_local_eval.md`

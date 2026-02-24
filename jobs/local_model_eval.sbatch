@@ -21,7 +21,7 @@ GENERATOR_DATASET_LABEL="${GENERATOR_DATASET_LABEL:?GENERATOR_DATASET_LABEL is r
 NUM_SHARDS="${NUM_SHARDS:?NUM_SHARDS is required}"
 SHARD_INDEX="${SLURM_ARRAY_TASK_ID}"
 
-PRESET="${PRESET:-core16}"
+PRESET="${PRESET:-final5}"
 OUTPUT_DIR="${OUTPUT_DIR:-results}"
 EVAL_MODE="${EVAL_MODE:-}"
 LIMIT="${LIMIT:-}"
@@ -29,7 +29,6 @@ MAX_TOKENS="${MAX_TOKENS:-150}"
 SAVE_INTERVAL="${SAVE_INTERVAL:-200}"
 KEEP_CHECKPOINTS="${KEEP_CHECKPOINTS:-2}"
 DATASET_TYPES="${DATASET_TYPES:-}"
-DISTRACTOR_SOURCES="${DISTRACTOR_SOURCES:-}"
 
 cd "$SLURM_SUBMIT_DIR"
 source .venv/bin/activate
@@ -56,10 +55,6 @@ CMD=(
 if [[ -n "$DATASET_TYPES" ]]; then
   IFS=',' read -r -a DATASET_TYPE_ARR <<< "$DATASET_TYPES"
   CMD+=(--dataset-types "${DATASET_TYPE_ARR[@]}")
-fi
-if [[ -n "$DISTRACTOR_SOURCES" ]]; then
-  IFS=',' read -r -a DISTRACTOR_SOURCE_ARR <<< "$DISTRACTOR_SOURCES"
-  CMD+=(--distractor-source "${DISTRACTOR_SOURCE_ARR[@]}")
 fi
 
 printf 'Running shard %s/%s with command: %q ' "$SHARD_INDEX" "$((NUM_SHARDS - 1))" "${CMD[@]}"

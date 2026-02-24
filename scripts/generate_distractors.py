@@ -1,26 +1,7 @@
-#!/usr/bin/env python
-"""
-Generate Synthetic Distractors.
+#!/usr/bin/env python3
+"""Generate Final5 distractor columns for a processed dataset."""
 
-Uses models from the models/ module directly.
-Run with --list-models to see available options.
-
-Usage:
-    # List available models
-    python scripts/generate_distractors.py --list-models
-
-    # Generate with a specific model (sequential, all splits)
-    python scripts/generate_distractors.py --input data.json --model gpt-4.1
-
-    # Run a SINGLE split (for parallelization)
-    python scripts/generate_distractors.py --input data.json --model gpt-4.1 --split arc_easy
-
-    # Run ALL splits in parallel (spawns one process per split)
-    python scripts/generate_distractors.py --input data.json --model gpt-4.1 --parallel
-
-    # Combine split results into a single dataset
-    python scripts/generate_distractors.py --combine datasets/augmented/run_20260213_040000
-"""
+from __future__ import annotations
 
 import argparse
 import subprocess
@@ -28,293 +9,197 @@ import sys
 import time
 from pathlib import Path
 
-# Add parent to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from models import get_client, list_available_models, resolve_model
-from data.augmentor import augment_dataset, AugmentorMode
+from data.augmentor import AugmentorMode, GenerationConfig, augment_dataset
+from data.hub_utils import homogenize_features, push_dataset_to_hub
+from models import list_available_models, resolve_model
 
 
-def parse_args():
-    parser = argparse.ArgumentParser(
-        description="Generate synthetic distractors using models/ module",
-    )
-
-    parser.add_argument(
-        "--list-models",
-        action="store_true",
-        help="List available models and exit"
-    )
-
-    parser.add_argument("--input", "-i", type=str, help="Input dataset JSON file")
-    parser.add_argument("--output", "-o", type=str, help="Output file")
-    parser.add_argument("--model", "-m", type=str, default="gpt-4.1", help="Model alias/name")
-
-    parser.add_argument(
-        "--mode",
-        type=str,
-        default="from_scratch",
-        choices=["from_scratch", "conditioned_human", "conditioned_synthetic"],
-    )
-    parser.add_argument("--num-distractors", type=int, default=9)
-    parser.add_argument("--limit", type=int, help="Limit entries per split")
-    parser.add_argument("--save-interval", type=int, default=5, help="Save intermediate results every N entries")
-    parser.add_argument(
-        "--reasoning-effort",
-        type=str,
-        choices=["minimal", "low", "medium", "high", "none"],
-        default=None,
-        help="Reasoning effort for OpenAI GPT-5 family models (default: provider default)",
-    )
-    parser.add_argument(
-        "--generate-branching-prefix-columns",
-        action="store_true",
-        help="Generate branching prefix columns (cond_model_q_a_dhuman_h1/h2/h3). Off by default.",
-    )
-    parser.add_argument("--skip-push", action="store_true", help="Skip pushing to HF Hub")
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Generate Final5 distractors")
+    parser.add_argument("--list-models", action="store_true", help="List available model aliases")
+    parser.add_argument("--input", "-i", type=str, help="Input processed dataset path")
+    parser.add_argument("--output", "-o", type=str, help="Output dataset path")
+    parser.add_argument("--model", "-m", type=str, default="gpt-5.2-2025-12-11")
+    parser.add_argument("--limit", type=int, default=None)
+    parser.add_argument("--save-interval", type=int, default=25)
+    parser.add_argument("--skip-push", action="store_true")
+    parser.add_argument("--split", type=str, help="Run a single split")
+    parser.add_argument("--parallel", action="store_true", help="Spawn one process per split")
+    parser.add_argument("--combine", type=str, help="Combine split_* directories")
+    parser.add_argument("--force-overwrite", action="store_true")
+    parser.add_argument("--resume-from", type=str, default=None)
     parser.add_argument("--dry-run", action="store_true")
-
-    # Parallelization
-    parser.add_argument("--split", type=str, help="Process only this specific split (for parallelization)")
-    parser.add_argument("--parallel", action="store_true", help="Run all splits in parallel (spawns subprocesses)")
-    parser.add_argument("--combine", type=str, help="Combine per-split results from this directory into a unified dataset")
-
     return parser.parse_args()
 
 
-def combine_splits(combine_dir: str, push_to_hub: bool = True):
-    """Combine per-split result directories into a single DatasetDict."""
+def _model_policy(model_name: str) -> tuple[str, dict, dict]:
+    provider, _, _ = resolve_model(model_name)
+    provider = provider.lower().strip()
+
+    client_kwargs: dict = {}
+    generate_kwargs: dict = {}
+
+    if model_name == "gpt-5.2-2025-12-11":
+        client_kwargs["reasoning_effort"] = "medium"
+    elif model_name == "claude-opus-4-6":
+        generate_kwargs["thinking"] = {"type": "adaptive"}
+
+    return provider, client_kwargs, generate_kwargs
+
+
+def _build_config(model_name: str, save_interval: int, force_overwrite: bool) -> GenerationConfig:
+    provider, client_kwargs, generate_kwargs = _model_policy(model_name)
+
+    return GenerationConfig(
+        mode=AugmentorMode.FINAL5,
+        model_provider=provider,
+        model_name=model_name,
+        save_interval=save_interval,
+        force_overwrite=force_overwrite,
+        reasoning_effort=client_kwargs.get("reasoning_effort"),
+        anthropic_thinking=generate_kwargs.get("thinking") if provider == "anthropic" else None,
+        generate_kwargs={} if provider == "anthropic" else generate_kwargs,
+    )
+
+
+def combine_splits(base_dir: Path, push: bool = True) -> int:
     from datasets import DatasetDict, load_from_disk
-    from data.hub_utils import push_dataset_to_hub, homogenize_features
 
-    combine_path = Path(combine_dir)
-    if not combine_path.exists():
-        print(f"Error: {combine_path} not found")
+    if not base_dir.exists():
+        print(f"Missing combine directory: {base_dir}")
         return 1
 
-    # Find all split_* subdirectories
-    split_dirs = sorted([d for d in combine_path.iterdir() if d.is_dir() and d.name.startswith("split_")])
-
+    split_dirs = sorted([p for p in base_dir.iterdir() if p.is_dir() and p.name.startswith("split_")])
     if not split_dirs:
-        print(f"No split_* directories found in {combine_path}")
+        print(f"No split_* directories found in {base_dir}")
         return 1
 
-    print(f"\n📦 Combining {len(split_dirs)} split directories from {combine_path}")
-
-    combined = {}
+    merged = {}
     for split_dir in split_dirs:
         split_name = split_dir.name.replace("split_", "")
-        print(f"  Loading {split_name} from {split_dir}...")
         ds = load_from_disk(str(split_dir))
-        # If it's a DatasetDict with a single split, unwrap it
         if isinstance(ds, DatasetDict):
             for k, v in ds.items():
-                combined[k] = v
+                merged[k] = v
         else:
-            combined[split_name] = ds
+            merged[split_name] = ds
 
-    result = DatasetDict(combined)
+    result = homogenize_features(DatasetDict(merged))
+    out = base_dir / "combined"
+    result.save_to_disk(str(out))
+    print(f"Saved combined dataset to {out}")
 
-    # Homogenize features
-    result = homogenize_features(result)
-
-    # Save combined
-    output_path = combine_path / "combined"
-    result.save_to_disk(str(output_path))
-    print(f"\n✅ Combined dataset saved to {output_path}")
-    print(f"   Splits: {list(result.keys())}")
-    for split in result:
-        print(f"   - {split}: {len(result[split])} rows")
-
-    if push_to_hub:
-        dataset_name = combine_path.name
-        print(f"\nPushing to Hub as {dataset_name}...")
-        push_dataset_to_hub(result, dataset_name=dataset_name)
+    if push:
+        push_dataset_to_hub(result, dataset_name=base_dir.name)
 
     return 0
 
 
-def run_parallel(args):
-    """Spawn one subprocess per split, all running concurrently."""
+def run_parallel(args: argparse.Namespace) -> int:
     from datasets import load_from_disk
 
     input_path = Path(args.input)
-    dataset = load_from_disk(str(input_path))
-    split_names = list(dataset.keys())
-
-    timestamp = time.strftime("%Y%m%d_%H%M%S")
-    if args.output:
-        base_output = Path(f"{args.output}_{timestamp}")
-    else:
-        base_output = input_path.parent / f"{input_path.name}_{args.model}_{timestamp}"
-
-    base_output.mkdir(parents=True, exist_ok=True)
-
-    print(f"\n🚀 Parallel mode: spawning {len(split_names)} processes")
-    print(f"   Model: {args.model}")
-    print(f"   Splits: {split_names}")
-    print(f"   Output: {base_output}")
-
-    # Build base command
-    script = str(Path(__file__).resolve())
-    base_cmd = [
-        sys.executable, script,
-        "--input", str(input_path),
-        "--model", args.model,
-        "--mode", args.mode,
-        "--num-distractors", str(args.num_distractors),
-        "--save-interval", str(args.save_interval),
-        "--skip-push",  # Don't push individual splits
-    ]
-    if args.reasoning_effort:
-        base_cmd += ["--reasoning-effort", args.reasoning_effort]
-    if args.generate_branching_prefix_columns:
-        base_cmd.append("--generate-branching-prefix-columns")
-    if args.limit:
-        base_cmd += ["--limit", str(args.limit)]
-
-    # Spawn one process per split
-    processes = []
-    for split_name in split_names:
-        split_output = base_output / f"split_{split_name}"
-        cmd = base_cmd + [
-            "--split", split_name,
-            "--output", str(split_output),
-        ]
-        print(f"   Starting {split_name}...")
-        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-        processes.append((split_name, proc))
-
-    # Wait for all and stream output
-    print(f"\n⏳ Waiting for {len(processes)} processes...\n")
-    failed = []
-    for split_name, proc in processes:
-        stdout, _ = proc.communicate()
-        status = "✅" if proc.returncode == 0 else "❌"
-        print(f"{status} {split_name} (exit code {proc.returncode})")
-        if stdout:
-            # Print last few lines
-            lines = stdout.strip().split("\n")
-            for line in lines[-5:]:
-                print(f"   {line}")
-        if proc.returncode != 0:
-            failed.append(split_name)
-        print()
-
-    if failed:
-        print(f"\n⚠️ {len(failed)} splits failed: {failed}")
+    ds = load_from_disk(str(input_path))
+    if not hasattr(ds, "keys"):
+        print("Parallel mode requires DatasetDict input")
         return 1
 
-    # Auto-combine
-    print(f"\n📦 All splits done. Combining...")
-    return combine_splits(str(base_output), push_to_hub=not args.skip_push)
+    timestamp = time.strftime("%Y%m%d_%H%M%S")
+    base_output = Path(args.output) if args.output else input_path.parent / f"{input_path.name}_{args.model}_{timestamp}"
+    base_output.mkdir(parents=True, exist_ok=True)
+
+    script = str(Path(__file__).resolve())
+    base_cmd = [
+        sys.executable,
+        script,
+        "--input",
+        str(input_path),
+        "--model",
+        args.model,
+        "--save-interval",
+        str(args.save_interval),
+        "--skip-push",
+    ]
+    if args.limit is not None:
+        base_cmd.extend(["--limit", str(args.limit)])
+    if args.force_overwrite:
+        base_cmd.append("--force-overwrite")
+
+    procs = []
+    for split in ds.keys():
+        out = base_output / f"split_{split}"
+        cmd = base_cmd + ["--split", split, "--output", str(out)]
+        procs.append((split, subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)))
+
+    failed = []
+    for split, proc in procs:
+        stdout, _ = proc.communicate()
+        if proc.returncode != 0:
+            failed.append(split)
+        print(f"[{split}] rc={proc.returncode}")
+        if stdout:
+            for line in stdout.strip().splitlines()[-8:]:
+                print(f"  {line}")
+
+    if failed:
+        print(f"Failed splits: {failed}")
+        return 1
+
+    return combine_splits(base_output, push=not args.skip_push)
 
 
-def main():
+def main() -> int:
     args = parse_args()
-    if args.reasoning_effort == "none":
-        args.reasoning_effort = None
 
     if args.list_models:
-        print("\n📋 Available Models (from config/model_aliases.toml + providers):")
-        print("=" * 50)
-        for model_name in list_available_models(include_providers=True):
-            print(f"  {model_name}")
+        for name in list_available_models(include_providers=False):
+            print(name)
         return 0
 
-    # Combine mode
     if args.combine:
-        return combine_splits(args.combine, push_to_hub=not args.skip_push)
+        return combine_splits(Path(args.combine), push=not args.skip_push)
 
     if not args.input:
-        print("Error: --input required")
+        print("--input is required")
         return 1
 
     input_path = Path(args.input)
     if not input_path.exists():
-        print(f"Error: {input_path} not found")
+        print(f"Input not found: {input_path}")
         return 1
 
-    # Parallel mode
     if args.parallel:
         return run_parallel(args)
 
-    # Get client directly from models module
-    provider_name, _, _ = resolve_model(args.model)
-    client_kwargs = {}
-    if provider_name == "openai":
-        if args.reasoning_effort:
-            client_kwargs["reasoning_effort"] = args.reasoning_effort
-
-    try:
-        client = get_client(args.model, **client_kwargs)
-    except ValueError as e:
-        print(f"Error: {e}")
-        print("Use --list-models to see available options")
-        return 1
-
-    mode_map = {
-        "from_scratch": AugmentorMode.FROM_SCRATCH,
-        "conditioned_human": AugmentorMode.CONDITIONED_HUMAN,
-        "conditioned_synthetic": AugmentorMode.CONDITIONED_SYNTHETIC,
-    }
+    cfg = _build_config(args.model, args.save_interval, args.force_overwrite)
 
     if args.dry_run:
-        print(f"\n🔧 Model: {client.name}")
-        print(f"   Mode: {args.mode}")
-        print(f"   Input: {input_path}")
-        print("\n🔍 Dry run - done")
+        print(f"Model: {args.model}")
+        print(f"Provider: {cfg.model_provider}")
+        print(f"Reasoning effort: {cfg.reasoning_effort}")
+        print(f"Anthropic thinking: {cfg.anthropic_thinking}")
+        print(f"Generate kwargs: {cfg.generate_kwargs}")
         return 0
 
-    print("\n🚀 Starting generation...")
-
-    # Determine provider from client type
-    provider = client.__class__.__name__.replace("Client", "").lower()
-
-    from data.augmentor import GenerationConfig, augment_dataset
-
     timestamp = time.strftime("%Y%m%d_%H%M%S")
-    if args.output:
-        output_path = Path(f"{args.output}_{timestamp}")
-    else:
-        output_path = input_path.parent / f"{input_path.name}_{args.model}_{timestamp}"
+    output_path = Path(args.output) if args.output else input_path.parent / f"{input_path.name}_{args.model}_{timestamp}"
 
-    print(f"\n🔧 Model: {client.name}")
-    print(f"   Mode: {args.mode}")
-    print(f"   Input: {input_path}")
-    print(f"   Output: {output_path}")
-    print(f"   Reasoning effort: {args.reasoning_effort or 'provider default'}")
-    print(f"   Branching prefix cols: {args.generate_branching_prefix_columns}")
-    if args.split:
-        print(f"   Split: {args.split}")
-
-    config = GenerationConfig(
-        mode=mode_map[args.mode],
-        model_provider=provider,
-        model_name=args.model,
-        num_distractors=args.num_distractors,
-        save_interval=args.save_interval,
-        reasoning_effort=args.reasoning_effort,
-        generate_branching_prefix_columns=args.generate_branching_prefix_columns,
-    )
-
-    print(f"🚀 Starting generation for {input_path}...")
-
-    # Pass split filter if specified
     split_filter = [args.split] if args.split else None
-
     augment_dataset(
         dataset_path=input_path,
-        config=config,
+        config=cfg,
         output_path=output_path,
         limit=args.limit,
+        resume_from=Path(args.resume_from) if args.resume_from else None,
         push_to_hub=not args.skip_push,
         splits=split_filter,
     )
 
-    print(f"\n✅ Done. Augmented dataset saved to {output_path}")
+    print(f"Done: {output_path}")
     return 0
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    raise SystemExit(main())
