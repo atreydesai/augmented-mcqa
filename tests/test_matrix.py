@@ -24,8 +24,18 @@ def test_core16_matrix_count(tmp_path):
         preset="core16",
         output_base=tmp_path,
     )
-    # Historical core16 naming; unique config set currently has 15 settings.
-    assert len(configs) == len(MATRIX_PRESETS["core16"]) * 2 * 2
+    # Human-only configs (nM=0) are source-agnostic and deduplicated across
+    # distractor sources.  core16 has 3 such configs (1H0M, 2H0M, 3H0M) and
+    # 12 source-sensitive configs.  With 2 sources × 2 dataset types:
+    #   source-sensitive: 12 * 2 * 2 = 48
+    #   human-only:        3 * 1 * 2 =  6
+    #   total:                          54
+    core16 = MATRIX_PRESETS["core16"]
+    n_human_only = sum(1 for _, m in core16 if m == 0)
+    n_source_sensitive = len(core16) - n_human_only
+    n_dataset_types, n_sources = 2, 2
+    expected = n_source_sensitive * n_sources * n_dataset_types + n_human_only * n_dataset_types
+    assert len(configs) == expected
 
 
 def test_branching21_matrix_count(tmp_path):

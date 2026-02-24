@@ -115,10 +115,18 @@ def build_matrix_configs(
     label_root = output_base if output_base.name == generator_label else output_base / generator_label
 
     for dataset_type in dataset_types:
+        human_only_emitted: set[int] = set()
         for source_name in distractor_sources:
             distractor_type = DISTRACTOR_SOURCE_MAP[source_name]
 
             for num_human, num_model in get_preset_distractor_configs(preset):
+                # Configs with num_model=0 are identical across all distractor
+                # sources: no model distractors are selected regardless of
+                # generation strategy.  Emit only once per (dataset_type, nH).
+                if num_model == 0:
+                    if num_human in human_only_emitted:
+                        continue
+                    human_only_emitted.add(num_human)
                 config_str = f"{num_human}H{num_model}M"
                 name = f"{generator_label}_{model_safe}_{dataset_type}_{source_name}_{config_str}"
                 output_dir = (
