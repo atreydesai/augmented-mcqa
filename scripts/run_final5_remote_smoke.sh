@@ -385,7 +385,7 @@ echo "[5/9] Merging partial entry shards"
 echo
 echo "[6/9] Validating counts"
 expected_canonical="$(jq '.config_roots | length' "$BUNDLE_DIR/bundle_manifest.json")"
-expected_partial="$(jq '[.expected_entry_shards_by_config_root[]] | add' "$BUNDLE_DIR/bundle_manifest.json")"
+expected_partial="$(jq '[.expected_entry_shards_by_config_root[] | select(. > 1)] | add // 0' "$BUNDLE_DIR/bundle_manifest.json")"
 
 if command -v rg >/dev/null 2>&1; then
   actual_canonical="$(find "$SMOKE_OUT" -path '*/summary.json' | rg '/(human_from_scratch|model_from_scratch|augment_human|augment_model|augment_ablation)/summary.json$' | wc -l | tr -d ' ')"
