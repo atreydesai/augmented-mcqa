@@ -23,7 +23,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output", "-o", type=str, help="Output dataset path")
     parser.add_argument("--model", "-m", type=str, default="gpt-5.2-2025-12-11")
     parser.add_argument("--limit", type=int, default=None)
-    parser.add_argument("--save-interval", type=int, default=25)
+    parser.add_argument("--save-interval", type=int, default=200)
     parser.add_argument("--skip-push", action="store_true")
     parser.add_argument("--split", type=str, help="Run a single split")
     parser.add_argument("--parallel", action="store_true", help="Spawn one process per split")
