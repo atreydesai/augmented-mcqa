@@ -61,5 +61,6 @@ def test_collect_and_plot_final5_outputs_include_random_baseline_and_ci(tmp_path
     outputs = plot_final5_pairwise(root, output_dir, include_tables=True)
 
     assert outputs
-    assert any(path.suffix == ".png" for path in outputs)
+    png_outputs = [path for path in outputs if path.suffix == ".png"]
+    assert len(png_outputs) == 3
     assert (output_dir / "final5_results_summary.csv").exists()

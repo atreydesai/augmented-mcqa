@@ -241,30 +241,39 @@ def plot_final5_pairwise(
 
     grouped = df.groupby(["generator", "dataset", "mode"], sort=True)
     for (generator, dataset, mode), group_df in grouped:
-        fig, axes = plt.subplots(1, len(PAIRWISE_COMPARISONS), figsize=(18, 5), constrained_layout=True)
-        if len(PAIRWISE_COMPARISONS) == 1:
-            axes = [axes]
-
-        for ax, (left, right, title_key) in zip(axes, PAIRWISE_COMPARISONS):
+        for left, right, title_key in PAIRWISE_COMPARISONS:
+            fig, ax = plt.subplots(1, 1, figsize=(8.5, 5.5))
             pair_df = _pairwise_subset(group_df, left, right)
             pretty_title = title_key.replace("_", " ")
-            _plot_pair(ax, pair_df, left, right, pretty_title)
+            _plot_pair(
+                ax,
+                pair_df,
+                left,
+                right,
+                f"{pretty_title}\n{generator} | {dataset} | {mode}",
+            )
 
-        handles, labels = axes[0].get_legend_handles_labels()
-        if handles:
-            fig.legend(handles, labels, loc="upper center", ncols=2)
+            handles, labels = ax.get_legend_handles_labels()
+            if handles:
+                fig.legend(
+                    handles,
+                    labels,
+                    loc="lower center",
+                    bbox_to_anchor=(0.5, 0.02),
+                    ncols=2,
+                    frameon=False,
+                )
+            fig.subplots_adjust(top=0.84, bottom=0.22)
 
-        fig.suptitle(f"Final5 Pairwise | generator={generator} | dataset={dataset} | mode={mode}")
+            out_png = out_dir / f"pairwise_{generator}_{dataset}_{mode}_{title_key}.png"
+            fig.savefig(out_png, dpi=200)
+            plt.close(fig)
+            outputs.append(out_png)
 
-        out_png = out_dir / f"pairwise_{generator}_{dataset}_{mode}.png"
-        fig.savefig(out_png, dpi=200)
-        plt.close(fig)
-        outputs.append(out_png)
-
-        if include_tables:
-            per_group_csv = out_dir / f"pairwise_{generator}_{dataset}_{mode}.csv"
-            group_df.sort_values(["setting", "eval_model"], inplace=False).to_csv(per_group_csv, index=False)
-            outputs.append(per_group_csv)
+            if include_tables:
+                per_pair_csv = out_dir / f"pairwise_{generator}_{dataset}_{mode}_{title_key}.csv"
+                pair_df.sort_values(["setting", "eval_model"], inplace=False).to_csv(per_pair_csv, index=False)
+                outputs.append(per_pair_csv)
 
     if include_tables:
         full_csv = out_dir / "final5_results_summary.csv"
