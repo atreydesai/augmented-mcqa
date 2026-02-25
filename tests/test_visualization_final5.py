@@ -63,4 +63,38 @@ def test_collect_and_plot_final5_outputs_include_random_baseline_and_ci(tmp_path
     assert outputs
     png_outputs = [path for path in outputs if path.suffix == ".png"]
     assert len(png_outputs) == 3
-    assert (output_dir / "final5_results_summary.csv").exists()
+    assert (output_dir / "tables" / "final5_results_summary.csv").exists()
+
+
+def test_plot_final5_pairwise_groups_datasets_side_by_side_into_six_mode_plots(tmp_path):
+    root = tmp_path / "results"
+    generator = "gpt-5.2-2025-12-11"
+    modes = ["full_question", "choices_only"]
+    datasets = ["arc_challenge", "mmlu_pro", "gpqa"]
+    eval_models = ["Qwen_Qwen3-4B-Instruct-2507", "allenai_Olmo-3-7B-Instruct"]
+    settings = [
+        "human_from_scratch",
+        "model_from_scratch",
+        "augment_human",
+        "augment_model",
+        "augment_ablation",
+    ]
+
+    for mode_idx, mode in enumerate(modes):
+        for dataset_idx, dataset in enumerate(datasets):
+            for model_idx, eval_model in enumerate(eval_models):
+                for setting_idx, setting in enumerate(settings):
+                    total = 40
+                    correct = 10 + mode_idx + dataset_idx + model_idx + setting_idx
+                    out = root / generator / eval_model / mode / dataset / setting / "summary.json"
+                    _write_summary(out, total=total, correct=correct)
+
+    output_dir = tmp_path / "plots"
+    outputs = plot_final5_pairwise(root, output_dir, include_tables=True)
+
+    png_outputs = [path for path in outputs if path.suffix == ".png"]
+    assert len(png_outputs) == 6
+
+    csv_outputs = [path for path in outputs if path.suffix == ".csv"]
+    assert len(csv_outputs) == 7  # 6 per-plot csv + 1 full summary csv
+    assert all(path.parent == output_dir / "tables" for path in csv_outputs)
