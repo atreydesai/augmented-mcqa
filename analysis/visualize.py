@@ -288,11 +288,11 @@ def plot_final5_pairwise(
                     handles,
                     labels,
                     loc="lower center",
-                    bbox_to_anchor=(0.5, 0.02),
+                    bbox_to_anchor=(0.5, 0.0),
                     ncols=2,
                     frameon=False,
                 )
-            fig.subplots_adjust(top=0.82, bottom=0.20, wspace=0.22)
+            fig.subplots_adjust(top=0.82, bottom=0.26, wspace=0.22)
 
             out_png = out_dir / f"pairwise_{generator}_{mode}_{title_key}.png"
             fig.savefig(out_png, dpi=200)
