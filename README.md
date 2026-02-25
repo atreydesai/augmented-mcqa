@@ -30,6 +30,8 @@ Generation/evaluation setting IDs:
 ## Setup
 
 ```bash
+cp .env.example .env
+# fill API keys and path values in .env
 uv sync
 ```
 
@@ -52,6 +54,12 @@ jobs/install_local_model_weights.sh --dry-run
 
 ```bash
 uv run python scripts/download_datasets.py --all
+```
+
+If you prefer the module entrypoint, run:
+
+```bash
+uv run python -m data.downloader --dataset all
 ```
 
 2. Process to Final5 unified schema (deterministic first 1000 per dataset):
@@ -101,8 +109,11 @@ uv run python scripts/plot_final5.py --results-root results --output-dir results
 
 ## Sanity Counts
 
-- Generation side target rows: `3 * 4 * 3 * 1000 = 36,000`
-- Eval side target rows: `3 * 5 * 3 * 2 * 1000 * 3 = 270,000`
+- Ideal generation target rows (if every dataset has 1000 rows): `3 * 4 * 3 * 1000 = 36,000`
+- Ideal eval target rows (if every dataset has 1000 rows): `3 * 5 * 3 * 2 * 1000 * 3 = 270,000`
+
+Actual totals can be lower when a source dataset has fewer than `limit` rows after filtering/validation
+(for example, GPQA may be `<1000` rows in some runs).
 
 ## Live API Smoke
 

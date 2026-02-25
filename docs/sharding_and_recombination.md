@@ -202,10 +202,14 @@ for k in sorted(setting_totals):
 PY
 ```
 
-Expected global total for full Final5 eval:
+Expected global totals for full Final5 eval **when all 3 datasets contribute 1000 rows**:
 
 - `270000` rows
 - per-setting expected rows: `54000` each
+
+If a dataset has fewer available rows after preprocessing/filtering (for example GPQA < 1000),
+actual totals will be lower. Use `bundle_manifest.json` `expected_eval_rows` as the run target,
+and compare it against merged output totals.
 
 ## 5) Troubleshooting
 

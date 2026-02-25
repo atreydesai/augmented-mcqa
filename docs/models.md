@@ -37,13 +37,15 @@ Implementation points:
 
 - `scripts/generate_distractors.py` (`_model_policy`)
 - `data/augmentor.py` (`GenerationConfig` + provider-specific kwargs)
-- `models/gemini_client.py` (guardrails)
+- `models/gemini_client.py` (OpenAI-compatible transport)
 
-## Gemini 3 Guardrail
+## Gemini 3 Transport
 
-Gemini requests in this repo reject mixed thinking knobs in one request:
+Gemini requests use OpenAI-compatible Chat Completions transport:
 
-- cannot send both `thinking_level` and legacy `thinking_budget`
+- base URL: `https://generativelanguage.googleapis.com/v1beta/openai/`
+- model: `gemini-3.1-pro-preview`
+- default generation policy: no explicit thinking knobs
 
 Reference: [Gemini 3 docs](https://ai.google.dev/gemini-api/docs/gemini-3).
 
