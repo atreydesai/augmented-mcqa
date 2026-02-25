@@ -10,7 +10,7 @@ from experiments.defaults import (
     DEFAULT_EVAL_TEMPERATURE,
     DEFAULT_MATRIX_PRESET,
 )
-from experiments.matrix import build_matrix_configs
+from experiments.matrix import build_manifest, build_matrix_configs, save_manifest
 from scripts import eval_matrix
 
 
@@ -105,3 +105,45 @@ def test_eval_matrix_plan_no_manifest_attribute_crash(tmp_path):
     )
     assert rc == 0
     assert out_manifest.exists()
+
+
+def test_eval_matrix_manifest_run_preserves_entry_shards(tmp_path):
+    model = "Qwen/Qwen3-4B-Instruct-2507"
+    dataset_path = Path("datasets/augmented/final5")
+    generator_label = "gpt-5.2-2025-12-11"
+
+    configs = build_matrix_configs(
+        model=model,
+        dataset_path=dataset_path,
+        generator_dataset_label=generator_label,
+        dataset_types=["arc_challenge"],
+        output_base=tmp_path,
+        entry_shards=2,
+        entry_shard_index=1,
+        entry_shard_strategy="contiguous",
+    )
+    manifest = build_manifest(
+        configs,
+        preset="final5",
+        model=model,
+        dataset_path=dataset_path,
+        generator_dataset_label=generator_label,
+        dataset_types=["arc_challenge"],
+    )
+    manifest_path = save_manifest(manifest, tmp_path / "run_manifest.json")
+
+    parser = eval_matrix.build_parser()
+    args = parser.parse_args(
+        [
+            "run",
+            "--manifest",
+            str(manifest_path),
+            "--generator-dataset-label",
+            generator_label,
+        ]
+    )
+    resolved = eval_matrix._resolve_configs(args)
+    assert resolved
+    assert all(cfg.entry_shards == 2 for cfg in resolved)
+    assert all(cfg.entry_shard_index == 1 for cfg in resolved)
+    assert all(cfg.entry_shard_strategy == "contiguous" for cfg in resolved)

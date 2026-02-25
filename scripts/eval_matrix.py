@@ -98,9 +98,11 @@ def _resolve_configs(args: argparse.Namespace) -> list:
 
     for cfg in configs:
         cfg.save_interval = args.save_interval
-        cfg.entry_shards = args.entry_shards
-        cfg.entry_shard_index = args.entry_shard_index
-        cfg.entry_shard_strategy = args.entry_shard_strategy
+        # Preserve per-config shard settings from manifest runs.
+        if not manifest_path:
+            cfg.entry_shards = args.entry_shards
+            cfg.entry_shard_index = args.entry_shard_index
+            cfg.entry_shard_strategy = args.entry_shard_strategy
         if hasattr(args, "eval_batch_size") and args.eval_batch_size is not None:
             cfg.inference_batch_size = int(args.eval_batch_size)
         if hasattr(args, "vllm_max_num_batched_tokens"):
