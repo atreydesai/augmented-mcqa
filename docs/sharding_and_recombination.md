@@ -60,6 +60,15 @@ uv run python scripts/merge_eval_subshards.py \
   --strict
 ```
 
+### F. Single-GPU smoke validation
+
+```bash
+scripts/run_final5_remote_smoke.sh
+```
+
+This smoke path uses a tiny dataset and still exercises the same sharding model
+(`mode x dataset_part`) while running all 5 Final5 settings in each work unit.
+
 ## 3) Output Layout
 
 Canonical per-config outputs:

@@ -77,6 +77,30 @@ uv run python scripts/eval_matrix.py run \
   --skip-existing
 ```
 
+## Remote Single-GPU Smoke (Sharding)
+
+Use this to validate balanced sharding, merge, and plotting end-to-end with a
+tiny dataset (`arc=5`, `mmlu_pro=5`, `gpqa=2`):
+
+```bash
+scripts/run_final5_remote_smoke.sh
+```
+
+The script:
+
+- builds a tiny Arrow dataset
+- builds a per-pair bundle (`target_rows_per_subsplit=3` by default)
+- runs all array tasks locally without `sbatch`
+- strict-merges partials
+- validates summary counts and `question_idx` uniqueness
+- runs Final5 plots
+
+Checkpoint note:
+
+- `eval_matrix` currently accepts `--save-interval` and `--keep-checkpoints`,
+  but eval does not currently emit periodic temp JSON checkpoints while running.
+  The smoke script still reports any new `results/temp_final5_*.json` files.
+
 ## Baselines and Deltas
 
 Batch summaries include:

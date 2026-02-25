@@ -127,6 +127,25 @@ Runs 1-2 rows per split through all 3 generator APIs:
 uv run python scripts/live_api_smoke.py --limit 2 --dry-run
 ```
 
+## Remote Eval Sharding Smoke
+
+Runs a minimum-question end-to-end Final5 eval sharding test on one GPU host
+with all eval models and all 5 settings.
+
+```bash
+scripts/run_final5_remote_smoke.sh
+```
+
+Useful overrides:
+
+```bash
+scripts/run_final5_remote_smoke.sh \
+  --gen-full-ds datasets/augmented/final5_full_<timestamp>_<generator> \
+  --target-rows 3 \
+  --save-interval 2 \
+  --max-tokens 32
+```
+
 ## Documentation
 
 - `docs/models.md`
