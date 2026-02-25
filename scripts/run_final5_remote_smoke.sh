@@ -30,7 +30,7 @@ Notes:
 USAGE
 }
 
-PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 GEN_FULL_DS=""
 GENERATOR_LABEL=""
 HF_HOME_OVERRIDE="/fs/nexus-scratch/adesai10/hub"
@@ -107,11 +107,27 @@ while [[ $# -gt 0 ]]; do
 done
 
 cd "$PROJECT_ROOT"
+PROJECT_ROOT="$(pwd -P)"
 
 if [[ -f ".venv/bin/activate" ]]; then
   # shellcheck disable=SC1091
   source .venv/bin/activate
 fi
+
+if command -v uv >/dev/null 2>&1; then
+  PY_RUNNER=(uv run python)
+else
+  if ! command -v python >/dev/null 2>&1; then
+    echo "Error: neither 'uv' nor 'python' is available on PATH."
+    exit 1
+  fi
+  PY_RUNNER=(python)
+  echo "Warning: 'uv' not found; using 'python' from current environment."
+fi
+
+export DATASETS_DIR="$PROJECT_ROOT/datasets"
+export RESULTS_DIR="$PROJECT_ROOT/results"
+mkdir -p "$DATASETS_DIR" "$RESULTS_DIR"
 
 export HF_HOME="$HF_HOME_OVERRIDE"
 export MODEL_CACHE_DIR="$HF_HOME_OVERRIDE"
@@ -125,7 +141,11 @@ if ! command -v jq >/dev/null 2>&1; then
 fi
 
 if [[ -z "$GEN_FULL_DS" ]]; then
-  GEN_FULL_DS="$(ls -dt datasets/augmented/final5_full_* 2>/dev/null | head -n1 || true)"
+  GEN_FULL_DS="$(ls -dt "$DATASETS_DIR"/augmented/final5_full_* 2>/dev/null | head -n1 || true)"
+fi
+
+if [[ -n "$GEN_FULL_DS" && "$GEN_FULL_DS" != /* ]]; then
+  GEN_FULL_DS="$PROJECT_ROOT/$GEN_FULL_DS"
 fi
 
 if [[ -z "$GEN_FULL_DS" ]]; then
@@ -142,10 +162,10 @@ if [[ -z "$GENERATOR_LABEL" ]]; then
 fi
 
 TS="${TIMESTAMP_OVERRIDE:-$(date +%Y%m%d_%H%M%S)}"
-SMOKE_DS="datasets/augmented/final5_smoke_${TS}"
-SMOKE_MANIFEST="datasets/augmented/final5_smoke_manifest_${TS}.json"
-BUNDLE_DIR="jobs/generated/final5_smoke_${TS}"
-SMOKE_OUT="results/final5_smoke_${TS}"
+SMOKE_DS="$DATASETS_DIR/augmented/final5_smoke_${TS}"
+SMOKE_MANIFEST="$DATASETS_DIR/augmented/final5_smoke_manifest_${TS}.json"
+BUNDLE_DIR="$PROJECT_ROOT/jobs/generated/final5_smoke_${TS}"
+SMOKE_OUT="$RESULTS_DIR/final5_smoke_${TS}"
 MARKER="/tmp/final5_eval_smoke_${TS}.marker"
 touch "$MARKER"
 
@@ -159,7 +179,7 @@ echo "Smoke output: $SMOKE_OUT"
 echo
 echo "[1/9] Building tiny smoke dataset (arc=${ARC_LIMIT}, mmlu_pro=${MMLU_LIMIT}, gpqa=${GPQA_LIMIT})"
 export GEN_FULL_DS SMOKE_DS ARC_LIMIT MMLU_LIMIT GPQA_LIMIT
-uv run python - <<'PY'
+"${PY_RUNNER[@]}" - <<'PY'
 from datasets import DatasetDict, load_from_disk
 import os
 
@@ -197,7 +217,7 @@ JSON
 
 echo
 echo "[3/9] Building per-pair bundle"
-uv run python scripts/build_eval_slurm_bundle.py \
+"${PY_RUNNER[@]}" scripts/build_eval_slurm_bundle.py \
   --manifest "$SMOKE_MANIFEST" \
   --output-dir "$BUNDLE_DIR" \
   --output-base "$SMOKE_OUT" \
@@ -252,7 +272,7 @@ fi
 
 echo
 echo "[5/9] Merging partial entry shards"
-uv run python scripts/merge_eval_subshards.py \
+"${PY_RUNNER[@]}" scripts/merge_eval_subshards.py \
   --bundle-manifest "$BUNDLE_DIR/bundle_manifest.json" \
   --strict
 
@@ -283,7 +303,7 @@ fi
 echo
 echo "[7/9] Checking question_idx uniqueness in merged Arrow rows"
 export SMOKE_OUT
-uv run python - <<'PY'
+"${PY_RUNNER[@]}" - <<'PY'
 from collections import Counter
 from pathlib import Path
 import os
@@ -304,7 +324,7 @@ PY
 if [[ "$SKIP_PLOT" == "0" ]]; then
   echo
   echo "[8/9] Plotting Final5 visuals"
-  uv run python scripts/plot_final5.py \
+  "${PY_RUNNER[@]}" scripts/plot_final5.py \
     --results-root "$SMOKE_OUT" \
     --output-dir "$SMOKE_OUT/final5_plots"
   find "$SMOKE_OUT/final5_plots" -maxdepth 1 -type f | sort
@@ -315,7 +335,7 @@ fi
 
 echo
 echo "[9/9] Checking for new temp_final5 checkpoint files (eval-side currently expected to be none)"
-find results -maxdepth 1 -name 'temp_final5_*.json' -newer "$MARKER" -print || true
+find "$RESULTS_DIR" -maxdepth 1 -name 'temp_final5_*.json' -newer "$MARKER" -print || true
 
 echo
 echo "Smoke run complete."
