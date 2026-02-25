@@ -4,7 +4,7 @@ from pathlib import Path
 from analysis.visualize import collect_final5_results, plot_final5_pairwise
 
 
-def _write_result(path: Path, *, total: int, correct: int) -> None:
+def _write_summary(path: Path, *, total: int, correct: int) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     payload = {
         "config": {"name": "cfg"},
@@ -21,7 +21,6 @@ def _write_result(path: Path, *, total: int, correct: int) -> None:
         },
         "timing": {"start": "2026-01-01T00:00:00Z", "end": "2026-01-01T00:00:10Z"},
         "entry_failures": [],
-        "results": [],
     }
     path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
@@ -45,8 +44,8 @@ def test_collect_and_plot_final5_outputs_include_random_baseline_and_ci(tmp_path
         for setting_idx, setting in enumerate(settings):
             total = 100
             correct = 20 + model_idx * 5 + setting_idx
-            out = root / generator / eval_model / mode / dataset / setting / "results.json"
-            _write_result(out, total=total, correct=correct)
+            out = root / generator / eval_model / mode / dataset / setting / "summary.json"
+            _write_summary(out, total=total, correct=correct)
 
     df = collect_final5_results(root)
     assert not df.empty

@@ -1,26 +1,47 @@
 import json
 from pathlib import Path
 
+from datasets import Dataset, DatasetDict
+
 from scripts import build_eval_slurm_bundle
 
 
-def _write_regen_manifest(path: Path) -> None:
+def _build_generator_dataset(path: Path, *, arc_rows: int, mmlu_rows: int, gpqa_rows: int) -> None:
+    arc = Dataset.from_list([{"id": i} for i in range(arc_rows)])
+    mmlu = Dataset.from_list([{"id": i} for i in range(mmlu_rows)])
+    gpqa = Dataset.from_list([{"id": i} for i in range(gpqa_rows)])
+    ds = DatasetDict({
+        "arc_challenge": arc,
+        "mmlu_pro": mmlu,
+        "gpqa": gpqa,
+    })
+    ds.save_to_disk(str(path))
+
+
+def _write_regen_manifest(path: Path, datasets_root: Path) -> None:
+    gpt_path = datasets_root / "gpt"
+    opus_path = datasets_root / "opus"
+    gemini_path = datasets_root / "gemini"
+    _build_generator_dataset(gpt_path, arc_rows=6, mmlu_rows=6, gpqa_rows=3)
+    _build_generator_dataset(opus_path, arc_rows=6, mmlu_rows=6, gpqa_rows=3)
+    _build_generator_dataset(gemini_path, arc_rows=6, mmlu_rows=6, gpqa_rows=3)
+
     payload = {
         "manifest_version": 1,
         "generators": [
             {
                 "model": "gpt-5.2-2025-12-11",
-                "dataset_path": "datasets/augmented/gpt-5.2-2025-12-11",
+                "dataset_path": str(gpt_path),
                 "returncode": 0,
             },
             {
                 "model": "claude-opus-4-6",
-                "dataset_path": "datasets/augmented/claude-opus-4-6",
+                "dataset_path": str(opus_path),
                 "returncode": 0,
             },
             {
                 "model": "gemini-3.1-pro-preview",
-                "dataset_path": "datasets/augmented/gemini-3.1-pro-preview",
+                "dataset_path": str(gemini_path),
                 "returncode": 0,
             },
         ],
@@ -30,7 +51,7 @@ def _write_regen_manifest(path: Path) -> None:
 
 def test_build_eval_slurm_bundle_generates_expected_shard_math(tmp_path, monkeypatch):
     regen_manifest = tmp_path / "regen_manifest.json"
-    _write_regen_manifest(regen_manifest)
+    _write_regen_manifest(regen_manifest, tmp_path / "generated_ds")
 
     output_dir = tmp_path / "bundle"
 
@@ -39,10 +60,8 @@ def test_build_eval_slurm_bundle_generates_expected_shard_math(tmp_path, monkeyp
         str(regen_manifest),
         "--output-dir",
         str(output_dir),
-        "--num-gpus",
-        "8",
-        "--entry-shards",
-        "4",
+        "--target-rows-per-subsplit",
+        "3",
         "--output-base",
         "results",
     ]
@@ -54,21 +73,24 @@ def test_build_eval_slurm_bundle_generates_expected_shard_math(tmp_path, monkeyp
     manifest_path = output_dir / "bundle_manifest.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
 
-    # Base groups = 3 generators * 3 eval models * 2 modes = 18
-    assert manifest["total_base_groups"] == 18
-    # Job groups = base groups * entry_shards = 18 * 4 = 72
-    assert manifest["total_job_groups"] == 72
-    # Array tasks = job groups * num_gpus = 72 * 8 = 576
-    assert manifest["total_array_tasks"] == 576
-    # Eval rows = 3 gen * 3 eval * 2 modes * 3 datasets * 5 settings * 1000 limit
-    assert manifest["expected_eval_rows"] == 270000
+    # Pair groups = 3 generators * 3 eval models = 9
+    assert manifest["total_pairs"] == 9
+    assert manifest["total_sbatch_files"] == 9
+    # Work-units per pair: 2 modes * (2+2+1) dataset parts = 10
+    assert manifest["total_array_tasks"] == 90
+    # Eval rows = 3 generators * 15 rows * 3 eval models * 2 modes * 5 settings
+    assert manifest["expected_eval_rows"] == 1350
 
     sbatch_files = sorted(output_dir.glob("*.sbatch"))
-    assert len(sbatch_files) == 72
+    assert len(sbatch_files) == 9
+    work_units_files = sorted(output_dir.glob("*.work_units.json"))
+    assert len(work_units_files) == 9
+    sample_units = json.loads(work_units_files[0].read_text(encoding="utf-8"))
+    assert len(sample_units) == 10
 
     sample = sbatch_files[0].read_text(encoding="utf-8")
     assert "--entry-shards \"$ENTRY_SHARDS\"" in sample
-    assert "--num-shards \"$NUM_SHARDS\"" in sample
+    assert "WORK_UNITS_FILE" in sample
 
     submit_all = output_dir / "submit_all.sh"
     assert submit_all.exists()

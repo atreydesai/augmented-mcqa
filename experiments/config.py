@@ -31,6 +31,7 @@ EvalMode = Literal["accuracy", "behavioral"]
 SamplingStrategy = Literal["independent", "branching_cumulative"]
 BranchingMode = Literal["shuffled_prefix", "human_prefix"]
 WorkpackFormat = Literal["none", "parquet", "arrow"]
+EntryShardStrategy = Literal["contiguous", "modulo"]
 
 
 @dataclass
@@ -103,6 +104,7 @@ class ExperimentConfig:
     # Sub-sharding within config rows.
     entry_shards: int = 1
     entry_shard_index: int = 0
+    entry_shard_strategy: EntryShardStrategy = "contiguous"
 
     # Data loading acceleration
     workpack_format: WorkpackFormat = "none"
@@ -151,6 +153,10 @@ class ExperimentConfig:
         if self.entry_shard_index < 0 or self.entry_shard_index >= self.entry_shards:
             raise ValueError(
                 f"entry_shard_index must be in [0,{self.entry_shards - 1}], got {self.entry_shard_index}"
+            )
+        if self.entry_shard_strategy not in {"contiguous", "modulo"}:
+            raise ValueError(
+                "entry_shard_strategy must be 'contiguous' or 'modulo'"
             )
         if self.workpack_format not in {"none", "parquet", "arrow"}:
             raise ValueError(
@@ -219,6 +225,7 @@ class ExperimentConfig:
             "distractor_source": self.distractor_source,
             "entry_shards": self.entry_shards,
             "entry_shard_index": self.entry_shard_index,
+            "entry_shard_strategy": self.entry_shard_strategy,
             "workpack_format": self.workpack_format,
             "workpack_path": str(self.workpack_path) if self.workpack_path else None,
             "inference_batch_size": self.inference_batch_size,

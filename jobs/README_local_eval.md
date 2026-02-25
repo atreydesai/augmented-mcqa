@@ -14,8 +14,7 @@ jobs/install_local_model_weights.sh --dry-run
 ```bash
 uv run python scripts/build_eval_slurm_bundle.py \
   --manifest datasets/augmented/<final5_regeneration_manifest>.json \
-  --num-gpus 8 \
-  --entry-shards 4
+  --target-rows-per-subsplit 500
 ```
 
 Default output:

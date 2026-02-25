@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from datasets import load_from_disk
+
 from experiments.config import ExperimentConfig
 from experiments.runner import ExperimentRunner
 
@@ -36,7 +38,13 @@ def _entry(i: int) -> dict:
     }
 
 
-def _cfg(tmp_path: Path, entry_shards: int, entry_shard_index: int, setting: str = "model_from_scratch"):
+def _cfg(
+    tmp_path: Path,
+    entry_shards: int,
+    entry_shard_index: int,
+    setting: str = "model_from_scratch",
+    entry_shard_strategy: str = "contiguous",
+):
     return ExperimentConfig(
         name=f"sub_{entry_shards}_{entry_shard_index}",
         dataset_path=Path("datasets/augmented/final5"),
@@ -48,11 +56,12 @@ def _cfg(tmp_path: Path, entry_shards: int, entry_shard_index: int, setting: str
         output_dir=tmp_path / "out",
         entry_shards=entry_shards,
         entry_shard_index=entry_shard_index,
+        entry_shard_strategy=entry_shard_strategy,
         inference_batch_size=4,
     )
 
 
-def test_entry_subshards_are_disjoint_and_complete(tmp_path):
+def test_entry_subshards_contiguous_are_disjoint_and_complete(tmp_path):
     entries = [{"i": i} for i in range(15)]
 
     seen = set()
@@ -67,20 +76,54 @@ def test_entry_subshards_are_disjoint_and_complete(tmp_path):
     assert seen == set(range(15))
 
 
-def test_runner_writes_entry_shard_partial_result_path(tmp_path, monkeypatch):
+def test_entry_subshards_modulo_are_disjoint_and_complete(tmp_path):
+    entries = [{"i": i} for i in range(15)]
+
+    seen = set()
+    for shard_index in range(4):
+        runner = ExperimentRunner(
+            _cfg(
+                tmp_path,
+                entry_shards=4,
+                entry_shard_index=shard_index,
+                entry_shard_strategy="modulo",
+            ),
+            client=_BatchClient(),
+        )
+        subset = runner._select_entry_shard(entries)
+        indices = {x["i"] for x in subset}
+
+        assert seen.isdisjoint(indices)
+        seen.update(indices)
+
+    assert seen == set(range(15))
+
+
+def test_runner_writes_entry_shard_partial_summary_and_rows_with_global_indices(tmp_path, monkeypatch):
     cfg = _cfg(tmp_path, entry_shards=3, entry_shard_index=1)
     runner = ExperimentRunner(cfg, client=_BatchClient())
     monkeypatch.setattr(runner, "_load_data", lambda: [_entry(i) for i in range(10)])
 
     results = runner.run()
 
-    # Shard 1 of 3 should process indices where i % 3 == 1 -> 3 rows for 10 entries.
+    # Contiguous shard 1 of 3 over 10 rows -> rows [4,5,6].
     assert len(results.results) == 3
+    assert [r.question_idx for r in results.results] == [4, 5, 6]
 
-    expected_path = (
+    expected_summary = (
         cfg.output_dir
         / "_partials"
         / "entry_shard_1_of_3"
-        / "results.json"
+        / "summary.json"
     )
-    assert expected_path.exists()
+    expected_rows = (
+        cfg.output_dir
+        / "_partials"
+        / "entry_shard_1_of_3"
+        / "rows"
+    )
+    assert expected_summary.exists()
+    assert expected_rows.exists()
+
+    rows_ds = load_from_disk(str(expected_rows))
+    assert [int(r["question_idx"]) for r in rows_ds] == [4, 5, 6]

@@ -1,32 +1,20 @@
-# Sharding and Recombination Guide
+# Sharding and Recombination Guide (Final5 V2)
 
-This guide is the operational playbook for Final5 evaluation when scaling past the base 18 job groups.
+Final5 V2 uses explicit per-pair work units and Arrow-native outputs.
 
 ## 1) Concept Model
 
-Final5 eval uses two dimensions of splitting:
+- Pair groups: `3 generator models * 3 eval models = 9`
+- Modes per pair: `2` (`full_question`, `choices_only`)
+- Dataset parts per pair are dynamic:
+  - `parts[dataset] = max(1, ceil(rows(dataset) / target_rows_per_subsplit))`
+- Each work unit evaluates one `(mode, dataset, dataset_part_idx)` and always runs all 5 settings.
 
-- Base groups: `3 generator models * 3 eval models * 2 modes = 18`
-- Config shards (`num_gpus`): split config list across array tasks
-- Entry sub-shards (`entry_shards`): split question rows within each config
+For current row counts (`arc=1000`, `mmlu_pro=1000`, `gpqa=448`) with target `500`:
 
-### Formulas
-
-Given:
-
-- base groups = `18`
-- config shards = `num_gpus`
-- entry sub-shards = `entry_shards`
-
-Then:
-
-- job groups = `18 * entry_shards`
-- array tasks submitted = `18 * entry_shards * num_gpus`
-
-Example (`num_gpus=8`, `entry_shards=4`):
-
-- job groups = `18 * 4 = 72`
-- array tasks = `18 * 4 * 8 = 576`
+- parts: `arc=2`, `mmlu_pro=2`, `gpqa=1`
+- work units per pair: `2 * (2+2+1) = 10`
+- total array tasks across all pairs: `9 * 10 = 90`
 
 ## 2) End-to-End Commands
 
@@ -43,8 +31,7 @@ uv run python scripts/regenerate_experiments.py \
 ```bash
 uv run python scripts/build_eval_slurm_bundle.py \
   --manifest datasets/augmented/<final5_regeneration_manifest>.json \
-  --num-gpus 8 \
-  --entry-shards 4
+  --target-rows-per-subsplit 500
 ```
 
 Bundle output default:
@@ -59,21 +46,13 @@ jobs/generated/<timestamp>/
 bash jobs/generated/<timestamp>/submit_all.sh
 ```
 
-Dry-run submission preview:
-
-```bash
-bash jobs/generated/<timestamp>/submit_all.sh --dry-run
-```
-
 ### D. Re-run failed tasks
-
-Find the relevant sbatch file and resubmit only failed array IDs:
 
 ```bash
 sbatch --array=1,4,7 jobs/generated/<timestamp>/<specific>.sbatch
 ```
 
-### E. Merge partials to canonical results
+### E. Merge partials to canonical outputs
 
 ```bash
 uv run python scripts/merge_eval_subshards.py \
@@ -81,135 +60,55 @@ uv run python scripts/merge_eval_subshards.py \
   --strict
 ```
 
-## 3) Practical Scale Recipes
+## 3) Output Layout
 
-### Small smoke (quick validation)
+Canonical per-config outputs:
 
-- `num_gpus=1`
-- `entry_shards=1`
-- optionally run with eval `--limit 2`
-
-```bash
-uv run python scripts/build_eval_slurm_bundle.py \
-  --manifest datasets/augmented/<manifest>.json \
-  --num-gpus 1 \
-  --entry-shards 1
+```text
+results/<generator>/<eval_model>/<mode>/<dataset>/<setting>/summary.json
+results/<generator>/<eval_model>/<mode>/<dataset>/<setting>/rows/
+results/<generator>/<eval_model>/<mode>/<dataset>/<setting>/merge_metadata.json
 ```
 
-### Medium run
+Partial outputs:
 
-- `num_gpus=4`
-- `entry_shards=2`
-
-```bash
-uv run python scripts/build_eval_slurm_bundle.py \
-  --manifest datasets/augmented/<manifest>.json \
-  --num-gpus 4 \
-  --entry-shards 2
-```
-
-### Full run (common)
-
-- `num_gpus=8`
-- `entry_shards=4`
-
-```bash
-uv run python scripts/build_eval_slurm_bundle.py \
-  --manifest datasets/augmented/<manifest>.json \
-  --num-gpus 8 \
-  --entry-shards 4
-```
-
-### Max split (queue pressure control)
-
-- keep per-task runtime lower by increasing `entry_shards`
-- example: `num_gpus=8`, `entry_shards=12`
-
-```bash
-uv run python scripts/build_eval_slurm_bundle.py \
-  --manifest datasets/augmented/<manifest>.json \
-  --num-gpus 8 \
-  --entry-shards 12
+```text
+results/<generator>/<eval_model>/<mode>/<dataset>/<setting>/_partials/entry_shard_<i>_of_<n>/summary.json
+results/<generator>/<eval_model>/<mode>/<dataset>/<setting>/_partials/entry_shard_<i>_of_<n>/rows/
 ```
 
 ## 4) Verification Commands
 
-### Check bundle math
+### Check bundle-level counts
 
 ```bash
-jq '.total_base_groups, .total_job_groups, .total_array_tasks' jobs/generated/<timestamp>/bundle_manifest.json
+jq '.total_pairs, .total_sbatch_files, .total_array_tasks' jobs/generated/<timestamp>/bundle_manifest.json
 ```
 
-### Check expected config roots
+### Inspect per-pair work units
 
 ```bash
-jq '.config_roots | length' jobs/generated/<timestamp>/bundle_manifest.json
+jq '.' jobs/generated/<timestamp>/<one-job>.work_units.json
 ```
 
-### Count canonical merged result files
+### Count canonical summaries
 
 ```bash
-find results -path '*/results.json' | rg '/(human_from_scratch|model_from_scratch|augment_human|augment_model|augment_ablation)/results.json$' | wc -l
+find results -path '*/summary.json' | rg '/(human_from_scratch|model_from_scratch|augment_human|augment_model|augment_ablation)/summary.json$' | wc -l
 ```
 
-Expected canonical config files after full merge:
-
-- `3 generators * 3 eval models * 2 modes * 3 datasets * 5 settings = 270`
-
-### Inspect missing partial shard files before merge
-
-```bash
-uv run python scripts/merge_eval_subshards.py \
-  --bundle-manifest jobs/generated/<timestamp>/bundle_manifest.json
-```
-
-Then inspect `merged_summary.json` for `missing_partials` or per-config `missing_entry_shards`.
-
-### Row-level sanity check (example)
+### Quick merged summary check
 
 ```bash
 python - <<'PY'
 import json, pathlib
-p = pathlib.Path('results/<generator>/<eval_model>/<mode>/<dataset>/<setting>/results.json')
+p = pathlib.Path('results/<generator>/<eval_model>/<mode>/<dataset>/<setting>/summary.json')
 obj = json.loads(p.read_text())
 print('total', obj['summary']['total'])
 print('accuracy', obj['summary']['accuracy'])
+print('rows_path', obj.get('rows_path'))
 PY
 ```
-
-### Aggregate row-count sanity checks (global + per setting)
-
-```bash
-python - <<'PY'
-import json
-from collections import Counter
-from pathlib import Path
-
-setting_totals = Counter()
-global_total = 0
-
-for p in Path('results').glob('*/*/*/*/*/results.json'):
-    setting = p.parent.name
-    obj = json.loads(p.read_text())
-    n = int(obj.get('summary', {}).get('total', 0))
-    setting_totals[setting] += n
-    global_total += n
-
-print('global_total_rows', global_total)
-print('by_setting')
-for k in sorted(setting_totals):
-    print(f'  {k}: {setting_totals[k]}')
-PY
-```
-
-Expected global totals for full Final5 eval **when all 3 datasets contribute 1000 rows**:
-
-- `270000` rows
-- per-setting expected rows: `54000` each
-
-If a dataset has fewer available rows after preprocessing/filtering (for example GPQA < 1000),
-actual totals will be lower. Use `bundle_manifest.json` `expected_eval_rows` as the run target,
-and compare it against merged output totals.
 
 ## 5) Troubleshooting
 
@@ -222,28 +121,19 @@ Symptoms:
 Actions:
 
 1. Identify config and missing shard indexes from `merged_summary.json`.
-2. Re-run only failed array IDs for the corresponding sbatch file:
-
-```bash
-sbatch --array=<failed_ids_csv> jobs/generated/<timestamp>/<specific>.sbatch
-```
-
+2. Re-run only failed array IDs for the corresponding sbatch file.
 3. Re-run strict merge.
 
 ### Duplicate partial rows
 
 Symptoms:
 
-- merge metadata reports `duplicate_question_idx_rows`
+- `merge_metadata.json` reports `duplicate_question_idx_rows`
 
 Behavior:
 
-- merge dedupes deterministically by `question_idx`
-- in `--strict`, conflicting duplicates fail merge
-
-Action:
-
-- inspect offending config partials and re-run shard(s), then merge again.
+- merge dedupes by `question_idx` with deterministic first-wins order.
+- in `--strict`, conflicting duplicates fail merge.
 
 ### Non-matching shard params
 
@@ -253,19 +143,8 @@ Symptoms:
 
 Cause:
 
-- mixed outputs from different bundle settings
+- mixed outputs from different bundle settings.
 
 Action:
 
-- keep bundle outputs isolated by timestamp directory
-- clear/restart that config path, rerun with one consistent `entry_shards` value.
-
-### Resume/restart strategy
-
-- Re-submitting is safe with `--skip-existing` in generated sbatch scripts.
-- Targeted restart pattern:
-
-```bash
-sbatch --array=<failed_ids_csv> jobs/generated/<timestamp>/<specific>.sbatch
-uv run python scripts/merge_eval_subshards.py --bundle-manifest jobs/generated/<timestamp>/bundle_manifest.json --strict
-```
+- isolate outputs by bundle directory and rerun with one consistent bundle manifest.

@@ -82,6 +82,7 @@ def build_matrix_configs(
     save_interval: int = DEFAULT_EVAL_SAVE_INTERVAL,
     entry_shards: int = 1,
     entry_shard_index: int = 0,
+    entry_shard_strategy: str = "contiguous",
 ) -> list[ExperimentConfig]:
     del distractor_sources
 
@@ -138,6 +139,7 @@ def build_matrix_configs(
                 branching_mode="shuffled_prefix",
                 entry_shards=entry_shards,
                 entry_shard_index=entry_shard_index,
+                entry_shard_strategy=entry_shard_strategy,
             )
             configs.append(cfg)
 

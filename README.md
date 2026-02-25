@@ -78,13 +78,12 @@ uv run python scripts/regenerate_experiments.py \
   --output-root datasets/augmented
 ```
 
-4. Build eval SLURM bundle (base 18 groups + entry sub-shards):
+4. Build eval SLURM bundle (per-pair balanced work units):
 
 ```bash
 uv run python scripts/build_eval_slurm_bundle.py \
   --manifest datasets/augmented/<manifest>.json \
-  --num-gpus 8 \
-  --entry-shards 4
+  --target-rows-per-subsplit 500
 ```
 
 5. Submit jobs:
@@ -100,6 +99,11 @@ uv run python scripts/merge_eval_subshards.py \
   --bundle-manifest jobs/generated/<timestamp>/bundle_manifest.json \
   --strict
 ```
+
+Canonical outputs are now:
+
+- `.../summary.json` (lightweight metrics + metadata)
+- `.../rows/` (HuggingFace Arrow row store)
 
 7. Plot required Final5 pairwise comparisons:
 

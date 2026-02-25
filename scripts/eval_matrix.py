@@ -60,18 +60,19 @@ def _validate_preset(preset: str) -> str:
 
 def _results_path(cfg) -> Path:
     if cfg.entry_shards <= 1:
-        return cfg.output_dir / "results.json"
+        return cfg.output_dir / "summary.json"
     return (
         cfg.output_dir
         / "_partials"
         / f"entry_shard_{cfg.entry_shard_index}_of_{cfg.entry_shards}"
-        / "results.json"
+        / "summary.json"
     )
 
 
 def _resolve_configs(args: argparse.Namespace) -> list:
-    if args.manifest:
-        configs = load_configs_from_manifest(Path(args.manifest))
+    manifest_path = getattr(args, "manifest", None)
+    if manifest_path:
+        configs = load_configs_from_manifest(Path(manifest_path))
     else:
         output_base = Path(args.output_dir) if args.output_dir else RESULTS_DIR
         configs = build_matrix_configs(
@@ -92,12 +93,14 @@ def _resolve_configs(args: argparse.Namespace) -> list:
             save_interval=args.save_interval,
             entry_shards=args.entry_shards,
             entry_shard_index=args.entry_shard_index,
+            entry_shard_strategy=args.entry_shard_strategy,
         )
 
     for cfg in configs:
         cfg.save_interval = args.save_interval
         cfg.entry_shards = args.entry_shards
         cfg.entry_shard_index = args.entry_shard_index
+        cfg.entry_shard_strategy = args.entry_shard_strategy
         if hasattr(args, "eval_batch_size") and args.eval_batch_size is not None:
             cfg.inference_batch_size = int(args.eval_batch_size)
         if hasattr(args, "vllm_max_num_batched_tokens"):
@@ -151,6 +154,7 @@ def cmd_plan(args: argparse.Namespace) -> int:
             "choices_only": args.choices_only,
             "entry_shards": args.entry_shards,
             "entry_shard_index": args.entry_shard_index,
+            "entry_shard_strategy": args.entry_shard_strategy,
             "save_interval": args.save_interval,
         },
     )
@@ -308,6 +312,7 @@ def cmd_run(args: argparse.Namespace) -> int:
         "shard_index": args.shard_index,
         "entry_shards": args.entry_shards,
         "entry_shard_index": args.entry_shard_index,
+        "entry_shard_strategy": args.entry_shard_strategy,
         "total_configs": len(summaries),
         "successful": sum(1 for x in summaries if x["status"] == "success"),
         "failed": sum(1 for x in summaries if x["status"] != "success"),
@@ -365,6 +370,12 @@ def build_parser() -> argparse.ArgumentParser:
         p.add_argument("--shard-index", type=int)
         p.add_argument("--entry-shards", type=int, default=1)
         p.add_argument("--entry-shard-index", type=int, default=0)
+        p.add_argument(
+            "--entry-shard-strategy",
+            type=str,
+            choices=["contiguous", "modulo"],
+            default="contiguous",
+        )
 
     plan = sub.add_parser("plan", help="Build final5 manifest")
     add_common(plan, required_inputs=True)
@@ -394,6 +405,8 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("--entry-shards must be > 0")
     if args.entry_shard_index < 0 or args.entry_shard_index >= args.entry_shards:
         parser.error("--entry-shard-index must be in [0, entry_shards-1]")
+    if args.entry_shard_strategy not in {"contiguous", "modulo"}:
+        parser.error("--entry-shard-strategy must be contiguous or modulo")
 
     if args.subcommand == "run" and not args.manifest:
         missing = [name for name in ["model", "dataset_path"] if getattr(args, name) is None]

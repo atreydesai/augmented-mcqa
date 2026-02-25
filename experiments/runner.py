@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import random
+import shutil
 import time
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
@@ -91,7 +92,20 @@ class ExperimentResults:
             for k, v in by_cat.items()
         }
 
-    def to_dict(self) -> dict:
+    def _row_payloads(self) -> List[dict[str, Any]]:
+        return [
+            {
+                **asdict(r),
+                "options_randomized": r.eval_options_randomized,
+                "correct_answer_letter": r.eval_correct_answer_letter,
+                "full_question": r.eval_full_question,
+                "model_input": r.eval_model_input,
+                "model_output": r.eval_model_output,
+            }
+            for r in self.results
+        ]
+
+    def to_summary_dict(self) -> dict[str, Any]:
         return {
             "config": self.config.to_dict(),
             "summary": {
@@ -110,23 +124,29 @@ class ExperimentResults:
                 "end": self.end_time.isoformat() if self.end_time else None,
             },
             "entry_failures": self.entry_failures,
-            "results": [
-                {
-                    **asdict(r),
-                    "options_randomized": r.eval_options_randomized,
-                    "correct_answer_letter": r.eval_correct_answer_letter,
-                    "full_question": r.eval_full_question,
-                    "model_input": r.eval_model_input,
-                    "model_output": r.eval_model_output,
-                }
-                for r in self.results
-            ],
         }
 
-    def save(self, path: Path) -> Path:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(self.to_dict(), indent=2), encoding="utf-8")
-        return path
+    def to_dict(self) -> dict[str, Any]:
+        payload = self.to_summary_dict()
+        payload["results"] = self._row_payloads()
+        return payload
+
+    def save(self, *, summary_path: Path, rows_path: Path) -> tuple[Path, Path]:
+        from datasets import Dataset
+
+        summary_path.parent.mkdir(parents=True, exist_ok=True)
+        rows_path.parent.mkdir(parents=True, exist_ok=True)
+
+        if rows_path.exists():
+            if rows_path.is_dir():
+                shutil.rmtree(rows_path)
+            else:
+                rows_path.unlink()
+
+        rows = self._row_payloads()
+        Dataset.from_list(rows).save_to_disk(str(rows_path))
+        summary_path.write_text(json.dumps(self.to_summary_dict(), indent=2), encoding="utf-8")
+        return summary_path, rows_path
 
 
 def determine_prediction_type(
@@ -201,13 +221,24 @@ class ExperimentRunner:
 
         return dataset
 
-    def _select_entry_shard(self, entries: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _select_entry_shard(self, entries: List[Any]) -> List[Any]:
         if self.config.entry_shards <= 1:
             return entries
-        return [
-            e for idx, e in enumerate(entries)
-            if idx % self.config.entry_shards == self.config.entry_shard_index
-        ]
+        if self.config.entry_shard_strategy == "modulo":
+            return [
+                e for idx, e in enumerate(entries)
+                if idx % self.config.entry_shards == self.config.entry_shard_index
+            ]
+
+        total = len(entries)
+        shards = self.config.entry_shards
+        shard_idx = self.config.entry_shard_index
+        base = total // shards
+        remainder = total % shards
+        start = shard_idx * base + min(shard_idx, remainder)
+        size = base + (1 if shard_idx < remainder else 0)
+        end = start + size
+        return entries[start:end]
 
     def _prepare_entry(self, entry: Dict[str, Any], idx: int) -> Dict[str, Any]:
         setting = self.config.setting_id
@@ -284,22 +315,27 @@ class ExperimentRunner:
         lines = [f"{CHOICE_LABELS[i]}: {opt}" for i, opt in enumerate(options)]
         return f"Question: {question}\n" + "\n".join(lines)
 
-    def _results_path(self) -> Path:
+    def _partial_root(self) -> Path:
         if self.config.entry_shards <= 1:
-            return self.config.output_dir / "results.json"
+            return self.config.output_dir
         return (
             self.config.output_dir
             / "_partials"
             / f"entry_shard_{self.config.entry_shard_index}_of_{self.config.entry_shards}"
-            / "results.json"
         )
+
+    def _summary_path(self) -> Path:
+        return self._partial_root() / "summary.json"
+
+    def _rows_path(self) -> Path:
+        return self._partial_root() / "rows"
 
     def run(self) -> ExperimentResults:
         results = ExperimentResults(config=self.config)
         results.start_time = datetime.now()
 
         dataset = self._load_data()
-        entries = list(dataset)
+        entries = list(enumerate(dataset))
         if self.config.limit is not None:
             entries = entries[: self.config.limit]
         entries = self._select_entry_shard(entries)
@@ -402,7 +438,7 @@ class ExperimentRunner:
 
             pending = []
 
-        iterator = enumerate(tqdm(entries, desc="Evaluating", total=len(entries)))
+        iterator = tqdm(entries, desc="Evaluating", total=len(entries))
         for idx, entry in iterator:
             try:
                 prepared = self._prepare_entry(entry, idx)
@@ -438,9 +474,11 @@ class ExperimentRunner:
         flush_pending()
 
         results.end_time = datetime.now()
-        out_path = self._results_path()
-        results.save(out_path)
-        print(f"Saved results: {out_path}")
+        summary_path = self._summary_path()
+        rows_path = self._rows_path()
+        results.save(summary_path=summary_path, rows_path=rows_path)
+        print(f"Saved summary: {summary_path}")
+        print(f"Saved rows: {rows_path}")
         return results
 
 

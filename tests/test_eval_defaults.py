@@ -63,6 +63,7 @@ def test_eval_matrix_parser_defaults_use_shared_constants():
     assert args.temperature == DEFAULT_EVAL_TEMPERATURE
     assert args.max_tokens == DEFAULT_EVAL_MAX_TOKENS
     assert args.save_interval == DEFAULT_EVAL_SAVE_INTERVAL
+    assert args.entry_shard_strategy == "contiguous"
 
     run_args = parser.parse_args(
         [
@@ -74,6 +75,7 @@ def test_eval_matrix_parser_defaults_use_shared_constants():
         ]
     )
     assert run_args.keep_checkpoints == DEFAULT_EVAL_KEEP_CHECKPOINTS
+    assert run_args.entry_shard_strategy == "contiguous"
 
 
 def test_legacy_presets_are_rejected():
@@ -84,3 +86,22 @@ def test_legacy_presets_are_rejected():
             assert "archived" in str(exc)
         else:
             raise AssertionError(f"Expected ValueError for preset={preset}")
+
+
+def test_eval_matrix_plan_no_manifest_attribute_crash(tmp_path):
+    out_manifest = tmp_path / "plan_manifest.json"
+    rc = eval_matrix.main(
+        [
+            "plan",
+            "--model",
+            "Qwen/Qwen3-4B-Instruct-2507",
+            "--dataset-path",
+            "datasets/augmented/final5",
+            "--generator-dataset-label",
+            "gpt-5.2-2025-12-11",
+            "--manifest-out",
+            str(out_manifest),
+        ]
+    )
+    assert rc == 0
+    assert out_manifest.exists()

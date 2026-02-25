@@ -28,13 +28,15 @@ Legacy presets (`core16`, `branching21`) are migration-blocked and return explic
 Canonical result path format:
 
 ```text
-results/<generator>/<eval_model>/<mode>/<dataset>/<setting>/results.json
+results/<generator>/<eval_model>/<mode>/<dataset>/<setting>/summary.json
+results/<generator>/<eval_model>/<mode>/<dataset>/<setting>/rows/
 ```
 
 If entry sub-sharding is enabled (`entry_shards > 1`), partial files are written to:
 
 ```text
-results/<generator>/<eval_model>/<mode>/<dataset>/<setting>/_partials/entry_shard_<i>_of_<n>/results.json
+results/<generator>/<eval_model>/<mode>/<dataset>/<setting>/_partials/entry_shard_<i>_of_<n>/summary.json
+results/<generator>/<eval_model>/<mode>/<dataset>/<setting>/_partials/entry_shard_<i>_of_<n>/rows/
 ```
 
 Then recombined with `scripts/merge_eval_subshards.py`.
@@ -46,8 +48,7 @@ Then recombined with `scripts/merge_eval_subshards.py`.
 ```bash
 uv run python scripts/build_eval_slurm_bundle.py \
   --manifest datasets/augmented/<final5_regeneration_manifest>.json \
-  --num-gpus 8 \
-  --entry-shards 4
+  --target-rows-per-subsplit 500
 ```
 
 ### Plan configs
@@ -72,6 +73,7 @@ uv run python scripts/eval_matrix.py run \
   --shard-index 0 \
   --entry-shards 4 \
   --entry-shard-index 0 \
+  --entry-shard-strategy contiguous \
   --skip-existing
 ```
 

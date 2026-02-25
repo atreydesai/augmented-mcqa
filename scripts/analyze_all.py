@@ -29,34 +29,44 @@ def main():
         print(f"Error: Directory not found: {base_dir}")
         sys.exit(1)
     
-    # Find all directories containing results.json
-    exp_dirs = []
+    # Find all experiment directories containing summary.json or results.json.
+    exp_files = []
     for p in base_dir.iterdir():
-        if p.is_dir() and (p / "results.json").exists():
-            exp_dirs.append(p)
-    
-    if not exp_dirs:
-        # Check subdirectories if they are nested (e.g., results/parent/exp)
-        for p in base_dir.glob("**/results.json"):
-            exp_dirs.append(p.parent)
-            
-    if not exp_dirs:
+        if not p.is_dir():
+            continue
+        if (p / "summary.json").exists():
+            exp_files.append(p / "summary.json")
+        elif (p / "results.json").exists():
+            exp_files.append(p / "results.json")
+
+    if not exp_files:
+        # Check nested subdirectories.
+        summary_files = sorted(base_dir.glob("**/summary.json"))
+        summary_parents = {p.parent for p in summary_files}
+        result_files = [
+            p for p in sorted(base_dir.glob("**/results.json"))
+            if p.parent not in summary_parents
+        ]
+        exp_files.extend(summary_files)
+        exp_files.extend(result_files)
+
+    if not exp_files:
         print(f"No experiment results found in {base_dir}")
         sys.exit(0)
-        
-    print(f"Found {len(exp_dirs)} experiments. Analyzing...")
+
+    print(f"Found {len(exp_files)} experiments. Analyzing...")
     
     results = {}
-    for exp_dir in sorted(exp_dirs):
+    for exp_file in sorted(exp_files):
         try:
-            analysis = analyze_experiment(exp_dir / "results.json")
-            name = exp_dir.name
+            analysis = analyze_experiment(exp_file)
+            name = exp_file.parent.name
             results[name] = {
                 "signature": analysis["overall"]["signature"],
                 "gold_rate": analysis["overall"]["gold_rate"]
             }
         except Exception as e:
-            print(f"Warning: Failed to analyze {exp_dir.name}: {e}")
+            print(f"Warning: Failed to analyze {exp_file.parent.name}: {e}")
             
     # Format table
     table = format_signature_table(results, include_counts=True)

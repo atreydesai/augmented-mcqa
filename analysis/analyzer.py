@@ -6,7 +6,19 @@ from collections import defaultdict
 
 def load_results(results_path: Path) -> Dict[str, Any]:
     with open(results_path, 'r') as f:
-        return json.load(f)
+        payload = json.load(f)
+
+    if isinstance(payload, dict) and "results" not in payload and results_path.name == "summary.json":
+        rows_path = results_path.parent / "rows"
+        if rows_path.exists():
+            try:
+                from datasets import load_from_disk
+                rows_ds = load_from_disk(str(rows_path))
+                payload = dict(payload)
+                payload["results"] = [dict(row) for row in rows_ds]
+            except Exception:
+                pass
+    return payload
 
 
 def compute_behavioral_signature(results: List[Dict]) -> Dict[str, Any]:

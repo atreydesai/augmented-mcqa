@@ -60,7 +60,14 @@ def collect_final5_results(results_root: Path | str) -> pd.DataFrame:
     root = Path(results_root)
     rows: list[dict[str, object]] = []
 
-    for path in sorted(root.glob("*/*/*/*/*/results.json")):
+    summary_paths = sorted(root.glob("*/*/*/*/*/summary.json"))
+    summary_parents = {p.parent for p in summary_paths}
+    legacy_paths = [
+        p for p in sorted(root.glob("*/*/*/*/*/results.json"))
+        if p.parent not in summary_parents
+    ]
+
+    for path in [*summary_paths, *legacy_paths]:
         rel = path.relative_to(root)
         if len(rel.parts) != 6:
             continue
