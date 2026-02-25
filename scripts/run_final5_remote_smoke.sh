@@ -135,6 +135,13 @@ if [[ ! -d "$HF_HOME" ]]; then
   mkdir -p "$HF_HOME" 2>/dev/null || true
 fi
 
+REMOTE_VENV_ACTIVATE_DEFAULT="/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/activate"
+if [[ -f "$REMOTE_VENV_ACTIVATE_DEFAULT" ]]; then
+  VENV_ACTIVATE_PATH="$REMOTE_VENV_ACTIVATE_DEFAULT"
+else
+  VENV_ACTIVATE_PATH="$PROJECT_ROOT/.venv/bin/activate"
+fi
+
 if ! command -v jq >/dev/null 2>&1; then
   echo "Error: jq is required for this smoke script."
   exit 1
@@ -172,6 +179,7 @@ touch "$MARKER"
 echo "Project root: $PROJECT_ROOT"
 echo "Source dataset: $GEN_FULL_DS"
 echo "Generator label: $GENERATOR_LABEL"
+echo "Venv activate: $VENV_ACTIVATE_PATH"
 echo "Smoke dataset: $SMOKE_DS"
 echo "Bundle dir: $BUNDLE_DIR"
 echo "Smoke output: $SMOKE_OUT"
@@ -259,6 +267,7 @@ if [[ "$SKIP_RUN" == "0" ]]; then
       OUTPUT_BASE="$SMOKE_OUT" \
       SAVE_INTERVAL="$SAVE_INTERVAL" \
       MAX_TOKENS="$MAX_TOKENS" \
+      VENV_ACTIVATE="$VENV_ACTIVATE_PATH" \
       LOG_DIR="$SMOKE_OUT/logs" \
       bash "$sb"
     done

@@ -146,7 +146,24 @@ set -euo pipefail
 
 PROJECT_ROOT="${{PROJECT_ROOT:-$SLURM_SUBMIT_DIR}}"
 cd "$PROJECT_ROOT"
-source .venv/bin/activate
+DEFAULT_VENV_ACTIVATE="$PROJECT_ROOT/.venv/bin/activate"
+if [[ ! -f "$DEFAULT_VENV_ACTIVATE" ]]; then
+  DEFAULT_VENV_ACTIVATE="/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/activate"
+fi
+VENV_ACTIVATE="${{VENV_ACTIVATE:-$DEFAULT_VENV_ACTIVATE}}"
+if [[ ! -f "$VENV_ACTIVATE" ]]; then
+  echo "Error: venv activate script not found: $VENV_ACTIVATE"
+  exit 1
+fi
+source "$VENV_ACTIVATE"
+PYTHON_BIN="${{PYTHON_BIN:-$(dirname "$VENV_ACTIVATE")/python}}"
+if [[ ! -x "$PYTHON_BIN" ]]; then
+  PYTHON_BIN="$(command -v python || true)"
+fi
+if [[ -z "$PYTHON_BIN" || ! -x "$PYTHON_BIN" ]]; then
+  echo "Error: python executable not found after activating venv."
+  exit 1
+fi
 mkdir -p "${{LOG_DIR:-logs/final5_eval}}"
 
 GENERATOR_LABEL="{generator_label}"
@@ -158,7 +175,7 @@ MAX_TOKENS="${{MAX_TOKENS:-{max_tokens}}}"
 SCRIPT_DIR="$(cd "$(dirname "${{BASH_SOURCE[0]}}")" && pwd)"
 WORK_UNITS_FILE="${{WORK_UNITS_FILE:-$SCRIPT_DIR/{work_units_filename}}}"
 
-readarray -t UNIT_EXPORTS < <(python - "$WORK_UNITS_FILE" "$SLURM_ARRAY_TASK_ID" <<'PY'
+readarray -t UNIT_EXPORTS < <("$PYTHON_BIN" - "$WORK_UNITS_FILE" "$SLURM_ARRAY_TASK_ID" <<'PY'
 import json
 import shlex
 import sys
@@ -179,7 +196,7 @@ for kv in "${{UNIT_EXPORTS[@]}}"; do
 done
 
 CMD=(
-  uv run python scripts/eval_matrix.py run
+  "$PYTHON_BIN" scripts/eval_matrix.py run
   --preset final5
   --model "$EVAL_MODEL"
   --dataset-path "$GENERATOR_DATASET_PATH"
