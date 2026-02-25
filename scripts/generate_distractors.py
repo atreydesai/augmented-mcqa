@@ -29,7 +29,22 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--parallel", action="store_true", help="Spawn one process per split")
     parser.add_argument("--combine", type=str, help="Combine split_* directories")
     parser.add_argument("--force-overwrite", action="store_true")
+    parser.add_argument("--skip-failed-entries", action="store_true")
     parser.add_argument("--resume-from", type=str, default=None)
+    parser.add_argument("--max-retries", type=int, default=3)
+    parser.add_argument("--retry-delay", type=float, default=1.0)
+    parser.add_argument(
+        "--request-log",
+        type=str,
+        default=None,
+        help="Optional JSONL request log path for call-level visibility",
+    )
+    parser.add_argument(
+        "--slow-call-seconds",
+        type=float,
+        default=45.0,
+        help="Emit slow-call logs when a request exceeds this duration",
+    )
     parser.add_argument("--dry-run", action="store_true")
     return parser.parse_args()
 
@@ -45,22 +60,42 @@ def _model_policy(model_name: str) -> tuple[str, dict, dict]:
         client_kwargs["reasoning_effort"] = "medium"
     elif model_name == "claude-opus-4-6":
         generate_kwargs["thinking"] = {"type": "adaptive"}
+        generate_kwargs["timeout"] = 60.0
 
     return provider, client_kwargs, generate_kwargs
 
 
-def _build_config(model_name: str, save_interval: int, force_overwrite: bool) -> GenerationConfig:
+def _build_config(
+    model_name: str,
+    save_interval: int,
+    force_overwrite: bool,
+    skip_failed_entries: bool,
+    max_retries: int,
+    retry_delay: float,
+    request_log: str | None,
+    slow_call_seconds: float,
+) -> GenerationConfig:
     provider, client_kwargs, generate_kwargs = _model_policy(model_name)
+    anthropic_thinking = None
+    max_tokens = 2048
+    if provider == "anthropic":
+        anthropic_thinking = generate_kwargs.pop("thinking", None)
 
     return GenerationConfig(
         mode=AugmentorMode.FINAL5,
         model_provider=provider,
         model_name=model_name,
+        max_tokens=max_tokens,
+        max_retries=max_retries,
+        retry_delay=retry_delay,
         save_interval=save_interval,
+        skip_failed_entries=skip_failed_entries,
         force_overwrite=force_overwrite,
         reasoning_effort=client_kwargs.get("reasoning_effort"),
-        anthropic_thinking=generate_kwargs.get("thinking") if provider == "anthropic" else None,
-        generate_kwargs={} if provider == "anthropic" else generate_kwargs,
+        anthropic_thinking=anthropic_thinking,
+        generate_kwargs=generate_kwargs,
+        request_log_path=Path(request_log) if request_log else None,
+        slow_call_seconds=slow_call_seconds,
     )
 
 
@@ -126,6 +161,10 @@ def run_parallel(args: argparse.Namespace) -> int:
         base_cmd.extend(["--limit", str(args.limit)])
     if args.force_overwrite:
         base_cmd.append("--force-overwrite")
+    if args.skip_failed_entries:
+        base_cmd.append("--skip-failed-entries")
+    base_cmd.extend(["--max-retries", str(args.max_retries)])
+    base_cmd.extend(["--retry-delay", str(args.retry_delay)])
 
     procs = []
     for split in ds.keys():
@@ -173,7 +212,16 @@ def main() -> int:
     if args.parallel:
         return run_parallel(args)
 
-    cfg = _build_config(args.model, args.save_interval, args.force_overwrite)
+    cfg = _build_config(
+        args.model,
+        args.save_interval,
+        args.force_overwrite,
+        args.skip_failed_entries,
+        args.max_retries,
+        args.retry_delay,
+        args.request_log,
+        args.slow_call_seconds,
+    )
 
     if args.dry_run:
         print(f"Model: {args.model}")
@@ -181,6 +229,11 @@ def main() -> int:
         print(f"Reasoning effort: {cfg.reasoning_effort}")
         print(f"Anthropic thinking: {cfg.anthropic_thinking}")
         print(f"Generate kwargs: {cfg.generate_kwargs}")
+        print(f"Max retries: {cfg.max_retries}")
+        print(f"Retry delay (s): {cfg.retry_delay}")
+        print(f"Skip failed entries: {cfg.skip_failed_entries}")
+        print(f"Request log: {cfg.request_log_path}")
+        print(f"Slow call threshold (s): {cfg.slow_call_seconds}")
         return 0
 
     timestamp = time.strftime("%Y%m%d_%H%M%S")

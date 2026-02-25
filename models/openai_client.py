@@ -22,9 +22,6 @@ class OpenAIClient(ModelClient):
     Supports GPT-5-family models with reasoning_effort.
     """
     
-    # Models that support reasoning_effort parameter
-    REASONING_MODELS = {"gpt-5", "gpt-5-mini", "gpt-5.1", "gpt-5.2","gpt-5.2-2025-12-11"}
-    
     def __init__(
         self,
         model_id: str = "gpt-5.2-2025-12-11",
@@ -54,11 +51,6 @@ class OpenAIClient(ModelClient):
         base_url = os.getenv("OPENAI_BASE_URL", "https://us.api.openai.com/v1")
         self._client = openai.OpenAI(api_key=self._api_key, base_url=base_url)
         self._reasoning_effort = reasoning_effort
-        
-        # Check if model supports reasoning
-        self._supports_reasoning = any(
-            self._model_id.startswith(prefix) for prefix in self.REASONING_MODELS
-        )
     
     @property
     def name(self) -> str:
@@ -71,7 +63,7 @@ class OpenAIClient(ModelClient):
     @property
     def supports_reasoning(self) -> bool:
         """Check if this model supports reasoning_effort parameter."""
-        return self._supports_reasoning
+        return True
     
     def generate(
         self,
@@ -96,11 +88,9 @@ class OpenAIClient(ModelClient):
             "max_completion_tokens": max_tokens,
         }
         
-        # Add reasoning effort for GPT-5 models
-        if self._supports_reasoning:
-            effort = reasoning_effort or self._reasoning_effort
-            if effort is not None:
-                params["reasoning_effort"] = effort
+        effort = reasoning_effort or self._reasoning_effort
+        if effort is not None:
+            params["reasoning_effort"] = effort
         
         params.update(kwargs)
         

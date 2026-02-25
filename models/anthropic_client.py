@@ -35,7 +35,6 @@ class AnthropicClient(ModelClient):
         "low": 1024,
         "medium": 4096,
         "high": 16384,
-        "adaptive": 0,
     }
     
     def __init__(
@@ -43,6 +42,7 @@ class AnthropicClient(ModelClient):
         model_id: str = "claude-sonnet-4-5-20250929",
         api_key: Optional[str] = None,
         thinking_level: ThinkingLevel = "off",
+        request_timeout: Optional[float] = 60.0,
     ):
         """
         Initialize Anthropic client.
@@ -65,6 +65,7 @@ class AnthropicClient(ModelClient):
         self._api_key = api_key or get_api_key("anthropic")
         self._client = anthropic.Anthropic(api_key=self._api_key)
         self._thinking_level = thinking_level
+        self._request_timeout = request_timeout
         
         # Check if model supports thinking
         self._supports_thinking = any(
@@ -106,6 +107,9 @@ class AnthropicClient(ModelClient):
             "max_tokens": max_tokens,
             "messages": [{"role": "user", "content": prompt}],
         }
+        timeout = kwargs.pop("timeout", getattr(self, "_request_timeout", 120.0))
+        if timeout is not None:
+            params["timeout"] = timeout
         
         # Add extended thinking for supported models, unless caller provided an
         # explicit `thinking` payload.
@@ -124,11 +128,72 @@ class AnthropicClient(ModelClient):
         
         response = self._client.messages.create(**params)
         
-        # Extract text from content blocks
-        text = ""
+        # Extract text from content blocks. With adaptive thinking enabled,
+        # some responses may return thinking blocks without a text block.
+        text_parts = []
+        thinking_parts = []
+
+        def _append_thinking_fragment(value):
+            if value is None:
+                return
+            if isinstance(value, str):
+                if value.strip():
+                    thinking_parts.append(value)
+                return
+            if isinstance(value, list):
+                for item in value:
+                    _append_thinking_fragment(item)
+                return
+            if isinstance(value, dict):
+                if value.get("text"):
+                    thinking_parts.append(str(value["text"]))
+                elif value.get("thinking"):
+                    _append_thinking_fragment(value.get("thinking"))
+                return
+            if hasattr(value, "text") and getattr(value, "text"):
+                thinking_parts.append(str(getattr(value, "text")))
+
         for block in response.content:
-            if hasattr(block, "text"):
-                text += block.text
+            block_type = getattr(block, "type", None)
+            block_text = getattr(block, "text", None)
+            block_thinking = getattr(block, "thinking", None)
+
+            if block_type == "text" and block_text:
+                text_parts.append(block_text)
+                continue
+            if block_text:
+                text_parts.append(block_text)
+                continue
+            if block_thinking:
+                _append_thinking_fragment(block_thinking)
+
+        text = "".join(text_parts).strip()
+        if not text and thinking_parts:
+            text = "\n".join(x for x in thinking_parts if x.strip())
+
+        if not text:
+            # Fallback through model dump for SDK variants with dict-like blocks.
+            try:
+                dumped = response.model_dump()
+                dumped_content = dumped.get("content", []) if isinstance(dumped, dict) else []
+                for block in dumped_content:
+                    if not isinstance(block, dict):
+                        continue
+                    if block.get("type") == "text" and block.get("text"):
+                        text += str(block["text"])
+                    elif block.get("thinking"):
+                        thinking_val = block["thinking"]
+                        if isinstance(thinking_val, str):
+                            text += f"\n{thinking_val}"
+                        elif isinstance(thinking_val, list):
+                            for item in thinking_val:
+                                if isinstance(item, dict) and item.get("text"):
+                                    text += f"\n{item['text']}"
+                                elif isinstance(item, str) and item.strip():
+                                    text += f"\n{item}"
+                text = text.strip()
+            except Exception:  # noqa: BLE001
+                pass
         
         usage = None
         if response.usage:

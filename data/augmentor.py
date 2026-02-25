@@ -15,6 +15,7 @@ import random
 import re
 import time
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
@@ -22,7 +23,11 @@ from typing import Any, Dict, Iterable, List, Optional
 from datasets import Dataset, DatasetDict, load_from_disk
 from tqdm import tqdm
 
-from config import RESULTS_DIR
+from config import (
+    RESULTS_DIR,
+    DISTRACTOR_GENERATION_PROMPT_QA_TEMPLATE,
+    DISTRACTOR_GENERATION_PROMPT_CONDITIONED_TEMPLATE,
+)
 from data.hub_utils import push_dataset_to_hub
 from models import get_client
 
@@ -43,12 +48,16 @@ class NonRetryableAugmentationError(RuntimeError):
     """Raised for deterministic schema/data issues."""
 
 
+class StructuredParseError(ValueError):
+    """Raised when structured distractor parsing fails."""
+
+
 @dataclass
 class GenerationConfig:
     mode: AugmentorMode = AugmentorMode.FINAL5
     model_provider: str = "openai"
     model_name: str = "gpt-5.2-2025-12-11"
-    max_tokens: int = 2048
+    max_tokens: int = 512
     max_retries: int = 3
     retry_delay: float = 1.0
     save_interval: int = 25
@@ -62,6 +71,10 @@ class GenerationConfig:
     # Additional provider kwargs applied to every generation call.
     generate_kwargs: Dict[str, Any] = field(default_factory=dict)
 
+    # Optional request-level visibility controls.
+    request_log_path: Optional[Path] = None
+    slow_call_seconds: float = 45.0
+
 
 STRATEGY_IDS = [
     "human_from_scratch",
@@ -70,6 +83,30 @@ STRATEGY_IDS = [
     "augment_model",
     "augment_ablation",
 ]
+
+
+def _utc_now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+
+def _append_request_log(path: Optional[Path], payload: Dict[str, Any]) -> None:
+    if path is None:
+        return
+    p = Path(path)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    with p.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(payload, ensure_ascii=True) + "\n")
+
+
+def _log_event(config: GenerationConfig, event: str, **fields: Any) -> None:
+    payload = {
+        "ts_utc": _utc_now_iso(),
+        "event": event,
+        "model": config.model_name,
+        "provider": config.model_provider,
+        **fields,
+    }
+    _append_request_log(config.request_log_path, payload)
 
 
 def _safe_text(value: Any) -> str:
@@ -104,43 +141,99 @@ def parse_generated_distractors(
     if expected_count <= 0:
         raise ValueError(f"expected_count must be > 0, got {expected_count}")
 
-    expected_letters = _expected_letters(start_letter, expected_count)
-    expected_set = set(expected_letters)
-    by_letter: Dict[str, str] = {}
-    pattern = r"^\s*([A-Z])\s*(?:[:\.\)\-])\s*(.+?)\s*$"
+    del start_letter
 
-    for line in response.strip().splitlines():
-        line = line.strip()
-        if not line:
-            continue
-        m = re.match(pattern, line, re.IGNORECASE)
-        if not m:
-            continue
-        letter = m.group(1).upper()
-        if letter not in expected_set:
-            continue
-        text = m.group(2).strip().rstrip(".")
-        if text and letter not in by_letter:
-            by_letter[letter] = text
+    response = response.strip()
+    if not response:
+        raise ValueError("Model output is empty")
 
-    missing = [x for x in expected_letters if x not in by_letter]
-    if missing:
-        raise ValueError(
-            f"Expected letters {expected_letters}, missing {missing}. Output invalid."
-        )
+    json_values = _extract_json_distractors(response, expected_count=expected_count)
+    if json_values is not None:
+        return json_values
 
-    return [by_letter[x] for x in expected_letters]
+    raise ValueError(
+        f"Could not decode structured distractors JSON with {expected_count} entries. "
+        f"Raw preview: '{_preview_text(response)}'"
+    )
+
+
+def _json_candidates_from_text(text: str) -> List[str]:
+    candidates = [text.strip()]
+    fenced_blocks = re.findall(r"```(?:json)?\s*(.*?)```", text, flags=re.IGNORECASE | re.DOTALL)
+    candidates.extend(block.strip() for block in fenced_blocks if block.strip())
+    return candidates
+
+
+def _normalize_distractor_text(value: Any) -> str:
+    text = str(value).strip()
+    if not text:
+        return ""
+    text = re.sub(r"^\s*[A-Z]\s*(?:[:\.\)\-])\s*", "", text)
+    return text.strip()
+
+
+def _extract_json_distractors(text: str, expected_count: int) -> Optional[List[str]]:
+    for candidate in _json_candidates_from_text(text):
+        try:
+            parsed = json.loads(candidate)
+        except Exception:  # noqa: BLE001
+            recovered = _extract_truncated_json_distractors(
+                candidate,
+                expected_count=expected_count,
+            )
+            if recovered is not None:
+                return recovered
+            continue
+
+        distractors: Any = parsed.get("distractors") if isinstance(parsed, dict) else None
+
+        if not isinstance(distractors, list):
+            continue
+
+        values = [_normalize_distractor_text(x) for x in distractors]
+        values = [x for x in values if x]
+        if len(values) >= expected_count:
+            return values[:expected_count]
+    return None
+
+
+def _extract_truncated_json_distractors(
+    candidate: str,
+    expected_count: int,
+) -> Optional[List[str]]:
+    # Structured-output specific fallback: provider sometimes truncates tail
+    # after producing valid quoted distractor strings.
+    m = re.search(r'"distractors"\s*:\s*\[(.*)', candidate, flags=re.DOTALL)
+    if not m:
+        return None
+
+    body = m.group(1)
+    quoted = re.findall(r'"((?:\\.|[^"\\])*)"', body)
+    if not quoted:
+        return None
+
+    values: List[str] = []
+    for item in quoted:
+        try:
+            decoded = json.loads(f'"{item}"')
+        except Exception:  # noqa: BLE001
+            decoded = item
+        normalized = _normalize_distractor_text(decoded)
+        if normalized:
+            values.append(normalized)
+
+    if len(values) >= expected_count:
+        return values[:expected_count]
+    return None
 
 
 def _build_q_a_prompt(question: str, answer: str, count: int, start_letter: str) -> str:
     letters = ", ".join(_expected_letters(start_letter, count))
-    return (
-        "I have a multiple-choice question with one known correct answer.\n"
-        "Generate plausible but incorrect distractor options.\n\n"
-        f"Question: {question}\n"
-        f"Correct Answer: A: {answer}\n\n"
-        f"Generate exactly {count} incorrect options using labels: {letters}.\n"
-        "Output one option per line with format '<LETTER>: <option>'."
+    return DISTRACTOR_GENERATION_PROMPT_QA_TEMPLATE.format(
+        question=question,
+        gold_answer=answer,
+        count=count,
+        target_letters=letters,
     )
 
 
@@ -155,51 +248,81 @@ def _build_conditioned_prompt(
         lines.append(f"{chr(ord('A') + i)}: {d}")
 
     start_letter = chr(ord("A") + len(context_distractors) + 1)
+    num_existing_options = len(lines)
+    total_options = num_existing_options + count
+    total_distractors = total_options - 1
     letters = ", ".join(_expected_letters(start_letter, count))
+    existing_options_block = "\n".join(lines)
 
-    return (
-        "I have a multiple-choice question with existing options where A is correct.\n"
-        "Generate additional plausible but incorrect distractors.\n\n"
-        f"Question: {question}\n"
-        "Existing Options:\n"
-        + "\n".join(lines)
-        + "\n\n"
-        + f"Generate exactly {count} new incorrect options: {letters}.\n"
-        + "Output one option per line with format '<LETTER>: <option>'."
+    return DISTRACTOR_GENERATION_PROMPT_CONDITIONED_TEMPLATE.format(
+        question=question,
+        gold_answer=answer,
+        existing_options_block=existing_options_block,
+        num_existing_options=num_existing_options,
+        total_options=total_options,
+        total_distractors=total_distractors,
+        count=count,
+        target_letters=letters,
     )
 
 
-def _build_repair_prompt(raw_output: str, start_letter: str, expected_count: int) -> str:
-    letters = ", ".join(_expected_letters(start_letter, expected_count))
-    return (
-        "Reformat the following text into strict distractor lines.\n"
-        f"Output exactly {expected_count} lines using labels: {letters}.\n"
-        "Line format must be '<LETTER>: <option>' and nothing else.\n\n"
-        "Text:\n"
-        f"{raw_output}"
-    )
+def _build_structured_schema(expected_count: int, provider: str) -> Dict[str, Any]:
+    provider_key = provider.lower().strip()
+    array_schema: Dict[str, Any] = {
+        "type": "array",
+        "items": {"type": "string"},
+    }
+    if provider_key == "anthropic":
+        # Anthropic JSON schema currently rejects minItems > 1 for arrays.
+        # Keep schema permissive and enforce exact count in parser.
+        array_schema["minItems"] = 1
+    else:
+        array_schema["minItems"] = expected_count
+        array_schema["maxItems"] = expected_count
+
+    return {
+        "type": "object",
+        "properties": {
+            "distractors": array_schema
+        },
+        "required": ["distractors"],
+        "additionalProperties": False,
+    }
 
 
-def _parse_or_repair(
-    *,
-    client,
-    text: str,
-    expected_count: int,
-    start_letter: str,
-    max_tokens: int,
-    generate_kwargs: Dict[str, Any],
-) -> tuple[List[str], str]:
-    try:
-        return parse_generated_distractors(text, expected_count, start_letter), text
-    except ValueError:
-        repair_prompt = _build_repair_prompt(text, start_letter, expected_count)
-        repaired = client.generate(
-            prompt=repair_prompt,
-            max_tokens=max_tokens,
-            **generate_kwargs,
-        )
-        parsed = parse_generated_distractors(repaired.text, expected_count, start_letter)
-        return parsed, repaired.text
+def _preview_text(value: str, max_chars: int = 300) -> str:
+    compact = re.sub(r"\s+", " ", value or "").strip()
+    if len(compact) <= max_chars:
+        return compact
+    return f"{compact[: max_chars - 3]}..."
+
+
+def _structured_request_kwargs(provider: str, expected_count: int) -> Dict[str, Any]:
+    provider_key = provider.lower().strip()
+    schema = _build_structured_schema(expected_count, provider=provider_key)
+    schema_name = f"distractors_{expected_count}"
+
+    if provider_key in {"openai", "gemini"}:
+        return {
+            "response_format": {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": schema_name,
+                    "strict": True,
+                    "schema": schema,
+                },
+            }
+        }
+    if provider_key == "anthropic":
+        return {
+            "output_config": {
+                "format": {
+                    "type": "json_schema",
+                    "schema": schema,
+                }
+            }
+        }
+    return {}
 
 
 def _shuffle_options(answer: str, distractors: List[str], seed: int) -> tuple[List[str], str]:
@@ -229,10 +352,84 @@ def _client_kwargs_for_config(config: GenerationConfig) -> Dict[str, Any]:
     kwargs: Dict[str, Any] = {}
     provider = config.model_provider.lower().strip()
 
-    if provider == "openai":
-        if config.reasoning_effort:
-            kwargs["reasoning_effort"] = config.reasoning_effort
+    if provider in {"openai", "gemini"} and config.reasoning_effort:
+        kwargs["reasoning_effort"] = config.reasoning_effort
     return kwargs
+
+
+def _call_generate_with_observability(
+    *,
+    client,
+    prompt: str,
+    max_tokens: int,
+    generate_kwargs: Dict[str, Any],
+    config: GenerationConfig,
+    context: str,
+    entry_index: int,
+    attempt: int,
+    expected_count: Optional[int] = None,
+    structured_output_type: Optional[str] = None,
+):
+    started = time.time()
+    _log_event(
+        config,
+        "request_start",
+        context=context,
+        entry_index=entry_index,
+        attempt=attempt,
+        prompt_chars=len(prompt),
+        max_tokens=max_tokens,
+        expected_count=expected_count,
+        structured_output_type=structured_output_type,
+    )
+
+    try:
+        response = client.generate(
+            prompt=prompt,
+            max_tokens=max_tokens,
+            **generate_kwargs,
+        )
+    except Exception as exc:  # noqa: BLE001
+        elapsed = round(time.time() - started, 3)
+        _log_event(
+            config,
+            "request_error",
+            context=context,
+            entry_index=entry_index,
+            attempt=attempt,
+            elapsed_s=elapsed,
+            error_type=type(exc).__name__,
+            error=str(exc),
+        )
+        raise
+
+    elapsed = round(time.time() - started, 3)
+    output_chars = len(_safe_text(getattr(response, "text", "")))
+    if elapsed >= config.slow_call_seconds:
+        msg = (
+            f"[slow-call] model={config.model_name} context={context} "
+            f"entry={entry_index} attempt={attempt} elapsed={elapsed:.1f}s"
+        )
+        print(msg)
+        _log_event(
+            config,
+            "slow_call",
+            context=context,
+            entry_index=entry_index,
+            attempt=attempt,
+            elapsed_s=elapsed,
+        )
+
+    _log_event(
+        config,
+        "request_success",
+        context=context,
+        entry_index=entry_index,
+        attempt=attempt,
+        elapsed_s=elapsed,
+        output_chars=output_chars,
+    )
+    return response
 
 
 def _generate_with_retries(
@@ -243,24 +440,97 @@ def _generate_with_retries(
     start_letter: str,
     config: GenerationConfig,
     generate_kwargs: Dict[str, Any],
+    context: str,
+    entry_index: int,
 ) -> tuple[List[str], str]:
     last_error: Optional[Exception] = None
+    parse_retry_used = False
+    merged_kwargs = dict(generate_kwargs)
+    merged_kwargs.update(_structured_request_kwargs(config.model_provider, expected_count))
+    structured_output_type = (
+        "response_format"
+        if "response_format" in merged_kwargs
+        else "output_config"
+        if "output_config" in merged_kwargs
+        else None
+    )
+
     for attempt in range(config.max_retries):
+        attempt_number = attempt + 1
         try:
-            response = client.generate(prompt=prompt, max_tokens=config.max_tokens, **generate_kwargs)
-            return _parse_or_repair(
+            response = _call_generate_with_observability(
                 client=client,
-                text=response.text,
-                expected_count=expected_count,
-                start_letter=start_letter,
+                prompt=prompt,
                 max_tokens=config.max_tokens,
-                generate_kwargs=generate_kwargs,
+                generate_kwargs=merged_kwargs,
+                config=config,
+                context=context,
+                entry_index=entry_index,
+                attempt=attempt_number,
+                expected_count=expected_count,
+                structured_output_type=structured_output_type,
             )
+            text = _safe_text(getattr(response, "text", ""))
+            if not text:
+                raw = getattr(response, "raw_response", None)
+                stop_reason = getattr(raw, "stop_reason", None) if raw is not None else None
+                model = getattr(raw, "model", None) if raw is not None else None
+                content_types: List[str] = []
+                if raw is not None:
+                    content = getattr(raw, "content", None)
+                    if content:
+                        for block in content:
+                            block_type = getattr(block, "type", None)
+                            if block_type is None and isinstance(block, dict):
+                                block_type = block.get("type")
+                            content_types.append(str(block_type))
+                raise ValueError(
+                    "Model returned empty output "
+                    f"(model={model}, stop_reason={stop_reason}, content_types={content_types})"
+                )
+            try:
+                parsed = parse_generated_distractors(text, expected_count, start_letter)
+            except ValueError as parse_exc:
+                if not parse_retry_used and attempt < config.max_retries - 1:
+                    parse_retry_used = True
+                    _log_event(
+                        config,
+                        "parse_retry",
+                        context=context,
+                        entry_index=entry_index,
+                        attempt=attempt_number,
+                        expected_count=expected_count,
+                        error_type=type(parse_exc).__name__,
+                        error=str(parse_exc),
+                    )
+                    time.sleep(config.retry_delay * (2**attempt))
+                    continue
+                raise StructuredParseError(
+                    f"{parse_exc} Raw preview: '{_preview_text(text)}'"
+                ) from parse_exc
+            return parsed, text
         except Exception as exc:  # noqa: BLE001
             last_error = exc
+            _log_event(
+                config,
+                "request_retry",
+                context=context,
+                entry_index=entry_index,
+                attempt=attempt_number,
+                error_type=type(exc).__name__,
+                error=str(exc),
+            )
+            if isinstance(exc, StructuredParseError):
+                raise RuntimeError(
+                    f"Generation failed after structured parse retry for {context} "
+                    f"(entry_index={entry_index}): {exc}"
+                ) from exc
             if attempt < config.max_retries - 1:
                 time.sleep(config.retry_delay * (2**attempt))
-    raise RuntimeError(f"Generation failed after {config.max_retries} attempts: {last_error}")
+    raise RuntimeError(
+        f"Generation failed after {config.max_retries} attempts for {context} "
+        f"(entry_index={entry_index}): {last_error}"
+    )
 
 
 def _is_missing(values: Any) -> bool:
@@ -283,6 +553,57 @@ def _write_trace(
     entry[f"{strategy}_model_output"] = output
     entry[f"{strategy}_options_randomized"] = shuffled
     entry[f"{strategy}_correct_answer_letter"] = correct_letter
+
+
+def _generate_conditioned_options(
+    *,
+    client,
+    question: str,
+    answer: str,
+    base_context_distractors: List[str],
+    total_count: int,
+    config: GenerationConfig,
+    generate_kwargs: Dict[str, Any],
+    context_label: str,
+    entry_index: int,
+) -> tuple[List[str], str]:
+    prompt = _build_conditioned_prompt(question, answer, base_context_distractors, count=total_count)
+    start_letter = chr(ord("A") + len(base_context_distractors) + 1)
+    return _generate_with_retries(
+        client=client,
+        prompt=prompt,
+        expected_count=total_count,
+        start_letter=start_letter,
+        config=config,
+        generate_kwargs=generate_kwargs,
+        context=context_label,
+        entry_index=entry_index,
+    )
+
+
+def _generate_qa_options(
+    *,
+    client,
+    question: str,
+    answer: str,
+    total_count: int,
+    start_letter: str,
+    config: GenerationConfig,
+    generate_kwargs: Dict[str, Any],
+    context_label: str,
+    entry_index: int,
+) -> tuple[List[str], str]:
+    prompt = _build_q_a_prompt(question, answer, count=total_count, start_letter=start_letter)
+    return _generate_with_retries(
+        client=client,
+        prompt=prompt,
+        expected_count=total_count,
+        start_letter=start_letter,
+        config=config,
+        generate_kwargs=generate_kwargs,
+        context=context_label,
+        entry_index=entry_index,
+    )
 
 
 def _apply_generation_for_entry(
@@ -326,15 +647,18 @@ def _apply_generation_for_entry(
     # B: model_from_scratch (3M)
     need_b = config.force_overwrite or _is_missing(row.get("model_from_scratch"))
     if need_b:
-        prompt_b = _build_q_a_prompt(question, answer, count=3, start_letter="B")
-        model3, raw_b = _generate_with_retries(
+        model3, raw_b = _generate_qa_options(
             client=client,
-            prompt=prompt_b,
-            expected_count=3,
+            question=question,
+            answer=answer,
+            total_count=3,
             start_letter="B",
             config=config,
             generate_kwargs=generate_kwargs,
+            context_label="model_from_scratch",
+            entry_index=idx,
         )
+        prompt_b = _build_q_a_prompt(question, answer, count=3, start_letter="B")
         row["model_from_scratch"] = model3
         _write_trace(
             row,
@@ -355,15 +679,18 @@ def _apply_generation_for_entry(
     # C: augment_human (delta 6M conditioned on 3H)
     need_c = config.force_overwrite or _is_missing(row.get("augment_human"))
     if need_c:
-        prompt_c = _build_conditioned_prompt(question, answer, human3, count=6)
-        c_delta6, raw_c = _generate_with_retries(
+        c_delta6, raw_c = _generate_conditioned_options(
             client=client,
-            prompt=prompt_c,
-            expected_count=6,
-            start_letter="E",
+            question=question,
+            answer=answer,
+            base_context_distractors=human3,
+            total_count=6,
             config=config,
             generate_kwargs=generate_kwargs,
+            context_label="augment_human",
+            entry_index=idx,
         )
+        prompt_c = _build_conditioned_prompt(question, answer, human3, count=6)
         row["augment_human"] = c_delta6
         # Eval setting uses A + C.
         _write_trace(
@@ -385,15 +712,18 @@ def _apply_generation_for_entry(
     # D: augment_model_delta_6m + augment_model combined 9M
     need_d = config.force_overwrite or _is_missing(row.get("augment_model"))
     if need_d:
-        prompt_d = _build_conditioned_prompt(question, answer, model3, count=6)
-        d_delta6, raw_d = _generate_with_retries(
+        d_delta6, raw_d = _generate_conditioned_options(
             client=client,
-            prompt=prompt_d,
-            expected_count=6,
-            start_letter="E",
+            question=question,
+            answer=answer,
+            base_context_distractors=model3,
+            total_count=6,
             config=config,
             generate_kwargs=generate_kwargs,
+            context_label="augment_model_delta_6m",
+            entry_index=idx,
         )
+        prompt_d = _build_conditioned_prompt(question, answer, model3, count=6)
         combined9 = model3 + d_delta6
         row["augment_model_delta_6m"] = d_delta6
         row["augment_model"] = combined9
@@ -417,15 +747,18 @@ def _apply_generation_for_entry(
     # E: augment_ablation (9M direct)
     need_e = config.force_overwrite or _is_missing(row.get("augment_ablation"))
     if need_e:
-        prompt_e = _build_q_a_prompt(question, answer, count=9, start_letter="B")
-        e_9m, raw_e = _generate_with_retries(
+        e_9m, raw_e = _generate_qa_options(
             client=client,
-            prompt=prompt_e,
-            expected_count=9,
+            question=question,
+            answer=answer,
+            total_count=9,
             start_letter="B",
             config=config,
             generate_kwargs=generate_kwargs,
+            context_label="augment_ablation",
+            entry_index=idx,
         )
+        prompt_e = _build_q_a_prompt(question, answer, count=9, start_letter="B")
         row["augment_ablation"] = e_9m
         _write_trace(
             row,
@@ -478,6 +811,15 @@ def augment_single_dataset(
     temp_path = RESULTS_DIR / f"temp_final5_{config.model_name.replace('/', '_')}_{int(time.time())}.json"
     temp_path.parent.mkdir(parents=True, exist_ok=True)
 
+    _log_event(
+        config,
+        "dataset_start",
+        rows=len(entries),
+        limit=limit,
+        resume_from=str(resume_from) if resume_from else None,
+        request_log_path=str(config.request_log_path) if config.request_log_path else None,
+    )
+
     failures = 0
     for idx in tqdm(range(start_idx, len(entries)), desc="Generating Final5"):
         row = dict(entries[idx])
@@ -502,6 +844,13 @@ def augment_single_dataset(
                     }
                 )
                 processed_rows.append(row)
+                _log_event(
+                    config,
+                    "row_failed_skipped",
+                    entry_index=idx,
+                    error_type=type(exc).__name__,
+                    error=str(exc),
+                )
             else:
                 raise
 
@@ -511,6 +860,7 @@ def augment_single_dataset(
     temp_path.write_text(json.dumps(processed_rows, indent=2), encoding="utf-8")
     if failures:
         print(f"Generation completed with {failures} failed rows")
+    _log_event(config, "dataset_end", rows_processed=len(processed_rows), failures=failures)
 
     return Dataset.from_list(processed_rows)
 
