@@ -75,6 +75,10 @@ SETTING_SHORT_LABELS: dict[str, str] = {
 }
 
 DATASET_PLOT_ORDER = ["arc_challenge", "mmlu_pro", "gpqa"]
+MCNEMAR_SIGNIFICANCE_LEGEND = (
+    "McNemar significance: ns (p>=0.05), * (p<0.05), ** (p<0.01), "
+    "*** (p<0.001), **** (p<0.0001)"
+)
 
 
 def _display_generator(generator: str) -> str:
@@ -118,16 +122,6 @@ def _binomial_stderr(correct: int, total: int) -> float:
     return math.sqrt(max(0.0, p * (1.0 - p)) / total)
 
 
-def _wilson_ci(correct: int, total: int, z: float = 1.96) -> tuple[float, float]:
-    if total <= 0:
-        return 0.0, 0.0
-    p = correct / total
-    denom = 1.0 + (z**2) / total
-    center = (p + (z**2) / (2.0 * total)) / denom
-    spread = z * math.sqrt((p * (1.0 - p) + (z**2) / (4.0 * total)) / total) / denom
-    return max(0.0, center - spread), min(1.0, center + spread)
-
-
 def _binom_two_sided_pvalue(k: int, n: int) -> float:
     if n <= 0:
         return 1.0
@@ -159,16 +153,16 @@ def _mcnemar_pvalue(correct_a: dict[int, bool], correct_b: dict[int, bool]) -> t
     return p, b, c, n
 
 
-def _significance_label(p_value: float) -> str:
+def _significance_stars(p_value: float) -> str:
     if p_value < 1e-4:
-        return "very very sig"
+        return "****"
     if p_value < 1e-3:
-        return "very sig"
+        return "***"
     if p_value < 1e-2:
-        return "sig"
+        return "**"
     if p_value < 5e-2:
-        return "weak sig"
-    return "not sig"
+        return "*"
+    return "ns"
 
 
 def _load_correctness_map(config_root: Path, cache: dict[str, dict[int, bool] | None]) -> dict[int, bool] | None:
@@ -280,26 +274,6 @@ def collect_final5_results(results_root: Path | str) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def add_binomial_ci(df: pd.DataFrame) -> pd.DataFrame:
-    """Backward-compatible helper; plotting now uses standard-error bars."""
-    if df.empty:
-        out = df.copy()
-        out["ci_low"] = []
-        out["ci_high"] = []
-        return out
-
-    out = df.copy()
-    lows: list[float] = []
-    highs: list[float] = []
-    for correct, total in zip(out["correct"], out["total"]):
-        lo, hi = _wilson_ci(int(correct), int(total))
-        lows.append(lo)
-        highs.append(hi)
-    out["ci_low"] = lows
-    out["ci_high"] = highs
-    return out
-
-
 def write_final5_summary_table(results_root: Path | str, output_csv: Path | str) -> pd.DataFrame:
     """Write a CSV table containing baseline and delta metrics."""
     df = collect_final5_results(results_root)
@@ -341,15 +315,18 @@ def _mcnemar_annotation_for_model(
                 level = "n/a"
             else:
                 p_value, _b, _c, n_discordant = _mcnemar_pvalue(left_map, right_map)
-                level = "n/a" if n_discordant == 0 else _significance_label(p_value)
+                level = "n/a" if n_discordant == 0 else _significance_stars(p_value)
             left_short = SETTING_SHORT_LABELS.get(left, left)
             right_short = SETTING_SHORT_LABELS.get(right, right)
-            pair_labels.append(f"{left_short} vs {right_short}: {level}")
+            if len(settings) == 2:
+                pair_labels.append(level)
+            else:
+                pair_labels.append(f"{left_short}/{right_short} {level}")
     if not pair_labels:
-        return "McNemar: n/a"
+        return "n/a"
     if len(pair_labels) == 1:
-        return f"McNemar: {pair_labels[0].split(': ', 1)[1]}"
-    return "McNemar\n" + "\n".join(pair_labels)
+        return pair_labels[0]
+    return "\n".join(pair_labels)
 
 
 def _plot_comparison(
@@ -501,11 +478,12 @@ def plot_final5_pairwise(
                     handles,
                     labels,
                     loc="lower center",
-                    bbox_to_anchor=(0.5, 0.0),
+                    bbox_to_anchor=(0.5, 0.10),
                     ncols=1,
                     frameon=False,
                 )
-            fig.subplots_adjust(top=0.86, bottom=0.36, wspace=0.22)
+            fig.text(0.5, 0.03, MCNEMAR_SIGNIFICANCE_LEGEND, ha="center", va="bottom", fontsize=9)
+            fig.subplots_adjust(top=0.86, bottom=0.32, wspace=0.22)
 
             out_png = out_dir / f"pairwise_{generator}_{mode}_{title_key}.png"
             fig.savefig(out_png, dpi=200)

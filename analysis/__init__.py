@@ -13,7 +13,6 @@ from .analyzer import (
 from .visualize import (
     SETTING_RANDOM_BASELINES,
     collect_final5_results,
-    add_binomial_ci,
     write_final5_summary_table,
     plot_final5_pairwise,
 )
@@ -31,7 +30,6 @@ __all__ = [
     # Final5 plotting
     "SETTING_RANDOM_BASELINES",
     "collect_final5_results",
-    "add_binomial_ci",
     "write_final5_summary_table",
     "plot_final5_pairwise",
 ]
