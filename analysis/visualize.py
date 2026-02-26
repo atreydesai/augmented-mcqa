@@ -29,7 +29,64 @@ PLOT_COMPARISONS: list[tuple[list[str], str]] = [
     (["augment_human", "augment_model", "augment_ablation"], "augment_triplet"),
 ]
 
+COMPARISON_DISPLAY_TITLES: dict[str, str] = {
+    "human_vs_model": "Are human or model distractors better?",
+    "augment_triplet": (
+        "If you are augmenting, are distractors based on humans or models "
+        "(one-step or two-step) better?"
+    ),
+}
+
+MODE_DISPLAY_LABELS: dict[str, str] = {
+    "full_question": "Full Question",
+    "choices_only": "Choices-only",
+}
+
+GENERATOR_DISPLAY_ALIASES: list[tuple[str, str]] = [
+    ("gpt-5.2", "gpt-5.2"),
+    ("gemini-3.1-pro", "gemini-3.1-pro"),
+    ("claude-opus-4-6", "opus-4.6"),
+    ("opus-4-6", "opus-4.6"),
+]
+
+EVAL_MODEL_DISPLAY_LABELS: dict[str, str] = {
+    "Qwen_Qwen3-4B-Instruct-2507": "Qwen3-4B",
+    "Qwen/Qwen3-4B-Instruct-2507": "Qwen3-4B",
+    "allenai_Olmo-3-7B-Instruct": "Olmo3-7B",
+    "allenai/Olmo-3-7B-Instruct": "Olmo3-7B",
+    "meta-llama_Llama-3.1-8B-Instruct": "Llama3.1-8B",
+    "meta-llama/Llama-3.1-8B-Instruct": "Llama3.1-8B",
+}
+
+SETTING_DISPLAY_LABELS: dict[str, str] = {
+    "human_from_scratch": "human_from_scratch (Normal Benchmark)",
+    "model_from_scratch": "model_from_scratch (LLM Distractors from Q+A)",
+    "augment_human": "augment_human (Augment Human MCQ with LLM Distractors)",
+    "augment_model": "augment_model (Augment Model MCQ with LLM Distractors)",
+    "augment_ablation": "augment_ablation (Generate Full MCQ from Q+A in One Step (Ablation))",
+}
+
 DATASET_PLOT_ORDER = ["arc_challenge", "mmlu_pro", "gpqa"]
+
+
+def _display_generator(generator: str) -> str:
+    raw = str(generator)
+    for needle, display in GENERATOR_DISPLAY_ALIASES:
+        if needle in raw:
+            return display
+    return raw
+
+
+def _display_mode(mode: str) -> str:
+    return MODE_DISPLAY_LABELS.get(str(mode), str(mode))
+
+
+def _display_eval_model(model: str) -> str:
+    return EVAL_MODEL_DISPLAY_LABELS.get(str(model), str(model))
+
+
+def _display_setting(setting: str) -> str:
+    return SETTING_DISPLAY_LABELS.get(str(setting), str(setting))
 
 
 def _safe_float(value: object, default: float = 0.0) -> float:
@@ -202,7 +259,7 @@ def _plot_comparison(ax, comp_df: pd.DataFrame, settings: list[str], title: str)
             yerr=[acc - lo, hi - acc],
             fmt="o",
             capsize=3,
-            label=setting,
+            label=_display_setting(setting),
             color=color,
         )
 
@@ -212,7 +269,7 @@ def _plot_comparison(ax, comp_df: pd.DataFrame, settings: list[str], title: str)
 
     ax.set_title(title)
     ax.set_xticks(x)
-    ax.set_xticklabels(models, rotation=15, ha="right")
+    ax.set_xticklabels([_display_eval_model(m) for m in models], rotation=15, ha="right")
     ax.set_ylim(0.0, 1.0)
     ax.set_ylabel("Accuracy")
     ax.grid(axis="y", alpha=0.2)
@@ -253,7 +310,7 @@ def plot_final5_pairwise(
             if len(datasets) == 1:
                 axes = [axes]
 
-            pretty_title = title_key.replace("_", " ")
+            pretty_title = COMPARISON_DISPLAY_TITLES.get(title_key, title_key.replace("_", " "))
             for ax, dataset in zip(axes, datasets):
                 dataset_df = group_df[group_df["dataset"] == dataset]
                 comp_df = _comparison_subset(dataset_df, settings)
@@ -264,7 +321,10 @@ def plot_final5_pairwise(
                     f"{dataset}",
                 )
 
-            fig.suptitle(f"{pretty_title} | generator={generator} | mode={mode}")
+            fig.suptitle(
+                f"{pretty_title} | generator={_display_generator(generator)} | "
+                f"mode={_display_mode(mode)}"
+            )
 
             handles: list[object] = []
             labels: list[str] = []
