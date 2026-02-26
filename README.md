@@ -146,6 +146,119 @@ scripts/run_final5_remote_smoke.sh \
   --max-tokens 32
 ```
 
+## Remote Full Eval Runbook (clip + A6000)
+
+Assumes:
+
+- repo path: `/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa`
+- venv path: `/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/activate`
+- model cache: `/fs/nexus-scratch/adesai10/hub`
+- one generated Final5 dataset as eval input
+
+1. Environment setup:
+
+```bash
+cd /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa
+source /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/activate
+set -eo pipefail
+
+export HF_HOME=/fs/nexus-scratch/adesai10/hub
+export MODEL_CACHE_DIR=/fs/nexus-scratch/adesai10/hub
+```
+
+2. Create regeneration manifest and paths:
+
+```bash
+GEN_FULL_DS="/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/augmented/final5_full_20260225_004316_gpt-5.2-2025-12-11"
+GENERATOR_LABEL="$(basename "$GEN_FULL_DS" | sed -E 's/^final5_full_[0-9]{8}_[0-9]{6}_//')"
+TS="$(date +%Y%m%d_%H%M%S)"
+
+REGEN_MANIFEST="datasets/augmented/final5_regeneration_manifest_${GENERATOR_LABEL}_${TS}.json"
+BUNDLE="jobs/generated/final5_full_${GENERATOR_LABEL}_${TS}"
+OUT="results/final5_full_${GENERATOR_LABEL}_${TS}"
+
+cat > "$REGEN_MANIFEST" <<JSON
+{
+  "manifest_version": 1,
+  "schema_version": "final5_v1",
+  "generators": [
+    {"model": "${GENERATOR_LABEL}", "dataset_path": "${GEN_FULL_DS}", "returncode": 0}
+  ]
+}
+JSON
+```
+
+3. Build bundle:
+
+```bash
+python scripts/build_eval_slurm_bundle.py \
+  --manifest "$REGEN_MANIFEST" \
+  --output-dir "$BUNDLE" \
+  --output-base "$OUT" \
+  --target-rows-per-subsplit 500 \
+  --save-interval 50 \
+  --max-tokens 100
+```
+
+4. Preflight checks:
+
+```bash
+jq '.total_sbatch_files, .total_work_units, .dataset_part_counts' "$BUNDLE/bundle_manifest.json"
+for f in "$BUNDLE"/final5_pair__*.sbatch; do sbatch --test-only "$f"; done
+```
+
+5. Submit full evaluation:
+
+```bash
+bash "$BUNDLE/submit_all.sh" | tee "$BUNDLE/submit.log"
+awk '/Submitted batch job/{print $4}' "$BUNDLE/submit.log" > "$BUNDLE/job_ids.txt"
+cat "$BUNDLE/job_ids.txt"
+```
+
+6. Monitor:
+
+```bash
+JOB_CSV="$(paste -sd, "$BUNDLE/job_ids.txt")"
+while squeue -h -j "$JOB_CSV" | grep -q .; do
+  date
+  squeue -j "$JOB_CSV" -o "%.18i %.9P %.30j %.8T %.10M %.20R"
+  sleep 60
+done
+
+while read -r j; do
+  sacct -j "$j" --format=JobID,State,ExitCode,Elapsed,NodeList -n -P
+done < "$BUNDLE/job_ids.txt"
+```
+
+7. Merge shards:
+
+```bash
+python scripts/merge_eval_subshards.py \
+  --bundle-manifest "$BUNDLE/bundle_manifest.json" \
+  --strict | tee "$BUNDLE/merge.log"
+```
+
+8. Validate summary counts (for 1 generator x 3 eval models, with part counts `2/2/1`):
+
+```bash
+CANONICAL=$(find "$OUT" -path '*/summary.json' | grep -E '/(human_from_scratch|model_from_scratch|augment_human|augment_model|augment_ablation)/summary.json$' | wc -l)
+PARTIAL=$(find "$OUT" -path '*/_partials/entry_shard_*_of_*/summary.json' | wc -l)
+echo "canonical=$CANONICAL expected=90"
+echo "partial=$PARTIAL expected=150"
+```
+
+If your `dataset_part_counts` differ, recompute expected partial count from the bundle manifest.
+
+9. Generate visuals:
+
+```bash
+python scripts/plot_final5.py \
+  --results-root "$OUT" \
+  --output-dir "$OUT/final5_plots"
+
+find "$OUT/final5_plots" -maxdepth 2 -type f | sort
+```
+
 ## Documentation
 
 - `docs/models.md`

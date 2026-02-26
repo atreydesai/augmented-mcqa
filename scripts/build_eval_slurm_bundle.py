@@ -259,7 +259,17 @@ def _render_submit_all(sbatch_files: list[Path]) -> str:
 
     for path in sorted(sbatch_files):
         rel = path.name
+        run_manifest_rel = f"{path.stem}.run_manifest.json"
         lines.append(f'echo "Submitting {rel}"')
+        lines.append(f'if grep -qE \'^#SBATCH --(output|error)=\\$\\{{\' "$SCRIPT_DIR/{rel}"; then')
+        lines.append(f'  echo "Error: stale sbatch template detected in {rel} (found #SBATCH with shell expansion)."')
+        lines.append('  echo "Rebuild this bundle with the latest scripts/build_eval_slurm_bundle.py."')
+        lines.append("  exit 1")
+        lines.append("fi")
+        lines.append(f'if [[ ! -f "$SCRIPT_DIR/{run_manifest_rel}" ]]; then')
+        lines.append(f'  echo "Error: missing run manifest for {rel}: $SCRIPT_DIR/{run_manifest_rel}"')
+        lines.append("  exit 1")
+        lines.append("fi")
         lines.append('if [[ "$DRY_RUN" == "1" ]]; then')
         lines.append(f'  printf "  sbatch "')
         lines.append('  printf "%q " "${SBATCH_ARGS[@]}"')
