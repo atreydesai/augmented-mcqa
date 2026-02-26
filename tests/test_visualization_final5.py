@@ -49,7 +49,7 @@ def test_collect_and_plot_final5_outputs_include_random_baseline_and_ci(tmp_path
 
     df = collect_final5_results(root)
     assert not df.empty
-    assert {"random_baseline", "delta_over_random", "ci_low", "ci_high"}.issubset(df.columns)
+    assert {"random_baseline", "delta_over_random", "stderr"}.issubset(df.columns)
 
     # 3H+0M and 0H+3M both have 4 answer choices -> random 0.25
     baseline_h = df[df["setting"] == "human_from_scratch"].iloc[0]["random_baseline"]

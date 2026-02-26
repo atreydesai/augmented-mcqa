@@ -66,6 +66,14 @@ SETTING_DISPLAY_LABELS: dict[str, str] = {
     "augment_ablation": "augment_ablation (Generate Full MCQ from Q+A in One Step (Ablation))",
 }
 
+SETTING_SHORT_LABELS: dict[str, str] = {
+    "human_from_scratch": "HFS",
+    "model_from_scratch": "MFS",
+    "augment_human": "AH",
+    "augment_model": "AM",
+    "augment_ablation": "AA",
+}
+
 DATASET_PLOT_ORDER = ["arc_challenge", "mmlu_pro", "gpqa"]
 
 
@@ -103,6 +111,13 @@ def _safe_int(value: object, default: int = 0) -> int:
         return default
 
 
+def _binomial_stderr(correct: int, total: int) -> float:
+    if total <= 0:
+        return 0.0
+    p = correct / total
+    return math.sqrt(max(0.0, p * (1.0 - p)) / total)
+
+
 def _wilson_ci(correct: int, total: int, z: float = 1.96) -> tuple[float, float]:
     if total <= 0:
         return 0.0, 0.0
@@ -111,6 +126,85 @@ def _wilson_ci(correct: int, total: int, z: float = 1.96) -> tuple[float, float]
     center = (p + (z**2) / (2.0 * total)) / denom
     spread = z * math.sqrt((p * (1.0 - p) + (z**2) / (4.0 * total)) / total) / denom
     return max(0.0, center - spread), min(1.0, center + spread)
+
+
+def _binom_two_sided_pvalue(k: int, n: int) -> float:
+    if n <= 0:
+        return 1.0
+    two_pow = 2.0**n
+    obs_count = math.comb(n, k)
+    mass = 0.0
+    for i in range(0, n + 1):
+        count = math.comb(n, i)
+        if count <= obs_count:
+            mass += count / two_pow
+    return min(1.0, max(0.0, mass))
+
+
+def _mcnemar_pvalue(correct_a: dict[int, bool], correct_b: dict[int, bool]) -> tuple[float, int, int, int]:
+    keys = sorted(set(correct_a.keys()).intersection(correct_b.keys()))
+    b = 0  # A correct, B wrong
+    c = 0  # A wrong, B correct
+    for idx in keys:
+        a_val = bool(correct_a[idx])
+        b_val = bool(correct_b[idx])
+        if a_val and not b_val:
+            b += 1
+        elif (not a_val) and b_val:
+            c += 1
+    n = b + c
+    if n == 0:
+        return 1.0, b, c, n
+    p = _binom_two_sided_pvalue(min(b, c), n)
+    return p, b, c, n
+
+
+def _significance_label(p_value: float) -> str:
+    if p_value < 1e-4:
+        return "very very sig"
+    if p_value < 1e-3:
+        return "very sig"
+    if p_value < 1e-2:
+        return "sig"
+    if p_value < 5e-2:
+        return "weak sig"
+    return "not sig"
+
+
+def _load_correctness_map(config_root: Path, cache: dict[str, dict[int, bool] | None]) -> dict[int, bool] | None:
+    key = str(config_root)
+    if key in cache:
+        return cache[key]
+
+    rows_path = config_root / "rows"
+    if rows_path.exists():
+        try:
+            from datasets import load_from_disk  # type: ignore
+        except Exception:
+            cache[key] = None
+            return None
+        out: dict[int, bool] = {}
+        dataset = load_from_disk(str(rows_path))
+        for row in dataset:
+            idx = row.get("question_idx")
+            if idx is None:
+                continue
+            out[int(idx)] = bool(row.get("is_correct", False))
+        cache[key] = out
+        return out
+
+    legacy_results = config_root / "results.json"
+    if legacy_results.exists():
+        payload = json.loads(legacy_results.read_text(encoding="utf-8"))
+        out = {}
+        for local_idx, row in enumerate(payload.get("results", [])):
+            q_idx = row.get("question_idx", local_idx)
+            out[int(q_idx)] = bool(row.get("is_correct", False))
+        cache[key] = out
+        return out
+
+    cache[key] = None
+    return None
 
 
 def collect_final5_results(results_root: Path | str) -> pd.DataFrame:
@@ -156,9 +250,11 @@ def collect_final5_results(results_root: Path | str) -> pd.DataFrame:
                 "total": total,
                 "correct": correct,
                 "accuracy": accuracy,
+                "stderr": _binomial_stderr(correct, total),
                 "random_baseline": random_baseline,
                 "delta_over_random": accuracy - random_baseline,
                 "results_path": str(path),
+                "config_root": str(path.parent),
             }
         )
 
@@ -173,34 +269,32 @@ def collect_final5_results(results_root: Path | str) -> pd.DataFrame:
                 "total",
                 "correct",
                 "accuracy",
+                "stderr",
                 "random_baseline",
                 "delta_over_random",
-                "ci_low",
-                "ci_high",
                 "results_path",
+                "config_root",
             ]
         )
 
-    df = pd.DataFrame(rows)
-    return add_binomial_ci(df)
+    return pd.DataFrame(rows)
 
 
 def add_binomial_ci(df: pd.DataFrame) -> pd.DataFrame:
-    """Append Wilson 95% confidence interval columns."""
+    """Backward-compatible helper; plotting now uses standard-error bars."""
     if df.empty:
         out = df.copy()
         out["ci_low"] = []
         out["ci_high"] = []
         return out
 
+    out = df.copy()
     lows: list[float] = []
     highs: list[float] = []
-    for correct, total in zip(df["correct"], df["total"]):
+    for correct, total in zip(out["correct"], out["total"]):
         lo, hi = _wilson_ci(int(correct), int(total))
         lows.append(lo)
         highs.append(hi)
-
-    out = df.copy()
     out["ci_low"] = lows
     out["ci_high"] = highs
     return out
@@ -225,7 +319,46 @@ def _comparison_subset(df: pd.DataFrame, settings: Iterable[str]) -> pd.DataFram
     return df[df["setting"].isin(setting_set)].copy()
 
 
-def _plot_comparison(ax, comp_df: pd.DataFrame, settings: list[str], title: str) -> None:
+def _mcnemar_annotation_for_model(
+    *,
+    model: str,
+    settings: list[str],
+    by_setting: dict[str, pd.DataFrame],
+    row_cache: dict[str, dict[int, bool] | None],
+) -> str:
+    pair_labels: list[str] = []
+    for left_idx, left in enumerate(settings):
+        for right in settings[left_idx + 1 :]:
+            left_df = by_setting[left]
+            right_df = by_setting[right]
+            if model not in left_df.index or model not in right_df.index:
+                continue
+            left_root = Path(str(left_df.loc[model, "config_root"]))
+            right_root = Path(str(right_df.loc[model, "config_root"]))
+            left_map = _load_correctness_map(left_root, row_cache)
+            right_map = _load_correctness_map(right_root, row_cache)
+            if left_map is None or right_map is None:
+                level = "n/a"
+            else:
+                p_value, _b, _c, n_discordant = _mcnemar_pvalue(left_map, right_map)
+                level = "n/a" if n_discordant == 0 else _significance_label(p_value)
+            left_short = SETTING_SHORT_LABELS.get(left, left)
+            right_short = SETTING_SHORT_LABELS.get(right, right)
+            pair_labels.append(f"{left_short} vs {right_short}: {level}")
+    if not pair_labels:
+        return "McNemar: n/a"
+    if len(pair_labels) == 1:
+        return f"McNemar: {pair_labels[0].split(': ', 1)[1]}"
+    return "McNemar\n" + "\n".join(pair_labels)
+
+
+def _plot_comparison(
+    ax,
+    comp_df: pd.DataFrame,
+    settings: list[str],
+    title: str,
+    row_cache: dict[str, dict[int, bool] | None],
+) -> None:
     by_setting = {
         setting: comp_df[comp_df["setting"] == setting].set_index("eval_model")
         for setting in settings
@@ -240,37 +373,64 @@ def _plot_comparison(ax, comp_df: pd.DataFrame, settings: list[str], title: str)
         return
 
     x = np.arange(len(models), dtype=float)
+    bar_width = 0.22 if len(settings) >= 3 else 0.28
     if len(settings) == 1:
-        offsets = [0.0]
+        offsets = np.array([0.0], dtype=float)
     else:
-        offsets = np.linspace(-0.22, 0.22, len(settings))
+        offsets = np.linspace(
+            -bar_width * (len(settings) - 1) / 2.0,
+            bar_width * (len(settings) - 1) / 2.0,
+            len(settings),
+        )
     colors = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd"]
 
+    model_max = np.zeros(len(models), dtype=float)
     for idx, setting in enumerate(settings):
         setting_df = by_setting[setting]
         acc = np.array([float(setting_df.loc[m, "accuracy"]) for m in models])
-        lo = np.array([float(setting_df.loc[m, "ci_low"]) for m in models])
-        hi = np.array([float(setting_df.loc[m, "ci_high"]) for m in models])
+        err = np.array([float(setting_df.loc[m, "stderr"]) for m in models])
 
         color = colors[idx % len(colors)]
-        ax.errorbar(
+        ax.bar(
             x + float(offsets[idx]),
             acc,
-            yerr=[acc - lo, hi - acc],
-            fmt="o",
+            width=bar_width,
+            yerr=err,
             capsize=3,
             label=_display_setting(setting),
             color=color,
+            alpha=0.88,
+            edgecolor="black",
+            linewidth=0.4,
         )
+        model_max = np.maximum(model_max, acc + err)
 
-        baseline = SETTING_RANDOM_BASELINES[setting]
-        ax.scatter(x + float(offsets[idx]), [baseline] * len(x), marker="x", color=color, alpha=0.8)
-        ax.axhline(baseline, linestyle="--", color=color, alpha=0.2)
+    baseline_values = sorted({SETTING_RANDOM_BASELINES[setting] for setting in settings})
+    if len(baseline_values) == 1:
+        ax.axhline(baseline_values[0], linestyle="--", color="#555555", alpha=0.35, linewidth=1.0)
+    else:
+        for idx, setting in enumerate(settings):
+            ax.axhline(
+                SETTING_RANDOM_BASELINES[setting],
+                linestyle="--",
+                color=colors[idx % len(colors)],
+                alpha=0.2,
+                linewidth=1.0,
+            )
+
+    for idx, model in enumerate(models):
+        annotation = _mcnemar_annotation_for_model(
+            model=model,
+            settings=settings,
+            by_setting=by_setting,
+            row_cache=row_cache,
+        )
+        ax.text(x[idx], min(1.12, model_max[idx] + 0.06), annotation, ha="center", va="bottom", fontsize=7)
 
     ax.set_title(title)
     ax.set_xticks(x)
     ax.set_xticklabels([_display_eval_model(m) for m in models], rotation=15, ha="right")
-    ax.set_ylim(0.0, 1.0)
+    ax.set_ylim(0.0, 1.15)
     ax.set_ylabel("Accuracy")
     ax.grid(axis="y", alpha=0.2)
 
@@ -297,6 +457,7 @@ def plot_final5_pairwise(
         return []
 
     outputs: list[Path] = []
+    row_cache: dict[str, dict[int, bool] | None] = {}
 
     grouped = df.groupby(["generator", "mode"], sort=True)
     for (generator, mode), group_df in grouped:
@@ -306,7 +467,7 @@ def plot_final5_pairwise(
             datasets = sorted(datasets_present)
 
         for settings, title_key in PLOT_COMPARISONS:
-            fig, axes = plt.subplots(1, len(datasets), figsize=(6.4 * len(datasets), 5.8))
+            fig, axes = plt.subplots(1, len(datasets), figsize=(6.4 * len(datasets), 6.5))
             if len(datasets) == 1:
                 axes = [axes]
 
@@ -319,6 +480,7 @@ def plot_final5_pairwise(
                     comp_df,
                     settings,
                     f"{dataset}",
+                    row_cache,
                 )
 
             fig.suptitle(
@@ -340,10 +502,10 @@ def plot_final5_pairwise(
                     labels,
                     loc="lower center",
                     bbox_to_anchor=(0.5, 0.0),
-                    ncols=max(2, len(settings)),
+                    ncols=1,
                     frameon=False,
                 )
-            fig.subplots_adjust(top=0.82, bottom=0.26, wspace=0.22)
+            fig.subplots_adjust(top=0.86, bottom=0.36, wspace=0.22)
 
             out_png = out_dir / f"pairwise_{generator}_{mode}_{title_key}.png"
             fig.savefig(out_png, dpi=200)
