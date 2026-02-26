@@ -24,10 +24,9 @@ SETTING_RANDOM_BASELINES: dict[str, float] = {
     setting: 1.0 / options for setting, options in SETTING_OPTION_COUNTS.items()
 }
 
-PAIRWISE_COMPARISONS: list[tuple[str, str, str]] = [
-    ("human_from_scratch", "model_from_scratch", "human_vs_model"),
-    ("augment_human", "augment_model", "augment_human_vs_augment_model"),
-    ("augment_model", "augment_ablation", "two_step_vs_one_step"),
+PLOT_COMPARISONS: list[tuple[list[str], str]] = [
+    (["human_from_scratch", "model_from_scratch"], "human_vs_model"),
+    (["augment_human", "augment_model", "augment_ablation"], "augment_triplet"),
 ]
 
 DATASET_PLOT_ORDER = ["arc_challenge", "mmlu_pro", "gpqa"]
@@ -164,15 +163,18 @@ def write_final5_summary_table(results_root: Path | str, output_csv: Path | str)
     return df
 
 
-def _pairwise_subset(df: pd.DataFrame, left: str, right: str) -> pd.DataFrame:
-    pair = df[df["setting"].isin([left, right])].copy()
-    return pair
+def _comparison_subset(df: pd.DataFrame, settings: Iterable[str]) -> pd.DataFrame:
+    setting_set = set(settings)
+    return df[df["setting"].isin(setting_set)].copy()
 
 
-def _plot_pair(ax, pair_df: pd.DataFrame, left: str, right: str, title: str) -> None:
-    left_df = pair_df[pair_df["setting"] == left].set_index("eval_model")
-    right_df = pair_df[pair_df["setting"] == right].set_index("eval_model")
-    models = sorted(set(left_df.index).intersection(right_df.index))
+def _plot_comparison(ax, comp_df: pd.DataFrame, settings: list[str], title: str) -> None:
+    by_setting = {
+        setting: comp_df[comp_df["setting"] == setting].set_index("eval_model")
+        for setting in settings
+    }
+    model_sets = [set(df.index) for df in by_setting.values()]
+    models = sorted(set.intersection(*model_sets)) if model_sets else []
 
     if not models:
         ax.set_title(title)
@@ -181,42 +183,32 @@ def _plot_pair(ax, pair_df: pd.DataFrame, left: str, right: str, title: str) -> 
         return
 
     x = np.arange(len(models), dtype=float)
-    left_acc = np.array([float(left_df.loc[m, "accuracy"]) for m in models])
-    right_acc = np.array([float(right_df.loc[m, "accuracy"]) for m in models])
+    if len(settings) == 1:
+        offsets = [0.0]
+    else:
+        offsets = np.linspace(-0.22, 0.22, len(settings))
+    colors = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd"]
 
-    left_lo = np.array([float(left_df.loc[m, "ci_low"]) for m in models])
-    left_hi = np.array([float(left_df.loc[m, "ci_high"]) for m in models])
-    right_lo = np.array([float(right_df.loc[m, "ci_low"]) for m in models])
-    right_hi = np.array([float(right_df.loc[m, "ci_high"]) for m in models])
+    for idx, setting in enumerate(settings):
+        setting_df = by_setting[setting]
+        acc = np.array([float(setting_df.loc[m, "accuracy"]) for m in models])
+        lo = np.array([float(setting_df.loc[m, "ci_low"]) for m in models])
+        hi = np.array([float(setting_df.loc[m, "ci_high"]) for m in models])
 
-    ax.errorbar(
-        x - 0.14,
-        left_acc,
-        yerr=[left_acc - left_lo, left_hi - left_acc],
-        fmt="o",
-        capsize=3,
-        label=left,
-        color="#1f77b4",
-    )
-    ax.errorbar(
-        x + 0.14,
-        right_acc,
-        yerr=[right_acc - right_lo, right_hi - right_acc],
-        fmt="o",
-        capsize=3,
-        label=right,
-        color="#ff7f0e",
-    )
+        color = colors[idx % len(colors)]
+        ax.errorbar(
+            x + float(offsets[idx]),
+            acc,
+            yerr=[acc - lo, hi - acc],
+            fmt="o",
+            capsize=3,
+            label=setting,
+            color=color,
+        )
 
-    left_base = SETTING_RANDOM_BASELINES[left]
-    right_base = SETTING_RANDOM_BASELINES[right]
-
-    ax.scatter(x - 0.14, [left_base] * len(x), marker="x", color="#1f77b4", alpha=0.8)
-    ax.scatter(x + 0.14, [right_base] * len(x), marker="x", color="#ff7f0e", alpha=0.8)
-
-    ax.axhline(left_base, linestyle="--", color="#1f77b4", alpha=0.25)
-    if abs(right_base - left_base) > 1e-12:
-        ax.axhline(right_base, linestyle="--", color="#ff7f0e", alpha=0.25)
+        baseline = SETTING_RANDOM_BASELINES[setting]
+        ax.scatter(x + float(offsets[idx]), [baseline] * len(x), marker="x", color=color, alpha=0.8)
+        ax.axhline(baseline, linestyle="--", color=color, alpha=0.2)
 
     ax.set_title(title)
     ax.set_xticks(x)
@@ -235,7 +227,7 @@ def plot_final5_pairwise(
 
     Each plot contains dataset subplots side-by-side (arc/mmlu_pro/gpqa when
     available), so each generator produces:
-    - 3 comparisons x 2 modes = 6 PNGs
+    - 2 comparisons x 2 modes = 4 PNGs
     """
     df = collect_final5_results(results_root)
     out_dir = Path(output_dir)
@@ -256,7 +248,7 @@ def plot_final5_pairwise(
         if not datasets:
             datasets = sorted(datasets_present)
 
-        for left, right, title_key in PAIRWISE_COMPARISONS:
+        for settings, title_key in PLOT_COMPARISONS:
             fig, axes = plt.subplots(1, len(datasets), figsize=(6.4 * len(datasets), 5.8))
             if len(datasets) == 1:
                 axes = [axes]
@@ -264,12 +256,11 @@ def plot_final5_pairwise(
             pretty_title = title_key.replace("_", " ")
             for ax, dataset in zip(axes, datasets):
                 dataset_df = group_df[group_df["dataset"] == dataset]
-                pair_df = _pairwise_subset(dataset_df, left, right)
-                _plot_pair(
+                comp_df = _comparison_subset(dataset_df, settings)
+                _plot_comparison(
                     ax,
-                    pair_df,
-                    left,
-                    right,
+                    comp_df,
+                    settings,
                     f"{dataset}",
                 )
 
@@ -289,7 +280,7 @@ def plot_final5_pairwise(
                     labels,
                     loc="lower center",
                     bbox_to_anchor=(0.5, 0.0),
-                    ncols=2,
+                    ncols=max(2, len(settings)),
                     frameon=False,
                 )
             fig.subplots_adjust(top=0.82, bottom=0.26, wspace=0.22)
@@ -300,7 +291,7 @@ def plot_final5_pairwise(
             outputs.append(out_png)
 
             if include_tables:
-                per_plot_df = _pairwise_subset(group_df, left, right)
+                per_plot_df = _comparison_subset(group_df, settings)
                 per_pair_csv = tables_dir / f"pairwise_{generator}_{mode}_{title_key}.csv"
                 per_plot_df.sort_values(["dataset", "setting", "eval_model"], inplace=False).to_csv(
                     per_pair_csv,

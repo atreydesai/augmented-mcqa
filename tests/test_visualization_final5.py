@@ -62,11 +62,11 @@ def test_collect_and_plot_final5_outputs_include_random_baseline_and_ci(tmp_path
 
     assert outputs
     png_outputs = [path for path in outputs if path.suffix == ".png"]
-    assert len(png_outputs) == 3
+    assert len(png_outputs) == 2
     assert (output_dir / "tables" / "final5_results_summary.csv").exists()
 
 
-def test_plot_final5_pairwise_groups_datasets_side_by_side_into_six_mode_plots(tmp_path):
+def test_plot_final5_pairwise_groups_datasets_side_by_side_into_four_mode_plots(tmp_path):
     root = tmp_path / "results"
     generator = "gpt-5.2-2025-12-11"
     modes = ["full_question", "choices_only"]
@@ -93,8 +93,8 @@ def test_plot_final5_pairwise_groups_datasets_side_by_side_into_six_mode_plots(t
     outputs = plot_final5_pairwise(root, output_dir, include_tables=True)
 
     png_outputs = [path for path in outputs if path.suffix == ".png"]
-    assert len(png_outputs) == 6
+    assert len(png_outputs) == 4
 
     csv_outputs = [path for path in outputs if path.suffix == ".csv"]
-    assert len(csv_outputs) == 7  # 6 per-plot csv + 1 full summary csv
+    assert len(csv_outputs) == 5  # 4 per-plot csv + 1 full summary csv
     assert all(path.parent == output_dir / "tables" for path in csv_outputs)
