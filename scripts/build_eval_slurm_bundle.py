@@ -172,14 +172,14 @@ def _render_sbatch(
     *,
     job_name: str,
     generator_label: str,
-    run_manifest_filename: str,
+    run_manifest_path: str,
     save_interval: int,
     num_work_units: int,
 ) -> str:
     return f"""#!/bin/bash
 #SBATCH --job-name={job_name}
-#SBATCH --output=${{LOG_DIR:-logs/final5_eval}}/{job_name}_%j.out
-#SBATCH --error=${{LOG_DIR:-logs/final5_eval}}/{job_name}_%j.err
+#SBATCH --output=logs/final5_eval/{job_name}_%j.out
+#SBATCH --error=logs/final5_eval/{job_name}_%j.err
 #SBATCH --partition=clip
 #SBATCH --account=clip
 #SBATCH --qos=high
@@ -210,12 +210,16 @@ if [[ -z "$PYTHON_BIN" || ! -x "$PYTHON_BIN" ]]; then
   echo "Error: python executable not found after activating venv."
   exit 1
 fi
-mkdir -p "${{LOG_DIR:-logs/final5_eval}}"
+LOG_DIR="${{LOG_DIR:-logs/final5_eval}}"
+mkdir -p "$LOG_DIR"
 
 GENERATOR_LABEL="{generator_label}"
 SAVE_INTERVAL="${{SAVE_INTERVAL:-{save_interval}}}"
-SCRIPT_DIR="$(cd "$(dirname "${{BASH_SOURCE[0]}}")" && pwd)"
-RUN_MANIFEST_FILE="${{RUN_MANIFEST_FILE:-$SCRIPT_DIR/{run_manifest_filename}}}"
+RUN_MANIFEST_FILE="${{RUN_MANIFEST_FILE:-{run_manifest_path}}}"
+if [[ ! -f "$RUN_MANIFEST_FILE" ]]; then
+  echo "Error: run manifest not found: $RUN_MANIFEST_FILE"
+  exit 1
+fi
 
 CMD=(
   "$PYTHON_BIN" scripts/eval_matrix.py run
@@ -420,7 +424,7 @@ def main() -> int:
             sbatch_text = _render_sbatch(
                 job_name=job_name,
                 generator_label=generator_label,
-                run_manifest_filename=run_manifest_name,
+                run_manifest_path=str(run_manifest_path.resolve()),
                 save_interval=args.save_interval,
                 num_work_units=num_work_units,
             )

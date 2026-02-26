@@ -98,6 +98,9 @@ def test_build_eval_slurm_bundle_generates_expected_shard_math(tmp_path, monkeyp
     sample = sbatch_files[0].read_text(encoding="utf-8")
     assert "RUN_MANIFEST_FILE" in sample
     assert "--manifest \"$RUN_MANIFEST_FILE\"" in sample
+    assert "$SCRIPT_DIR" not in sample
+    assert "#SBATCH --output=${" not in sample
+    assert "#SBATCH --error=${" not in sample
     assert "#SBATCH --array" not in sample
 
     submit_all = output_dir / "submit_all.sh"
