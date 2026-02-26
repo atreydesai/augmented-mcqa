@@ -51,6 +51,12 @@ uv run python scripts/build_eval_slurm_bundle.py \
   --target-rows-per-subsplit 500
 ```
 
+Bundle behavior:
+
+- one sbatch file per `(generator, eval_model)` pair
+- each sbatch runs a per-pair manifest containing all work units
+- this keeps all 5 settings and all dataset parts in one process per pair (model loaded once per pair job)
+
 ### Plan configs
 
 ```bash

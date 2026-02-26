@@ -14,7 +14,7 @@ For current row counts (`arc=1000`, `mmlu_pro=1000`, `gpqa=448`) with target `50
 
 - parts: `arc=2`, `mmlu_pro=2`, `gpqa=1`
 - work units per pair: `2 * (2+2+1) = 10`
-- total array tasks across all pairs: `9 * 10 = 90`
+- total work units across all pairs: `9 * 10 = 90`
 
 ## 2) End-to-End Commands
 
@@ -49,7 +49,7 @@ bash jobs/generated/<timestamp>/submit_all.sh
 ### D. Re-run failed tasks
 
 ```bash
-sbatch --array=1,4,7 jobs/generated/<timestamp>/<specific>.sbatch
+sbatch jobs/generated/<timestamp>/<specific>.sbatch
 ```
 
 ### E. Merge partials to canonical outputs
@@ -91,7 +91,7 @@ results/<generator>/<eval_model>/<mode>/<dataset>/<setting>/_partials/entry_shar
 ### Check bundle-level counts
 
 ```bash
-jq '.total_pairs, .total_sbatch_files, .total_array_tasks' jobs/generated/<timestamp>/bundle_manifest.json
+jq '.total_pairs, .total_sbatch_files, .total_work_units' jobs/generated/<timestamp>/bundle_manifest.json
 ```
 
 ### Inspect per-pair work units

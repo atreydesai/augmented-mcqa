@@ -7,11 +7,16 @@ import argparse
 import json
 import math
 import re
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 from datasets import load_from_disk
+
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from experiments.matrix import build_manifest, build_matrix_configs, save_manifest
 
 EVAL_MODELS = [
     "Qwen/Qwen3-4B-Instruct-2507",
@@ -117,23 +122,64 @@ def _build_work_units(
     return units
 
 
+def _build_pair_run_manifest(
+    *,
+    work_units: list[dict[str, Any]],
+    eval_model: str,
+    generator_dataset_path: str,
+    generator_label: str,
+    output_base: str,
+    max_tokens: int,
+    save_interval: int,
+    source_work_units_file: str,
+) -> dict[str, Any]:
+    configs = []
+    for unit in work_units:
+        cfgs = build_matrix_configs(
+            model=eval_model,
+            dataset_path=Path(generator_dataset_path),
+            generator_dataset_label=generator_label,
+            dataset_types=[str(unit["dataset"])],
+            preset="final5",
+            output_base=Path(output_base),
+            limit=None,
+            eval_mode="behavioral",
+            choices_only=bool(unit["choices_only"]),
+            max_tokens=max_tokens,
+            save_interval=save_interval,
+            entry_shards=int(unit["entry_shards"]),
+            entry_shard_index=int(unit["entry_shard_index"]),
+            entry_shard_strategy=str(unit.get("entry_shard_strategy", "contiguous")),
+        )
+        configs.extend(cfgs)
+
+    return build_manifest(
+        configs,
+        preset="final5",
+        model=eval_model,
+        dataset_path=Path(generator_dataset_path),
+        generator_dataset_label=generator_label,
+        dataset_types=sorted({str(unit["dataset"]) for unit in work_units}),
+        metadata={
+            "source_work_units_file": source_work_units_file,
+            "work_unit_count": len(work_units),
+            "execution_mode": "pair_serial_reuse_client",
+        },
+    )
+
+
 def _render_sbatch(
     *,
     job_name: str,
     generator_label: str,
-    generator_dataset_path: str,
-    eval_model: str,
-    output_base: str,
+    run_manifest_filename: str,
     save_interval: int,
-    max_tokens: int,
-    work_units_filename: str,
     num_work_units: int,
 ) -> str:
     return f"""#!/bin/bash
 #SBATCH --job-name={job_name}
-#SBATCH --output=${{LOG_DIR:-logs/final5_eval}}/{job_name}_%A_%a.out
-#SBATCH --error=${{LOG_DIR:-logs/final5_eval}}/{job_name}_%A_%a.err
-#SBATCH --array=0-{num_work_units - 1}
+#SBATCH --output=${{LOG_DIR:-logs/final5_eval}}/{job_name}_%j.out
+#SBATCH --error=${{LOG_DIR:-logs/final5_eval}}/{job_name}_%j.err
 #SBATCH --partition=${{SLURM_PARTITION_OVERRIDE:-clip}}
 #SBATCH --account=${{SLURM_ACCOUNT_OVERRIDE:-clip}}
 #SBATCH --qos=${{SLURM_QOS_OVERRIDE:-high}}
@@ -167,56 +213,20 @@ fi
 mkdir -p "${{LOG_DIR:-logs/final5_eval}}"
 
 GENERATOR_LABEL="{generator_label}"
-GENERATOR_DATASET_PATH="{generator_dataset_path}"
-EVAL_MODEL="{eval_model}"
-OUTPUT_BASE="${{OUTPUT_BASE:-{output_base}}}"
 SAVE_INTERVAL="${{SAVE_INTERVAL:-{save_interval}}}"
-MAX_TOKENS="${{MAX_TOKENS:-{max_tokens}}}"
 SCRIPT_DIR="$(cd "$(dirname "${{BASH_SOURCE[0]}}")" && pwd)"
-WORK_UNITS_FILE="${{WORK_UNITS_FILE:-$SCRIPT_DIR/{work_units_filename}}}"
-
-readarray -t UNIT_EXPORTS < <("$PYTHON_BIN" - "$WORK_UNITS_FILE" "$SLURM_ARRAY_TASK_ID" <<'PY'
-import json
-import shlex
-import sys
-
-units = json.loads(open(sys.argv[1], encoding='utf-8').read())
-idx = int(sys.argv[2])
-if idx < 0 or idx >= len(units):
-    raise SystemExit(f"Invalid SLURM_ARRAY_TASK_ID={{idx}} for work_units size={{len(units)}}")
-unit = units[idx]
-for key in ("mode", "dataset", "entry_shards", "entry_shard_index", "entry_shard_strategy", "choices_only", "expected_rows"):
-    val = unit[key]
-    print(f"{{key.upper()}}={{shlex.quote(str(val))}}")
-PY
-)
-
-for kv in "${{UNIT_EXPORTS[@]}}"; do
-  eval "$kv"
-done
+RUN_MANIFEST_FILE="${{RUN_MANIFEST_FILE:-$SCRIPT_DIR/{run_manifest_filename}}}"
 
 CMD=(
   "$PYTHON_BIN" scripts/eval_matrix.py run
-  --preset final5
-  --model "$EVAL_MODEL"
-  --dataset-path "$GENERATOR_DATASET_PATH"
+  --manifest "$RUN_MANIFEST_FILE"
   --generator-dataset-label "$GENERATOR_LABEL"
-  --dataset-types "$DATASET"
-  --output-dir "$OUTPUT_BASE"
-  --entry-shards "$ENTRY_SHARDS"
-  --entry-shard-index "$ENTRY_SHARD_INDEX"
-  --entry-shard-strategy "$ENTRY_SHARD_STRATEGY"
   --save-interval "$SAVE_INTERVAL"
-  --max-tokens "$MAX_TOKENS"
   --skip-existing
 )
 
-if [[ "$CHOICES_ONLY" == "True" || "$CHOICES_ONLY" == "true" || "$CHOICES_ONLY" == "1" ]]; then
-  CMD+=(--choices-only)
-fi
-
-printf 'Running task %s | mode=%s dataset=%s part=%s/%s expected_rows=%s\\n' \
-  "$SLURM_ARRAY_TASK_ID" "$MODE" "$DATASET" "$ENTRY_SHARD_INDEX" "$ENTRY_SHARDS" "$EXPECTED_ROWS"
+printf 'Running pair job with %s work-units\\n' "{num_work_units}"
+printf 'Run manifest: %s\\n' "$RUN_MANIFEST_FILE"
 printf 'Running: %q ' "${{CMD[@]}}"
 printf '\\n'
 "${{CMD[@]}}"
@@ -253,7 +263,7 @@ def _render_readme(
     bundle_manifest_path: Path,
     submit_path: Path,
     total_pairs: int,
-    total_array_tasks: int,
+    total_work_units: int,
     target_rows_per_subsplit: int,
 ) -> str:
     return f"""# Final5 Eval SLURM Bundle (Per-Pair Work Units)
@@ -265,7 +275,7 @@ Generated from regeneration manifest.
 - Pair groups = generator model x eval model = {total_pairs}
 - Modes per pair = 2 (`full_question`, `choices_only`)
 - Per-dataset part counts are dynamic from row counts with target rows/subsplit = {target_rows_per_subsplit}
-- One sbatch file per pair, with array indexes mapped via `work_units.json`
+- One sbatch file per pair, each running a per-pair manifest with all work units
 
 ## Files
 
@@ -273,6 +283,7 @@ Generated from regeneration manifest.
 - Submit script: `{submit_path.name}`
 - SBATCH scripts: one per `(generator, eval_model)`
 - Work unit maps: one JSON per sbatch file
+- Per-pair run manifests: one JSON per sbatch file
 
 ## Submit everything
 
@@ -286,22 +297,22 @@ Dry run:
 bash {submit_path.name} --dry-run
 ```
 
-## Re-run failed array tasks
+## Re-run failed pair jobs
 
 ```bash
-sbatch --array=1,4,7 <one-of-the-generated>.sbatch
+sbatch <one-of-the-generated>.sbatch
 ```
 
 ## Merge entry sub-shards to canonical results
 
 ```bash
-uv run python scripts/merge_eval_subshards.py --bundle-manifest {bundle_manifest_path} --strict
+python scripts/merge_eval_subshards.py --bundle-manifest {bundle_manifest_path} --strict
 ```
 
 ## Quick stats
 
 - Pair groups: {total_pairs}
-- Total array tasks across all pair sbatch files: {total_array_tasks}
+- Total work units across all pair jobs: {total_work_units}
 """
 
 
@@ -378,20 +389,29 @@ def main() -> int:
             )
             sbatch_name = f"{job_name}.sbatch"
             work_units_name = f"{job_name}.work_units.json"
+            run_manifest_name = f"{job_name}.run_manifest.json"
             sbatch_path = bundle_dir / sbatch_name
             work_units_path = bundle_dir / work_units_name
+            run_manifest_path = bundle_dir / run_manifest_name
 
             work_units_path.write_text(json.dumps(work_units, indent=2), encoding="utf-8")
+            run_manifest = _build_pair_run_manifest(
+                work_units=work_units,
+                eval_model=eval_model,
+                generator_dataset_path=generator_dataset_path,
+                generator_label=generator_label,
+                output_base=args.output_base,
+                max_tokens=args.max_tokens,
+                save_interval=args.save_interval,
+                source_work_units_file=str(work_units_path),
+            )
+            save_manifest(run_manifest, run_manifest_path)
 
             sbatch_text = _render_sbatch(
                 job_name=job_name,
                 generator_label=generator_label,
-                generator_dataset_path=generator_dataset_path,
-                eval_model=eval_model,
-                output_base=args.output_base,
+                run_manifest_filename=run_manifest_name,
                 save_interval=args.save_interval,
-                max_tokens=args.max_tokens,
-                work_units_filename=work_units_name,
                 num_work_units=num_work_units,
             )
 
@@ -404,6 +424,7 @@ def main() -> int:
                     "job_name": job_name,
                     "sbatch_file": str(sbatch_path),
                     "work_units_file": str(work_units_path),
+                    "run_manifest_file": str(run_manifest_path),
                     "generator_label": generator_label,
                     "generator_dataset_path": generator_dataset_path,
                     "eval_model": eval_model,
@@ -429,7 +450,7 @@ def main() -> int:
     submit_all_path.chmod(0o755)
 
     total_pairs = len(generators) * len(EVAL_MODELS)
-    total_array_tasks = sum(int(job["num_work_units"]) for job in jobs)
+    total_work_units = sum(int(job["num_work_units"]) for job in jobs)
     expected_eval_rows = 0
     for gen in generators:
         generator_label = gen["model"]
@@ -451,8 +472,11 @@ def main() -> int:
         "dataset_part_counts": dataset_part_counts,
         "total_pairs": total_pairs,
         "total_sbatch_files": len(sbatch_files),
-        "total_array_tasks": total_array_tasks,
+        # Backward-compatible field name retained from prior array-based mode.
+        "total_array_tasks": total_work_units,
+        "total_work_units": total_work_units,
         "expected_eval_rows": expected_eval_rows,
+        "execution_mode": "single_job_per_pair_manifest",
         "jobs": jobs,
         "config_roots": sorted(set(config_roots)),
         "expected_entry_shards_by_config_root": expected_entry_shards_by_config_root,
@@ -467,7 +491,7 @@ def main() -> int:
             bundle_manifest_path=bundle_manifest_path,
             submit_path=submit_all_path,
             total_pairs=total_pairs,
-            total_array_tasks=total_array_tasks,
+            total_work_units=total_work_units,
             target_rows_per_subsplit=args.target_rows_per_subsplit,
         ),
         encoding="utf-8",
@@ -476,7 +500,7 @@ def main() -> int:
     print(f"Bundle directory: {bundle_dir}")
     print(f"SBATCH files: {len(sbatch_files)}")
     print(f"Total pairs: {total_pairs}")
-    print(f"Total array tasks: {total_array_tasks}")
+    print(f"Total work units: {total_work_units}")
     print(f"Submit all: {submit_all_path}")
     print(f"Manifest: {bundle_manifest_path}")
 

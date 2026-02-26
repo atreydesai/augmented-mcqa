@@ -250,121 +250,27 @@ if [[ "$SKIP_RUN" == "0" ]]; then
 
   for sb in "${sbatch_files[@]}"; do
     echo "Running $(basename "$sb")"
-    wu="${sb%.sbatch}.work_units.json"
-    if [[ ! -f "$wu" ]]; then
-      echo "Error: missing work units file for $sb"
+    run_manifest="${sb%.sbatch}.run_manifest.json"
+    if [[ ! -f "$run_manifest" ]]; then
+      echo "Error: missing run manifest file for $sb"
       exit 1
     fi
-    num_units="$(jq 'length' "$wu")"
+
+    num_units="$(jq -r '.metadata.work_unit_count // 0' "$run_manifest")"
     if [[ "$num_units" -le 0 ]]; then
-      echo "Error: $wu has no work units"
+      echo "Error: $run_manifest has invalid work_unit_count"
       exit 1
     fi
-    eval_model="$(python - "$sb" <<'PY'
-import re
-import sys
-from pathlib import Path
-
-text = Path(sys.argv[1]).read_text(encoding="utf-8")
-match = re.search(r'^EVAL_MODEL="([^"]+)"', text, flags=re.MULTILINE)
-if not match:
-    raise SystemExit("Could not parse EVAL_MODEL from sbatch file")
-print(match.group(1))
-PY
-)"
-
-    generator_dataset_path="$(python - "$sb" <<'PY'
-import re
-import sys
-from pathlib import Path
-
-text = Path(sys.argv[1]).read_text(encoding="utf-8")
-match = re.search(r'^GENERATOR_DATASET_PATH="([^"]+)"', text, flags=re.MULTILINE)
-if not match:
-    raise SystemExit("Could not parse GENERATOR_DATASET_PATH from sbatch file")
-print(match.group(1))
-PY
-)"
-
-    generator_label_from_sbatch="$(python - "$sb" <<'PY'
-import re
-import sys
-from pathlib import Path
-
-text = Path(sys.argv[1]).read_text(encoding="utf-8")
-match = re.search(r'^GENERATOR_LABEL="([^"]+)"', text, flags=re.MULTILINE)
-if not match:
-    raise SystemExit("Could not parse GENERATOR_LABEL from sbatch file")
-print(match.group(1))
-PY
-)"
-
-    pair_manifest="${sb%.sbatch}.run_manifest.json"
-    "${PY_RUNNER[@]}" - "$wu" "$pair_manifest" "$eval_model" "$generator_dataset_path" "$generator_label_from_sbatch" "$SMOKE_OUT" "$MAX_TOKENS" "$SAVE_INTERVAL" <<'PY'
-import json
-import sys
-from pathlib import Path
-
-sys.path.insert(0, str(Path.cwd()))
-
-from experiments.matrix import build_manifest, build_matrix_configs, save_manifest
-
-work_units_path = Path(sys.argv[1])
-manifest_out = Path(sys.argv[2])
-eval_model = sys.argv[3]
-dataset_path = Path(sys.argv[4])
-generator_label = sys.argv[5]
-output_base = Path(sys.argv[6])
-max_tokens = int(sys.argv[7])
-save_interval = int(sys.argv[8])
-
-work_units = json.loads(work_units_path.read_text(encoding="utf-8"))
-configs = []
-for unit in work_units:
-    cfgs = build_matrix_configs(
-        model=eval_model,
-        dataset_path=dataset_path,
-        generator_dataset_label=generator_label,
-        dataset_types=[str(unit["dataset"])],
-        preset="final5",
-        output_base=output_base,
-        limit=None,
-        eval_mode="behavioral",
-        choices_only=bool(unit["choices_only"]),
-        max_tokens=max_tokens,
-        save_interval=save_interval,
-        entry_shards=int(unit["entry_shards"]),
-        entry_shard_index=int(unit["entry_shard_index"]),
-        entry_shard_strategy=str(unit.get("entry_shard_strategy", "contiguous")),
-    )
-    configs.extend(cfgs)
-
-manifest = build_manifest(
-    configs,
-    preset="final5",
-    model=eval_model,
-    dataset_path=dataset_path,
-    generator_dataset_label=generator_label,
-    dataset_types=sorted({str(unit["dataset"]) for unit in work_units}),
-    metadata={
-        "source_work_units_file": str(work_units_path),
-        "work_unit_count": len(work_units),
-        "mode": "pair_serial_reuse_client",
-    },
-)
-save_manifest(manifest, manifest_out)
-print(str(manifest_out))
-PY
 
     cmd=(
       "${PY_RUNNER[@]}"
       scripts/eval_matrix.py run
-      --manifest "$pair_manifest"
-      --generator-dataset-label "$generator_label_from_sbatch"
+      --manifest "$run_manifest"
+      --generator-dataset-label "$GENERATOR_LABEL"
       --save-interval "$SAVE_INTERVAL"
       --skip-existing
     )
-    printf 'Running pair manifest (%s units): %s\n' "$num_units" "$pair_manifest"
+    printf 'Running pair manifest (%s units): %s\n' "$num_units" "$run_manifest"
     printf 'Running: %q ' "${cmd[@]}"
     printf '\n'
     "${cmd[@]}"

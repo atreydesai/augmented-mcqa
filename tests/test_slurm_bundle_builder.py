@@ -78,6 +78,8 @@ def test_build_eval_slurm_bundle_generates_expected_shard_math(tmp_path, monkeyp
     assert manifest["total_sbatch_files"] == 9
     # Work-units per pair: 2 modes * (2+2+1) dataset parts = 10
     assert manifest["total_array_tasks"] == 90
+    assert manifest["total_work_units"] == 90
+    assert manifest["execution_mode"] == "single_job_per_pair_manifest"
     # Eval rows = 3 generators * 15 rows * 3 eval models * 2 modes * 5 settings
     assert manifest["expected_eval_rows"] == 1350
 
@@ -85,12 +87,18 @@ def test_build_eval_slurm_bundle_generates_expected_shard_math(tmp_path, monkeyp
     assert len(sbatch_files) == 9
     work_units_files = sorted(output_dir.glob("*.work_units.json"))
     assert len(work_units_files) == 9
+    run_manifest_files = sorted(output_dir.glob("*.run_manifest.json"))
+    assert len(run_manifest_files) == 9
     sample_units = json.loads(work_units_files[0].read_text(encoding="utf-8"))
     assert len(sample_units) == 10
+    sample_run_manifest = json.loads(run_manifest_files[0].read_text(encoding="utf-8"))
+    assert sample_run_manifest["summary"]["total"] == 50  # 10 work units * 5 settings
+    assert sample_run_manifest["metadata"]["work_unit_count"] == 10
 
     sample = sbatch_files[0].read_text(encoding="utf-8")
-    assert "--entry-shards \"$ENTRY_SHARDS\"" in sample
-    assert "WORK_UNITS_FILE" in sample
+    assert "RUN_MANIFEST_FILE" in sample
+    assert "--manifest \"$RUN_MANIFEST_FILE\"" in sample
+    assert "#SBATCH --array" not in sample
 
     submit_all = output_dir / "submit_all.sh"
     assert submit_all.exists()
