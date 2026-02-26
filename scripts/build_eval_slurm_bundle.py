@@ -180,13 +180,13 @@ def _render_sbatch(
 #SBATCH --job-name={job_name}
 #SBATCH --output=${{LOG_DIR:-logs/final5_eval}}/{job_name}_%j.out
 #SBATCH --error=${{LOG_DIR:-logs/final5_eval}}/{job_name}_%j.err
-#SBATCH --partition=${{SLURM_PARTITION_OVERRIDE:-clip}}
-#SBATCH --account=${{SLURM_ACCOUNT_OVERRIDE:-clip}}
-#SBATCH --qos=${{SLURM_QOS_OVERRIDE:-high}}
-#SBATCH --time=${{SLURM_TIME_OVERRIDE:-12:00:00}}
-#SBATCH --mem=${{SLURM_MEM_OVERRIDE:-32G}}
-#SBATCH --cpus-per-task=${{SLURM_CPUS_OVERRIDE:-4}}
-#SBATCH --gres=${{SLURM_GRES_OVERRIDE:-gpu:rtxa6000:1}}
+#SBATCH --partition=clip
+#SBATCH --account=clip
+#SBATCH --qos=high
+#SBATCH --time=12:00:00
+#SBATCH --mem=32G
+#SBATCH --cpus-per-task=4
+#SBATCH --gres=gpu:rtxa6000:1
 
 set -euo pipefail
 
@@ -238,6 +238,14 @@ def _render_submit_all(sbatch_files: list[Path]) -> str:
         "#!/bin/bash",
         "set -euo pipefail",
         'SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"',
+        "SBATCH_ARGS=()",
+        '[[ -n "${SLURM_PARTITION_OVERRIDE:-}" ]] && SBATCH_ARGS+=(--partition "$SLURM_PARTITION_OVERRIDE")',
+        '[[ -n "${SLURM_ACCOUNT_OVERRIDE:-}" ]] && SBATCH_ARGS+=(--account "$SLURM_ACCOUNT_OVERRIDE")',
+        '[[ -n "${SLURM_QOS_OVERRIDE:-}" ]] && SBATCH_ARGS+=(--qos "$SLURM_QOS_OVERRIDE")',
+        '[[ -n "${SLURM_TIME_OVERRIDE:-}" ]] && SBATCH_ARGS+=(--time "$SLURM_TIME_OVERRIDE")',
+        '[[ -n "${SLURM_MEM_OVERRIDE:-}" ]] && SBATCH_ARGS+=(--mem "$SLURM_MEM_OVERRIDE")',
+        '[[ -n "${SLURM_CPUS_OVERRIDE:-}" ]] && SBATCH_ARGS+=(--cpus-per-task "$SLURM_CPUS_OVERRIDE")',
+        '[[ -n "${SLURM_GRES_OVERRIDE:-}" ]] && SBATCH_ARGS+=(--gres "$SLURM_GRES_OVERRIDE")',
         "DRY_RUN=0",
         "if [[ \"${1:-}\" == \"--dry-run\" ]]; then",
         "  DRY_RUN=1",
@@ -249,9 +257,11 @@ def _render_submit_all(sbatch_files: list[Path]) -> str:
         rel = path.name
         lines.append(f'echo "Submitting {rel}"')
         lines.append('if [[ "$DRY_RUN" == "1" ]]; then')
-        lines.append(f'  echo "  sbatch $SCRIPT_DIR/{rel}"')
+        lines.append(f'  printf "  sbatch "')
+        lines.append('  printf "%q " "${SBATCH_ARGS[@]}"')
+        lines.append(f'  printf "%q\\n" "$SCRIPT_DIR/{rel}"')
         lines.append("else")
-        lines.append(f'  sbatch "$SCRIPT_DIR/{rel}"')
+        lines.append(f'  sbatch "${{SBATCH_ARGS[@]}}" "$SCRIPT_DIR/{rel}"')
         lines.append("fi")
         lines.append("")
 
