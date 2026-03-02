@@ -1,0 +1,335 @@
+{
+  "source_dataset_path": "/Users/ndesai-air/Documents/GitHub/augmented-mcqa/datasets/augmented/final5_full_20260225_004316_gpt-5.2-2025-12-11",
+  "output_directory": "/Users/ndesai-air/Documents/GitHub/augmented-mcqa/datasets/benchmarker_items/final5_full_20260225_004316_gpt-5.2-2025-12-11",
+  "splits": [
+    "arc_challenge",
+    "mmlu_pro",
+    "gpqa"
+  ],
+  "files": {
+    "arc_challenge": {
+      "original": {
+        "output_path": "/Users/ndesai-air/Documents/GitHub/augmented-mcqa/datasets/benchmarker_items/final5_full_20260225_004316_gpt-5.2-2025-12-11/arc_challenge/original.jsonl",
+        "rows_written": 1000,
+        "skipped_row_count": 0,
+        "skipped_rows": []
+      },
+      "human_from_scratch": {
+        "output_path": "/Users/ndesai-air/Documents/GitHub/augmented-mcqa/datasets/benchmarker_items/final5_full_20260225_004316_gpt-5.2-2025-12-11/arc_challenge/human_from_scratch.jsonl",
+        "rows_written": 1000,
+        "skipped_row_count": 0,
+        "skipped_rows": []
+      },
+      "model_from_scratch": {
+        "output_path": "/Users/ndesai-air/Documents/GitHub/augmented-mcqa/datasets/benchmarker_items/final5_full_20260225_004316_gpt-5.2-2025-12-11/arc_challenge/model_from_scratch.jsonl",
+        "rows_written": 1000,
+        "skipped_row_count": 0,
+        "skipped_rows": []
+      },
+      "augment_human": {
+        "output_path": "/Users/ndesai-air/Documents/GitHub/augmented-mcqa/datasets/benchmarker_items/final5_full_20260225_004316_gpt-5.2-2025-12-11/arc_challenge/augment_human.jsonl",
+        "rows_written": 1000,
+        "skipped_row_count": 0,
+        "skipped_rows": []
+      },
+      "augment_model": {
+        "output_path": "/Users/ndesai-air/Documents/GitHub/augmented-mcqa/datasets/benchmarker_items/final5_full_20260225_004316_gpt-5.2-2025-12-11/arc_challenge/augment_model.jsonl",
+        "rows_written": 1000,
+        "skipped_row_count": 0,
+        "skipped_rows": []
+      },
+      "augment_ablation": {
+        "output_path": "/Users/ndesai-air/Documents/GitHub/augmented-mcqa/datasets/benchmarker_items/final5_full_20260225_004316_gpt-5.2-2025-12-11/arc_challenge/augment_ablation.jsonl",
+        "rows_written": 1000,
+        "skipped_row_count": 0,
+        "skipped_rows": []
+      }
+    },
+    "mmlu_pro": {
+      "original": {
+        "output_path": "/Users/ndesai-air/Documents/GitHub/augmented-mcqa/datasets/benchmarker_items/final5_full_20260225_004316_gpt-5.2-2025-12-11/mmlu_pro/original.jsonl",
+        "rows_written": 1000,
+        "skipped_row_count": 0,
+        "skipped_rows": []
+      },
+      "human_from_scratch": {
+        "output_path": "/Users/ndesai-air/Documents/GitHub/augmented-mcqa/datasets/benchmarker_items/final5_full_20260225_004316_gpt-5.2-2025-12-11/mmlu_pro/human_from_scratch.jsonl",
+        "rows_written": 998,
+        "skipped_row_count": 2,
+        "skipped_rows": [
+          {
+            "row_index": 210,
+            "identifier": "996",
+            "reason": "missing choices in human_from_scratch_options_randomized"
+          },
+          {
+            "row_index": 872,
+            "identifier": "2165",
+            "reason": "missing choices in human_from_scratch_options_randomized"
+          }
+        ]
+      },
+      "model_from_scratch": {
+        "output_path": "/Users/ndesai-air/Documents/GitHub/augmented-mcqa/datasets/benchmarker_items/final5_full_20260225_004316_gpt-5.2-2025-12-11/mmlu_pro/model_from_scratch.jsonl",
+        "rows_written": 998,
+        "skipped_row_count": 2,
+        "skipped_rows": [
+          {
+            "row_index": 210,
+            "identifier": "996",
+            "reason": "missing choices in model_from_scratch_options_randomized"
+          },
+          {
+            "row_index": 872,
+            "identifier": "2165",
+            "reason": "missing choices in model_from_scratch_options_randomized"
+          }
+        ]
+      },
+      "augment_human": {
+        "output_path": "/Users/ndesai-air/Documents/GitHub/augmented-mcqa/datasets/benchmarker_items/final5_full_20260225_004316_gpt-5.2-2025-12-11/mmlu_pro/augment_human.jsonl",
+        "rows_written": 998,
+        "skipped_row_count": 2,
+        "skipped_rows": [
+          {
+            "row_index": 210,
+            "identifier": "996",
+            "reason": "missing choices in augment_human_options_randomized"
+          },
+          {
+            "row_index": 872,
+            "identifier": "2165",
+            "reason": "missing choices in augment_human_options_randomized"
+          }
+        ]
+      },
+      "augment_model": {
+        "output_path": "/Users/ndesai-air/Documents/GitHub/augmented-mcqa/datasets/benchmarker_items/final5_full_20260225_004316_gpt-5.2-2025-12-11/mmlu_pro/augment_model.jsonl",
+        "rows_written": 998,
+        "skipped_row_count": 2,
+        "skipped_rows": [
+          {
+            "row_index": 210,
+            "identifier": "996",
+            "reason": "missing choices in augment_model_options_randomized"
+          },
+          {
+            "row_index": 872,
+            "identifier": "2165",
+            "reason": "missing choices in augment_model_options_randomized"
+          }
+        ]
+      },
+      "augment_ablation": {
+        "output_path": "/Users/ndesai-air/Documents/GitHub/augmented-mcqa/datasets/benchmarker_items/final5_full_20260225_004316_gpt-5.2-2025-12-11/mmlu_pro/augment_ablation.jsonl",
+        "rows_written": 998,
+        "skipped_row_count": 2,
+        "skipped_rows": [
+          {
+            "row_index": 210,
+            "identifier": "996",
+            "reason": "missing choices in augment_ablation_options_randomized"
+          },
+          {
+            "row_index": 872,
+            "identifier": "2165",
+            "reason": "missing choices in augment_ablation_options_randomized"
+          }
+        ]
+      }
+    },
+    "gpqa": {
+      "original": {
+        "output_path": "/Users/ndesai-air/Documents/GitHub/augmented-mcqa/datasets/benchmarker_items/final5_full_20260225_004316_gpt-5.2-2025-12-11/gpqa/original.jsonl",
+        "rows_written": 448,
+        "skipped_row_count": 0,
+        "skipped_rows": []
+      },
+      "human_from_scratch": {
+        "output_path": "/Users/ndesai-air/Documents/GitHub/augmented-mcqa/datasets/benchmarker_items/final5_full_20260225_004316_gpt-5.2-2025-12-11/gpqa/human_from_scratch.jsonl",
+        "rows_written": 442,
+        "skipped_row_count": 6,
+        "skipped_rows": [
+          {
+            "row_index": 26,
+            "identifier": "rec42yAdAZnQgoibP",
+            "reason": "missing choices in human_from_scratch_options_randomized"
+          },
+          {
+            "row_index": 96,
+            "identifier": "recGhzQ1AsM0pBO0a",
+            "reason": "missing choices in human_from_scratch_options_randomized"
+          },
+          {
+            "row_index": 218,
+            "identifier": "recWxGU8Q4YReJ1tb",
+            "reason": "missing choices in human_from_scratch_options_randomized"
+          },
+          {
+            "row_index": 221,
+            "identifier": "recX9sU1D7BxJNXyI",
+            "reason": "missing choices in human_from_scratch_options_randomized"
+          },
+          {
+            "row_index": 288,
+            "identifier": "recgM7o1tcc7tP778",
+            "reason": "missing choices in human_from_scratch_options_randomized"
+          },
+          {
+            "row_index": 344,
+            "identifier": "recnTTKdBzfuoZ7w7",
+            "reason": "missing choices in human_from_scratch_options_randomized"
+          }
+        ]
+      },
+      "model_from_scratch": {
+        "output_path": "/Users/ndesai-air/Documents/GitHub/augmented-mcqa/datasets/benchmarker_items/final5_full_20260225_004316_gpt-5.2-2025-12-11/gpqa/model_from_scratch.jsonl",
+        "rows_written": 442,
+        "skipped_row_count": 6,
+        "skipped_rows": [
+          {
+            "row_index": 26,
+            "identifier": "rec42yAdAZnQgoibP",
+            "reason": "missing choices in model_from_scratch_options_randomized"
+          },
+          {
+            "row_index": 96,
+            "identifier": "recGhzQ1AsM0pBO0a",
+            "reason": "missing choices in model_from_scratch_options_randomized"
+          },
+          {
+            "row_index": 218,
+            "identifier": "recWxGU8Q4YReJ1tb",
+            "reason": "missing choices in model_from_scratch_options_randomized"
+          },
+          {
+            "row_index": 221,
+            "identifier": "recX9sU1D7BxJNXyI",
+            "reason": "missing choices in model_from_scratch_options_randomized"
+          },
+          {
+            "row_index": 288,
+            "identifier": "recgM7o1tcc7tP778",
+            "reason": "missing choices in model_from_scratch_options_randomized"
+          },
+          {
+            "row_index": 344,
+            "identifier": "recnTTKdBzfuoZ7w7",
+            "reason": "missing choices in model_from_scratch_options_randomized"
+          }
+        ]
+      },
+      "augment_human": {
+        "output_path": "/Users/ndesai-air/Documents/GitHub/augmented-mcqa/datasets/benchmarker_items/final5_full_20260225_004316_gpt-5.2-2025-12-11/gpqa/augment_human.jsonl",
+        "rows_written": 442,
+        "skipped_row_count": 6,
+        "skipped_rows": [
+          {
+            "row_index": 26,
+            "identifier": "rec42yAdAZnQgoibP",
+            "reason": "missing choices in augment_human_options_randomized"
+          },
+          {
+            "row_index": 96,
+            "identifier": "recGhzQ1AsM0pBO0a",
+            "reason": "missing choices in augment_human_options_randomized"
+          },
+          {
+            "row_index": 218,
+            "identifier": "recWxGU8Q4YReJ1tb",
+            "reason": "missing choices in augment_human_options_randomized"
+          },
+          {
+            "row_index": 221,
+            "identifier": "recX9sU1D7BxJNXyI",
+            "reason": "missing choices in augment_human_options_randomized"
+          },
+          {
+            "row_index": 288,
+            "identifier": "recgM7o1tcc7tP778",
+            "reason": "missing choices in augment_human_options_randomized"
+          },
+          {
+            "row_index": 344,
+            "identifier": "recnTTKdBzfuoZ7w7",
+            "reason": "missing choices in augment_human_options_randomized"
+          }
+        ]
+      },
+      "augment_model": {
+        "output_path": "/Users/ndesai-air/Documents/GitHub/augmented-mcqa/datasets/benchmarker_items/final5_full_20260225_004316_gpt-5.2-2025-12-11/gpqa/augment_model.jsonl",
+        "rows_written": 442,
+        "skipped_row_count": 6,
+        "skipped_rows": [
+          {
+            "row_index": 26,
+            "identifier": "rec42yAdAZnQgoibP",
+            "reason": "missing choices in augment_model_options_randomized"
+          },
+          {
+            "row_index": 96,
+            "identifier": "recGhzQ1AsM0pBO0a",
+            "reason": "missing choices in augment_model_options_randomized"
+          },
+          {
+            "row_index": 218,
+            "identifier": "recWxGU8Q4YReJ1tb",
+            "reason": "missing choices in augment_model_options_randomized"
+          },
+          {
+            "row_index": 221,
+            "identifier": "recX9sU1D7BxJNXyI",
+            "reason": "missing choices in augment_model_options_randomized"
+          },
+          {
+            "row_index": 288,
+            "identifier": "recgM7o1tcc7tP778",
+            "reason": "missing choices in augment_model_options_randomized"
+          },
+          {
+            "row_index": 344,
+            "identifier": "recnTTKdBzfuoZ7w7",
+            "reason": "missing choices in augment_model_options_randomized"
+          }
+        ]
+      },
+      "augment_ablation": {
+        "output_path": "/Users/ndesai-air/Documents/GitHub/augmented-mcqa/datasets/benchmarker_items/final5_full_20260225_004316_gpt-5.2-2025-12-11/gpqa/augment_ablation.jsonl",
+        "rows_written": 442,
+        "skipped_row_count": 6,
+        "skipped_rows": [
+          {
+            "row_index": 26,
+            "identifier": "rec42yAdAZnQgoibP",
+            "reason": "missing choices in augment_ablation_options_randomized"
+          },
+          {
+            "row_index": 96,
+            "identifier": "recGhzQ1AsM0pBO0a",
+            "reason": "missing choices in augment_ablation_options_randomized"
+          },
+          {
+            "row_index": 218,
+            "identifier": "recWxGU8Q4YReJ1tb",
+            "reason": "missing choices in augment_ablation_options_randomized"
+          },
+          {
+            "row_index": 221,
+            "identifier": "recX9sU1D7BxJNXyI",
+            "reason": "missing choices in augment_ablation_options_randomized"
+          },
+          {
+            "row_index": 288,
+            "identifier": "recgM7o1tcc7tP778",
+            "reason": "missing choices in augment_ablation_options_randomized"
+          },
+          {
+            "row_index": 344,
+            "identifier": "recnTTKdBzfuoZ7w7",
+            "reason": "missing choices in augment_ablation_options_randomized"
+          }
+        ]
+      }
+    }
+  }
+}
