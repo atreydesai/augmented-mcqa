@@ -46,6 +46,8 @@ _SYMBOL_TO_MODULE = {
     "load_gpqa_dataset": "gpqa_processor",
     "process_gpqa_for_experiments": "gpqa_processor",
     "get_gpqa_stats": "gpqa_processor",
+    # Benchmarker export
+    "export_benchmarker_items": "benchmarker_export",
     # Hub Utils
     "push_dataset_to_hub": "hub_utils",
 }
