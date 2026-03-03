@@ -1,0 +1,64 @@
+{
+  "config": {
+    "name": "gpt-5.2-2025-12-11_allenai_Olmo-3-7B-Instruct_choices_only_arc_challenge_augment_model",
+    "dataset_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/augmented/final5_full_20260225_004316_gpt-5.2-2025-12-11",
+    "model_name": "allenai/Olmo-3-7B-Instruct",
+    "generator_dataset_label": "gpt-5.2-2025-12-11",
+    "setting_id": "augment_model",
+    "num_human": 0,
+    "num_model": 9,
+    "model_distractor_type": "cond_model_q_a_scratch",
+    "eval_mode": "behavioral",
+    "sampling_strategy": "independent",
+    "branching_mode": "shuffled_prefix",
+    "choices_only": true,
+    "limit": null,
+    "seed": 12345,
+    "reasoning_effort": null,
+    "thinking_level": null,
+    "temperature": null,
+    "max_tokens": 1024,
+    "output_dir": "results/final5_full_gpt-5.2-2025-12-11_20260226_001349/gpt-5.2-2025-12-11/allenai_Olmo-3-7B-Instruct/choices_only/arc_challenge/augment_model",
+    "checkpoint_dir": "results/final5_full_gpt-5.2-2025-12-11_20260226_001349/gpt-5.2-2025-12-11/allenai_Olmo-3-7B-Instruct/choices_only/arc_challenge/augment_model/checkpoints",
+    "save_interval": 50,
+    "categories": null,
+    "dataset_type_filter": "arc_challenge",
+    "distractor_source": "augment_model",
+    "entry_shards": 2,
+    "entry_shard_index": 0,
+    "entry_shard_strategy": "contiguous",
+    "workpack_format": "none",
+    "workpack_path": null,
+    "inference_batch_size": 8,
+    "vllm_max_num_batched_tokens": null,
+    "vllm_max_num_seqs": null,
+    "vllm_enable_chunked_prefill": null,
+    "stop": null,
+    "config_id": "gpt-5.2-2025-12-11_allenai_Olmo-3-7B-Instruct_choices_only_arc_challenge_augment_model_augment_model_0H9M_allenai_Olmo-3-7B-Instruct"
+  },
+  "summary": {
+    "total": 1000,
+    "correct": 341,
+    "accuracy": 0.341,
+    "attempted_entries": 1000,
+    "successful_entries": 1000,
+    "failed_entries": 0,
+    "entry_failure_count": 0,
+    "behavioral_counts": {
+      "G": 341,
+      "H": 0,
+      "M": 659,
+      "?": 0
+    },
+    "accuracy_by_category": {
+      "": 0.341
+    }
+  },
+  "timing": {
+    "start": "2026-02-26T01:13:55.236306",
+    "end": "2026-02-26T01:40:28.828491",
+    "merged_at": "2026-02-26T16:55:23.692582+00:00"
+  },
+  "entry_failures": [],
+  "rows_path": "results/final5_full_gpt-5.2-2025-12-11_20260226_001349/gpt-5.2-2025-12-11/allenai_Olmo-3-7B-Instruct/choices_only/arc_challenge/augment_model/rows"
+}
