@@ -48,18 +48,18 @@ env/
 .coverage
 htmlcov/
 
-# Large files (datasets and results tracked separately)
+# Large files (datasets tracked separately, results included)
 # datasets/*
 # !datasets/.gitkeep
-# results/*
-# !results/.gitkeep
+datasets/**/*.arrow
+# results are intentionally tracked
+!results/**/*.arrow
 
 # Model weights
 *.bin
 *.pt
 *.pth
 *.safetensors
-*.arrow
 
 # Logs
 *.log
