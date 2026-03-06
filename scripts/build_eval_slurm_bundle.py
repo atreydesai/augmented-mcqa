@@ -16,23 +16,23 @@ from datasets import load_from_disk
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from experiments.matrix import build_manifest, build_matrix_configs, save_manifest
+from experiments.matrix import (
+    ALL_DATASET_TYPES,
+    MATRIX_PRESETS,
+    build_manifest,
+    build_matrix_configs,
+    save_manifest,
+)
 
-EVAL_MODELS = [
+DEFAULT_EVAL_MODELS = [
     "Qwen/Qwen3-4B-Instruct-2507",
     "allenai/Olmo-3-7B-Instruct",
     "meta-llama/Llama-3.1-8B-Instruct",
 ]
 
 MODES = ["full_question", "choices_only"]
-ACTIVE_DATASETS = ["arc_challenge", "mmlu_pro", "gpqa"]
-SETTING_IDS = [
-    "human_from_scratch",
-    "model_from_scratch",
-    "augment_human",
-    "augment_model",
-    "augment_ablation",
-]
+ACTIVE_DATASETS = ALL_DATASET_TYPES
+SETTING_IDS = MATRIX_PRESETS["final5"]
 
 
 def _sanitize(value: str) -> str:
@@ -143,7 +143,6 @@ def _build_pair_run_manifest(
             preset="final5",
             output_base=Path(output_base),
             limit=None,
-            eval_mode="behavioral",
             choices_only=bool(unit["choices_only"]),
             max_tokens=max_tokens,
             save_interval=save_interval,
@@ -359,6 +358,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-base", type=str, default="results", help="Root results output directory")
     parser.add_argument("--save-interval", type=int, default=50)
     parser.add_argument("--max-tokens", type=int, default=100)
+    parser.add_argument(
+        "--eval-models",
+        type=str,
+        nargs="+",
+        default=DEFAULT_EVAL_MODELS,
+        help="Eval model names (default: DEFAULT_EVAL_MODELS list)",
+    )
     return parser.parse_args()
 
 
@@ -403,7 +409,7 @@ def main() -> int:
         work_units = _build_work_units(row_counts=row_counts, part_counts=part_counts)
         num_work_units = len(work_units)
 
-        for eval_model in EVAL_MODELS:
+        for eval_model in args.eval_models:
             job_name = "__".join(
                 [
                     "final5_pair",
@@ -473,7 +479,7 @@ def main() -> int:
     submit_all_path.write_text(_render_submit_all(sbatch_files), encoding="utf-8")
     submit_all_path.chmod(0o755)
 
-    total_pairs = len(generators) * len(EVAL_MODELS)
+    total_pairs = len(generators) * len(args.eval_models)
     total_work_units = sum(int(job["num_work_units"]) for job in jobs)
     expected_eval_rows = 0
     for gen in generators:
@@ -487,7 +493,7 @@ def main() -> int:
         "regeneration_manifest": str(regen_manifest_path),
         "output_base": args.output_base,
         "target_rows_per_subsplit": args.target_rows_per_subsplit,
-        "eval_models": list(EVAL_MODELS),
+        "eval_models": list(args.eval_models),
         "modes": list(MODES),
         "datasets": list(ACTIVE_DATASETS),
         "setting_ids": list(SETTING_IDS),

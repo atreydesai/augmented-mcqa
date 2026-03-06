@@ -51,11 +51,8 @@ GENERATOR_DISPLAY_ALIASES: list[tuple[str, str]] = [
 
 EVAL_MODEL_DISPLAY_LABELS: dict[str, str] = {
     "Qwen_Qwen3-4B-Instruct-2507": "Qwen3-4B",
-    "Qwen/Qwen3-4B-Instruct-2507": "Qwen3-4B",
     "allenai_Olmo-3-7B-Instruct": "Olmo3-7B",
-    "allenai/Olmo-3-7B-Instruct": "Olmo3-7B",
     "meta-llama_Llama-3.1-8B-Instruct": "Llama3.1-8B",
-    "meta-llama/Llama-3.1-8B-Instruct": "Llama3.1-8B",
 }
 
 SETTING_DISPLAY_LABELS: dict[str, str] = {
@@ -94,7 +91,8 @@ def _display_mode(mode: str) -> str:
 
 
 def _display_eval_model(model: str) -> str:
-    return EVAL_MODEL_DISPLAY_LABELS.get(str(model), str(model))
+    normalized = str(model).replace("/", "_")
+    return EVAL_MODEL_DISPLAY_LABELS.get(normalized, str(model))
 
 
 def _display_setting(setting: str) -> str:

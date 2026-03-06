@@ -18,7 +18,7 @@ from evaluation.evaluator import build_mcqa_prompt, extract_answer
 from models import ModelClient, get_client
 from models.local_client import LocalClient
 from .config import ExperimentConfig
-from .defaults import DEFAULT_EVAL_STOP
+from config import DEFAULT_EVAL_STOP
 
 
 # Hash-mixing coefficients for generating deterministic per-question seeds.

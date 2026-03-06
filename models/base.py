@@ -6,7 +6,10 @@ Defines the abstract interface that all model clients must implement.
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Optional, Dict, Any
+from typing import Literal, Optional, Dict, Any
+
+
+ReasoningEffort = Literal["minimal", "low", "medium", "high", "none"]
 
 
 @dataclass

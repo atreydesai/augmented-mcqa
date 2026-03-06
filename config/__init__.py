@@ -21,11 +21,20 @@ from .settings import (
     # Experiment settings
     RANDOM_SEED,
     DEFAULT_LIMIT,
+    DEFAULT_MATRIX_PRESET,
+    DEFAULT_EVAL_MODE,
+    DEFAULT_EVAL_SEED,
+    DEFAULT_EVAL_TEMPERATURE,
+    DEFAULT_EVAL_MAX_TOKENS,
+    DEFAULT_EVAL_SAVE_INTERVAL,
+    DEFAULT_EVAL_KEEP_CHECKPOINTS,
+    DEFAULT_EVAL_STOP,
+    DEFAULT_NUM_HUMAN_DISTRACTORS,
+    DEFAULT_NUM_MODEL_DISTRACTORS,
     
     # Distractor naming
     DistractorType,
-    get_distractor_column,
-    
+
     # Dataset types and schema
     DatasetType,
     ACTIVE_DATASET_TYPES,
@@ -63,7 +72,6 @@ __all__ = [
     "RANDOM_SEED",
     "DEFAULT_LIMIT",
     "DistractorType",
-    "get_distractor_column",
     "DatasetType",
     "ACTIVE_DATASET_TYPES",
     "DATASET_SCHEMA",
@@ -77,4 +85,14 @@ __all__ = [
     "DISTRACTOR_GENERATION_PROMPT_CONDITIONED_TEMPLATE",
     "get_api_key",
     "CHOICE_LABELS",
+    "DEFAULT_MATRIX_PRESET",
+    "DEFAULT_EVAL_MODE",
+    "DEFAULT_EVAL_SEED",
+    "DEFAULT_EVAL_TEMPERATURE",
+    "DEFAULT_EVAL_MAX_TOKENS",
+    "DEFAULT_EVAL_SAVE_INTERVAL",
+    "DEFAULT_EVAL_KEEP_CHECKPOINTS",
+    "DEFAULT_EVAL_STOP",
+    "DEFAULT_NUM_HUMAN_DISTRACTORS",
+    "DEFAULT_NUM_MODEL_DISTRACTORS",
 ]

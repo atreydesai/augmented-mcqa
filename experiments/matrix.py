@@ -5,17 +5,16 @@ from __future__ import annotations
 import json
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Literal, cast
+from typing import Any, Literal, Optional, cast
 
-from config import RESULTS_DIR
-from .config import ExperimentConfig
-from .defaults import (
+from config import (
+    RESULTS_DIR,
     DEFAULT_EVAL_MAX_TOKENS,
-    DEFAULT_EVAL_MODE,
     DEFAULT_EVAL_SAVE_INTERVAL,
     DEFAULT_EVAL_SEED,
     DEFAULT_EVAL_TEMPERATURE,
 )
+from .config import ExperimentConfig
 
 
 MatrixPreset = Literal["final5"]
@@ -68,11 +67,9 @@ def build_matrix_configs(
     dataset_path: Path,
     generator_dataset_label: str,
     dataset_types: list[str],
-    distractor_sources: list[str] | None = None,
     preset: MatrixPreset = cast(MatrixPreset, "final5"),
     output_base: Path | None = None,
     limit: int | None = None,
-    eval_mode: str = DEFAULT_EVAL_MODE,
     choices_only: bool = False,
     seed: int = DEFAULT_EVAL_SEED,
     reasoning_effort: str | None = None,
@@ -84,8 +81,6 @@ def build_matrix_configs(
     entry_shard_index: int = 0,
     entry_shard_strategy: str = "contiguous",
 ) -> list[ExperimentConfig]:
-    del distractor_sources
-
     generator_label = str(generator_dataset_label).strip()
     if not generator_label:
         raise ValueError("generator_dataset_label is required and cannot be blank")
@@ -123,7 +118,6 @@ def build_matrix_configs(
                 setting_id=setting_id,
                 num_human=int(spec["num_human"]),
                 num_model=int(spec["num_model"]),
-                eval_mode=eval_mode,
                 choices_only=choices_only,
                 limit=limit,
                 seed=seed,
@@ -134,9 +128,6 @@ def build_matrix_configs(
                 save_interval=save_interval,
                 output_dir=output_dir,
                 dataset_type_filter=dataset_type,
-                distractor_source=setting_id,
-                sampling_strategy="independent",
-                branching_mode="shuffled_prefix",
                 entry_shards=entry_shards,
                 entry_shard_index=entry_shard_index,
                 entry_shard_strategy=entry_shard_strategy,
@@ -200,11 +191,8 @@ def build_manifest(
     dataset_path: Path,
     generator_dataset_label: str,
     dataset_types: list[str],
-    distractor_sources: list[str] | None = None,
     metadata: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    del distractor_sources
-
     generator_label = str(generator_dataset_label).strip()
     if not generator_label:
         raise ValueError("generator_dataset_label is required and cannot be blank")

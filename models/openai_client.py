@@ -5,14 +5,10 @@ OpenAI model client for Augmented MCQA.
 """
 
 import os
-from typing import Optional, Literal
+from typing import Optional
 
-from .base import ModelClient, GenerationResult
+from .base import ModelClient, GenerationResult, ReasoningEffort
 from config import get_api_key
-
-
-# Valid reasoning effort levels for GPT-5 models
-ReasoningEffort = Literal["minimal", "low", "medium", "high", "none"]
 
 
 class OpenAIClient(ModelClient):

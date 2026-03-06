@@ -12,17 +12,16 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from config import RESULTS_DIR
-from experiments import run_experiment
-from experiments.defaults import (
+from config import (
+    RESULTS_DIR,
     DEFAULT_EVAL_KEEP_CHECKPOINTS,
     DEFAULT_EVAL_MAX_TOKENS,
-    DEFAULT_EVAL_MODE,
     DEFAULT_EVAL_SAVE_INTERVAL,
     DEFAULT_EVAL_SEED,
     DEFAULT_EVAL_TEMPERATURE,
     DEFAULT_MATRIX_PRESET,
 )
+from experiments import run_experiment
 from experiments.matrix import (
     ALL_DATASET_TYPES,
     MATRIX_PRESETS,
@@ -83,7 +82,6 @@ def _resolve_configs(args: argparse.Namespace) -> list:
             preset=args.preset,
             output_base=output_base,
             limit=args.limit,
-            eval_mode=args.eval_mode,
             choices_only=args.choices_only,
             seed=args.seed,
             reasoning_effort=args.reasoning_effort,
@@ -348,18 +346,8 @@ def build_parser() -> argparse.ArgumentParser:
             choices=ALL_DATASET_TYPES,
             default=ALL_DATASET_TYPES,
         )
-        p.add_argument(
-            "--distractor-source",
-            "--distractor-sources",
-            dest="distractor_sources",
-            type=str,
-            nargs="+",
-            default=[],
-            help="Deprecated/ignored in final5",
-        )
         p.add_argument("--generator-dataset-label", type=str, required=True)
         p.add_argument("--limit", type=int)
-        p.add_argument("--eval-mode", type=str, choices=["accuracy", "behavioral"], default=DEFAULT_EVAL_MODE)
         p.add_argument("--choices-only", action="store_true")
         p.add_argument("--seed", type=int, default=DEFAULT_EVAL_SEED)
         p.add_argument("--reasoning-effort", type=str)

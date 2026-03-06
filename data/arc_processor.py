@@ -149,33 +149,6 @@ def process_arc_for_experiments(
     return dataset
 
 
-def add_synthetic_distractors_to_arc(
-    entries: List[Dict[str, Any]],
-    synthetic_distractors: List[List[str]],
-    distractor_type: DistractorType = DistractorType.COND_MODEL_Q_A_SCRATCH,
-) -> List[Dict[str, Any]]:
-    """
-    Add synthetic distractors to ARC entries.
-    
-    Args:
-        entries: List of ARC entries
-        synthetic_distractors: List of distractor lists (one per entry)
-        distractor_type: Type of distractors being added
-        
-    Returns:
-        Updated entries with synthetic distractors
-    """
-    if len(synthetic_distractors) != len(entries):
-        raise ValueError(
-            f"Mismatch: {len(entries)} entries but {len(synthetic_distractors)} distractor lists"
-        )
-    
-    for entry, distractors in zip(entries, synthetic_distractors):
-        entry[distractor_type.value] = distractors
-    
-    return entries
-
-
 def get_arc_stats(entries: List[Dict[str, Any]]) -> Dict[str, Any]:
     """Get statistics about processed ARC entries."""
     stats = {

@@ -26,19 +26,11 @@ from data import (
     process_gpqa_for_experiments,
     process_mmlu_pro as process_mmlu_pro_func,
 )
+from data.augmentor import STRATEGY_IDS
 
 
 SCHEMA_VERSION = "final5_v1"
 DEFAULT_PER_DATASET_LIMIT = 1000
-
-
-STRATEGY_IDS = [
-    "human_from_scratch",
-    "model_from_scratch",
-    "augment_human",
-    "augment_model",
-    "augment_ablation",
-]
 
 
 def _limit_dataset(ds: Dataset, limit: Optional[int]) -> Dataset:

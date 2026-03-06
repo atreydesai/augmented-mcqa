@@ -30,17 +30,9 @@ _SYMBOL_TO_MODULE = {
     "augment_dataset": "augmentor",
     "parse_generated_distractors": "augmentor",
     "get_output_column": "augmentor",
-    # Filter
-    "FilterConfig": "filter",
-    "filter_dataset": "filter",
-    "create_standard_subsets": "filter",
-    "shuffle_options_deterministic": "filter",
-    "get_answer_letter": "filter",
-    "CHOICE_LABELS": "filter",
     # ARC Processor
     "load_arc_dataset": "arc_processor",
     "process_arc_for_experiments": "arc_processor",
-    "add_synthetic_distractors_to_arc": "arc_processor",
     "get_arc_stats": "arc_processor",
     # GPQA Processor
     "load_gpqa_dataset": "gpqa_processor",

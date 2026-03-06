@@ -48,9 +48,6 @@ RESULTS_DIR = _ensure_writable_dir(RESULTS_DIR, PROJECT_ROOT / "results", "RESUL
 RAW_DATASETS_DIR = DATASETS_DIR / "raw"
 PROCESSED_DATASETS_DIR = DATASETS_DIR / "processed"
 AUGMENTED_DATASETS_DIR = DATASETS_DIR / "augmented"
-AUGMENTED_FROM_SCRATCH_DIR = AUGMENTED_DATASETS_DIR / "from_scratch"
-AUGMENTED_CONDITIONED_HUMAN_DIR = AUGMENTED_DATASETS_DIR / "conditioned_human"
-AUGMENTED_CONDITIONED_SYNTHETIC_DIR = AUGMENTED_DATASETS_DIR / "conditioned_synthetic"
 
 
 # =============================================================================
@@ -106,6 +103,45 @@ else:
     DEFAULT_LIMIT = None
 
 
+def _get_int_env(name: str, default: int) -> int:
+    raw = os.getenv(name)
+    if raw is None or raw.strip() == "":
+        return default
+    try:
+        return int(raw)
+    except ValueError as exc:
+        raise ValueError(f"{name} must be an integer, got {raw!r}") from exc
+
+
+def _get_optional_float_env(name: str, default: Optional[float]) -> Optional[float]:
+    raw = os.getenv(name)
+    if raw is None or raw.strip() == "":
+        return default
+    try:
+        return float(raw)
+    except ValueError as exc:
+        raise ValueError(f"{name} must be a float, got {raw!r}") from exc
+
+
+# Evaluation defaults (overridable via environment variables)
+DEFAULT_MATRIX_PRESET: str = os.getenv("AUGMCQA_DEFAULT_MATRIX_PRESET", "final5")
+DEFAULT_EVAL_MODE: str = os.getenv("AUGMCQA_DEFAULT_EVAL_MODE", "behavioral")
+DEFAULT_EVAL_SEED: int = _get_int_env("AUGMCQA_DEFAULT_EVAL_SEED", RANDOM_SEED)
+DEFAULT_EVAL_TEMPERATURE: Optional[float] = _get_optional_float_env("AUGMCQA_DEFAULT_EVAL_TEMPERATURE", None)
+DEFAULT_EVAL_MAX_TOKENS: int = _get_int_env("AUGMCQA_DEFAULT_EVAL_MAX_TOKENS", 100)
+DEFAULT_EVAL_SAVE_INTERVAL: int = _get_int_env("AUGMCQA_DEFAULT_EVAL_SAVE_INTERVAL", 50)
+DEFAULT_EVAL_KEEP_CHECKPOINTS: int = _get_int_env("AUGMCQA_DEFAULT_EVAL_KEEP_CHECKPOINTS", 2)
+DEFAULT_NUM_HUMAN_DISTRACTORS: int = _get_int_env("AUGMCQA_DEFAULT_NUM_HUMAN_DISTRACTORS", 3)
+DEFAULT_NUM_MODEL_DISTRACTORS: int = _get_int_env("AUGMCQA_DEFAULT_NUM_MODEL_DISTRACTORS", 0)
+
+_stop_env = os.getenv("AUGMCQA_DEFAULT_EVAL_STOP", "")
+DEFAULT_EVAL_STOP: List[str] = (
+    [s for s in _stop_env.split("|||") if s]
+    if _stop_env.strip()
+    else ["\n\nQuestion:", "\n\nThe following", "\n\nAnswer:"]
+)
+
+
 # =============================================================================
 # Unified Distractor Naming Convention
 # =============================================================================
@@ -136,24 +172,6 @@ class DistractorType(Enum):
     
     # NEWLY GENERATED distractors conditioned on Q+A + 3 random scratch distractors
     COND_MODEL_Q_A_DMODEL = "cond_model_q_a_dmodel"
-
-
-def get_distractor_column(entry: dict, distractor_type: DistractorType) -> List[str]:
-    """
-    Get distractor values from a dataset entry using the unified naming convention.
-    
-    Args:
-        entry: A dataset entry dictionary
-        distractor_type: The type of distractors to retrieve
-        
-    Returns:
-        List of distractor strings
-    """
-    unified_name = distractor_type.value
-    if unified_name in entry and entry[unified_name] is not None:
-        return list(entry[unified_name])
-
-    return []
 
 
 # =============================================================================

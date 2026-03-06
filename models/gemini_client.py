@@ -3,13 +3,10 @@
 from __future__ import annotations
 
 import os
-from typing import Optional, Literal
+from typing import Optional
 
-from .base import GenerationResult, ModelClient
+from .base import GenerationResult, ModelClient, ReasoningEffort
 from config import get_api_key
-
-
-ReasoningEffort = Literal["minimal", "low", "medium", "high", "none"]
 
 
 class GeminiClient(ModelClient):

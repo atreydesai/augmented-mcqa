@@ -2,17 +2,10 @@ from unittest.mock import MagicMock
 
 from models.anthropic_client import AnthropicClient
 from models.gemini_client import GeminiClient
-from scripts.generate_distractors import _build_config, _model_policy
+from scripts.generate_distractors import _build_config
 
 
-def test_generation_model_policy_mapping():
-    provider, client_kwargs, generate_kwargs = _model_policy("gpt-5.2-2025-12-11")
-    assert provider == "openai"
-    assert client_kwargs == {"reasoning_effort": "medium"}
-    assert generate_kwargs == {}
-
-
-def test_build_config_preserves_anthropic_timeout_and_thinking():
+def test_build_config_anthropic_explicit_thinking():
     cfg = _build_config(
         model_name="claude-opus-4-6",
         save_interval=25,
@@ -22,21 +15,28 @@ def test_build_config_preserves_anthropic_timeout_and_thinking():
         retry_delay=1.0,
         request_log=None,
         slow_call_seconds=45.0,
+        thinking_level="adaptive",
     )
     assert cfg.model_provider == "anthropic"
     assert cfg.anthropic_thinking == {"type": "adaptive"}
-    assert cfg.generate_kwargs.get("timeout") == 60.0
     assert cfg.max_tokens == 2048
 
-    provider, client_kwargs, generate_kwargs = _model_policy("claude-opus-4-6")
-    assert provider == "anthropic"
-    assert client_kwargs == {}
-    assert generate_kwargs == {"thinking": {"type": "adaptive"}, "timeout": 60.0}
 
-    provider, client_kwargs, generate_kwargs = _model_policy("gemini-3.1-pro-preview")
-    assert provider == "gemini"
-    assert client_kwargs == {}
-    assert generate_kwargs == {}
+def test_build_config_openai_explicit_reasoning_effort():
+    cfg = _build_config(
+        model_name="gpt-5.2-2025-12-11",
+        save_interval=25,
+        force_overwrite=False,
+        skip_failed_entries=False,
+        max_retries=3,
+        retry_delay=1.0,
+        request_log=None,
+        slow_call_seconds=45.0,
+        reasoning_effort="medium",
+    )
+    assert cfg.model_provider == "openai"
+    assert cfg.reasoning_effort == "medium"
+    assert cfg.max_tokens == 2048
 
 
 def test_build_config_uses_uniform_2048_output_cap():
@@ -54,6 +54,8 @@ def test_build_config_uses_uniform_2048_output_cap():
             retry_delay=1.0,
             request_log=None,
             slow_call_seconds=45.0,
+            reasoning_effort=None,
+            thinking_level=None,
         )
         assert cfg.max_tokens == 2048
 

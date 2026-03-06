@@ -45,24 +45,12 @@ def parse_args() -> argparse.Namespace:
         default=45.0,
         help="Emit slow-call logs when a request exceeds this duration",
     )
+    parser.add_argument("--reasoning-effort", type=str, default=None,
+                        help="Reasoning effort for OpenAI models (minimal/low/medium/high)")
+    parser.add_argument("--thinking-level", type=str, default=None,
+                        help="Thinking type for Anthropic models (e.g. 'adaptive')")
     parser.add_argument("--dry-run", action="store_true")
     return parser.parse_args()
-
-
-def _model_policy(model_name: str) -> tuple[str, dict, dict]:
-    provider, _, _ = resolve_model(model_name)
-    provider = provider.lower().strip()
-
-    client_kwargs: dict = {}
-    generate_kwargs: dict = {}
-
-    if model_name == "gpt-5.2-2025-12-11":
-        client_kwargs["reasoning_effort"] = "medium"
-    elif model_name == "claude-opus-4-6":
-        generate_kwargs["thinking"] = {"type": "adaptive"}
-        generate_kwargs["timeout"] = 60.0
-
-    return provider, client_kwargs, generate_kwargs
 
 
 def _build_config(
@@ -74,26 +62,29 @@ def _build_config(
     retry_delay: float,
     request_log: str | None,
     slow_call_seconds: float,
+    reasoning_effort: str | None = None,
+    thinking_level: str | None = None,
 ) -> GenerationConfig:
-    provider, client_kwargs, generate_kwargs = _model_policy(model_name)
+    provider, _, _ = resolve_model(model_name)
+    provider = provider.lower().strip()
+
     anthropic_thinking = None
-    max_tokens = 2048
-    if provider == "anthropic":
-        anthropic_thinking = generate_kwargs.pop("thinking", None)
+    if provider == "anthropic" and thinking_level:
+        anthropic_thinking = {"type": thinking_level}
 
     return GenerationConfig(
         mode=AugmentorMode.FINAL5,
         model_provider=provider,
         model_name=model_name,
-        max_tokens=max_tokens,
+        max_tokens=2048,
         max_retries=max_retries,
         retry_delay=retry_delay,
         save_interval=save_interval,
         skip_failed_entries=skip_failed_entries,
         force_overwrite=force_overwrite,
-        reasoning_effort=client_kwargs.get("reasoning_effort"),
+        reasoning_effort=reasoning_effort,
         anthropic_thinking=anthropic_thinking,
-        generate_kwargs=generate_kwargs,
+        generate_kwargs={},
         request_log_path=Path(request_log) if request_log else None,
         slow_call_seconds=slow_call_seconds,
     )
@@ -221,6 +212,8 @@ def main() -> int:
         args.retry_delay,
         args.request_log,
         args.slow_call_seconds,
+        reasoning_effort=args.reasoning_effort,
+        thinking_level=args.thinking_level,
     )
 
     if args.dry_run:
@@ -228,7 +221,6 @@ def main() -> int:
         print(f"Provider: {cfg.model_provider}")
         print(f"Reasoning effort: {cfg.reasoning_effort}")
         print(f"Anthropic thinking: {cfg.anthropic_thinking}")
-        print(f"Generate kwargs: {cfg.generate_kwargs}")
         print(f"Max retries: {cfg.max_retries}")
         print(f"Retry delay (s): {cfg.retry_delay}")
         print(f"Skip failed entries: {cfg.skip_failed_entries}")

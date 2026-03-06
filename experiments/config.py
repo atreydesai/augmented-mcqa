@@ -9,28 +9,21 @@ Defines ExperimentConfig for specifying evaluation parameters:
 """
 
 from dataclasses import dataclass
-from typing import Optional, List, Literal
+from typing import List, Literal, Optional
 from pathlib import Path
 import json
 
-from config import RESULTS_DIR, DistractorType
-from .defaults import (
+from config import (
+    RESULTS_DIR,
     DEFAULT_EVAL_MAX_TOKENS,
-    DEFAULT_EVAL_MODE,
     DEFAULT_EVAL_SAVE_INTERVAL,
     DEFAULT_EVAL_SEED,
-    DEFAULT_EVAL_STOP,
     DEFAULT_EVAL_TEMPERATURE,
     DEFAULT_NUM_HUMAN_DISTRACTORS,
     DEFAULT_NUM_MODEL_DISTRACTORS,
 )
 
 
-# Evaluation modes
-EvalMode = Literal["accuracy", "behavioral"]
-SamplingStrategy = Literal["independent", "branching_cumulative"]
-BranchingMode = Literal["shuffled_prefix", "human_prefix"]
-WorkpackFormat = Literal["none", "parquet", "arrow"]
 EntryShardStrategy = Literal["contiguous", "modulo"]
 
 
@@ -38,28 +31,23 @@ EntryShardStrategy = Literal["contiguous", "modulo"]
 class ExperimentConfig:
     """
     Configuration for an MCQA evaluation experiment.
-    
-    Attributes:
+
+    Required:
         name: Experiment name (used for results directory)
         dataset_path: Path to processed dataset
         model_name: Model identifier (e.g., "gpt-5.2-2025-12-11")
-        
-        num_human: Number of human distractors to include
-        num_model: Number of model distractors to include
-        model_distractor_type: Which type of model distractors to use
-        
-        eval_mode: "accuracy" (just check correctness) or "behavioral" (track G/H/M patterns)
-        
-        limit: Maximum entries to evaluate (None = all)
-        seed: Random seed for reproducibility
-        
-        reasoning_effort: For OpenAI GPT-5 models
-        thinking_level: For Anthropic/Gemini models
-        
-        temperature: Optional sampling temperature (provider default if unset)
-        max_tokens: Max tokens for response
-        
-        output_dir: Where to save results
+        generator_dataset_label: Label identifying which generation run produced the dataset
+        setting_id: Which Final5 setting to evaluate (human_from_scratch, model_from_scratch, etc.)
+
+    Distractor counts:
+        num_human / num_model: How many human/model distractors to include
+
+    Model options:
+        reasoning_effort: For OpenAI reasoning models
+        thinking_level: For Anthropic extended thinking
+
+    Output:
+        output_dir: Where to save results (defaults to results/<name>)
     """
     # Required
     name: str
@@ -67,50 +55,38 @@ class ExperimentConfig:
     model_name: str
     generator_dataset_label: str
     setting_id: str = "human_from_scratch"
-    
+
     # Distractor configuration
     num_human: int = DEFAULT_NUM_HUMAN_DISTRACTORS
     num_model: int = DEFAULT_NUM_MODEL_DISTRACTORS
-    model_distractor_type: DistractorType = DistractorType.COND_MODEL_Q_A_SCRATCH
-    
+
     # Evaluation settings
-    eval_mode: EvalMode = DEFAULT_EVAL_MODE
-    sampling_strategy: SamplingStrategy = "independent"
-    branching_mode: BranchingMode = "shuffled_prefix"
     choices_only: bool = False
     limit: Optional[int] = None
     seed: int = DEFAULT_EVAL_SEED
-    
+
     # Model settings
-    reasoning_effort: Optional[str] = None  # OpenAI GPT-5
-    thinking_level: Optional[str] = None     # Anthropic/Gemini
+    reasoning_effort: Optional[str] = None  # OpenAI reasoning models
+    thinking_level: Optional[str] = None     # Anthropic extended thinking
     temperature: Optional[float] = DEFAULT_EVAL_TEMPERATURE
     max_tokens: int = DEFAULT_EVAL_MAX_TOKENS
-    
+
     # Output
     output_dir: Optional[Path] = None
-    checkpoint_dir: Optional[Path] = None
     save_interval: int = DEFAULT_EVAL_SAVE_INTERVAL
-    
+
     # Categories to include (None = all)
     categories: Optional[List[str]] = None
 
     # Filter unified dataset by dataset_type field (e.g., "mmlu_pro", "gpqa")
     dataset_type_filter: Optional[str] = None
 
-    # Track which distractor source this config uses (scratch/dhuman/dmodel)
-    distractor_source: Optional[str] = None
-
-    # Sub-sharding within config rows.
+    # Sub-sharding within config rows (for SLURM parallelism)
     entry_shards: int = 1
     entry_shard_index: int = 0
     entry_shard_strategy: EntryShardStrategy = "contiguous"
 
-    # Data loading acceleration
-    workpack_format: WorkpackFormat = "none"
-    workpack_path: Optional[Path] = None
-
-    # Local inference acceleration / stability knobs
+    # Local inference acceleration knobs
     inference_batch_size: int = 1
     vllm_max_num_batched_tokens: Optional[int] = None
     vllm_max_num_seqs: Optional[int] = None
@@ -119,11 +95,9 @@ class ExperimentConfig:
     
     def __post_init__(self):
         """Validate and set defaults after initialization."""
-        # Convert paths
         if isinstance(self.dataset_path, str):
             self.dataset_path = Path(self.dataset_path)
-        
-        # Set default output directory
+
         if self.output_dir is None:
             self.output_dir = RESULTS_DIR / self.name
         elif isinstance(self.output_dir, str):
@@ -134,20 +108,10 @@ class ExperimentConfig:
         if not str(self.setting_id).strip():
             raise ValueError("setting_id is required and cannot be blank")
 
-        if self.checkpoint_dir is None:
-            self.checkpoint_dir = self.output_dir / "checkpoints"
-        elif isinstance(self.checkpoint_dir, str):
-            self.checkpoint_dir = Path(self.checkpoint_dir)
-
-        if isinstance(self.workpack_path, str):
-            self.workpack_path = Path(self.workpack_path)
-
         if self.save_interval <= 0:
             raise ValueError(f"save_interval must be > 0, got {self.save_interval}")
         if self.inference_batch_size <= 0:
-            raise ValueError(
-                f"inference_batch_size must be > 0, got {self.inference_batch_size}"
-            )
+            raise ValueError(f"inference_batch_size must be > 0, got {self.inference_batch_size}")
         if self.entry_shards <= 0:
             raise ValueError("entry_shards must be > 0")
         if self.entry_shard_index < 0 or self.entry_shard_index >= self.entry_shards:
@@ -155,26 +119,13 @@ class ExperimentConfig:
                 f"entry_shard_index must be in [0,{self.entry_shards - 1}], got {self.entry_shard_index}"
             )
         if self.entry_shard_strategy not in {"contiguous", "modulo"}:
-            raise ValueError(
-                "entry_shard_strategy must be 'contiguous' or 'modulo'"
-            )
-        if self.workpack_format not in {"none", "parquet", "arrow"}:
-            raise ValueError(
-                f"workpack_format must be one of none|parquet|arrow, got {self.workpack_format}"
-            )
-        
-        # Validate distractor counts
+            raise ValueError("entry_shard_strategy must be 'contiguous' or 'modulo'")
+
         total = self.num_human + self.num_model
         if total < 1:
             raise ValueError("Must have at least 1 distractor (num_human + num_model >= 1)")
         if total > 9:
             raise ValueError("Cannot have more than 9 distractors (num_human + num_model <= 9)")
-        if self.sampling_strategy not in {"independent", "branching_cumulative"}:
-            raise ValueError(
-                "sampling_strategy must be 'independent' or 'branching_cumulative'"
-            )
-        if self.branching_mode not in {"shuffled_prefix", "human_prefix"}:
-            raise ValueError("branching_mode must be 'shuffled_prefix' or 'human_prefix'")
     
     @property
     def config_id(self) -> str:
@@ -206,10 +157,6 @@ class ExperimentConfig:
             "setting_id": self.setting_id,
             "num_human": self.num_human,
             "num_model": self.num_model,
-            "model_distractor_type": self.model_distractor_type.value,
-            "eval_mode": self.eval_mode,
-            "sampling_strategy": self.sampling_strategy,
-            "branching_mode": self.branching_mode,
             "choices_only": self.choices_only,
             "limit": self.limit,
             "seed": self.seed,
@@ -218,16 +165,12 @@ class ExperimentConfig:
             "temperature": self.temperature,
             "max_tokens": self.max_tokens,
             "output_dir": str(self.output_dir),
-            "checkpoint_dir": str(self.checkpoint_dir),
             "save_interval": self.save_interval,
             "categories": self.categories,
             "dataset_type_filter": self.dataset_type_filter,
-            "distractor_source": self.distractor_source,
             "entry_shards": self.entry_shards,
             "entry_shard_index": self.entry_shard_index,
             "entry_shard_strategy": self.entry_shard_strategy,
-            "workpack_format": self.workpack_format,
-            "workpack_path": str(self.workpack_path) if self.workpack_path else None,
             "inference_batch_size": self.inference_batch_size,
             "vllm_max_num_batched_tokens": self.vllm_max_num_batched_tokens,
             "vllm_max_num_seqs": self.vllm_max_num_seqs,
@@ -250,13 +193,12 @@ class ExperimentConfig:
     @classmethod
     def from_dict(cls, data: dict) -> "ExperimentConfig":
         """Create from dictionary."""
-        # Convert distractor type
-        if "model_distractor_type" in data:
-            data["model_distractor_type"] = DistractorType(data["model_distractor_type"])
-        
-        # Remove computed fields
-        data.pop("config_id", None)
-        
+        data = dict(data)
+        # Remove computed fields and removed fields (for backward compat with old saved configs)
+        for key in ("config_id", "model_distractor_type", "eval_mode", "sampling_strategy",
+                    "branching_mode", "workpack_format", "workpack_path",
+                    "distractor_source", "checkpoint_dir"):
+            data.pop(key, None)
         return cls(**data)
     
     @classmethod
