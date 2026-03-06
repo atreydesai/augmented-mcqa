@@ -485,7 +485,7 @@ def main() -> int:
     for gen in generators:
         generator_label = gen["model"]
         rows_total = sum(int(dataset_row_counts[generator_label].get(ds, 0)) for ds in ACTIVE_DATASETS)
-        expected_eval_rows += rows_total * len(EVAL_MODELS) * len(MODES) * len(SETTING_IDS)
+        expected_eval_rows += rows_total * len(args.eval_models) * len(MODES) * len(SETTING_IDS)
 
     bundle_manifest = {
         "bundle_version": 2,
