@@ -24,7 +24,11 @@ from data.downloader import (
     download_mmlu_all_configs,
     download_mmlu_pro,
 )
-from scripts.process_all import run_all as process_all_run
+from importlib import import_module as _import_module
+
+# Numbered script filename requires importlib for the Python import.
+_data_pipeline = _import_module("scripts.01_data_pipeline")
+process_all_run = _data_pipeline.run_all
 
 
 GENERATOR_MODELS = [
@@ -111,7 +115,7 @@ def _run_generator(
         "uv",
         "run",
         "python",
-        "scripts/generate_distractors.py",
+        "scripts/02_generate_distractors.py",
         "--input",
         str(processed_dataset_path),
         "--output",

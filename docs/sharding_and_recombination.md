@@ -21,7 +21,7 @@ For current row counts (`arc=1000`, `mmlu_pro=1000`, `gpqa=448`) with target `50
 ### A. Build datasets (generation)
 
 ```bash
-uv run python scripts/regenerate_experiments.py \
+uv run python scripts/03_regenerate_experiments.py \
   --processed-dataset datasets/processed/unified_processed_v2 \
   --output-root datasets/augmented
 ```
@@ -29,7 +29,7 @@ uv run python scripts/regenerate_experiments.py \
 ### B. Build SLURM bundle
 
 ```bash
-uv run python scripts/build_eval_slurm_bundle.py \
+uv run python scripts/05_build_eval_slurm_bundle.py \
   --manifest datasets/augmented/<final5_regeneration_manifest>.json \
   --target-rows-per-subsplit 500
 ```
@@ -55,7 +55,7 @@ sbatch jobs/generated/<timestamp>/<specific>.sbatch
 ### E. Merge partials to canonical outputs
 
 ```bash
-uv run python scripts/merge_eval_subshards.py \
+uv run python scripts/06_merge_eval_subshards.py \
   --bundle-manifest jobs/generated/<timestamp>/bundle_manifest.json \
   --strict
 ```

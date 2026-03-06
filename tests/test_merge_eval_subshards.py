@@ -3,7 +3,10 @@ from pathlib import Path
 
 from datasets import Dataset, load_from_disk
 
-from scripts.merge_eval_subshards import merge_config_root
+from importlib import import_module as _import_module
+
+_merge_mod = _import_module("scripts.06_merge_eval_subshards")
+merge_config_root = _merge_mod.merge_config_root
 
 
 def _write_partial(rows_path: Path, *, shard_idx: int, shard_total: int, question_indices: list[int]) -> None:

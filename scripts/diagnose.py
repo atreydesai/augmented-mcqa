@@ -1,5 +1,14 @@
 #!/usr/bin/env python3
-"""Diagnostic runner that records per-step structured-generation traces to JSON."""
+"""Diagnostic tools for debugging generation issues.
+
+Subcommands:
+    failures  - Report rows with missing required distractor columns
+    trace     - Run structured-generation trace and save per-step JSON
+
+Usage:
+    python scripts/diagnose.py failures --dataset-path datasets/augmented/...
+    python scripts/diagnose.py trace --model gemini-3.1-pro-preview --dataset-path datasets/processed/unified_processed_v2
+"""
 
 from __future__ import annotations
 
@@ -11,18 +20,51 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from datasets import DatasetDict, load_from_disk
-
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from data.augmentor import (  # noqa: E402
-    _build_conditioned_prompt,
-    _build_q_a_prompt,
-    _structured_request_kwargs,
-    parse_generated_distractors,
-)
-from models import get_client, resolve_model  # noqa: E402
 
+# ---------------------------------------------------------------------------
+# failures subcommand (from former diagnose_failures.py)
+# ---------------------------------------------------------------------------
+
+REQUIRED_COLUMNS = [
+    ("model_from_scratch", 3),
+    ("augment_human", 6),
+    ("augment_model", 9),
+    ("augment_ablation", 9),
+]
+
+
+def cmd_failures(args: argparse.Namespace) -> int:
+    from datasets import load_from_disk
+
+    ds = load_from_disk(str(Path(args.dataset_path)))
+
+    total_failed = 0
+    for split in ds.keys():
+        failed = []
+        for i, row in enumerate(ds[split]):
+            missing = [k for k, n in REQUIRED_COLUMNS if len(row.get(k) or []) < n]
+            if missing:
+                failed.append({
+                    "idx": i,
+                    "id": row.get("id"),
+                    "question_id": row.get("question_id"),
+                    "missing": missing,
+                    "question": row.get("question", "")[:140],
+                })
+
+        print(f"\n{split}: failed_rows={len(failed)}")
+        for r in failed:
+            print(r)
+        total_failed += len(failed)
+
+    return 1 if total_failed > 0 else 0
+
+
+# ---------------------------------------------------------------------------
+# trace subcommand (from former diagnose_structured_generation_trace.py)
+# ---------------------------------------------------------------------------
 
 DEFAULT_SPLITS = ["arc_challenge", "mmlu_pro", "gpqa"]
 
@@ -45,7 +87,7 @@ def _default_output_path(model: str) -> Path:
     return out_dir / f"{model_safe}_step_trace.json"
 
 
-def _pick_rows(ds: DatasetDict, splits: list[str], per_split: int) -> list[dict[str, Any]]:
+def _pick_rows(ds, splits: list[str], per_split: int) -> list[dict[str, Any]]:
     selected: list[dict[str, Any]] = []
     for split in splits:
         if split not in ds:
@@ -96,6 +138,8 @@ def _run_step(
     max_attempts: int,
     request_common_kwargs: dict[str, Any],
 ) -> dict[str, Any]:
+    from data.augmentor import _structured_request_kwargs, parse_generated_distractors
+
     step: dict[str, Any] = {
         "context": context,
         "expected_count": expected_count,
@@ -158,26 +202,11 @@ def _run_step(
     return step
 
 
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Run diagnostic structured-generation trace and save per-step JSON."
-    )
-    parser.add_argument("--model", type=str, default="gemini-3.1-pro-preview")
-    parser.add_argument(
-        "--dataset-path",
-        type=str,
-        default="datasets/processed/unified_processed_v2",
-    )
-    parser.add_argument("--splits", nargs="+", default=DEFAULT_SPLITS)
-    parser.add_argument("--per-split", type=int, default=1)
-    parser.add_argument("--max-tokens", type=int, default=2048)
-    parser.add_argument("--max-attempts", type=int, default=2)
-    parser.add_argument("--output", type=str, default=None)
-    return parser.parse_args()
+def cmd_trace(args: argparse.Namespace) -> int:
+    from datasets import DatasetDict, load_from_disk
 
-
-def main() -> int:
-    args = parse_args()
+    from data.augmentor import _build_conditioned_prompt, _build_q_a_prompt
+    from models import get_client, resolve_model
 
     ds = load_from_disk(str(Path(args.dataset_path)))
     if not isinstance(ds, DatasetDict):
@@ -302,6 +331,45 @@ def main() -> int:
         print(f"{q['split']} {statuses}")
 
     return 0
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(
+        description="Diagnostic tools for debugging generation issues"
+    )
+    subparsers = parser.add_subparsers(dest="command")
+
+    # failures subcommand
+    fail = subparsers.add_parser("failures", help="Report rows with missing distractor columns")
+    fail.add_argument(
+        "--dataset-path",
+        type=str,
+        required=True,
+        help="Path to augmented dataset on disk",
+    )
+    fail.set_defaults(handler=cmd_failures)
+
+    # trace subcommand
+    tr = subparsers.add_parser("trace", help="Run structured-generation trace and save per-step JSON")
+    tr.add_argument("--model", type=str, default="gemini-3.1-pro-preview")
+    tr.add_argument(
+        "--dataset-path",
+        type=str,
+        default="datasets/processed/unified_processed_v2",
+    )
+    tr.add_argument("--splits", nargs="+", default=DEFAULT_SPLITS)
+    tr.add_argument("--per-split", type=int, default=1)
+    tr.add_argument("--max-tokens", type=int, default=2048)
+    tr.add_argument("--max-attempts", type=int, default=2)
+    tr.add_argument("--output", type=str, default=None)
+    tr.set_defaults(handler=cmd_trace)
+
+    args = parser.parse_args()
+    if not args.command:
+        parser.print_help()
+        return 1
+
+    return args.handler(args)
 
 
 if __name__ == "__main__":

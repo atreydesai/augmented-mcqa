@@ -3,7 +3,9 @@ from pathlib import Path
 
 from datasets import Dataset, DatasetDict
 
-from scripts import build_eval_slurm_bundle
+from importlib import import_module as _import_module
+
+build_eval_slurm_bundle = _import_module("scripts.05_build_eval_slurm_bundle")
 
 
 def _build_generator_dataset(path: Path, *, arc_rows: int, mmlu_rows: int, gpqa_rows: int) -> None:

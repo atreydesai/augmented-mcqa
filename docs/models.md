@@ -35,7 +35,7 @@ Supported active providers:
 
 Implementation points:
 
-- `scripts/generate_distractors.py` (`_model_policy`)
+- `scripts/02_generate_distractors.py` (`_model_policy`)
 - `data/augmentor.py` (`GenerationConfig` + provider-specific kwargs)
 - `models/gemini_client.py` (OpenAI-compatible transport)
 

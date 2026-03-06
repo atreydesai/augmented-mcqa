@@ -2,6 +2,25 @@
 
 Final5 pipeline for distractor generation and evaluation.
 
+## Pipeline Overview
+
+The numbered scripts in `scripts/` follow the pipeline order:
+
+| # | Script | Purpose |
+|---|--------|---------|
+| 01 | `01_data_pipeline.py` | Download raw datasets and process into unified schema |
+| 02 | `02_generate_distractors.py` | Generate Final5 distractor columns using LLMs |
+| 03 | `03_regenerate_experiments.py` | Orchestrate step 02 across all generator models |
+| 04 | `04_eval_matrix.py` | Plan and run evaluation configs |
+| 05 | `05_build_eval_slurm_bundle.py` | Build balanced SLURM bundles for distributed eval |
+| 06 | `06_merge_eval_subshards.py` | Merge entry sub-shards into canonical results |
+| 07 | `07_export_benchmarker_items.py` | Export to benchmarker JSONL format |
+| 08 | `08_analyze.py` | Analyze results and generate plots |
+
+Utility scripts (not part of the main pipeline):
+- `diagnose.py` — Debug generation failures and structured output issues
+- `smoke_test.py` — Live API smoke tests for structured outputs
+
 ## Active Scope
 
 - Datasets: `arc_challenge`, `mmlu_pro`, `gpqa`
@@ -53,19 +72,19 @@ jobs/install_local_model_weights.sh --dry-run
 1. Download raw datasets:
 
 ```bash
-uv run python scripts/download_datasets.py --all
-```
-
-If you prefer the module entrypoint, run:
-
-```bash
-uv run python -m data.downloader --dataset all
+uv run python scripts/01_data_pipeline.py download --all
 ```
 
 2. Process to Final5 unified schema (deterministic first 1000 per dataset):
 
 ```bash
-uv run python scripts/process_all.py --output-path datasets/processed/unified_processed_v2
+uv run python scripts/01_data_pipeline.py process --output-path datasets/processed/unified_processed_v2
+```
+
+Or do both in one step:
+
+```bash
+uv run python scripts/01_data_pipeline.py all --output-path datasets/processed/unified_processed_v2
 ```
 
 `mmlu_pro` keeps the existing exact-match filtering behavior against `mmlu` (unchanged).
@@ -73,7 +92,7 @@ uv run python scripts/process_all.py --output-path datasets/processed/unified_pr
 3. Regenerate all generator datasets and write manifest:
 
 ```bash
-uv run python scripts/regenerate_experiments.py \
+uv run python scripts/03_regenerate_experiments.py \
   --processed-dataset datasets/processed/unified_processed_v2 \
   --output-root datasets/augmented
 ```
@@ -81,7 +100,7 @@ uv run python scripts/regenerate_experiments.py \
 4. Build eval SLURM bundle (per-pair balanced work units):
 
 ```bash
-uv run python scripts/build_eval_slurm_bundle.py \
+uv run python scripts/05_build_eval_slurm_bundle.py \
   --manifest datasets/augmented/<manifest>.json \
   --target-rows-per-subsplit 500
 ```
@@ -95,7 +114,7 @@ bash jobs/generated/<timestamp>/submit_all.sh
 6. Merge entry sub-shards into canonical results:
 
 ```bash
-uv run python scripts/merge_eval_subshards.py \
+uv run python scripts/06_merge_eval_subshards.py \
   --bundle-manifest jobs/generated/<timestamp>/bundle_manifest.json \
   --strict
 ```
@@ -108,7 +127,7 @@ Canonical outputs are now:
 7. Plot required Final5 pairwise comparisons:
 
 ```bash
-uv run python scripts/plot_final5.py --results-root results --output-dir results/final5_plots
+uv run python scripts/08_analyze.py plot --results-root results --output-dir results/final5_plots
 ```
 
 ## Sanity Counts
@@ -124,7 +143,7 @@ Actual totals can be lower when a source dataset has fewer than `limit` rows aft
 Runs 1-2 rows per split through all 3 generator APIs:
 
 ```bash
-uv run python scripts/live_api_smoke.py --limit 2 --dry-run
+uv run python scripts/smoke_test.py generate --limit 2 --dry-run
 ```
 
 ## Remote Eval Sharding Smoke
@@ -191,7 +210,7 @@ JSON
 3. Build bundle:
 
 ```bash
-python scripts/build_eval_slurm_bundle.py \
+python scripts/05_build_eval_slurm_bundle.py \
   --manifest "$REGEN_MANIFEST" \
   --output-dir "$BUNDLE" \
   --output-base "$OUT" \
@@ -233,7 +252,7 @@ done < "$BUNDLE/job_ids.txt"
 7. Merge shards:
 
 ```bash
-python scripts/merge_eval_subshards.py \
+python scripts/06_merge_eval_subshards.py \
   --bundle-manifest "$BUNDLE/bundle_manifest.json" \
   --strict | tee "$BUNDLE/merge.log"
 ```
@@ -252,7 +271,7 @@ If your `dataset_part_counts` differ, recompute expected partial count from the 
 9. Generate visuals:
 
 ```bash
-python scripts/plot_final5.py \
+python scripts/08_analyze.py plot \
   --results-root "$OUT" \
   --output-dir "$OUT/final5_plots"
 
@@ -261,7 +280,8 @@ find "$OUT/final5_plots" -maxdepth 2 -type f | sort
 
 ## Documentation
 
-- `docs/models.md`
-- `docs/evaluation.md`
-- `docs/sharding_and_recombination.md`
-- `jobs/README_local_eval.md`
+- `docs/pipeline.md` — End-to-end pipeline guide with quick start
+- `docs/models.md` — Model registry, providers, reasoning policies
+- `docs/evaluation.md` — Evaluation settings, modes, result paths
+- `docs/sharding_and_recombination.md` — Sharding model and recombination
+- `jobs/README_local_eval.md` — Local eval on SLURM

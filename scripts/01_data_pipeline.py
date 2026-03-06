@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
-"""Process raw datasets into the Final5 unified schema.
+"""Download raw datasets and process them into the Final5 unified schema.
 
-Active datasets:
-- arc_challenge
-- mmlu_pro
-- gpqa
+Subcommands:
+    download  - Download raw datasets from HuggingFace
+    process   - Process raw datasets into unified schema
+    all       - Download then process (full pipeline)
 
-MMLU-Pro filtering-vs-MMLU remains delegated to data.mmlu_pro_processor.
+Usage:
+    python scripts/01_data_pipeline.py download --all
+    python scripts/01_data_pipeline.py download --dataset mmlu_pro
+    python scripts/01_data_pipeline.py process --output-path datasets/processed/unified_processed_v2
+    python scripts/01_data_pipeline.py all --output-path datasets/processed/unified_processed_v2
 """
 
 from __future__ import annotations
@@ -16,18 +20,26 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-from datasets import Dataset, DatasetDict, concatenate_datasets
-
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from config import PROCESSED_DATASETS_DIR
+from config import RAW_DATASETS_DIR, PROCESSED_DATASETS_DIR
 from data import (
+    download_mmlu_pro,
+    download_mmlu_all_configs,
+    download_arc,
+    download_gpqa,
     process_arc_for_experiments,
     process_gpqa_for_experiments,
     process_mmlu_pro as process_mmlu_pro_func,
 )
 from data.augmentor import STRATEGY_IDS
 
+from datasets import Dataset, DatasetDict, concatenate_datasets
+
+
+# ---------------------------------------------------------------------------
+# Processing helpers (from former process_all.py)
+# ---------------------------------------------------------------------------
 
 SCHEMA_VERSION = "final5_v1"
 DEFAULT_PER_DATASET_LIMIT = 1000
@@ -178,26 +190,120 @@ def run_all(limit: Optional[int] = None, output_path: Optional[Path] = None) -> 
     return unified
 
 
+# ---------------------------------------------------------------------------
+# Download helpers (from former download_datasets.py)
+# ---------------------------------------------------------------------------
+
+def cmd_download(args: argparse.Namespace) -> int:
+    output_dir = Path(args.output_dir)
+
+    datasets_to_download = []
+    if args.all:
+        datasets_to_download = ["mmlu_pro", "mmlu", "arc", "gpqa"]
+    elif args.dataset:
+        datasets_to_download = [args.dataset]
+    else:
+        print("Must specify --dataset or --all")
+        return 1
+
+    for ds in datasets_to_download:
+        print(f"\n{'='*50}")
+        print(f"Downloading: {ds}")
+        print('='*50)
+
+        try:
+            if ds == "mmlu_pro":
+                download_mmlu_pro(output_dir / "mmlu_pro")
+            elif ds == "mmlu":
+                download_mmlu_all_configs(output_dir / "mmlu_all")
+            elif ds == "arc":
+                download_arc(output_dir / "arc")
+            elif ds == "gpqa":
+                download_gpqa(output_dir / "gpqa")
+
+            print(f"Downloaded: {ds}")
+
+        except Exception as e:
+            print(f"Failed to download {ds}: {e}")
+
+    print(f"\nDatasets saved to: {output_dir}")
+    return 0
+
+
+def cmd_process(args: argparse.Namespace) -> int:
+    run_all(limit=args.limit, output_path=Path(args.output_path))
+    return 0
+
+
+def cmd_all(args: argparse.Namespace) -> int:
+    rc = cmd_download(args)
+    if rc != 0:
+        return rc
+    return cmd_process(args)
+
+
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Process all active datasets for Final5")
-    parser.add_argument(
+    parser = argparse.ArgumentParser(
+        description="Download and process datasets for the Final5 pipeline"
+    )
+    subparsers = parser.add_subparsers(dest="command")
+
+    # download subcommand
+    dl = subparsers.add_parser("download", help="Download raw datasets from HuggingFace")
+    dl.add_argument(
+        "--dataset",
+        type=str,
+        choices=["mmlu_pro", "mmlu", "arc", "gpqa"],
+        help="Download a specific dataset",
+    )
+    dl.add_argument("--all", action="store_true", help="Download all datasets")
+    dl.add_argument(
+        "--output-dir",
+        type=str,
+        default=str(RAW_DATASETS_DIR),
+        help="Output directory for datasets",
+    )
+    dl.set_defaults(handler=cmd_download)
+
+    # process subcommand
+    proc = subparsers.add_parser("process", help="Process raw datasets into unified schema")
+    proc.add_argument(
         "--limit",
         type=int,
         default=None,
-        help=(
-            "Per-dataset row cap. If omitted, defaults to deterministic first 1000 rows per dataset"
-        ),
+        help="Per-dataset row cap (default: deterministic first 1000)",
     )
-    parser.add_argument(
+    proc.add_argument(
         "--output-path",
         type=str,
         default=str(PROCESSED_DATASETS_DIR / "unified_processed_v2"),
         help="Output path for unified processed dataset",
     )
-    args = parser.parse_args()
+    proc.set_defaults(handler=cmd_process)
 
-    run_all(limit=args.limit, output_path=Path(args.output_path))
-    return 0
+    # all subcommand (download + process)
+    all_cmd = subparsers.add_parser("all", help="Download then process (full pipeline)")
+    all_cmd.add_argument(
+        "--dataset",
+        type=str,
+        choices=["mmlu_pro", "mmlu", "arc", "gpqa"],
+    )
+    all_cmd.add_argument("--all", action="store_true", default=True)
+    all_cmd.add_argument("--output-dir", type=str, default=str(RAW_DATASETS_DIR))
+    all_cmd.add_argument("--limit", type=int, default=None)
+    all_cmd.add_argument(
+        "--output-path",
+        type=str,
+        default=str(PROCESSED_DATASETS_DIR / "unified_processed_v2"),
+    )
+    all_cmd.set_defaults(handler=cmd_all)
+
+    args = parser.parse_args()
+    if not args.command:
+        parser.print_help()
+        return 1
+
+    return args.handler(args)
 
 
 if __name__ == "__main__":

@@ -2,7 +2,10 @@ from unittest.mock import MagicMock
 
 from models.anthropic_client import AnthropicClient
 from models.gemini_client import GeminiClient
-from scripts.generate_distractors import _build_config
+from importlib import import_module as _import_module
+
+_gen_mod = _import_module("scripts.02_generate_distractors")
+_build_config = _gen_mod._build_config
 
 
 def test_build_config_anthropic_explicit_thinking():

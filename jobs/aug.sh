@@ -43,7 +43,7 @@ done
 [[ -n "$OUTPUT" ]] || { echo "Error: --output is required"; exit 1; }
 
 CMD=(
-  uv run python scripts/generate_distractors.py
+  uv run python scripts/02_generate_distractors.py
   --model "$MODEL"
   --input "$INPUT"
   --output "$OUTPUT"

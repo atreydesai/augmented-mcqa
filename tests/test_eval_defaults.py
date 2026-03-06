@@ -10,7 +10,9 @@ from config import (
 )
 from experiments.config import ExperimentConfig
 from experiments.matrix import build_manifest, build_matrix_configs, save_manifest
-from scripts import eval_matrix
+from importlib import import_module as _import_module
+
+eval_matrix = _import_module("scripts.04_eval_matrix")
 
 
 def test_experiment_config_defaults_use_shared_constants(tmp_path):

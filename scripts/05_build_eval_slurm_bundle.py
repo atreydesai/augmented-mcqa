@@ -221,7 +221,7 @@ if [[ ! -f "$RUN_MANIFEST_FILE" ]]; then
 fi
 
 CMD=(
-  "$PYTHON_BIN" scripts/eval_matrix.py run
+  "$PYTHON_BIN" scripts/04_eval_matrix.py run
   --manifest "$RUN_MANIFEST_FILE"
   --generator-dataset-label "$GENERATOR_LABEL"
   --save-interval "$SAVE_INTERVAL"
@@ -262,7 +262,7 @@ def _render_submit_all(sbatch_files: list[Path]) -> str:
         lines.append(f'echo "Submitting {rel}"')
         lines.append(f'if grep -qE \'^#SBATCH --(output|error)=\\$\\{{\' "$SCRIPT_DIR/{rel}"; then')
         lines.append(f'  echo "Error: stale sbatch template detected in {rel} (found #SBATCH with shell expansion)."')
-        lines.append('  echo "Rebuild this bundle with the latest scripts/build_eval_slurm_bundle.py."')
+        lines.append('  echo "Rebuild this bundle with the latest scripts/05_build_eval_slurm_bundle.py."')
         lines.append("  exit 1")
         lines.append("fi")
         lines.append(f'if [[ ! -f "$SCRIPT_DIR/{run_manifest_rel}" ]]; then')
@@ -329,7 +329,7 @@ sbatch <one-of-the-generated>.sbatch
 ## Merge entry sub-shards to canonical results
 
 ```bash
-python scripts/merge_eval_subshards.py --bundle-manifest {bundle_manifest_path} --strict
+python scripts/06_merge_eval_subshards.py --bundle-manifest {bundle_manifest_path} --strict
 ```
 
 ## Quick stats

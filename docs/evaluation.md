@@ -39,14 +39,14 @@ results/<generator>/<eval_model>/<mode>/<dataset>/<setting>/_partials/entry_shar
 results/<generator>/<eval_model>/<mode>/<dataset>/<setting>/_partials/entry_shard_<i>_of_<n>/rows/
 ```
 
-Then recombined with `scripts/merge_eval_subshards.py`.
+Then recombined with `scripts/06_merge_eval_subshards.py`.
 
 ## CLI
 
 ### Build bundle for SLURM
 
 ```bash
-uv run python scripts/build_eval_slurm_bundle.py \
+uv run python scripts/05_build_eval_slurm_bundle.py \
   --manifest datasets/augmented/<final5_regeneration_manifest>.json \
   --target-rows-per-subsplit 500
 ```
@@ -60,7 +60,7 @@ Bundle behavior:
 ### Plan configs
 
 ```bash
-uv run python scripts/eval_matrix.py plan \
+uv run python scripts/04_eval_matrix.py plan \
   --preset final5 \
   --model Qwen/Qwen3-4B-Instruct-2507 \
   --dataset-path datasets/augmented/gpt-5.2-2025-12-11 \
@@ -70,7 +70,7 @@ uv run python scripts/eval_matrix.py plan \
 ### Run configs
 
 ```bash
-uv run python scripts/eval_matrix.py run \
+uv run python scripts/04_eval_matrix.py run \
   --preset final5 \
   --model Qwen/Qwen3-4B-Instruct-2507 \
   --dataset-path datasets/augmented/gpt-5.2-2025-12-11 \

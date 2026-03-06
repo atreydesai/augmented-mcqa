@@ -24,7 +24,7 @@ Options:
   --help                      Show this help
 
 Notes:
-  - Runs all eval models from scripts/build_eval_slurm_bundle.py.
+  - Runs all eval models from scripts/05_build_eval_slurm_bundle.py.
   - Each task runs preset=final5, so all 5 settings are exercised.
   - Eval currently does not emit periodic temp JSON checkpoints; this script still checks for new temp_final5 files.
 USAGE
@@ -225,7 +225,7 @@ JSON
 
 echo
 echo "[3/9] Building per-pair bundle"
-"${PY_RUNNER[@]}" scripts/build_eval_slurm_bundle.py \
+"${PY_RUNNER[@]}" scripts/05_build_eval_slurm_bundle.py \
   --manifest "$SMOKE_MANIFEST" \
   --output-dir "$BUNDLE_DIR" \
   --output-base "$SMOKE_OUT" \
@@ -264,7 +264,7 @@ if [[ "$SKIP_RUN" == "0" ]]; then
 
     cmd=(
       "${PY_RUNNER[@]}"
-      scripts/eval_matrix.py run
+      scripts/04_eval_matrix.py run
       --manifest "$run_manifest"
       --generator-dataset-label "$GENERATOR_LABEL"
       --save-interval "$SAVE_INTERVAL"
@@ -284,7 +284,7 @@ fi
 
 echo
 echo "[5/9] Merging partial entry shards"
-"${PY_RUNNER[@]}" scripts/merge_eval_subshards.py \
+"${PY_RUNNER[@]}" scripts/06_merge_eval_subshards.py \
   --bundle-manifest "$BUNDLE_DIR/bundle_manifest.json" \
   --strict
 
@@ -336,7 +336,7 @@ PY
 if [[ "$SKIP_PLOT" == "0" ]]; then
   echo
   echo "[8/9] Plotting Final5 visuals"
-  "${PY_RUNNER[@]}" scripts/plot_final5.py \
+  "${PY_RUNNER[@]}" scripts/08_analyze.py plot \
     --results-root "$SMOKE_OUT" \
     --output-dir "$SMOKE_OUT/final5_plots"
   find "$SMOKE_OUT/final5_plots" -maxdepth 1 -type f | sort

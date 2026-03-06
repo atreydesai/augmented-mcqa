@@ -12,7 +12,7 @@ jobs/install_local_model_weights.sh --dry-run
 ## 2) Build eval bundle
 
 ```bash
-uv run python scripts/build_eval_slurm_bundle.py \
+uv run python scripts/05_build_eval_slurm_bundle.py \
   --manifest datasets/augmented/<final5_regeneration_manifest>.json \
   --target-rows-per-subsplit 500
 ```
@@ -45,7 +45,7 @@ sbatch --array=1,4,7 jobs/generated/<timestamp>/<specific>.sbatch
 ## 5) Recombine sub-shards
 
 ```bash
-uv run python scripts/merge_eval_subshards.py \
+uv run python scripts/06_merge_eval_subshards.py \
   --bundle-manifest jobs/generated/<timestamp>/bundle_manifest.json \
   --strict
 ```
