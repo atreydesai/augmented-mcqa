@@ -15,6 +15,9 @@ from .settings import (
     HF_TOKEN,
     HF_SKIP_PUSH,
     
+    # Shared constants
+    CHOICE_LABELS,
+
     # Experiment settings
     RANDOM_SEED,
     DEFAULT_LIMIT,
@@ -73,4 +76,5 @@ __all__ = [
     "DISTRACTOR_GENERATION_PROMPT_QA_TEMPLATE",
     "DISTRACTOR_GENERATION_PROMPT_CONDITIONED_TEMPLATE",
     "get_api_key",
+    "CHOICE_LABELS",
 ]

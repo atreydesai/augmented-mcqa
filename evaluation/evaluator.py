@@ -1,9 +1,7 @@
 from typing import List, Dict, Optional, Tuple
 import re
 
-from config import MCQA_PROMPT_FULL, MCQA_PROMPT_CHOICES_ONLY
-
-CHOICE_LABELS = "ABCDEFGHIJ"
+from config import MCQA_PROMPT_FULL, MCQA_PROMPT_CHOICES_ONLY, CHOICE_LABELS
 
 
 def build_mcqa_prompt(

@@ -17,31 +17,6 @@ class GenerationResult:
     finish_reason: Optional[str] = None
     usage: Optional[Dict[str, int]] = None
     raw_response: Optional[Any] = None
-    
-    def extract_answer(self) -> str:
-        """
-        Extract the answer letter from the response text.
-        
-        Looks for patterns like "The answer is (A)" or "The answer is A".
-        """
-        import re
-        
-        text = self.text.strip()
-        
-        # Pattern 1: "The answer is (X)" or "The answer is X"
-        pattern1 = r"[Tt]he answer is \(?([A-J])\)?"
-        match = re.search(pattern1, text)
-        if match:
-            return match.group(1).upper()
-        
-        # Pattern 2: Last single capital letter in the response
-        pattern2 = r"\b([A-J])\b"
-        matches = re.findall(pattern2, text)
-        if matches:
-            return matches[-1].upper()
-        
-        # Pattern 3: Just return empty if no match
-        return ""
 
 
 class ModelClient(ABC):

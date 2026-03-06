@@ -19,6 +19,7 @@ from config import (
     DATASETS_DIR,
     RANDOM_SEED,
     DistractorType,
+    CHOICE_LABELS,
 )
 
 
@@ -68,9 +69,6 @@ def shuffle_options_deterministic(
     new_answer_idx = indices.index(0)  # Original gold was at index 0
     
     return shuffled, new_answer_idx
-
-
-CHOICE_LABELS = "ABCDEFGHIJ"
 
 
 def get_answer_letter(index: int) -> str:

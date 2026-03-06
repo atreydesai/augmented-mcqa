@@ -27,12 +27,12 @@ from config import (
     RESULTS_DIR,
     DISTRACTOR_GENERATION_PROMPT_QA_TEMPLATE,
     DISTRACTOR_GENERATION_PROMPT_CONDITIONED_TEMPLATE,
+    CHOICE_LABELS,
 )
 from data.hub_utils import push_dataset_to_hub
 from models import get_client
 
 
-CHOICE_LABELS = "ABCDEFGHIJ"
 FINAL5_SCHEMA_VERSION = "final5_v1"
 
 

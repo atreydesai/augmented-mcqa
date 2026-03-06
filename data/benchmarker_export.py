@@ -9,8 +9,7 @@ from typing import Any
 
 from datasets import DatasetDict, load_from_disk
 
-
-CHOICE_LABELS = "ABCDEFGHIJ"
+from config import CHOICE_LABELS
 
 
 @dataclass(frozen=True)

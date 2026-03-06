@@ -13,12 +13,7 @@ from typing import Any, Dict, List, Optional
 from datasets import Dataset, load_dataset
 
 from config import HF_TOKEN, PROCESSED_DATASETS_DIR
-
-
-def _safe_text(value: Any) -> str:
-    if value is None:
-        return ""
-    return str(value).strip()
+from data.augmentor import _safe_text
 
 
 def load_gpqa_dataset(

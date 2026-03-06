@@ -13,15 +13,20 @@ from typing import Any, Dict, List, Optional
 
 from tqdm import tqdm
 
-from config import DistractorType
-from evaluation.evaluator import build_mcqa_prompt
+from config import DistractorType, CHOICE_LABELS
+from evaluation.evaluator import build_mcqa_prompt, extract_answer
 from models import ModelClient, get_client
 from models.local_client import LocalClient
 from .config import ExperimentConfig
 from .defaults import DEFAULT_EVAL_STOP
 
 
-CHOICE_LABELS = "ABCDEFGHIJ"
+# Hash-mixing coefficients for generating deterministic per-question seeds.
+# Each coefficient ensures independence across the three axes of variation.
+_SEED_PER_IDX = 1009
+_SEED_PER_HUMAN = 97
+_SEED_PER_MODEL = 89
+
 SETTING_IDS = {
     "human_from_scratch",
     "model_from_scratch",
@@ -284,9 +289,9 @@ class ExperimentRunner:
         order = list(range(len(options)))
         rng = random.Random(
             self.config.seed
-            + idx * 1009
-            + self.config.num_human * 97
-            + self.config.num_model * 89
+            + idx * _SEED_PER_IDX
+            + self.config.num_human * _SEED_PER_HUMAN
+            + self.config.num_model * _SEED_PER_MODEL
         )
         rng.shuffle(order)
 
@@ -385,7 +390,7 @@ class ExperimentRunner:
                 eval_full_question = item["eval_full_question"]
 
                 try:
-                    pred = response.extract_answer()
+                    pred = extract_answer(response.text)
                     gold_letter = CHOICE_LABELS[prepared["gold_idx"]]
                     is_correct = pred == gold_letter
                     ptype = None

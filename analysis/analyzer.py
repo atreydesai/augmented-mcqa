@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import json
 from pathlib import Path
-from typing import Dict, List, Optional, Any, Tuple
+from typing import Any, Dict, List, Optional
 from collections import defaultdict
 
 
@@ -21,7 +23,7 @@ def load_results(results_path: Path) -> Dict[str, Any]:
     return payload
 
 
-def compute_behavioral_signature(results: List[Dict]) -> Dict[str, Any]:
+def compute_behavioral_signature(results: List[Dict[str, Any]]) -> Dict[str, Any]:
     counts = {"G": 0, "H": 0, "M": 0, "?": 0}    
     for r in results:
         ptype = r.get("prediction_type", "?")
@@ -43,8 +45,7 @@ def compute_behavioral_signature(results: List[Dict]) -> Dict[str, Any]:
     }
 
 
-def compute_gold_rate(results: List[Dict]) -> float:
-    #Compute gold (correct) answer selection rate.
+def compute_gold_rate(results: List[Dict[str, Any]]) -> float:
     if not results:
         return 0.0
     
@@ -53,7 +54,7 @@ def compute_gold_rate(results: List[Dict]) -> float:
 
 
 def compute_hierarchical_signature(
-    results: List[Dict],
+    results: List[Dict[str, Any]],
 ) -> Dict[str, Dict[str, Any]]:
     by_category: Dict[str, List[Dict]] = defaultdict(list)
     
@@ -123,9 +124,8 @@ def compare_experiments(
         },
     }
 
-#AI GENERATED 
 def format_signature_table(
-    experiments: Dict[str, Dict],
+    experiments: Dict[str, Dict[str, Any]],
     include_counts: bool = False,
 ) -> str:
     lines = []
