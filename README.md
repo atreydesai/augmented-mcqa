@@ -1,287 +1,145 @@
 # Augmented MCQA
 
-Final5 pipeline for distractor generation and evaluation.
+Inspect-first Final5 generation and evaluation for `arc_challenge`, `mmlu_pro`, and `gpqa`.
 
-## Pipeline Overview
+The canonical interface is now [`main.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/main.py). Numbered scripts in [`scripts/`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/scripts) remain as thin compatibility wrappers where that helps with existing workflows.
 
-The numbered scripts in `scripts/` follow the pipeline order:
+## What Changed
 
-| # | Script | Purpose |
-|---|--------|---------|
-| 01 | `01_data_pipeline.py` | Download raw datasets and process into unified schema |
-| 02 | `02_generate_distractors.py` | Generate Final5 distractor columns using LLMs |
-| 03 | `03_regenerate_experiments.py` | Orchestrate step 02 across all generator models |
-| 04 | `04_eval_matrix.py` | Plan and run evaluation configs |
-| 05 | `05_build_eval_slurm_bundle.py` | Build balanced SLURM bundles for distributed eval |
-| 06 | `06_merge_eval_subshards.py` | Merge entry sub-shards into canonical results |
-| 07 | `07_export_benchmarker_items.py` | Export to benchmarker JSONL format |
-| 08 | `08_analyze.py` | Analyze results and generate plots |
+- Generation and evaluation are both built on [Inspect AI](https://inspect.aisi.org.uk/).
+- Structured outputs are gone. Final5 generation now uses plain-text labeled lines with strict parsing and retry.
+- Inspect `.eval` logs are the canonical run artifact.
+- Augmented Hugging Face datasets under `datasets/augmented/` are derived caches for reuse and export.
+- SLURM support remains, but only as thin shard launchers over `main.py`.
 
-Utility scripts (not part of the main pipeline):
-- `diagnose.py` — Debug generation failures and structured output issues
-- `smoke_test.py` — Live API smoke tests for structured outputs
+## Core Commands
 
-## Active Scope
-
-- Datasets: `arc_challenge`, `mmlu_pro`, `gpqa`
-- Generator models:
-  - `gpt-5.2-2025-12-11`
-  - `claude-opus-4-6`
-  - `gemini-3.1-pro-preview`
-- Local evaluation models:
-  - `Qwen/Qwen3-4B-Instruct-2507`
-  - `allenai/Olmo-3-7B-Instruct`
-  - `meta-llama/Llama-3.1-8B-Instruct`
-- Eval preset: `final5` only
-
-Legacy experiment surfaces are archived in `archive/legacy_experiments/`.
-
-## Final5 Settings
-
-Generation/evaluation setting IDs:
-
-1. `human_from_scratch` (A): `Q + A -> 3H` (passthrough)
-2. `model_from_scratch` (B): `Q + A -> 3M`
-3. `augment_human` (A + C): `Q + A + 3H -> +6M`
-4. `augment_model` (B + D): `Q + A + 3M -> +6M` (stored as `augment_model_delta_6m` + combined `augment_model`)
-5. `augment_ablation` (E): `Q + A -> 9M`
+| Command | Purpose |
+|---|---|
+| `main.py prepare-data` | Download and process raw datasets |
+| `main.py generate` | Run one generation model over the processed dataset |
+| `main.py generate-all` | Run the full generator model list |
+| `main.py evaluate` | Evaluate one model against one generation run |
+| `main.py evaluate-all` | Evaluate the full local/API eval model list |
+| `main.py analyze` | Aggregate Inspect logs into plots and summary tables |
+| `main.py export` | Export a derived augmented dataset to benchmarker JSONL |
 
 ## Setup
 
 ```bash
 cp .env.example .env
-# fill API keys and path values in .env
 uv sync
 ```
 
-For local-model eval, install vLLM after sync:
+For local vLLM-backed runs:
 
 ```bash
 uv pip install --no-build-isolation 'vllm==0.11.2' 'transformers<5' 'numpy<2.3'
 ```
 
-Stage local model weights (script reads `.env` and targets scratch cache):
+## Quick Start
+
+Prepare the unified processed dataset:
 
 ```bash
-jobs/install_local_model_weights.sh --dry-run
-# then run without --dry-run on remote GPU host
+uv run python main.py prepare-data --step all --output-path datasets/processed/unified_processed_v2
 ```
 
-## End-to-End Commands
-
-1. Download raw datasets:
+Run API-backed generation:
 
 ```bash
-uv run python scripts/01_data_pipeline.py download --all
-```
-
-2. Process to Final5 unified schema (deterministic first 1000 per dataset):
-
-```bash
-uv run python scripts/01_data_pipeline.py process --output-path datasets/processed/unified_processed_v2
-```
-
-Or do both in one step:
-
-```bash
-uv run python scripts/01_data_pipeline.py all --output-path datasets/processed/unified_processed_v2
-```
-
-`mmlu_pro` keeps the existing exact-match filtering behavior against `mmlu` (unchanged).
-
-3. Regenerate all generator datasets and write manifest:
-
-```bash
-uv run python scripts/03_regenerate_experiments.py \
+uv run python main.py generate \
+  --model gpt-5.2-2025-12-11 \
+  --run-name gen_openai \
   --processed-dataset datasets/processed/unified_processed_v2 \
-  --output-root datasets/augmented
+  --materialize-cache
 ```
 
-4. Build eval SLURM bundle (per-pair balanced work units):
+Run local generation against an OpenAI-compatible server:
 
 ```bash
-uv run python scripts/05_build_eval_slurm_bundle.py \
-  --manifest datasets/augmented/<manifest>.json \
-  --target-rows-per-subsplit 500
+uv run python main.py generate \
+  --model my-local-model \
+  --backend openai \
+  --model-base-url http://localhost:8000/v1 \
+  --run-name gen_local \
+  --processed-dataset datasets/processed/unified_processed_v2 \
+  --materialize-cache
 ```
 
-5. Submit jobs:
+Evaluate with a local vLLM model:
 
 ```bash
-bash jobs/generated/<timestamp>/submit_all.sh
+uv run python main.py evaluate \
+  --model Qwen/Qwen3-4B-Instruct-2507 \
+  --run-name eval_local \
+  --generator-run-name gen_openai \
+  --generator-model gpt-5.2-2025-12-11 \
+  --processed-dataset datasets/processed/unified_processed_v2
 ```
 
-6. Merge entry sub-shards into canonical results:
+Analyze Inspect logs:
 
 ```bash
-uv run python scripts/06_merge_eval_subshards.py \
-  --bundle-manifest jobs/generated/<timestamp>/bundle_manifest.json \
-  --strict
+uv run python main.py analyze \
+  --results-root results/inspect/evaluation \
+  --output-dir results/final5_plots
 ```
 
-Canonical outputs are now:
-
-- `.../summary.json` (lightweight metrics + metadata)
-- `.../rows/` (HuggingFace Arrow row store)
-
-7. Plot required Final5 pairwise comparisons:
+Export benchmarker items from the derived augmented cache:
 
 ```bash
-uv run python scripts/08_analyze.py plot --results-root results --output-dir results/final5_plots
+uv run python main.py export \
+  --generator-run-name gen_openai \
+  --generator-model gpt-5.2-2025-12-11 \
+  --processed-dataset datasets/processed/unified_processed_v2
 ```
 
-## Sanity Counts
+## Execution Modes
 
-- Ideal generation target rows (if every dataset has 1000 rows): `3 * 4 * 3 * 1000 = 36,000`
-- Ideal eval target rows (if every dataset has 1000 rows): `3 * 5 * 3 * 2 * 1000 * 3 = 270,000`
+API models:
+- Pass a provider-qualified Inspect model id directly, such as `openai/gpt-5.2-2025-12-11`.
+- Or use the short aliases in [`utils/modeling.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/utils/modeling.py).
 
-Actual totals can be lower when a source dataset has fewer than `limit` rows after filtering/validation
-(for example, GPQA may be `<1000` rows in some runs).
+Local models:
+- Use the built-in aliases such as `Qwen/Qwen3-4B-Instruct-2507`, which resolve to `vllm/...`.
+- Or point at an OpenAI-compatible local endpoint with `--backend openai --model-base-url ...`.
 
-## Live API Smoke
+Sharded cluster runs:
+- Every `generate` and `evaluate` command accepts `--shard-count`, `--shard-index`, and `--shard-strategy`.
+- Stable sample ids keep shard membership deterministic for resume and retry.
+- Thin launch helpers live in [`jobs/run_generate_shard.sh`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/jobs/run_generate_shard.sh), [`jobs/run_evaluate_shard.sh`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/jobs/run_evaluate_shard.sh), [`jobs/generate_array.sbatch`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/jobs/generate_array.sbatch), and [`jobs/evaluate_array.sbatch`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/jobs/evaluate_array.sbatch).
 
-Runs 1-2 rows per split through all 3 generator APIs:
+## Canonical Artifacts
 
-```bash
-uv run python scripts/smoke_test.py generate --limit 2 --dry-run
-```
+- Generation logs: `results/inspect/generation/<run>/<model>/`
+- Evaluation logs: `results/inspect/evaluation/<run>/<generator_run>/<generator_model>/<eval_model>/`
+- Derived augmented dataset cache: `datasets/augmented/<run>/<model>/`
 
-## Remote Eval Sharding Smoke
+Analysis reads Inspect logs directly. There is no merge stage in the canonical workflow anymore.
 
-Runs a minimum-question end-to-end Final5 eval sharding test on one GPU host
-with all eval models and all 5 settings.
+## Repo Layout
 
-```bash
-scripts/run_final5_remote_smoke.sh
-```
+- [`main.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/main.py): primary CLI
+- [`tasks/`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/tasks): Inspect task factories
+- [`solvers/`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/solvers): prompt and parsing logic
+- [`scorers/`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/scorers): Final5 scoring and metadata emission
+- [`data/`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/data): processed dataset loading, cache materialization, export
+- [`utils/`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/utils): constants, model aliasing, sharding, parsing, log helpers
+- [`prompts/`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/prompts): plain-text prompt templates
 
-Useful overrides:
+## Compatibility Scripts
 
-```bash
-scripts/run_final5_remote_smoke.sh \
-  --gen-full-ds datasets/augmented/final5_full_<timestamp>_<generator> \
-  --target-rows 3 \
-  --save-interval 2 \
-  --max-tokens 32
-```
+These still exist, but they now just forward into the Inspect-first core:
 
-## Remote Full Eval Runbook (clip + A6000)
+- [`scripts/02_generate_distractors.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/scripts/02_generate_distractors.py)
+- [`scripts/03_regenerate_experiments.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/scripts/03_regenerate_experiments.py)
+- [`scripts/04_eval_matrix.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/scripts/04_eval_matrix.py)
+- [`scripts/07_export_benchmarker_items.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/scripts/07_export_benchmarker_items.py)
+- [`scripts/08_analyze.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/scripts/08_analyze.py)
 
-Assumes:
+## Additional Docs
 
-- repo path: `/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa`
-- venv path: `/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/activate`
-- model cache: `/fs/nexus-scratch/adesai10/hub`
-- one generated Final5 dataset as eval input
-
-1. Environment setup:
-
-```bash
-cd /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa
-source /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/activate
-set -eo pipefail
-
-export HF_HOME=/fs/nexus-scratch/adesai10/hub
-export MODEL_CACHE_DIR=/fs/nexus-scratch/adesai10/hub
-```
-
-2. Create regeneration manifest and paths:
-
-```bash
-GEN_FULL_DS="/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/augmented/final5_full_20260225_004316_gpt-5.2-2025-12-11"
-GENERATOR_LABEL="$(basename "$GEN_FULL_DS" | sed -E 's/^final5_full_[0-9]{8}_[0-9]{6}_//')"
-TS="$(date +%Y%m%d_%H%M%S)"
-
-REGEN_MANIFEST="datasets/augmented/final5_regeneration_manifest_${GENERATOR_LABEL}_${TS}.json"
-BUNDLE="jobs/generated/final5_full_${GENERATOR_LABEL}_${TS}"
-OUT="results/final5_full_${GENERATOR_LABEL}_${TS}"
-
-cat > "$REGEN_MANIFEST" <<JSON
-{
-  "manifest_version": 1,
-  "schema_version": "final5_v1",
-  "generators": [
-    {"model": "${GENERATOR_LABEL}", "dataset_path": "${GEN_FULL_DS}", "returncode": 0}
-  ]
-}
-JSON
-```
-
-3. Build bundle:
-
-```bash
-python scripts/05_build_eval_slurm_bundle.py \
-  --manifest "$REGEN_MANIFEST" \
-  --output-dir "$BUNDLE" \
-  --output-base "$OUT" \
-  --target-rows-per-subsplit 500 \
-  --save-interval 50 \
-  --max-tokens 100
-```
-
-4. Preflight checks:
-
-```bash
-jq '.total_sbatch_files, .total_work_units, .dataset_part_counts' "$BUNDLE/bundle_manifest.json"
-for f in "$BUNDLE"/final5_pair__*.sbatch; do sbatch --test-only "$f"; done
-```
-
-5. Submit full evaluation:
-
-```bash
-bash "$BUNDLE/submit_all.sh" | tee "$BUNDLE/submit.log"
-awk '/Submitted batch job/{print $4}' "$BUNDLE/submit.log" > "$BUNDLE/job_ids.txt"
-cat "$BUNDLE/job_ids.txt"
-```
-
-6. Monitor:
-
-```bash
-JOB_CSV="$(paste -sd, "$BUNDLE/job_ids.txt")"
-while squeue -h -j "$JOB_CSV" | grep -q .; do
-  date
-  squeue -j "$JOB_CSV" -o "%.18i %.9P %.30j %.8T %.10M %.20R"
-  sleep 60
-done
-
-while read -r j; do
-  sacct -j "$j" --format=JobID,State,ExitCode,Elapsed,NodeList -n -P
-done < "$BUNDLE/job_ids.txt"
-```
-
-7. Merge shards:
-
-```bash
-python scripts/06_merge_eval_subshards.py \
-  --bundle-manifest "$BUNDLE/bundle_manifest.json" \
-  --strict | tee "$BUNDLE/merge.log"
-```
-
-8. Validate summary counts (for 1 generator x 3 eval models, with part counts `2/2/1`):
-
-```bash
-CANONICAL=$(find "$OUT" -path '*/summary.json' | grep -E '/(human_from_scratch|model_from_scratch|augment_human|augment_model|augment_ablation)/summary.json$' | wc -l)
-PARTIAL=$(find "$OUT" -path '*/_partials/entry_shard_*_of_*/summary.json' | wc -l)
-echo "canonical=$CANONICAL expected=90"
-echo "partial=$PARTIAL expected=150"
-```
-
-If your `dataset_part_counts` differ, recompute expected partial count from the bundle manifest.
-
-9. Generate visuals:
-
-```bash
-python scripts/08_analyze.py plot \
-  --results-root "$OUT" \
-  --output-dir "$OUT/final5_plots"
-
-find "$OUT/final5_plots" -maxdepth 2 -type f | sort
-```
-
-## Documentation
-
-- `docs/pipeline.md` — End-to-end pipeline guide with quick start
-- `docs/models.md` — Model registry, providers, reasoning policies
-- `docs/evaluation.md` — Evaluation settings, modes, result paths
-- `docs/sharding_and_recombination.md` — Sharding model and recombination
-- `jobs/README_local_eval.md` — Local eval on SLURM
+- [`docs/pipeline.md`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/docs/pipeline.md)
+- [`docs/models.md`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/docs/models.md)
+- [`docs/sharding_and_recombination.md`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/docs/sharding_and_recombination.md)

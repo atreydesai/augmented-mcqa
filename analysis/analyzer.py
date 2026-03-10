@@ -1,26 +1,35 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 from collections import defaultdict
 
+from utils.logs import read_log
+
 
 def load_results(results_path: Path) -> Dict[str, Any]:
-    with open(results_path, 'r') as f:
-        payload = json.load(f)
+    if results_path.suffix != ".eval":
+        raise ValueError(f"Expected Inspect `.eval` log, got {results_path}")
 
-    if isinstance(payload, dict) and "results" not in payload and results_path.name == "summary.json":
-        rows_path = results_path.parent / "rows"
-        if rows_path.exists():
-            try:
-                from datasets import load_from_disk
-                rows_ds = load_from_disk(str(rows_path))
-                payload = dict(payload)
-                payload["results"] = [dict(row) for row in rows_ds]
-            except Exception:
-                pass
-    return payload
+    log = read_log(results_path)
+    results: list[dict[str, Any]] = []
+    for sample in log.samples:
+        if not sample.scores:
+            continue
+        score = next(iter(sample.scores.values()))
+        metadata = dict(getattr(score, "metadata", {}) or {})
+        results.append(
+            {
+                "question_idx": metadata.get("question_idx"),
+                "is_correct": bool(getattr(score, "value", False)),
+                "prediction_type": metadata.get("prediction_type", "?"),
+                "category": metadata.get("category", ""),
+            }
+        )
+    return {
+        "config": getattr(log.eval, "metadata", {}) or {},
+        "results": results,
+    }
 
 
 def compute_behavioral_signature(results: List[Dict[str, Any]]) -> Dict[str, Any]:

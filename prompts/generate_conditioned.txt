@@ -1,0 +1,21 @@
+You are extending an existing multiple-choice question with additional plausible but incorrect distractors.
+
+Question:
+{question}
+
+Existing options:
+{existing_options_block}
+
+Correct answer:
+A. {gold_answer}
+
+Return exactly {count} new distractors as plain text.
+Use exactly these labels and this format:
+{labels}
+
+Rules:
+- One distractor per line.
+- Each line must start with the required label followed by a period.
+- Do not repeat any existing option.
+- Do not include the correct answer.
+- Do not include any explanation or extra text.

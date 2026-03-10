@@ -1,13 +1,9 @@
 #!/usr/bin/env python3
-"""Diagnostic tools for debugging generation issues.
+"""Diagnostic tools for Inspect-first generation runs.
 
 Subcommands:
-    failures  - Report rows with missing required distractor columns
-    trace     - Run structured-generation trace and save per-step JSON
-
-Usage:
-    python scripts/diagnose.py failures --dataset-path datasets/augmented/...
-    python scripts/diagnose.py trace --model gemini-3.1-pro-preview --dataset-path datasets/processed/unified_processed_v2
+    failures  - Report rows in an augmented dataset cache with missing Final5 columns
+    trace     - Dump generation traces from Inspect `.eval` logs
 """
 
 from __future__ import annotations
@@ -15,17 +11,11 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-import time
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-
-# ---------------------------------------------------------------------------
-# failures subcommand (from former diagnose_failures.py)
-# ---------------------------------------------------------------------------
 
 REQUIRED_COLUMNS = [
     ("model_from_scratch", 3),
@@ -35,341 +25,151 @@ REQUIRED_COLUMNS = [
 ]
 
 
-def cmd_failures(args: argparse.Namespace) -> int:
-    from datasets import load_from_disk
+def _load_dataset_dict(path: str):
+    from data.final5_store import _load_dataset_dict
 
-    ds = load_from_disk(str(Path(args.dataset_path)))
+    return _load_dataset_dict(Path(path))
+
+
+def cmd_failures(args: argparse.Namespace) -> int:
+    ds = _load_dataset_dict(args.dataset_path)
 
     total_failed = 0
     for split in ds.keys():
         failed = []
         for i, row in enumerate(ds[split]):
-            missing = [k for k, n in REQUIRED_COLUMNS if len(row.get(k) or []) < n]
+            missing = [key for key, count in REQUIRED_COLUMNS if len(row.get(key) or []) < count]
             if missing:
-                failed.append({
-                    "idx": i,
-                    "id": row.get("id"),
-                    "question_id": row.get("question_id"),
-                    "missing": missing,
-                    "question": row.get("question", "")[:140],
-                })
+                failed.append(
+                    {
+                        "idx": i,
+                        "id": row.get("id"),
+                        "question_id": row.get("question_id"),
+                        "missing": missing,
+                        "question": str(row.get("question", ""))[:140],
+                    }
+                )
 
         print(f"\n{split}: failed_rows={len(failed)}")
-        for r in failed:
-            print(r)
+        for row in failed:
+            print(json.dumps(row, ensure_ascii=True))
         total_failed += len(failed)
 
     return 1 if total_failed > 0 else 0
 
 
-# ---------------------------------------------------------------------------
-# trace subcommand (from former diagnose_structured_generation_trace.py)
-# ---------------------------------------------------------------------------
+def _generation_trace_records(
+    *,
+    log_dir: str,
+    sample_id: str | None,
+    only_errors: bool,
+    limit: int | None,
+) -> list[dict[str, Any]]:
+    from utils.logs import iter_eval_logs
 
-DEFAULT_SPLITS = ["arc_challenge", "mmlu_pro", "gpqa"]
+    records: list[dict[str, Any]] = []
+    for log_path, log in iter_eval_logs(log_dir, kind="generation"):
+        eval_metadata = dict(getattr(log.eval, "metadata", {}) or {})
+        for sample in getattr(log, "samples", []):
+            if not sample.scores:
+                continue
+            score = next(iter(sample.scores.values()))
+            metadata = dict(getattr(score, "metadata", {}) or {})
+            if not metadata:
+                continue
+            current_sample_id = str(getattr(sample, "id", ""))
+            status = str(metadata.get("status", ""))
+            if sample_id and current_sample_id != sample_id:
+                continue
+            if only_errors and status != "error":
+                continue
 
-
-def _now_iso() -> str:
-    return datetime.now(timezone.utc).isoformat(timespec="seconds")
-
-
-def _safe_text(value: Any) -> str:
-    if value is None:
-        return ""
-    return str(value).strip()
-
-
-def _default_output_path(model: str) -> Path:
-    ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
-    model_safe = model.replace("/", "_")
-    out_dir = Path("results/live_smoke_logs") / ts
-    out_dir.mkdir(parents=True, exist_ok=True)
-    return out_dir / f"{model_safe}_step_trace.json"
-
-
-def _pick_rows(ds, splits: list[str], per_split: int) -> list[dict[str, Any]]:
-    selected: list[dict[str, Any]] = []
-    for split in splits:
-        if split not in ds:
-            continue
-        split_ds = ds[split]
-        take = min(per_split, len(split_ds))
-        for idx in range(take):
-            row = split_ds[idx]
-            answer = _safe_text(row.get("answer"))
-            if not answer:
-                choices_answer = row.get("choices_answer") or []
-                answer = _safe_text(choices_answer[0]) if choices_answer else ""
-
-            human = [_safe_text(x) for x in (row.get("choices_human") or []) if _safe_text(x)]
-            selected.append(
+            records.append(
                 {
-                    "split": split,
-                    "entry_index": idx,
-                    "question": _safe_text(row.get("question")),
-                    "answer": answer,
-                    "human3": human[:3],
+                    "log_path": str(log_path),
+                    "run_name": eval_metadata.get("run_name"),
+                    "generation_model": eval_metadata.get("generation_model"),
+                    "sample_id": current_sample_id,
+                    "status": status,
+                    "error": metadata.get("error"),
+                    "dataset_type": metadata.get("dataset_type"),
+                    "row_index": metadata.get("row_index"),
+                    "question": metadata.get("question"),
+                    "answer": metadata.get("answer"),
+                    "category": metadata.get("category"),
+                    "traces": metadata.get("traces", {}),
+                    "human_from_scratch": metadata.get("human_from_scratch", []),
+                    "model_from_scratch": metadata.get("model_from_scratch", []),
+                    "augment_human": metadata.get("augment_human", []),
+                    "augment_model": metadata.get("augment_model", []),
+                    "augment_ablation": metadata.get("augment_ablation", []),
                 }
             )
-    return selected
-
-
-def _client_policy_kwargs(model: str, provider: str) -> tuple[dict[str, Any], dict[str, Any]]:
-    client_kwargs: dict[str, Any] = {}
-    request_common_kwargs: dict[str, Any] = {}
-
-    if model == "gpt-5.2-2025-12-11":
-        client_kwargs["reasoning_effort"] = "medium"
-    if model == "claude-opus-4-6" or provider == "anthropic":
-        request_common_kwargs["thinking"] = {"type": "adaptive"}
-
-    return client_kwargs, request_common_kwargs
-
-
-def _run_step(
-    *,
-    client,
-    provider: str,
-    prompt: str,
-    context: str,
-    expected_count: int,
-    start_letter: str,
-    max_tokens: int,
-    max_attempts: int,
-    request_common_kwargs: dict[str, Any],
-) -> dict[str, Any]:
-    from data.augmentor import _structured_request_kwargs, parse_generated_distractors
-
-    step: dict[str, Any] = {
-        "context": context,
-        "expected_count": expected_count,
-        "start_letter": start_letter,
-        "success": False,
-        "parsed": None,
-        "attempts": [],
-    }
-
-    structured_kwargs = _structured_request_kwargs(provider, expected_count)
-
-    for attempt in range(1, max_attempts + 1):
-        req_kwargs = dict(request_common_kwargs)
-        req_kwargs.update(structured_kwargs)
-
-        attempt_rec: dict[str, Any] = {
-            "attempt": attempt,
-            "started_utc": _now_iso(),
-            "prompt": prompt,
-            "request_kwargs": req_kwargs,
-        }
-
-        started = time.time()
-        try:
-            out = client.generate(
-                prompt=prompt,
-                max_tokens=max_tokens,
-                **req_kwargs,
-            )
-            raw_output = _safe_text(out.text)
-            attempt_rec["elapsed_s"] = round(time.time() - started, 3)
-            attempt_rec["finish_reason"] = out.finish_reason
-            attempt_rec["usage"] = out.usage
-            attempt_rec["raw_output"] = raw_output
-
-            try:
-                parsed = parse_generated_distractors(
-                    raw_output,
-                    expected_count=expected_count,
-                    start_letter=start_letter,
-                )
-                attempt_rec["parse_ok"] = True
-                attempt_rec["parse_error"] = None
-                attempt_rec["parsed"] = parsed
-                step["success"] = True
-                step["parsed"] = parsed
-                step["attempts"].append(attempt_rec)
-                break
-            except Exception as parse_exc:  # noqa: BLE001
-                attempt_rec["parse_ok"] = False
-                attempt_rec["parse_error"] = f"{type(parse_exc).__name__}: {parse_exc}"
-                attempt_rec["parsed"] = None
-                step["attempts"].append(attempt_rec)
-        except Exception as req_exc:  # noqa: BLE001
-            attempt_rec["elapsed_s"] = round(time.time() - started, 3)
-            attempt_rec["request_error"] = f"{type(req_exc).__name__}: {req_exc}"
-            attempt_rec["raw_output"] = ""
-            step["attempts"].append(attempt_rec)
-
-    return step
+            if limit is not None and len(records) >= limit:
+                return records
+    return records
 
 
 def cmd_trace(args: argparse.Namespace) -> int:
-    from datasets import DatasetDict, load_from_disk
+    records = _generation_trace_records(
+        log_dir=args.log_dir,
+        sample_id=args.sample_id,
+        only_errors=args.only_errors,
+        limit=args.limit,
+    )
+    if not records:
+        print("No generation traces matched the requested filters.")
+        return 1
 
-    from data.augmentor import _build_conditioned_prompt, _build_q_a_prompt
-    from models import get_client, resolve_model
-
-    ds = load_from_disk(str(Path(args.dataset_path)))
-    if not isinstance(ds, DatasetDict):
-        raise TypeError(f"Expected DatasetDict at {args.dataset_path}")
-
-    rows = _pick_rows(ds, splits=args.splits, per_split=args.per_split)
-    if not rows:
-        raise RuntimeError("No rows selected for diagnostics")
-
-    provider, _, _ = resolve_model(args.model)
-    provider = provider.lower().strip()
-    client_kwargs, request_common_kwargs = _client_policy_kwargs(args.model, provider)
-    client = get_client(args.model, **client_kwargs)
-
-    trace: dict[str, Any] = {
-        "ts_utc": _now_iso(),
-        "model": args.model,
-        "provider": provider,
-        "dataset_path": args.dataset_path,
-        "splits": args.splits,
-        "per_split": args.per_split,
-        "max_tokens": args.max_tokens,
-        "max_attempts": args.max_attempts,
-        "question_count": len(rows),
-        "questions": [],
-    }
-
-    for row in rows:
-        question = row["question"]
-        answer = row["answer"]
-        human3 = row["human3"]
-
-        item: dict[str, Any] = {
-            "split": row["split"],
-            "entry_index": row["entry_index"],
-            "question": question,
-            "answer": answer,
-            "human3": human3,
-            "steps": [],
-        }
-
-        prompt_b = _build_q_a_prompt(question, answer, count=3, start_letter="B")
-        step_b = _run_step(
-            client=client,
-            provider=provider,
-            prompt=prompt_b,
-            context="model_from_scratch",
-            expected_count=3,
-            start_letter="B",
-            max_tokens=args.max_tokens,
-            max_attempts=args.max_attempts,
-            request_common_kwargs=request_common_kwargs,
-        )
-        item["steps"].append(step_b)
-
-        prompt_c = _build_conditioned_prompt(question, answer, human3, count=6)
-        step_c = _run_step(
-            client=client,
-            provider=provider,
-            prompt=prompt_c,
-            context="augment_human",
-            expected_count=6,
-            start_letter="E",
-            max_tokens=args.max_tokens,
-            max_attempts=args.max_attempts,
-            request_common_kwargs=request_common_kwargs,
-        )
-        item["steps"].append(step_c)
-
-        model3 = step_b.get("parsed") if isinstance(step_b.get("parsed"), list) else []
-        if len(model3) == 3:
-            prompt_d = _build_conditioned_prompt(question, answer, model3, count=6)
-            step_d = _run_step(
-                client=client,
-                provider=provider,
-                prompt=prompt_d,
-                context="augment_model_delta_6m",
-                expected_count=6,
-                start_letter="E",
-                max_tokens=args.max_tokens,
-                max_attempts=args.max_attempts,
-                request_common_kwargs=request_common_kwargs,
+    if args.summary:
+        for record in records:
+            print(
+                json.dumps(
+                    {
+                        "sample_id": record["sample_id"],
+                        "status": record["status"],
+                        "dataset_type": record["dataset_type"],
+                        "error": record["error"],
+                        "log_path": record["log_path"],
+                    },
+                    ensure_ascii=True,
+                )
             )
-        else:
-            step_d = {
-                "context": "augment_model_delta_6m",
-                "expected_count": 6,
-                "start_letter": "E",
-                "success": False,
-                "parsed": None,
-                "attempts": [],
-                "skipped": True,
-                "skip_reason": "model_from_scratch did not produce exactly 3 parsed distractors",
-            }
-        item["steps"].append(step_d)
+        return 0
 
-        prompt_e = _build_q_a_prompt(question, answer, count=9, start_letter="B")
-        step_e = _run_step(
-            client=client,
-            provider=provider,
-            prompt=prompt_e,
-            context="augment_ablation",
-            expected_count=9,
-            start_letter="B",
-            max_tokens=args.max_tokens,
-            max_attempts=args.max_attempts,
-            request_common_kwargs=request_common_kwargs,
-        )
-        item["steps"].append(step_e)
-
-        trace["questions"].append(item)
-
-    out_path = Path(args.output) if args.output else _default_output_path(args.model)
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(json.dumps(trace, indent=2), encoding="utf-8")
-
-    print(str(out_path))
-    for q in trace["questions"]:
-        statuses = ", ".join(
-            [f"{s['context']}={'ok' if s.get('success') else 'fail'}" for s in q["steps"]]
-        )
-        print(f"{q['split']} {statuses}")
-
+    payload = json.dumps(records, indent=2, ensure_ascii=True)
+    if args.output:
+        output_path = Path(args.output)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(payload + "\n", encoding="utf-8")
+        print(output_path)
+    else:
+        print(payload)
     return 0
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(
-        description="Diagnostic tools for debugging generation issues"
-    )
+    parser = argparse.ArgumentParser(description="Inspect-first Final5 diagnostics")
     subparsers = parser.add_subparsers(dest="command")
 
-    # failures subcommand
-    fail = subparsers.add_parser("failures", help="Report rows with missing distractor columns")
-    fail.add_argument(
-        "--dataset-path",
-        type=str,
-        required=True,
-        help="Path to augmented dataset on disk",
-    )
-    fail.set_defaults(handler=cmd_failures)
+    failures = subparsers.add_parser("failures", help="Report rows missing Final5 distractor columns")
+    failures.add_argument("--dataset-path", required=True, help="Augmented dataset cache path")
+    failures.set_defaults(handler=cmd_failures)
 
-    # trace subcommand
-    tr = subparsers.add_parser("trace", help="Run structured-generation trace and save per-step JSON")
-    tr.add_argument("--model", type=str, default="gemini-3.1-pro-preview")
-    tr.add_argument(
-        "--dataset-path",
-        type=str,
-        default="datasets/processed/unified_processed_v2",
-    )
-    tr.add_argument("--splits", nargs="+", default=DEFAULT_SPLITS)
-    tr.add_argument("--per-split", type=int, default=1)
-    tr.add_argument("--max-tokens", type=int, default=2048)
-    tr.add_argument("--max-attempts", type=int, default=2)
-    tr.add_argument("--output", type=str, default=None)
-    tr.set_defaults(handler=cmd_trace)
+    trace = subparsers.add_parser("trace", help="Dump generation traces from Inspect `.eval` logs")
+    trace.add_argument("--log-dir", required=True, help="Generation log directory or `.eval` file")
+    trace.add_argument("--sample-id", default=None, help="Optional sample id filter")
+    trace.add_argument("--only-errors", action="store_true", help="Only include failed generation samples")
+    trace.add_argument("--limit", type=int, default=None, help="Maximum number of records to emit")
+    trace.add_argument("--summary", action="store_true", help="Print compact JSON lines instead of full traces")
+    trace.add_argument("--output", default=None, help="Optional path for the emitted JSON payload")
+    trace.set_defaults(handler=cmd_trace)
 
     args = parser.parse_args()
     if not args.command:
         parser.print_help()
         return 1
-
-    return args.handler(args)
+    return int(args.handler(args))
 
 
 if __name__ == "__main__":

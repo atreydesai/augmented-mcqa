@@ -10,7 +10,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from data import export_benchmarker_items
+import main as app_main
 
 
 def parse_args() -> argparse.Namespace:
@@ -32,19 +32,7 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
-    summary_path = export_benchmarker_items(args.input, args.output_root)
-    summary = json.loads(summary_path.read_text(encoding="utf-8"))
-
-    print(f"Exported benchmarker items to {summary['output_directory']}")
-    for split_name in summary["splits"]:
-        print(f"{split_name}:")
-        for variant_name, meta in summary["files"][split_name].items():
-            print(
-                f"  {variant_name}: rows_written={meta['rows_written']} "
-                f"skipped={meta['skipped_row_count']}"
-            )
-
-    return 0
+    return app_main.main(["export", "--input", args.input, "--output-root", args.output_root])
 
 
 if __name__ == "__main__":

@@ -1,0 +1,131 @@
+[
+  {
+    "question": "What is the capital of France?",
+    "answer": "Paris",
+    "choices_answer": [
+      "Paris"
+    ],
+    "choices_human": [
+      "Lyon",
+      "Marseille",
+      "Nice"
+    ],
+    "human_from_scratch": [
+      "Lyon",
+      "Marseille",
+      "Nice"
+    ],
+    "human_from_scratch_full_question": "Question: What is the capital of France?\nAnswer: Paris",
+    "human_from_scratch_model_input": "passthrough: choices_human[:3]",
+    "human_from_scratch_model_output": "",
+    "human_from_scratch_options_randomized": [
+      "Nice",
+      "Paris",
+      "Marseille",
+      "Lyon"
+    ],
+    "human_from_scratch_correct_answer_letter": "B",
+    "model_from_scratch": [
+      "distractor_1",
+      "distractor_2",
+      "distractor_3"
+    ],
+    "model_from_scratch_full_question": "Question: What is the capital of France?\nAnswer: Paris",
+    "model_from_scratch_model_input": "<task>\nI have a multiple-choice question with a single correct answer, and I need 3 additional plausible but incorrect options.\n\nQuestion: What is the capital of France?\nCorrect answer:\nA: Paris\n</task>\n\n<format>\nGenerate your response as a JSON object with exactly 3 keys:\n{\n  \"distractor 1\": \"...\",\n  \"distractor 2\": \"...\",\n  \"distractor 3\": \"...\"\n}\nDo not generate anything else\n</format>",
+    "model_from_scratch_model_output": "{\"distractor 1\": \"distractor_1\", \"distractor 2\": \"distractor_2\", \"distractor 3\": \"distractor_3\"}",
+    "model_from_scratch_options_randomized": [
+      "distractor_1",
+      "distractor_2",
+      "distractor_3",
+      "Paris"
+    ],
+    "model_from_scratch_correct_answer_letter": "D",
+    "augment_human": [
+      "distractor_1",
+      "distractor_2",
+      "distractor_3",
+      "distractor_4",
+      "distractor_5",
+      "distractor_6"
+    ],
+    "augment_human_full_question": "Question: What is the capital of France?\nAnswer: Paris",
+    "augment_human_model_input": "<task>\nI have a multiple-choice question with existing options, one of which is correct, and I need 6 additional plausible but incorrect options.\nThis means there will be 10 options in the question. 4 options are given and 6 additional options are to be generated.\nAfter generation, there must be 9 total distractors and 1 correct option.\n\nQuestion: What is the capital of France?\nExisting options:\nA: Paris\nB: Lyon\nC: Marseille\nD: Nice\nCorrect answer:\nA: Paris\n</task>\n\n<format>\nGenerate your response as a JSON object with exactly 6 keys:\n{\n  \"distractor 1\": \"...\",\n  \"distractor 2\": \"...\",\n  \"distractor 3\": \"...\",\n  \"distractor 4\": \"...\",\n  \"distractor 5\": \"...\",\n  \"distractor 6\": \"...\"\n}\nDo not generate anything else\n</format>",
+    "augment_human_model_output": "{\"distractor 1\": \"distractor_1\", \"distractor 2\": \"distractor_2\", \"distractor 3\": \"distractor_3\", \"distractor 4\": \"distractor_4\", \"distractor 5\": \"distractor_5\", \"distractor 6\": \"distractor_6\"}",
+    "augment_human_options_randomized": [
+      "Lyon",
+      "distractor_2",
+      "distractor_3",
+      "Paris",
+      "distractor_6",
+      "distractor_1",
+      "distractor_4",
+      "Marseille",
+      "distractor_5",
+      "Nice"
+    ],
+    "augment_human_correct_answer_letter": "D",
+    "augment_model": [
+      "distractor_1",
+      "distractor_2",
+      "distractor_3",
+      "distractor_1",
+      "distractor_2",
+      "distractor_3",
+      "distractor_4",
+      "distractor_5",
+      "distractor_6"
+    ],
+    "augment_model_full_question": "Question: What is the capital of France?\nAnswer: Paris",
+    "augment_model_model_input": "<task>\nI have a multiple-choice question with existing options, one of which is correct, and I need 6 additional plausible but incorrect options.\nThis means there will be 10 options in the question. 4 options are given and 6 additional options are to be generated.\nAfter generation, there must be 9 total distractors and 1 correct option.\n\nQuestion: What is the capital of France?\nExisting options:\nA: Paris\nB: distractor_1\nC: distractor_2\nD: distractor_3\nCorrect answer:\nA: Paris\n</task>\n\n<format>\nGenerate your response as a JSON object with exactly 6 keys:\n{\n  \"distractor 1\": \"...\",\n  \"distractor 2\": \"...\",\n  \"distractor 3\": \"...\",\n  \"distractor 4\": \"...\",\n  \"distractor 5\": \"...\",\n  \"distractor 6\": \"...\"\n}\nDo not generate anything else\n</format>",
+    "augment_model_model_output": "{\"distractor 1\": \"distractor_1\", \"distractor 2\": \"distractor_2\", \"distractor 3\": \"distractor_3\", \"distractor 4\": \"distractor_4\", \"distractor 5\": \"distractor_5\", \"distractor 6\": \"distractor_6\"}",
+    "augment_model_options_randomized": [
+      "distractor_5",
+      "distractor_2",
+      "Paris",
+      "distractor_4",
+      "distractor_3",
+      "distractor_6",
+      "distractor_2",
+      "distractor_1",
+      "distractor_1",
+      "distractor_3"
+    ],
+    "augment_model_correct_answer_letter": "C",
+    "augment_ablation": [
+      "distractor_1",
+      "distractor_2",
+      "distractor_3",
+      "distractor_4",
+      "distractor_5",
+      "distractor_6",
+      "distractor_7",
+      "distractor_8",
+      "distractor_9"
+    ],
+    "augment_ablation_full_question": "Question: What is the capital of France?\nAnswer: Paris",
+    "augment_ablation_model_input": "<task>\nI have a multiple-choice question with a single correct answer, and I need 9 additional plausible but incorrect options.\n\nQuestion: What is the capital of France?\nCorrect answer:\nA: Paris\n</task>\n\n<format>\nGenerate your response as a JSON object with exactly 9 keys:\n{\n  \"distractor 1\": \"...\",\n  \"distractor 2\": \"...\",\n  \"distractor 3\": \"...\",\n  \"distractor 4\": \"...\",\n  \"distractor 5\": \"...\",\n  \"distractor 6\": \"...\",\n  \"distractor 7\": \"...\",\n  \"distractor 8\": \"...\",\n  \"distractor 9\": \"...\"\n}\nDo not generate anything else\n</format>",
+    "augment_ablation_model_output": "{\"distractor 1\": \"distractor_1\", \"distractor 2\": \"distractor_2\", \"distractor 3\": \"distractor_3\", \"distractor 4\": \"distractor_4\", \"distractor 5\": \"distractor_5\", \"distractor 6\": \"distractor_6\", \"distractor 7\": \"distractor_7\", \"distractor 8\": \"distractor_8\", \"distractor 9\": \"distractor_9\"}",
+    "augment_ablation_options_randomized": [
+      "distractor_2",
+      "distractor_3",
+      "distractor_1",
+      "Paris",
+      "distractor_8",
+      "distractor_7",
+      "distractor_6",
+      "distractor_5",
+      "distractor_4",
+      "distractor_9"
+    ],
+    "augment_ablation_correct_answer_letter": "D",
+    "augment_model_delta_6m": [
+      "distractor_1",
+      "distractor_2",
+      "distractor_3",
+      "distractor_4",
+      "distractor_5",
+      "distractor_6"
+    ],
+    "schema_version": "final5_v1"
+  }
+]

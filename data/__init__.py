@@ -24,12 +24,6 @@ _SYMBOL_TO_MODULE = {
     "clean_options": "mmlu_pro_processor",
     "verify_sorting": "mmlu_pro_processor",
     "WHITESPACE_BUG_CATEGORIES": "mmlu_pro_processor",
-    # Augmentor
-    "AugmentorMode": "augmentor",
-    "GenerationConfig": "augmentor",
-    "augment_dataset": "augmentor",
-    "parse_generated_distractors": "augmentor",
-    "get_output_column": "augmentor",
     # ARC Processor
     "load_arc_dataset": "arc_processor",
     "process_arc_for_experiments": "arc_processor",
@@ -42,6 +36,11 @@ _SYMBOL_TO_MODULE = {
     "export_benchmarker_items": "benchmarker_export",
     # Hub Utils
     "push_dataset_to_hub": "hub_utils",
+    # Inspect-native Final5 store
+    "build_generation_dataset": "final5_store",
+    "build_evaluation_dataset": "final5_store",
+    "ensure_augmented_dataset": "final5_store",
+    "materialize_augmented_dataset": "final5_store",
 }
 
 __all__ = list(_SYMBOL_TO_MODULE.keys())

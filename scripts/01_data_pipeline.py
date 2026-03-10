@@ -32,7 +32,7 @@ from data import (
     process_gpqa_for_experiments,
     process_mmlu_pro as process_mmlu_pro_func,
 )
-from data.augmentor import STRATEGY_IDS
+from utils.constants import FINAL5_SETTINGS
 
 from datasets import Dataset, DatasetDict, concatenate_datasets
 
@@ -73,7 +73,7 @@ def _init_strategy_columns(ds: Dataset) -> Dataset:
         ds = _add_or_replace_column(ds, col, [[] for _ in range(n)])
 
     trace_cols = []
-    for strategy in STRATEGY_IDS:
+    for strategy in FINAL5_SETTINGS:
         trace_cols.extend(
             [
                 f"{strategy}_full_question",

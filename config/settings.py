@@ -57,6 +57,7 @@ AUGMENTED_DATASETS_DIR = DATASETS_DIR / "augmented"
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "")
+TOGETHER_API_KEY = os.getenv("TOGETHER_API_KEY", "")
 HF_TOKEN = os.getenv("HF_TOKEN", "")
 
 # HuggingFace settings
@@ -101,45 +102,6 @@ if DEFAULT_LIMIT and DEFAULT_LIMIT.lower() != "none":
     DEFAULT_LIMIT = int(DEFAULT_LIMIT)
 else:
     DEFAULT_LIMIT = None
-
-
-def _get_int_env(name: str, default: int) -> int:
-    raw = os.getenv(name)
-    if raw is None or raw.strip() == "":
-        return default
-    try:
-        return int(raw)
-    except ValueError as exc:
-        raise ValueError(f"{name} must be an integer, got {raw!r}") from exc
-
-
-def _get_optional_float_env(name: str, default: Optional[float]) -> Optional[float]:
-    raw = os.getenv(name)
-    if raw is None or raw.strip() == "":
-        return default
-    try:
-        return float(raw)
-    except ValueError as exc:
-        raise ValueError(f"{name} must be a float, got {raw!r}") from exc
-
-
-# Evaluation defaults (overridable via environment variables)
-DEFAULT_MATRIX_PRESET: str = os.getenv("AUGMCQA_DEFAULT_MATRIX_PRESET", "final5")
-DEFAULT_EVAL_MODE: str = os.getenv("AUGMCQA_DEFAULT_EVAL_MODE", "behavioral")
-DEFAULT_EVAL_SEED: int = _get_int_env("AUGMCQA_DEFAULT_EVAL_SEED", RANDOM_SEED)
-DEFAULT_EVAL_TEMPERATURE: Optional[float] = _get_optional_float_env("AUGMCQA_DEFAULT_EVAL_TEMPERATURE", None)
-DEFAULT_EVAL_MAX_TOKENS: int = _get_int_env("AUGMCQA_DEFAULT_EVAL_MAX_TOKENS", 100)
-DEFAULT_EVAL_SAVE_INTERVAL: int = _get_int_env("AUGMCQA_DEFAULT_EVAL_SAVE_INTERVAL", 50)
-DEFAULT_EVAL_KEEP_CHECKPOINTS: int = _get_int_env("AUGMCQA_DEFAULT_EVAL_KEEP_CHECKPOINTS", 2)
-DEFAULT_NUM_HUMAN_DISTRACTORS: int = _get_int_env("AUGMCQA_DEFAULT_NUM_HUMAN_DISTRACTORS", 3)
-DEFAULT_NUM_MODEL_DISTRACTORS: int = _get_int_env("AUGMCQA_DEFAULT_NUM_MODEL_DISTRACTORS", 0)
-
-_stop_env = os.getenv("AUGMCQA_DEFAULT_EVAL_STOP", "")
-DEFAULT_EVAL_STOP: List[str] = (
-    [s for s in _stop_env.split("|||") if s]
-    if _stop_env.strip()
-    else ["\n\nQuestion:", "\n\nThe following", "\n\nAnswer:"]
-)
 
 
 # =============================================================================
@@ -350,57 +312,3 @@ DATASET_CONFIGS = {
     ),
 }
 
-
-# =============================================================================
-# Prompt Templates
-# =============================================================================
-
-MCQA_PROMPT_FULL = """The following are multiple choice questions (with answers). Output the answer in the format of "The answer is (X)" at the end.
-
-Question: {question}
-{options}
-Answer: """
-
-MCQA_PROMPT_CHOICES_ONLY = """The following are multiple choice options. Output the answer in the format of "The answer is (X)" at the end.
-
-{options}
-Answer: """
-
-DISTRACTOR_GENERATION_PROMPT_QA_TEMPLATE = """I have a multiple-choice question with the single correct answer, and I need to expand it with additional multiple-choice options. Please generate {count} additional plausible but incorrect options ({target_letters}) to accompany the correct answer choice. Do not output anything except the incorrect options.
-
-Input:
-
-Question: {question}
-
-Answer: A: {gold_answer}
-
-Please generate only the {count} new incorrect options {target_letters}. Output each option on a separate line in the format "<LETTER>: <option>"."""
-
-DISTRACTOR_GENERATION_PROMPT_CONDITIONED_TEMPLATE = """I have a multiple-choice question with existing options, one of which is correct, and I need to expand it with additional multiple-choice options. The existing options are shown below. Please generate {count} additional plausible but incorrect options ({target_letters}) to accompany the original options.
-This means there will be {total_options} options in the question. {num_existing_options} options are given and {count} additional options are to be generated.
-After generation, there must be {total_distractors} total distractors and 1 correct option.
-
-Input:
-Question: {question}
-Existing options:
-{existing_options_block}
-Answer: A: {gold_answer}
-
-Please generate only the {count} new incorrect options {target_letters}. Output each option on a separate line in the format "<LETTER>: <option>"."""
-
-
-# =============================================================================
-# Utility Functions
-# =============================================================================
-
-def get_api_key(provider: str) -> str:
-    """Get API key for a provider."""
-    keys = {
-        "openai": OPENAI_API_KEY,
-        "anthropic": ANTHROPIC_API_KEY,
-        "google": GOOGLE_API_KEY,
-    }
-    key = keys.get(provider, "")
-    if not key:
-        raise ValueError(f"API key not configured for provider: {provider}. Check your .env file.")
-    return key

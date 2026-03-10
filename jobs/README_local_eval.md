@@ -1,55 +1,41 @@
-# Local Eval on SLURM (Final5)
+# Local Eval on SLURM
 
-Primary flow is bundle-based generation of sbatch files, then manual submission.
+The only supported SLURM path is the Inspect-first shard launcher flow.
 
-## 1) Stage local model weights
+## 1. Stage model weights
 
 ```bash
 jobs/install_local_model_weights.sh --dry-run
-# run without --dry-run on remote GPU server
 ```
 
-## 2) Build eval bundle
+## 2. Build per-model sbatch wrappers
 
 ```bash
 uv run python scripts/05_build_eval_slurm_bundle.py \
-  --manifest datasets/augmented/<final5_regeneration_manifest>.json \
-  --target-rows-per-subsplit 500
+  --run-name eval_cluster \
+  --generator-run-name gen_cluster \
+  --generator-model gpt-5.2-2025-12-11 \
+  --output-dir jobs/generated/eval_cluster \
+  --shard-count 8
 ```
 
-Default output:
-
-```text
-jobs/generated/<timestamp>/
-```
-
-Contains:
-
-- per-group `.sbatch` files
-- `submit_all.sh`
-- `bundle_manifest.json`
-- README
-
-## 3) Submit jobs manually
+## 3. Submit
 
 ```bash
-bash jobs/generated/<timestamp>/submit_all.sh
+bash jobs/generated/eval_cluster/submit_all.sh
 ```
 
-## 4) Re-run failed array IDs
+## 4. Re-run failed array ids
 
 ```bash
-sbatch --array=1,4,7 jobs/generated/<timestamp>/<specific>.sbatch
+sbatch --array=1,4,7 jobs/generated/eval_cluster/<one-file>.sbatch
 ```
 
-## 5) Recombine sub-shards
+## 5. Direct launch helpers
 
-```bash
-uv run python scripts/06_merge_eval_subshards.py \
-  --bundle-manifest jobs/generated/<timestamp>/bundle_manifest.json \
-  --strict
-```
+- [`jobs/run_generate_shard.sh`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/jobs/run_generate_shard.sh)
+- [`jobs/run_evaluate_shard.sh`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/jobs/run_evaluate_shard.sh)
+- [`jobs/generate_array.sbatch`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/jobs/generate_array.sbatch)
+- [`jobs/evaluate_array.sbatch`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/jobs/evaluate_array.sbatch)
 
-## Optional legacy wrappers
-
-`jobs/run_local_eval.sh` and `jobs/local_model_eval.sbatch` remain available for direct array submission, but the bundle path above is the recommended Final5 workflow.
+There are no remaining legacy array wrappers in this repo.

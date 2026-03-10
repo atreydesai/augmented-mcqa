@@ -1,159 +1,110 @@
-# Sharding and Recombination Guide (Final5 V2)
+# Sharding and Aggregation Guide
 
-Final5 V2 uses explicit per-pair work units and Arrow-native outputs.
+The Inspect-first refactor keeps cluster sharding, but removes the old merge architecture.
 
-## 1) Concept Model
+## Core Idea
 
-- Pair groups: `3 generator models * 3 eval models = 9`
-- Modes per pair: `2` (`full_question`, `choices_only`)
-- Dataset parts per pair are dynamic:
-  - `parts[dataset] = max(1, ceil(rows(dataset) / target_rows_per_subsplit))`
-- Each work unit evaluates one `(mode, dataset, dataset_part_idx)` and always runs all 5 settings.
+- Stable sample ids are computed across the unified dataset.
+- `--shard-count` and `--shard-index` deterministically partition those ids.
+- Inspect `.eval` logs are written per shard.
+- Analysis aggregates shard logs directly.
 
-For current row counts (`arc=1000`, `mmlu_pro=1000`, `gpqa=448`) with target `500`:
+There is no canonical recombination step that rebuilds `summary.json` and `rows/` trees anymore.
 
-- parts: `arc=2`, `mmlu_pro=2`, `gpqa=1`
-- work units per pair: `2 * (2+2+1) = 10`
-- total work units across all pairs: `9 * 10 = 90`
+## Shard Controls
 
-## 2) End-to-End Commands
+Both `generate` and `evaluate` accept:
 
-### A. Build datasets (generation)
+- `--shard-count`
+- `--shard-index`
+- `--shard-strategy`
+
+Supported strategies:
+
+- `contiguous`
+- `modulo`
+
+## Generation Example
 
 ```bash
-uv run python scripts/03_regenerate_experiments.py \
+uv run python main.py generate \
+  --model gpt-5.2-2025-12-11 \
+  --run-name gen_cluster \
   --processed-dataset datasets/processed/unified_processed_v2 \
-  --output-root datasets/augmented
+  --shard-count 8 \
+  --shard-index 0
 ```
 
-### B. Build SLURM bundle
+## Evaluation Example
+
+```bash
+uv run python main.py evaluate \
+  --model Qwen/Qwen3-4B-Instruct-2507 \
+  --run-name eval_cluster \
+  --generator-run-name gen_cluster \
+  --generator-model gpt-5.2-2025-12-11 \
+  --processed-dataset datasets/processed/unified_processed_v2 \
+  --shard-count 8 \
+  --shard-index 0
+```
+
+## Thin SLURM Helpers
+
+Single-shard launchers:
+
+- [`jobs/run_generate_shard.sh`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/jobs/run_generate_shard.sh)
+- [`jobs/run_evaluate_shard.sh`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/jobs/run_evaluate_shard.sh)
+
+Array templates:
+
+- [`jobs/generate_array.sbatch`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/jobs/generate_array.sbatch)
+- [`jobs/evaluate_array.sbatch`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/jobs/evaluate_array.sbatch)
+
+Per-eval-model bundle generator:
 
 ```bash
 uv run python scripts/05_build_eval_slurm_bundle.py \
-  --manifest datasets/augmented/<final5_regeneration_manifest>.json \
-  --target-rows-per-subsplit 500
+  --run-name eval_cluster \
+  --generator-run-name gen_cluster \
+  --generator-model gpt-5.2-2025-12-11 \
+  --output-dir jobs/generated/eval_cluster \
+  --shard-count 8
 ```
 
-Bundle output default:
+Submit:
+
+```bash
+bash jobs/generated/eval_cluster/submit_all.sh
+```
+
+## Canonical Output Layout
+
+Generation logs:
 
 ```text
-jobs/generated/<timestamp>/
+results/inspect/generation/<run_name>/<generator_model>/**/*.eval
 ```
 
-### C. Submit everything
-
-```bash
-bash jobs/generated/<timestamp>/submit_all.sh
-```
-
-### D. Re-run failed tasks
-
-```bash
-sbatch jobs/generated/<timestamp>/<specific>.sbatch
-```
-
-### E. Merge partials to canonical outputs
-
-```bash
-uv run python scripts/06_merge_eval_subshards.py \
-  --bundle-manifest jobs/generated/<timestamp>/bundle_manifest.json \
-  --strict
-```
-
-### F. Single-GPU smoke validation
-
-```bash
-scripts/run_final5_remote_smoke.sh
-```
-
-This smoke path uses a tiny dataset and still exercises the same sharding model
-(`mode x dataset_part`) while running all 5 Final5 settings in each work unit.
-
-## 3) Output Layout
-
-Canonical per-config outputs:
+Evaluation logs:
 
 ```text
-results/<generator>/<eval_model>/<mode>/<dataset>/<setting>/summary.json
-results/<generator>/<eval_model>/<mode>/<dataset>/<setting>/rows/
-results/<generator>/<eval_model>/<mode>/<dataset>/<setting>/merge_metadata.json
+results/inspect/evaluation/<run_name>/<generator_run_name>/<generator_model>/<eval_model>/**/*.eval
 ```
 
-Partial outputs:
+Derived augmented cache:
 
 ```text
-results/<generator>/<eval_model>/<mode>/<dataset>/<setting>/_partials/entry_shard_<i>_of_<n>/summary.json
-results/<generator>/<eval_model>/<mode>/<dataset>/<setting>/_partials/entry_shard_<i>_of_<n>/rows/
+datasets/augmented/<generator_run_name>/<generator_model>/
 ```
 
-## 4) Verification Commands
+## Aggregation
 
-### Check bundle-level counts
+Use:
 
 ```bash
-jq '.total_pairs, .total_sbatch_files, .total_work_units' jobs/generated/<timestamp>/bundle_manifest.json
+uv run python main.py analyze --results-root results/inspect/evaluation
 ```
 
-### Inspect per-pair work units
+The plotting and summary code walks every shard log. If all shards finish, the analysis sees the full run without a separate merge command.
 
-```bash
-jq '.' jobs/generated/<timestamp>/<one-job>.work_units.json
-```
-
-### Count canonical summaries
-
-```bash
-find results -path '*/summary.json' | rg '/(human_from_scratch|model_from_scratch|augment_human|augment_model|augment_ablation)/summary.json$' | wc -l
-```
-
-### Quick merged summary check
-
-```bash
-python - <<'PY'
-import json, pathlib
-p = pathlib.Path('results/<generator>/<eval_model>/<mode>/<dataset>/<setting>/summary.json')
-obj = json.loads(p.read_text())
-print('total', obj['summary']['total'])
-print('accuracy', obj['summary']['accuracy'])
-print('rows_path', obj.get('rows_path'))
-PY
-```
-
-## 5) Troubleshooting
-
-### Missing partial shard files
-
-Symptoms:
-
-- merge summary reports `missing_entry_shards`
-
-Actions:
-
-1. Identify config and missing shard indexes from `merged_summary.json`.
-2. Re-run only failed array IDs for the corresponding sbatch file.
-3. Re-run strict merge.
-
-### Duplicate partial rows
-
-Symptoms:
-
-- `merge_metadata.json` reports `duplicate_question_idx_rows`
-
-Behavior:
-
-- merge dedupes by `question_idx` with deterministic first-wins order.
-- in `--strict`, conflicting duplicates fail merge.
-
-### Non-matching shard params
-
-Symptoms:
-
-- strict merge error: expected `entry_shards` mismatch
-
-Cause:
-
-- mixed outputs from different bundle settings.
-
-Action:
-
-- isolate outputs by bundle directory and rerun with one consistent bundle manifest.
+`scripts/06_merge_eval_subshards.py` remains only as a compatibility message and intentionally performs no work.

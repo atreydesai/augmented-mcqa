@@ -1,176 +1,161 @@
 # Pipeline Guide
 
-This document explains the end-to-end Final5 pipeline from dataset download to analysis.
+This repo now runs an Inspect-first Final5 workflow. The old manifest/merge pipeline is not canonical anymore.
 
-## Pipeline Flow
+## Flow
 
+```text
+prepare-data -> generate -> evaluate -> analyze/export
 ```
-Download → Process → Augment → Evaluate → Merge → Analyze
-  (01)      (01)      (02/03)    (04/05)   (06)    (08)
-```
 
-## Scripts (in pipeline order)
+Inspect `.eval` logs are the source of truth for both generation and evaluation. The augmented dataset under `datasets/augmented/` is rebuilt from generation logs when needed.
 
-### Step 1: Data Preparation — `scripts/01_data_pipeline.py`
+## Primary CLI
 
-Downloads raw datasets from HuggingFace and processes them into the unified Final5 schema.
+Use [`main.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/main.py) directly.
+
+### 1. Prepare data
 
 ```bash
-# Download all raw datasets
-uv run python scripts/01_data_pipeline.py download --all
-
-# Process into unified schema
-uv run python scripts/01_data_pipeline.py process --output-path datasets/processed/unified_processed_v2
-
-# Or do both at once
-uv run python scripts/01_data_pipeline.py all
+uv run python main.py prepare-data --step all --output-path datasets/processed/unified_processed_v2
 ```
 
-Active datasets: `arc_challenge`, `mmlu_pro`, `gpqa`
+### 2. Generate Final5 distractors
 
-### Step 2: Distractor Generation — `scripts/02_generate_distractors.py`
-
-Generates Final5 distractor columns for a processed dataset using LLM APIs. Supports parallel per-split generation.
+Single model:
 
 ```bash
-uv run python scripts/02_generate_distractors.py \
-  --input datasets/processed/unified_processed_v2 \
-  --output datasets/augmented/final5_full_<timestamp>_<model> \
-  --model gpt-5.2-2025-12-11
-```
-
-### Step 3: Orchestrated Regeneration — `scripts/03_regenerate_experiments.py`
-
-Runs step 2 across all three generator models concurrently and writes a regeneration manifest.
-
-```bash
-uv run python scripts/03_regenerate_experiments.py \
+uv run python main.py generate \
+  --model gpt-5.2-2025-12-11 \
+  --run-name gen_openai \
   --processed-dataset datasets/processed/unified_processed_v2 \
-  --output-root datasets/augmented
+  --materialize-cache
 ```
 
-### Step 4: Evaluation — `scripts/04_eval_matrix.py`
-
-Plans and runs evaluation configs. Has two subcommands: `plan` (builds manifests) and `run` (executes).
+All default generators:
 
 ```bash
-# Plan configs
-uv run python scripts/04_eval_matrix.py plan \
-  --preset final5 \
+uv run python main.py generate-all \
+  --run-name gen_all \
+  --processed-dataset datasets/processed/unified_processed_v2 \
+  --materialize-cache
+```
+
+Generation is plain-text only. The solver expects labeled lines like `B. ...`, `C. ...`, `D. ...` and retries on parse failure.
+
+### 3. Evaluate
+
+Single evaluation model:
+
+```bash
+uv run python main.py evaluate \
   --model Qwen/Qwen3-4B-Instruct-2507 \
-  --dataset-path datasets/augmented/<generator_dataset> \
-  --generator-dataset-label <generator>
-
-# Run configs
-uv run python scripts/04_eval_matrix.py run \
-  --manifest <manifest.json> \
-  --generator-dataset-label <generator>
+  --run-name eval_local \
+  --generator-run-name gen_openai \
+  --generator-model gpt-5.2-2025-12-11 \
+  --processed-dataset datasets/processed/unified_processed_v2
 ```
 
-### Step 5: SLURM Bundle — `scripts/05_build_eval_slurm_bundle.py`
-
-Builds balanced SLURM job bundles for distributed evaluation on GPU clusters.
+All default evaluation models:
 
 ```bash
-uv run python scripts/05_build_eval_slurm_bundle.py \
-  --manifest datasets/augmented/<manifest>.json \
-  --target-rows-per-subsplit 500
+uv run python main.py evaluate-all \
+  --run-name eval_all \
+  --generator-run-name gen_openai \
+  --generator-model gpt-5.2-2025-12-11 \
+  --processed-dataset datasets/processed/unified_processed_v2
 ```
 
-### Step 6: Merge Sub-shards — `scripts/06_merge_eval_subshards.py`
-
-Merges partial evaluation results from entry sub-shards into canonical Arrow + summary outputs.
+### 4. Analyze
 
 ```bash
-uv run python scripts/06_merge_eval_subshards.py \
-  --bundle-manifest jobs/generated/<timestamp>/bundle_manifest.json \
-  --strict
+uv run python main.py analyze \
+  --results-root results/inspect/evaluation \
+  --output-dir results/final5_plots
 ```
 
-### Step 7: Export — `scripts/07_export_benchmarker_items.py`
-
-Exports augmented datasets into benchmarker JSONL files for external tools.
+### 5. Export
 
 ```bash
-uv run python scripts/07_export_benchmarker_items.py \
-  --input datasets/augmented/<dataset> \
-  --output-root datasets/benchmarker_items
+uv run python main.py export \
+  --generator-run-name gen_openai \
+  --generator-model gpt-5.2-2025-12-11 \
+  --processed-dataset datasets/processed/unified_processed_v2
 ```
 
-### Step 8: Analysis — `scripts/08_analyze.py`
+## API and Local Backends
 
-Analyzes results and generates plots. Has two subcommands: `table` and `plot`.
+Hosted APIs:
 
 ```bash
-# Generate behavioral signature tables
-uv run python scripts/08_analyze.py table --dir results/
-
-# Generate Final5 pairwise plots
-uv run python scripts/08_analyze.py plot --results-root results --output-dir results/final5_plots
+uv run python main.py generate \
+  --model openai/gpt-5.2-2025-12-11 \
+  --run-name gen_api \
+  --processed-dataset datasets/processed/unified_processed_v2
 ```
 
-## Utility Scripts
-
-### `scripts/diagnose.py`
-
-Debugging tools for generation issues:
+OpenAI-compatible local server:
 
 ```bash
-# Check for missing distractor columns
-uv run python scripts/diagnose.py failures --dataset-path datasets/augmented/...
-
-# Run structured-generation trace
-uv run python scripts/diagnose.py trace --model gemini-3.1-pro-preview
+uv run python main.py evaluate \
+  --model my-local-model \
+  --backend openai \
+  --model-base-url http://localhost:8000/v1 \
+  --run-name eval_local_api \
+  --generator-run-name gen_api \
+  --generator-model openai/gpt-5.2-2025-12-11 \
+  --processed-dataset datasets/processed/unified_processed_v2
 ```
 
-### `scripts/smoke_test.py`
-
-Live API smoke tests:
+vLLM alias:
 
 ```bash
-# Test structured outputs across all providers
-uv run python scripts/smoke_test.py clients
-
-# End-to-end generation smoke with real datasets
-uv run python scripts/smoke_test.py generate --limit 2 --dry-run
-```
-
-## Quick Start (Minimal Pipeline)
-
-For a new user, the core happy path is:
-
-```bash
-# 1. Download and process datasets
-uv run python scripts/01_data_pipeline.py all
-
-# 2. Generate distractors (single model)
-uv run python scripts/02_generate_distractors.py \
-  --input datasets/processed/unified_processed_v2 \
-  --output datasets/augmented/my_run \
-  --model gpt-5.2-2025-12-11
-
-# 3. Run evaluation
-uv run python scripts/04_eval_matrix.py run \
-  --preset final5 \
+uv run python main.py evaluate \
   --model Qwen/Qwen3-4B-Instruct-2507 \
-  --dataset-path datasets/augmented/my_run \
-  --generator-dataset-label gpt-5.2-2025-12-11
-
-# 4. Analyze results
-uv run python scripts/08_analyze.py plot --results-root results
+  --run-name eval_vllm \
+  --generator-run-name gen_api \
+  --generator-model openai/gpt-5.2-2025-12-11 \
+  --processed-dataset datasets/processed/unified_processed_v2
 ```
 
-## Project Structure
+## Sharding
 
+Both generation and evaluation support:
+
+- `--shard-count`
+- `--shard-index`
+- `--shard-strategy`
+
+Example:
+
+```bash
+uv run python main.py evaluate \
+  --model Qwen/Qwen3-4B-Instruct-2507 \
+  --run-name eval_sharded \
+  --generator-run-name gen_openai \
+  --generator-model gpt-5.2-2025-12-11 \
+  --processed-dataset datasets/processed/unified_processed_v2 \
+  --shard-count 8 \
+  --shard-index 3
 ```
-config/        Central configuration (paths, API keys, constants, prompts)
-data/          Dataset downloading, processing, augmentation
-models/        LLM client abstraction (OpenAI, Anthropic, Gemini, local/vLLM)
-evaluation/    MCQA evaluation logic (prompt building, answer extraction, scoring)
-experiments/   Experiment configuration, matrix operations, runner
-analysis/      Post-hoc analysis and visualization
-scripts/       CLI entry points (numbered by pipeline order)
-tests/         Unit tests
-docs/          Documentation
-jobs/          SLURM job scripts and templates
-```
+
+## Compatibility Wrappers
+
+These scripts still exist for convenience, but they only forward into `main.py` now:
+
+- [`scripts/02_generate_distractors.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/scripts/02_generate_distractors.py)
+- [`scripts/03_regenerate_experiments.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/scripts/03_regenerate_experiments.py)
+- [`scripts/04_eval_matrix.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/scripts/04_eval_matrix.py)
+- [`scripts/07_export_benchmarker_items.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/scripts/07_export_benchmarker_items.py)
+- [`scripts/08_analyze.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/scripts/08_analyze.py)
+
+`scripts/06_merge_eval_subshards.py` is intentionally a no-op compatibility message because analysis now aggregates `.eval` logs directly.
+
+## Repo Structure
+
+- [`tasks/`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/tasks): Inspect task factories
+- [`solvers/`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/solvers): generation/evaluation prompt logic
+- [`scorers/`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/scorers): Final5 score metadata
+- [`data/final5_store.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/data/final5_store.py): dataset adapters and cache materialization
+- [`utils/`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/utils): parsing, sharding, model aliasing, log helpers
+- [`prompts/`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/prompts): plain-text templates

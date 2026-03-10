@@ -29,26 +29,7 @@ def cmd_table(args: argparse.Namespace) -> int:
         print(f"Error: Directory not found: {base_dir}")
         return 1
 
-    # Find all experiment directories containing summary.json or results.json.
-    exp_files = []
-    for p in base_dir.iterdir():
-        if not p.is_dir():
-            continue
-        if (p / "summary.json").exists():
-            exp_files.append(p / "summary.json")
-        elif (p / "results.json").exists():
-            exp_files.append(p / "results.json")
-
-    if not exp_files:
-        # Check nested subdirectories.
-        summary_files = sorted(base_dir.glob("**/summary.json"))
-        summary_parents = {p.parent for p in summary_files}
-        result_files = [
-            p for p in sorted(base_dir.glob("**/results.json"))
-            if p.parent not in summary_parents
-        ]
-        exp_files.extend(summary_files)
-        exp_files.extend(result_files)
+    exp_files = sorted(base_dir.glob("**/*.eval"))
 
     if not exp_files:
         print(f"No experiment results found in {base_dir}")
@@ -83,20 +64,12 @@ def cmd_table(args: argparse.Namespace) -> int:
 
 
 def cmd_plot(args: argparse.Namespace) -> int:
-    outputs = plot_final5_pairwise(
-        results_root=Path(args.results_root),
-        output_dir=Path(args.output_dir),
-        include_tables=not args.skip_tables,
-    )
+    import main as app_main
 
-    if not outputs:
-        print("No Final5 results found; nothing plotted.")
-        return 1
-
-    print("Generated outputs:")
-    for out in outputs:
-        print(f"  - {out}")
-    return 0
+    argv = ["analyze", "--results-root", args.results_root, "--output-dir", args.output_dir]
+    if args.skip_tables:
+        argv.append("--skip-tables")
+    return app_main.main(argv)
 
 
 def main() -> int:
