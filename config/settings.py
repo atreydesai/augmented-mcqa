@@ -70,8 +70,6 @@ else:
         HF_HOME = str(PROJECT_ROOT / ".hf_cache")
     else:
         HF_HOME = str(default_hf_home)
-HF_SKIP_PUSH = os.getenv("HF_SKIP_PUSH", "0").lower() in ("1", "true", "yes")
-
 # Set HF environment variables
 try:
     Path(HF_HOME).mkdir(parents=True, exist_ok=True)
@@ -102,38 +100,6 @@ if DEFAULT_LIMIT and DEFAULT_LIMIT.lower() != "none":
     DEFAULT_LIMIT = int(DEFAULT_LIMIT)
 else:
     DEFAULT_LIMIT = None
-
-
-# =============================================================================
-# Unified Distractor Naming Convention
-# =============================================================================
-
-class DistractorType(Enum):
-    """
-    Unified naming convention for distractor types.
-    
-    These names are used consistently throughout the codebase:
-    - In dataset columns
-    - In experiment configurations
-    - In results and analysis
-    
-    IMPORTANT DISTINCTION:
-    - choices_human: 3 human distractors from original MMLU/ARC/GPQA
-    - cond_model_q_a_scratch: NEWLY GENERATED from Q+A only (no conditioning)
-    - cond_model_q_a_dhuman: NEWLY GENERATED conditioned on 3 human distractors
-    - cond_model_q_a_dmodel: NEWLY GENERATED conditioned on 3 random scratch distractors
-    """
-    # Human distractors from original MMLU/ARC/GPQA (up to 3)
-    COND_HUMAN_Q_A = "choices_human"
-    
-    # NEWLY GENERATED distractors from Q+A only (no conditioning)
-    COND_MODEL_Q_A_SCRATCH = "cond_model_q_a_scratch"
-    
-    # NEWLY GENERATED distractors conditioned on Q+A + 3 human distractors
-    COND_MODEL_Q_A_DHUMAN = "cond_model_q_a_dhuman"
-    
-    # NEWLY GENERATED distractors conditioned on Q+A + 3 random scratch distractors
-    COND_MODEL_Q_A_DMODEL = "cond_model_q_a_dmodel"
 
 
 # =============================================================================
@@ -311,4 +277,3 @@ DATASET_CONFIGS = {
         dataset_type=DatasetType.GPQA,
     ),
 }
-

@@ -54,41 +54,58 @@ Derived generation cache used as evaluation input:
 datasets/augmented/<generator_run_name>/<generator_model>/
 ```
 
+Cluster submit jobs use dataset-scoped cache paths under `datasets/augmented/<generator_run_name>/<generator_model>/<dataset>/`.
+
 There is no canonical `summary.json` + `rows/` output tree anymore. Analysis reads the `.eval` logs directly.
 
-## SLURM
+## Login-Node Cluster Submit
 
-Per-model bundle generation:
+Submit all local evaluation jobs in one command:
 
 ```bash
-uv run python scripts/05_build_eval_slurm_bundle.py \
+uv run python main.py submit-evaluate-cluster \
   --run-name eval_cluster \
   --generator-run-name gen_openai \
   --generator-model gpt-5.2-2025-12-11 \
-  --output-dir jobs/generated/eval_cluster \
-  --shard-count 8
+  --processed-dataset datasets/processed/unified_processed_v2
 ```
 
-Submit:
+This command:
+
+- only accepts local models that resolve to `vllm/...`
+- writes one array task per `eval model × dataset`
+- runs all five Final5 settings and both modes inside each task
+- keeps one model loaded for the lifetime of that task
+- writes the manifest and sbatch script under `jobs/generated/evaluate/<run>/`
+- writes bootstrap and per-task logs under `logs/slurm/evaluate/<run>/`
+
+Limit concurrent jobs to the number of GPUs you want SLURM to use:
 
 ```bash
-bash jobs/generated/eval_cluster/submit_all.sh
+uv run python main.py submit-evaluate-cluster \
+  --run-name eval_cluster \
+  --generator-run-name gen_openai \
+  --generator-model gpt-5.2-2025-12-11 \
+  --processed-dataset datasets/processed/unified_processed_v2 \
+  --gpu-count 4
 ```
 
-Each sbatch file launches `main.py evaluate` with one evaluation model and one shard index per array task.
+If `--gpu-count` is omitted, the array is submitted without a `%N` cap and SLURM schedules tasks as resources become available.
 
-## Sharding
+Default fanout is `3 local eval models × 3 datasets = 9 jobs`.
 
-Evaluation supports:
+## Low-Level Sharding
+
+Direct `evaluate` still supports:
 
 - `--shard-count`
 - `--shard-index`
 - `--shard-strategy`
 
-Sharding is deterministic because task construction uses stable sample ids over the unified dataset.
+Use those only if a single `model × dataset` job is too large for your time limit. They are no longer the primary cluster orchestration path.
 
 ## Notes
 
 - `mmlu_pro` preprocessing still keeps the existing exact-match filter against raw `mmlu`.
-- The compatibility script [`scripts/04_eval_matrix.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/scripts/04_eval_matrix.py) now forwards straight into `main.py evaluate`.
-- [`scripts/06_merge_eval_subshards.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/scripts/06_merge_eval_subshards.py) intentionally does nothing beyond printing that Inspect logs are canonical.
+- There is no merge stage anymore; analysis reads Inspect logs directly.
+- Cluster submit is for local models only. Hosted/API models should use direct `evaluate` or `evaluate-all`.

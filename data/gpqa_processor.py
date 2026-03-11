@@ -103,15 +103,3 @@ def process_gpqa_for_experiments(
     print(f"Saved {len(dataset)} GPQA rows to {output_path}")
 
     return dataset
-
-
-def get_gpqa_stats(entries: List[Dict[str, Any]]) -> Dict[str, Any]:
-    """Simple summary stats for mapped GPQA rows."""
-    return {
-        "total_entries": len(entries),
-        "with_three_human_distractors": sum(
-            1 for e in entries if len(e.get("choices_human", [])) == 3
-        ),
-        "with_nonempty_answer": sum(1 for e in entries if bool(e.get("answer"))),
-        "with_nonempty_subfield": sum(1 for e in entries if bool(e.get("subfield"))),
-    }

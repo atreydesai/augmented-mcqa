@@ -87,10 +87,26 @@ Evaluation:
 
 ## Cluster Usage
 
-Sharded local-cluster runs are still supported. Use:
+Use the high-level cluster submit commands for local GPU-backed models:
 
-- [`jobs/run_generate_shard.sh`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/jobs/run_generate_shard.sh)
-- [`jobs/run_evaluate_shard.sh`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/jobs/run_evaluate_shard.sh)
-- [`scripts/05_build_eval_slurm_bundle.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/scripts/05_build_eval_slurm_bundle.py)
+```bash
+uv run python main.py submit-generate-cluster \
+  --run-name gen_cluster \
+  --processed-dataset datasets/processed/unified_processed_v2
+```
 
-The SLURM layer only launches `main.py` with deterministic shard arguments. There is no custom model client layer underneath it anymore.
+```bash
+uv run python main.py submit-evaluate-cluster \
+  --run-name eval_cluster \
+  --generator-run-name gen_cluster \
+  --generator-model Qwen/Qwen3-4B-Instruct-2507 \
+  --processed-dataset datasets/processed/unified_processed_v2 \
+  --gpu-count 4
+```
+
+Notes:
+
+- These commands only accept models that resolve to `vllm/...`.
+- Each task is one `model × dataset` pair on one GPU.
+- If `--gpu-count` is omitted, the array is submitted without a concurrency cap.
+- Hosted/API models are out of scope for the cluster submit commands and should be run with direct `generate` / `evaluate`.

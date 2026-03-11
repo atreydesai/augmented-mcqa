@@ -1,23 +1,12 @@
-"""
-Dataset downloading utilities for Augmented MCQA.
+"""Dataset downloading utilities for Augmented MCQA."""
 
-Supports downloading and saving datasets from HuggingFace Hub:
-- MMLU-Pro (TIGER-Lab/MMLU-Pro)
-- MMLU (cais/mmlu)
-- ARC-Challenge (allenai/ai2_arc, ARC-Challenge config)
-- GPQA (Idavidrein/gpqa, subset=gpqa_main)
-"""
-
-import os
 from pathlib import Path
-from typing import Optional, List, Dict, Any
-from dataclasses import dataclass
-import json
+from typing import Any, Dict, List, Optional
 
 from datasets import load_dataset, get_dataset_config_names, DatasetDict, Dataset
 from tqdm import tqdm
 
-from config import DATASETS_DIR, RAW_DATASETS_DIR, DATASET_CONFIGS, DatasetConfig, HF_TOKEN
+from config import DATASET_CONFIGS, HF_TOKEN, RAW_DATASETS_DIR
 
 
 def download_dataset(
@@ -92,10 +81,6 @@ def download_dataset(
     save_path.parent.mkdir(parents=True, exist_ok=True)
     dataset.save_to_disk(str(save_path))
     print(f"  Saved to: {save_path}")
-    
-    # Push to Hugging Face
-    from data.hub_utils import push_dataset_to_hub
-    push_dataset_to_hub(dataset, dataset_name=dataset_name, suffix="raw")
     
     return dataset
 
@@ -209,121 +194,3 @@ def download_gpqa(
     print(f"Saved to {save_path}")
     
     return dataset
-
-
-def get_dataset_info(dataset: DatasetDict) -> Dict[str, Any]:
-    """Get summary information about a dataset."""
-    info = {
-        "splits": {},
-        "total_examples": 0,
-    }
-    
-    for split_name, split_data in dataset.items():
-        split_info = {
-            "num_examples": len(split_data),
-            "columns": list(split_data.column_names),
-        }
-        info["splits"][split_name] = split_info
-        info["total_examples"] += len(split_data)
-        
-        # Sample first entry
-        if len(split_data) > 0:
-            split_info["sample_entry"] = dict(split_data[0])
-    
-    return info
-
-
-def print_dataset_info(dataset: DatasetDict, name: str = "Dataset") -> None:
-    """Print summary information about a dataset."""
-    info = get_dataset_info(dataset)
-    print(f"\n=== {name} ===")
-    print(f"Total examples: {info['total_examples']}")
-    
-    for split_name, split_info in info["splits"].items():
-        print(f"\n  Split: {split_name}")
-        print(f"    Examples: {split_info['num_examples']}")
-        print(f"    Columns: {split_info['columns']}")
-        
-        if "sample_entry" in split_info:
-            print(f"    Sample keys: {list(split_info['sample_entry'].keys())}")
-
-
-def download_all_datasets() -> Dict[str, Any]:
-    """
-    Download all required datasets.
-    
-    Returns:
-        Dict mapping dataset name to downloaded dataset
-    """
-    results = {}
-    
-    print("=" * 50)
-    print("Downloading MMLU-Pro...")
-    print("=" * 50)
-    results["mmlu_pro"] = download_mmlu_pro()
-    
-    print("\n" + "=" * 50)
-    print("Downloading MMLU (all configs)...")
-    print("=" * 50)
-    results["mmlu"] = download_mmlu_all_configs()
-    
-    print("\n" + "=" * 50)
-    print("Downloading ARC...")
-    print("=" * 50)
-    results["arc"] = download_arc()
-    
-    print("\n" + "=" * 50)
-    print("Downloading GPQA...")
-    print("=" * 50)
-    results["gpqa"] = download_gpqa()
-    
-    print("\n" + "=" * 50)
-    print("All datasets downloaded!")
-    print("=" * 50)
-    
-    return results
-
-
-if __name__ == "__main__":
-    import argparse
-    
-    parser = argparse.ArgumentParser(description="Download datasets for Augmented MCQA")
-    parser.add_argument(
-        "--dataset",
-        type=str,
-        choices=["mmlu_pro", "mmlu", "arc", "gpqa", "all"],
-        default="all",
-        help="Which dataset to download",
-    )
-    parser.add_argument(
-        "--info-only",
-        action="store_true",
-        help="Only print info about existing datasets, don't download",
-    )
-    args = parser.parse_args()
-    
-    if args.dataset in ["mmlu_pro", "all"]:
-        if args.info_only:
-            from datasets import load_from_disk
-            path = DATASETS_DIR / "mmlu_pro"
-            if path.exists():
-                ds = load_from_disk(str(path))
-                print_dataset_info(ds, "MMLU-Pro")
-        else:
-            ds = download_mmlu_pro()
-            print_dataset_info(ds, "MMLU-Pro")
-    
-    if args.dataset in ["mmlu", "all"]:
-        if not args.info_only:
-            download_mmlu_all_configs()
-    
-    if args.dataset in ["arc", "all"]:
-        if not args.info_only:
-            results = download_arc()
-            for name, ds in results.items():
-                print_dataset_info(ds, f"ARC-{name}")
-    
-    if args.dataset in ["gpqa", "all"]:
-        if not args.info_only:
-            ds = download_gpqa()
-            print_dataset_info(ds, "GPQA")

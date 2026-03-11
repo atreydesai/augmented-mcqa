@@ -10,8 +10,6 @@ Processes MMLU-Pro to:
 """
 
 import re
-import sys
-import argparse
 from pathlib import Path
 from typing import List, Dict, Set, Optional, Tuple
 from collections import defaultdict
@@ -19,17 +17,10 @@ from collections import defaultdict
 from datasets import Dataset, DatasetDict, load_from_disk
 from tqdm import tqdm
 
-# Add project root to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
 from config import (
-    DATASETS_DIR,
     RAW_DATASETS_DIR,
     PROCESSED_DATASETS_DIR,
-    DistractorType,
-    RANDOM_SEED,
 )
-from data.hub_utils import push_dataset_to_hub
 
 
 # Categories with known leading whitespace issues in MMLU-Pro
@@ -264,61 +255,4 @@ def process_mmlu_pro(
     result.save_to_disk(str(output_path))
     print(f"\n✓ Saved processed dataset to {output_path}")
     
-    # Push to Hugging Face
-    push_dataset_to_hub(result, repo_id="atreydesai/qgqa-mmlu-pro-processed")
-    
     return result
-
-
-def verify_sorting(output_path: Path, num_samples: int = 5) -> None:
-    """Verify sorting by printing sample entries."""
-    print("\n=== Verification Samples ===")
-    dataset = load_from_disk(str(output_path))
-    
-    # Handle DatasetDict
-    if isinstance(dataset, DatasetDict):
-        splits = dataset.keys()
-    else:
-        splits = ["main"]
-        dataset = {"main": dataset}
-        
-    for split_name in splits:
-        split_data = dataset[split_name]
-        print(f"\n--- {split_name} ---")
-        for i in range(min(num_samples, len(split_data))):
-            entry = split_data[i]
-            print(f"\nEntry {i}:")
-            print(f"  Question: {entry['question'][:80]}...")
-            print(f"  Gold: {entry.get('choices_answer', [])}")
-            print(f"  Human distractors: {len(entry.get(DistractorType.COND_HUMAN_Q_A.value, []))}")
-
-
-def main():
-    parser = argparse.ArgumentParser(description="Process MMLU-Pro dataset")
-    parser.add_argument("--input", type=str, default=str(RAW_DATASETS_DIR / "mmlu_pro"))
-    parser.add_argument("--mmlu", type=str, default=str(RAW_DATASETS_DIR / "mmlu_all"))
-    parser.add_argument("--output", type=str, default=str(PROCESSED_DATASETS_DIR / "mmlu_pro_processed"))
-    parser.add_argument("--fix-whitespace", action="store_true", default=True)
-    parser.add_argument("--report-whitespace", action="store_true")
-    parser.add_argument("--verify", action="store_true")
-    parser.add_argument("--limit", type=int)
-    
-    args = parser.parse_args()
-    
-    result = process_mmlu_pro(
-        mmlu_pro_path=Path(args.input),
-        mmlu_path=Path(args.mmlu),
-        output_path=Path(args.output),
-        fix_whitespace=args.fix_whitespace,
-        report_whitespace_bugs=args.report_whitespace,
-        limit=args.limit,
-    )
-    
-    if args.verify:
-        verify_sorting(Path(args.output))
-    
-    return 0
-
-
-if __name__ == "__main__":
-    sys.exit(main())

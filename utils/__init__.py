@@ -1,4 +1,5 @@
 from .constants import (
+    DEFAULT_LOCAL_CLUSTER_MODELS,
     DEFAULT_EVALUATION_MODELS,
     DEFAULT_GENERATION_MODELS,
     FINAL5_SETTINGS,
@@ -18,6 +19,7 @@ from .sharding import sample_id_for_row, select_shard
 __all__ = [
     "DEFAULT_EVALUATION_MODELS",
     "DEFAULT_GENERATION_MODELS",
+    "DEFAULT_LOCAL_CLUSTER_MODELS",
     "FINAL5_SETTINGS",
     "MODE_CHOICES",
     "SETTING_SPECS",

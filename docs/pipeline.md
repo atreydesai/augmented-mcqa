@@ -66,6 +66,38 @@ uv run python main.py evaluate-all \
   --processed-dataset datasets/processed/unified_processed_v2
 ```
 
+### 3a. Submit local cluster generation
+
+```bash
+uv run python main.py submit-generate-cluster \
+  --run-name gen_cluster \
+  --processed-dataset datasets/processed/unified_processed_v2
+```
+
+### 3b. Submit local cluster evaluation
+
+```bash
+uv run python main.py submit-evaluate-cluster \
+  --run-name eval_cluster \
+  --generator-run-name gen_openai \
+  --generator-model gpt-5.2-2025-12-11 \
+  --processed-dataset datasets/processed/unified_processed_v2 \
+  --gpu-count 4
+```
+
+Both cluster commands:
+
+- are for local `vllm/...` models only
+- create one SLURM array task per `model × dataset`
+- default to 9 jobs with the current 3 local models and 3 datasets
+- avoid repeated cold starts between configs and modes inside a task
+- still incur one cold start per `model × dataset` task
+- write manifests and sbatch scripts under `jobs/generated/<stage>/<run>/`
+- write SLURM logs under `logs/slurm/<stage>/<run>/`
+- use dataset-scoped augmented caches under `datasets/augmented/<run>/<model>/<dataset>/`
+
+If `--gpu-count` is omitted, the array is submitted with no `%N` concurrency cap.
+
 ### 4. Analyze
 
 ```bash
@@ -81,6 +113,18 @@ uv run python main.py export \
   --generator-run-name gen_openai \
   --generator-model gpt-5.2-2025-12-11 \
   --processed-dataset datasets/processed/unified_processed_v2
+```
+
+### 6. Benchmarker Writing-Flaw Analysis
+
+```bash
+uv run python analysis/benchmarker_analysis.py \
+  --writing-flaw-jsonl datasets/benchmarker_results/atrey_writing_flaw_rows.jsonl.zip \
+  --results-root results/inspect/evaluation \
+  --cache-root datasets/augmented \
+  --generator-run-name gen_openai \
+  --generator-model gpt-5.2-2025-12-11 \
+  --output-dir analysis/figures/benchmarker
 ```
 
 ## API and Local Backends
@@ -139,17 +183,19 @@ uv run python main.py evaluate \
   --shard-index 3
 ```
 
-## Compatibility Wrappers
+Those flags are now the low-level escape hatch. The preferred login-node path is `submit-generate-cluster` / `submit-evaluate-cluster`.
 
-These scripts still exist for convenience, but they only forward into `main.py` now:
+## Additional CLI Utilities
 
-- [`scripts/02_generate_distractors.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/scripts/02_generate_distractors.py)
-- [`scripts/03_regenerate_experiments.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/scripts/03_regenerate_experiments.py)
-- [`scripts/04_eval_matrix.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/scripts/04_eval_matrix.py)
-- [`scripts/07_export_benchmarker_items.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/scripts/07_export_benchmarker_items.py)
-- [`scripts/08_analyze.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/scripts/08_analyze.py)
+The same CLI also provides:
 
-`scripts/06_merge_eval_subshards.py` is intentionally a no-op compatibility message because analysis now aggregates `.eval` logs directly.
+- `main.py submit-generate-cluster`
+- `main.py submit-evaluate-cluster`
+- `main.py signature-table`
+- `main.py diagnose-failures`
+- `main.py diagnose-trace`
+- `main.py smoke-generate`
+- `main.py smoke-evaluate`
 
 ## Repo Structure
 

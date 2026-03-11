@@ -1,6 +1,6 @@
 # Local Eval on SLURM
 
-The only supported SLURM path is the Inspect-first shard launcher flow.
+The supported SLURM path is the dataset-aware submit flow in [`main.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/main.py).
 
 ## 1. Stage model weights
 
@@ -8,34 +8,34 @@ The only supported SLURM path is the Inspect-first shard launcher flow.
 jobs/install_local_model_weights.sh --dry-run
 ```
 
-## 2. Build per-model sbatch wrappers
+## 2. Submit generation
 
 ```bash
-uv run python scripts/05_build_eval_slurm_bundle.py \
+uv run python main.py submit-generate-cluster \
+  --run-name gen_cluster \
+  --processed-dataset datasets/processed/unified_processed_v2
+```
+
+## 3. Submit evaluation
+
+```bash
+uv run python main.py submit-evaluate-cluster \
   --run-name eval_cluster \
   --generator-run-name gen_cluster \
-  --generator-model gpt-5.2-2025-12-11 \
-  --output-dir jobs/generated/eval_cluster \
-  --shard-count 8
+  --generator-model Qwen/Qwen3-4B-Instruct-2507 \
+  --processed-dataset datasets/processed/unified_processed_v2 \
+  --gpu-count 4
 ```
 
-## 3. Submit
+## 4. What gets written
 
-```bash
-bash jobs/generated/eval_cluster/submit_all.sh
-```
+- bundle files under `jobs/generated/<stage>/<run>/`
+- bootstrap logs under `logs/slurm/<stage>/<run>/_bootstrap/`
+- per-task logs under `logs/slurm/<stage>/<run>/`
 
-## 4. Re-run failed array ids
+## 5. Notes
 
-```bash
-sbatch --array=1,4,7 jobs/generated/eval_cluster/<one-file>.sbatch
-```
-
-## 5. Direct launch helpers
-
-- [`jobs/run_generate_shard.sh`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/jobs/run_generate_shard.sh)
-- [`jobs/run_evaluate_shard.sh`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/jobs/run_evaluate_shard.sh)
-- [`jobs/generate_array.sbatch`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/jobs/generate_array.sbatch)
-- [`jobs/evaluate_array.sbatch`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/jobs/evaluate_array.sbatch)
-
-There are no remaining legacy array wrappers in this repo.
+- Cluster submit commands only support local `vllm/...` models.
+- Each job is one `model × dataset` pair on one GPU.
+- If `--gpu-count` is omitted, the array is submitted with no concurrency cap.
+- Settings and modes stay grouped inside each evaluation job, so there is no repeated cold start between configs inside that task.

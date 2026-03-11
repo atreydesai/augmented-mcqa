@@ -14,7 +14,6 @@ from .settings import (
     GOOGLE_API_KEY,
     TOGETHER_API_KEY,
     HF_TOKEN,
-    HF_SKIP_PUSH,
     
     # Shared constants
     CHOICE_LABELS,
@@ -22,9 +21,6 @@ from .settings import (
     # Experiment settings
     RANDOM_SEED,
     DEFAULT_LIMIT,
-    # Distractor naming
-    DistractorType,
-
     # Dataset types and schema
     DatasetType,
     ACTIVE_DATASET_TYPES,
@@ -51,10 +47,8 @@ __all__ = [
     "GOOGLE_API_KEY",
     "TOGETHER_API_KEY",
     "HF_TOKEN",
-    "HF_SKIP_PUSH",
     "RANDOM_SEED",
     "DEFAULT_LIMIT",
-    "DistractorType",
     "DatasetType",
     "ACTIVE_DATASET_TYPES",
     "DATASET_SCHEMA",

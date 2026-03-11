@@ -2,7 +2,7 @@
 
 Inspect-first Final5 generation and evaluation for `arc_challenge`, `mmlu_pro`, and `gpqa`.
 
-The canonical interface is now [`main.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/main.py). Numbered scripts in [`scripts/`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/scripts) remain as thin compatibility wrappers where that helps with existing workflows.
+The canonical interface is [`main.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/main.py). The old numbered script wrappers have been removed.
 
 ## What Changed
 
@@ -10,7 +10,7 @@ The canonical interface is now [`main.py`](/Users/ndesai-air/Documents/GitHub/au
 - Structured outputs are gone. Final5 generation now uses plain-text labeled lines with strict parsing and retry.
 - Inspect `.eval` logs are the canonical run artifact.
 - Augmented Hugging Face datasets under `datasets/augmented/` are derived caches for reuse and export.
-- SLURM support remains, but only as thin shard launchers over `main.py`.
+- SLURM support now goes through dataset-aware submit commands that generate one job per `model × dataset`.
 
 ## Core Commands
 
@@ -21,8 +21,15 @@ The canonical interface is now [`main.py`](/Users/ndesai-air/Documents/GitHub/au
 | `main.py generate-all` | Run the full generator model list |
 | `main.py evaluate` | Evaluate one model against one generation run |
 | `main.py evaluate-all` | Evaluate the full local/API eval model list |
+| `main.py submit-generate-cluster` | Submit local generation jobs as one SLURM array over `model × dataset` |
+| `main.py submit-evaluate-cluster` | Submit local evaluation jobs as one SLURM array over `model × dataset` |
 | `main.py analyze` | Aggregate Inspect logs into plots and summary tables |
+| `main.py signature-table` | Build a behavioral-signature table from Inspect logs |
 | `main.py export` | Export a derived augmented dataset to benchmarker JSONL |
+| `main.py diagnose-failures` | Find incomplete rows in an augmented cache |
+| `main.py diagnose-trace` | Dump generation traces from Inspect logs |
+| `main.py smoke-generate` | Run small generation smoke jobs |
+| `main.py smoke-evaluate` | Run small evaluation smoke jobs |
 
 ## Setup
 
@@ -78,6 +85,25 @@ uv run python main.py evaluate \
   --processed-dataset datasets/processed/unified_processed_v2
 ```
 
+Submit all local generation jobs from the login node:
+
+```bash
+uv run python main.py submit-generate-cluster \
+  --run-name gen_cluster \
+  --processed-dataset datasets/processed/unified_processed_v2
+```
+
+Submit all local evaluation jobs with a 4-GPU concurrency cap:
+
+```bash
+uv run python main.py submit-evaluate-cluster \
+  --run-name eval_cluster \
+  --generator-run-name gen_openai \
+  --generator-model gpt-5.2-2025-12-11 \
+  --processed-dataset datasets/processed/unified_processed_v2 \
+  --gpu-count 4
+```
+
 Analyze Inspect logs:
 
 ```bash
@@ -95,6 +121,18 @@ uv run python main.py export \
   --processed-dataset datasets/processed/unified_processed_v2
 ```
 
+Run the standalone benchmarker writing-flaw analysis against Inspect eval logs plus the derived augmented cache:
+
+```bash
+uv run python analysis/benchmarker_analysis.py \
+  --writing-flaw-jsonl datasets/benchmarker_results/atrey_writing_flaw_rows.jsonl.zip \
+  --results-root results/inspect/evaluation \
+  --cache-root datasets/augmented \
+  --generator-run-name gen_openai \
+  --generator-model gpt-5.2-2025-12-11 \
+  --output-dir analysis/figures/benchmarker
+```
+
 ## Execution Modes
 
 API models:
@@ -106,15 +144,22 @@ Local models:
 - Or point at an OpenAI-compatible local endpoint with `--backend openai --model-base-url ...`.
 
 Sharded cluster runs:
-- Every `generate` and `evaluate` command accepts `--shard-count`, `--shard-index`, and `--shard-strategy`.
-- Stable sample ids keep shard membership deterministic for resume and retry.
-- Thin launch helpers live in [`jobs/run_generate_shard.sh`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/jobs/run_generate_shard.sh), [`jobs/run_evaluate_shard.sh`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/jobs/run_evaluate_shard.sh), [`jobs/generate_array.sbatch`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/jobs/generate_array.sbatch), and [`jobs/evaluate_array.sbatch`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/jobs/evaluate_array.sbatch).
+- `submit-generate-cluster` and `submit-evaluate-cluster` are for local `vllm/...` models only.
+- Each array task owns one local model and one dataset split, then runs all work for that pair before exiting.
+- With the default 3 local models and 3 datasets, each command writes 9 tasks.
+- `--gpu-count` adds an array cap like `%4`. If omitted, the full array is submitted without a concurrency cap.
+- Cold starts are avoided within a job because settings and modes stay grouped inside that task. There is still one cold start per `model × dataset` job.
+- Low-level `--shard-count` / `--shard-index` remain available on direct `generate` and `evaluate`, but they are no longer the primary documented cluster interface.
 
 ## Canonical Artifacts
 
 - Generation logs: `results/inspect/generation/<run>/<model>/`
 - Evaluation logs: `results/inspect/evaluation/<run>/<generator_run>/<generator_model>/<eval_model>/`
 - Derived augmented dataset cache: `datasets/augmented/<run>/<model>/`
+- Cluster bundle artifacts: `jobs/generated/<stage>/<run>/`
+- Cluster runtime logs: `logs/slurm/<stage>/<run>/`
+
+Cluster submit generation uses dataset-scoped cache directories under `datasets/augmented/<run>/<model>/<dataset>/` so concurrent jobs do not overwrite each other.
 
 Analysis reads Inspect logs directly. There is no merge stage in the canonical workflow anymore.
 
@@ -128,18 +173,10 @@ Analysis reads Inspect logs directly. There is no merge stage in the canonical w
 - [`utils/`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/utils): constants, model aliasing, sharding, parsing, log helpers
 - [`prompts/`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/prompts): plain-text prompt templates
 
-## Compatibility Scripts
-
-These still exist, but they now just forward into the Inspect-first core:
-
-- [`scripts/02_generate_distractors.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/scripts/02_generate_distractors.py)
-- [`scripts/03_regenerate_experiments.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/scripts/03_regenerate_experiments.py)
-- [`scripts/04_eval_matrix.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/scripts/04_eval_matrix.py)
-- [`scripts/07_export_benchmarker_items.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/scripts/07_export_benchmarker_items.py)
-- [`scripts/08_analyze.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/scripts/08_analyze.py)
-
 ## Additional Docs
 
 - [`docs/pipeline.md`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/docs/pipeline.md)
+- [`docs/evaluation.md`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/docs/evaluation.md)
 - [`docs/models.md`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/docs/models.md)
 - [`docs/sharding_and_recombination.md`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/docs/sharding_and_recombination.md)
+- [`jobs/README_local_eval.md`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/jobs/README_local_eval.md)

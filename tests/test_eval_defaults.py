@@ -1,3 +1,6 @@
+import os
+from pathlib import Path
+
 import main as app_main
 from utils.modeling import resolve_model_name
 
@@ -8,7 +11,7 @@ def test_main_parser_generate_defaults_use_inspect_first_shape():
     assert args.processed_dataset.endswith("unified_processed_v2")
     assert args.shard_count == 1
     assert args.shard_strategy == "contiguous"
-    assert args.log_root.endswith("results/inspect/generation")
+    assert Path(args.log_root).relative_to(Path(os.environ["RESULTS_DIR"])) == Path("inspect/generation")
 
 
 def test_main_parser_evaluate_defaults_use_inspect_first_shape():
@@ -26,9 +29,62 @@ def test_main_parser_evaluate_defaults_use_inspect_first_shape():
             "gpt-5.2-2025-12-11",
         ]
     )
-    assert args.cache_root.endswith("datasets/augmented")
-    assert args.log_root.endswith("results/inspect/evaluation")
+    assert Path(args.cache_root).relative_to(Path(os.environ["DATASETS_DIR"])) == Path("augmented")
+    assert Path(args.log_root).relative_to(Path(os.environ["RESULTS_DIR"])) == Path("inspect/evaluation")
     assert args.shard_count == 1
+
+
+def test_main_parser_submit_generate_cluster_defaults_use_local_cluster_shape():
+    parser = app_main.build_parser()
+    args = parser.parse_args(["submit-generate-cluster", "--run-name", "cluster-gen"])
+    assert args.gpu_count is None
+    assert args.partition == "clip"
+    assert args.account == "clip"
+    assert args.qos == "high"
+    assert args.gpu_type == "rtxa6000"
+    assert args.submit is True
+
+
+def test_main_parser_submit_evaluate_cluster_defaults_use_local_cluster_shape():
+    parser = app_main.build_parser()
+    args = parser.parse_args(
+        [
+            "submit-evaluate-cluster",
+            "--run-name",
+            "cluster-eval",
+            "--generator-run-name",
+            "gen",
+            "--generator-model",
+            "gpt-5.2-2025-12-11",
+        ]
+    )
+    assert args.gpu_count is None
+    assert args.partition == "clip"
+    assert args.account == "clip"
+    assert args.qos == "high"
+    assert args.gpu_type == "rtxa6000"
+    assert args.submit is True
+
+
+def test_supported_main_subcommands_match_the_inspect_first_cli():
+    parser = app_main.build_parser()
+    subparser_action = next(action for action in parser._actions if getattr(action, "choices", None))
+    assert set(subparser_action.choices) == {
+        "prepare-data",
+        "generate",
+        "generate-all",
+        "evaluate",
+        "evaluate-all",
+        "analyze",
+        "signature-table",
+        "export",
+        "submit-generate-cluster",
+        "submit-evaluate-cluster",
+        "diagnose-failures",
+        "diagnose-trace",
+        "smoke-generate",
+        "smoke-evaluate",
+    }
 
 
 def test_model_alias_resolution_covers_api_and_local_defaults():

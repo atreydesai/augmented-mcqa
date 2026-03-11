@@ -1,19 +1,35 @@
-# Sharding and Aggregation Guide
+# Cluster Scheduling and Low-Level Sharding
 
-The Inspect-first refactor keeps cluster sharding, but removes the old merge architecture.
+The Inspect-first refactor keeps low-level sharding, but the primary cluster path is now dataset-aware SLURM submit commands.
 
-## Core Idea
+## Primary Cluster Shape
 
-- Stable sample ids are computed across the unified dataset.
-- `--shard-count` and `--shard-index` deterministically partition those ids.
-- Inspect `.eval` logs are written per shard.
-- Analysis aggregates shard logs directly.
+Use one login-node command per stage:
 
-There is no canonical recombination step that rebuilds `summary.json` and `rows/` trees anymore.
+```bash
+uv run python main.py submit-generate-cluster --run-name gen_cluster
+uv run python main.py submit-evaluate-cluster --run-name eval_cluster --generator-run-name gen_cluster --generator-model Qwen/Qwen3-4B-Instruct-2507
+```
 
-## Shard Controls
+Each command:
 
-Both `generate` and `evaluate` accept:
+- only supports local `vllm/...` models
+- creates one SLURM array task per `model × dataset`
+- keeps settings and modes grouped inside the task
+- avoids repeated cold starts within that job
+- still pays one cold start per `model × dataset` task
+- writes bundle files to `jobs/generated/<stage>/<run>/`
+- writes logs to `logs/slurm/<stage>/<run>/`
+
+If you pass `--gpu-count 4`, the sbatch array renders `%4`. If you omit it, there is no concurrency cap in the array specification.
+
+## Why There Is No Recombination Step
+
+Inspect `.eval` logs are the canonical artifact. Analysis walks all logs directly, so there is no merge command that rebuilds `summary.json` and `rows/`.
+
+## Low-Level Shard Controls
+
+Both direct `generate` and `evaluate` still accept:
 
 - `--shard-count`
 - `--shard-index`
@@ -24,57 +40,20 @@ Supported strategies:
 - `contiguous`
 - `modulo`
 
-## Generation Example
+Use those flags only if one `model × dataset` task is still too large and you need to split it manually.
 
-```bash
-uv run python main.py generate \
-  --model gpt-5.2-2025-12-11 \
-  --run-name gen_cluster \
-  --processed-dataset datasets/processed/unified_processed_v2 \
-  --shard-count 8 \
-  --shard-index 0
-```
-
-## Evaluation Example
+Example:
 
 ```bash
 uv run python main.py evaluate \
   --model Qwen/Qwen3-4B-Instruct-2507 \
-  --run-name eval_cluster \
+  --run-name eval_sharded \
   --generator-run-name gen_cluster \
   --generator-model gpt-5.2-2025-12-11 \
   --processed-dataset datasets/processed/unified_processed_v2 \
+  --dataset-types mmlu_pro \
   --shard-count 8 \
-  --shard-index 0
-```
-
-## Thin SLURM Helpers
-
-Single-shard launchers:
-
-- [`jobs/run_generate_shard.sh`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/jobs/run_generate_shard.sh)
-- [`jobs/run_evaluate_shard.sh`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/jobs/run_evaluate_shard.sh)
-
-Array templates:
-
-- [`jobs/generate_array.sbatch`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/jobs/generate_array.sbatch)
-- [`jobs/evaluate_array.sbatch`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/jobs/evaluate_array.sbatch)
-
-Per-eval-model bundle generator:
-
-```bash
-uv run python scripts/05_build_eval_slurm_bundle.py \
-  --run-name eval_cluster \
-  --generator-run-name gen_cluster \
-  --generator-model gpt-5.2-2025-12-11 \
-  --output-dir jobs/generated/eval_cluster \
-  --shard-count 8
-```
-
-Submit:
-
-```bash
-bash jobs/generated/eval_cluster/submit_all.sh
+  --shard-index 3
 ```
 
 ## Canonical Output Layout
@@ -97,6 +76,8 @@ Derived augmented cache:
 datasets/augmented/<generator_run_name>/<generator_model>/
 ```
 
+Cluster submit generation writes dataset-scoped caches under `datasets/augmented/<generator_run_name>/<generator_model>/<dataset>/`.
+
 ## Aggregation
 
 Use:
@@ -105,6 +86,4 @@ Use:
 uv run python main.py analyze --results-root results/inspect/evaluation
 ```
 
-The plotting and summary code walks every shard log. If all shards finish, the analysis sees the full run without a separate merge command.
-
-`scripts/06_merge_eval_subshards.py` remains only as a compatibility message and intentionally performs no work.
+The plotting and summary code walks every log. If all tasks finish, the analysis sees the full run without a separate merge command.
