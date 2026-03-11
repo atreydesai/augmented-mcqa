@@ -110,6 +110,31 @@ def test_cluster_help_mentions_gpu_count_and_write_only(capsys):
     assert "--write-only" in output
 
 
+def test_prepare_data_step_all_implies_download_all(monkeypatch):
+    captured = {}
+
+    def fake_prepare_data(**kwargs):
+        captured.update(kwargs)
+        return 0
+
+    monkeypatch.setattr(app_main, "prepare_data", fake_prepare_data)
+
+    rc = app_main.main(
+        [
+            "prepare-data",
+            "--step",
+            "all",
+            "--output-path",
+            "datasets/processed/unified_processed_v3",
+        ]
+    )
+
+    assert rc == 0
+    assert captured["step"] == "all"
+    assert captured["download_all"] is True
+    assert captured["dataset"] is None
+
+
 def test_model_alias_resolution_covers_api_and_local_defaults():
     assert resolve_model_name("gpt-5.2-2025-12-11") == "openai/gpt-5.2-2025-12-11"
     assert resolve_model_name("Qwen/Qwen3.5-397B-A17B") == "together/Qwen/Qwen3.5-397B-A17B"
