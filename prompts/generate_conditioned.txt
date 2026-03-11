@@ -15,8 +15,13 @@ Correct Answer: A. {gold_answer}
 - Each distractor must be plausible, incorrect, and distinct.
 - Do not repeat any existing option.
 - Do not include the correct answer.
+- Do not use any forbidden value listed below.
 - Do not include any explanation or extra text.
 </general instructions>
+
+<forbidden values>
+{forbidden_values}
+</forbidden values>
 
 <format>
 Return your output as valid JSON with exactly these keys: {labels}.

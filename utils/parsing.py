@@ -17,19 +17,34 @@ def strip_code_fences(text: str) -> str:
     return stripped.strip()
 
 
+def _extract_last_json_object(blob: str) -> dict[str, object] | None:
+    decoder = json.JSONDecoder()
+    for start in reversed([match.start() for match in re.finditer(r"\{", blob)]):
+        candidate = blob[start:].lstrip()
+        if not candidate.startswith("{"):
+            continue
+        try:
+            parsed, _end = decoder.raw_decode(candidate)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(parsed, dict):
+            return parsed
+    return None
+
+
 def _extract_json_object(text: str) -> dict[str, object]:
     payload = strip_code_fences(text)
     try:
         parsed = json.loads(payload)
     except json.JSONDecodeError:
-        start = payload.find("{")
-        end = payload.rfind("}")
-        if start < 0 or end < start:
+        fenced_blocks = re.findall(r"```(?:json)?\s*(.*?)```", text, flags=re.IGNORECASE | re.DOTALL)
+        candidate_blobs = [payload, *[block.strip() for block in fenced_blocks if block.strip()]]
+        for blob in candidate_blobs:
+            parsed = _extract_last_json_object(blob)
+            if parsed is not None:
+                break
+        else:
             raise LabeledParseError("Response does not contain a valid JSON object") from None
-        try:
-            parsed = json.loads(payload[start : end + 1])
-        except json.JSONDecodeError as exc:
-            raise LabeledParseError("Response does not contain a valid JSON object") from exc
     if not isinstance(parsed, dict):
         raise LabeledParseError("Expected a JSON object")
     return parsed

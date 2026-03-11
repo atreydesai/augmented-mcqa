@@ -110,6 +110,31 @@ def test_parse_labeled_distractors_accepts_exact_json_labels():
     assert parsed == ["One", "Two", "Three"]
 
 
+def test_parse_labeled_distractors_recovers_last_valid_json_object_from_messy_response():
+    payload = """{
+  "B": "broken start",
+  "C": "
+
+Let me redo that properly.
+
+```json
+{
+  "B": "still broken",
+  "C": "also broken",
+  "D": "
+
+I need to start over cleanly.
+
+{
+  "B": "One",
+  "C": "Two",
+  "D": "Three"
+}
+"""
+    parsed = parse_labeled_distractors(payload, ["B", "C", "D"], forbidden=["Gold"])
+    assert parsed == ["One", "Two", "Three"]
+
+
 def test_parse_labeled_distractors_rejects_extra_or_mislabeled_lines():
     try:
         parse_labeled_distractors("B. One\nD. Two\nE. Three", ["B", "C", "D"])
