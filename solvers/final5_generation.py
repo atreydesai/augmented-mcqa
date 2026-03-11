@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import hashlib
 import random
 from pathlib import Path
@@ -33,7 +34,7 @@ def _shuffle_options(sample_id: str, setting: str, answer: str, distractors: lis
 
 
 def _fresh_state(state: TaskState, prompt: str) -> TaskState:
-    working_state = state.model_copy(deep=True)
+    working_state = copy.deepcopy(state)
     working_state.user_prompt.text = prompt
     working_state.output.completion = ""
     return working_state

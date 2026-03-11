@@ -1,6 +1,10 @@
+from inspect_ai.model import ChatMessageUser, ModelOutput
+from inspect_ai.solver import TaskState
+
 from datasets import Dataset, DatasetDict
 
 from data.final5_store import build_generation_dataset
+from solvers.final5_generation import _fresh_state
 from utils.parsing import LabeledParseError, parse_labeled_distractors
 
 
@@ -64,3 +68,25 @@ def test_build_generation_dataset_flattens_processed_rows_with_stable_ids(tmp_pa
     assert len(dataset) == 2
     assert dataset[0].id == "arc_challenge:arc-1"
     assert dataset[1].metadata["choices_human"] == ["A", "B", "C"]
+
+
+def test_fresh_state_clones_task_state_without_model_copy():
+    state = TaskState(
+        model="openai/test",
+        sample_id="sample-1",
+        epoch=1,
+        input="Original prompt",
+        messages=[ChatMessageUser(content="Original prompt")],
+        output=ModelOutput(model="openai/test"),
+        metadata={"sample_id": "sample-1"},
+        store={},
+    )
+    state.output.completion = "previous output"
+
+    fresh = _fresh_state(state, "New prompt")
+
+    assert fresh is not state
+    assert fresh.user_prompt.text == "New prompt"
+    assert fresh.output.completion == ""
+    assert state.user_prompt.text == "Original prompt"
+    assert state.output.completion == "previous output"
