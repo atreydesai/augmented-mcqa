@@ -748,7 +748,7 @@ def build_parser() -> argparse.ArgumentParser:
         command.add_argument(
             "--max-tokens",
             type=int,
-            default=1024,
+            default=2048,
             help="Advanced tuning: maximum tokens requested from the model for each generation or evaluation call.",
         )
         command.add_argument(
@@ -759,7 +759,7 @@ def build_parser() -> argparse.ArgumentParser:
         )
         command.add_argument(
             "--reasoning-effort",
-            default="high",
+            default="medium",
             help="Advanced tuning: optional reasoning-effort hint for models/providers that support it.",
         )
         command.add_argument(
@@ -1409,7 +1409,7 @@ def build_parser() -> argparse.ArgumentParser:
     smoke_generate.add_argument(
         "--max-tokens",
         type=int,
-        default=256,
+        default=2048,
         help="Maximum output tokens per smoke-test generation call.",
     )
     smoke_generate.add_argument(
@@ -1501,7 +1501,7 @@ def build_parser() -> argparse.ArgumentParser:
     smoke_evaluate.add_argument(
         "--max-tokens",
         type=int,
-        default=128,
+        default=2048,
         help="Maximum output tokens per smoke-test evaluation call.",
     )
     smoke_evaluate.add_argument(
