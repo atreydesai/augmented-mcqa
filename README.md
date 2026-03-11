@@ -1,5 +1,5 @@
 # Augmented MCQA
-
+![diagram](diagram-flowchart.png)
 ## Setup
 
 ```bash
