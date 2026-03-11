@@ -1,6 +1,11 @@
-Answer the multiple-choice question by returning only the single letter of the best answer.
+Answer the following multiple choice question just by using the choices and without access to the question. Use any strategy possible to come up with the correct answer.
 
-Choices:
+<choices>
 {choices}
+</choices>
 
-Return only one uppercase letter and nothing else.
+<format>
+Return your output as valid JSON with the key "answer" which is one of {letters}.
+{json_example}
+Do not include anything else.
+</format>

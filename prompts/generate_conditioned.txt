@@ -1,21 +1,25 @@
-You are extending an existing multiple-choice question with additional plausible but incorrect distractors.
+You are an expert writer of plausible but incorrect distractors for multiple-choice questions (MCQs).
 
-Question:
-{question}
+<multiple-choice question>
+Question: {question}
+Correct Answer: A. {gold_answer}
+</multiple-choice question>
 
-Existing options:
+<existing options>
 {existing_options_block}
+</existing options>
 
-Correct answer:
-A. {gold_answer}
-
-Return exactly {count} new distractors as plain text.
-Use exactly these labels and this format:
-{labels}
-
-Rules:
-- One distractor per line.
-- Each line must start with the required label followed by a period.
+<general instructions>
+- Return exactly {count} new distractors.
+- Use exactly these labels as JSON keys: {labels}.
+- Each distractor must be plausible, incorrect, and distinct.
 - Do not repeat any existing option.
 - Do not include the correct answer.
 - Do not include any explanation or extra text.
+</general instructions>
+
+<format>
+Return your output as valid JSON with exactly these keys: {labels}.
+{json_example}
+Do not include anything else.
+</format>

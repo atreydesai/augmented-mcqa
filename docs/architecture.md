@@ -21,7 +21,7 @@ prepare-data -> generate -> augmented cache -> evaluate -> analyze/export
 - [`tasks/`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/tasks)
   Builds Inspect `Task` objects for generation and evaluation.
 - [`solvers/`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/solvers)
-  Prompt construction, model calls, and plain-text parsing.
+  Prompt construction, model calls, and response parsing.
 - [`scorers/`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/scorers)
   Converts solver outputs into Inspect scores and metadata.
 - [`analysis/`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/analysis)
@@ -55,7 +55,7 @@ The per-dataset processors are:
 - `augment_model`
 - `augment_ablation`
 
-Generation is plain text only. The parser in [`utils/parsing.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/utils/parsing.py) expects exact labeled lines such as `B. ...` and retries on invalid output.
+Generation prompts use XML-style sections and ask for JSON keyed by distractor label. The parser in [`utils/parsing.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/utils/parsing.py) validates that JSON first, and still accepts the older labeled-line format as a backward-compatible fallback during retries.
 
 ### Augmented cache
 
@@ -72,7 +72,7 @@ Generation is plain text only. The parser in [`utils/parsing.py`](/Users/ndesai-
 - `full_question`
 - `choices_only`
 
-The evaluation scorer in [`scorers/evaluation.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/scorers/evaluation.py) records correctness plus metadata needed by analysis.
+The evaluation prompts also use XML-style sections and require a small JSON object with an `"answer"` key in both modes. The evaluation scorer in [`scorers/evaluation.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/scorers/evaluation.py) records correctness plus metadata needed by analysis.
 
 ## Model Resolution
 

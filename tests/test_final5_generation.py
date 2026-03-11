@@ -41,6 +41,12 @@ def test_parse_labeled_distractors_accepts_exact_plain_text_labels():
     assert parsed == ["One", "Two", "Three"]
 
 
+def test_parse_labeled_distractors_accepts_exact_json_labels():
+    payload = '{"B": "One", "C": "Two", "D": "Three"}'
+    parsed = parse_labeled_distractors(payload, ["B", "C", "D"], forbidden=["Gold"])
+    assert parsed == ["One", "Two", "Three"]
+
+
 def test_parse_labeled_distractors_rejects_extra_or_mislabeled_lines():
     try:
         parse_labeled_distractors("B. One\nD. Two\nE. Three", ["B", "C", "D"])
@@ -58,6 +64,15 @@ def test_parse_labeled_distractors_rejects_duplicates_and_forbidden_answers():
             pass
         else:
             raise AssertionError("Expected parser failure")
+
+
+def test_parse_labeled_distractors_rejects_missing_json_keys():
+    try:
+        parse_labeled_distractors('{"B": "One", "D": "Three"}', ["B", "C", "D"], forbidden=["Gold"])
+    except LabeledParseError as exc:
+        assert "Missing distractor keys: C" in str(exc)
+    else:
+        raise AssertionError("Expected parser failure")
 
 
 def test_build_generation_dataset_flattens_processed_rows_with_stable_ids(tmp_path):

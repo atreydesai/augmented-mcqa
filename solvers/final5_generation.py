@@ -40,6 +40,10 @@ def _fresh_state(state: TaskState, prompt: str) -> TaskState:
     return working_state
 
 
+def _format_json_example(labels: list[str]) -> str:
+    return "{\n" + ",\n".join(f'  "{label}": "text for distractor {label}"' for label in labels) + "\n}"
+
+
 async def _call_and_parse(
     *,
     state: TaskState,
@@ -98,6 +102,7 @@ def final5_generation_solver():
                 labels="B, C, D",
                 question=question,
                 gold_answer=answer,
+                json_example=_format_json_example(["B", "C", "D"]),
             )
             model3, raw_b = await _call_and_parse(
                 state=state,
@@ -118,6 +123,7 @@ def final5_generation_solver():
                 question=question,
                 gold_answer=answer,
                 existing_options_block=format_choice_lines([answer, *human3]),
+                json_example=_format_json_example(["E", "F", "G", "H", "I", "J"]),
             )
             delta_human, raw_c = await _call_and_parse(
                 state=state,
@@ -138,6 +144,7 @@ def final5_generation_solver():
                 question=question,
                 gold_answer=answer,
                 existing_options_block=format_choice_lines([answer, *model3]),
+                json_example=_format_json_example(["E", "F", "G", "H", "I", "J"]),
             )
             delta_model, raw_d = await _call_and_parse(
                 state=state,
@@ -158,6 +165,7 @@ def final5_generation_solver():
                 labels="B, C, D, E, F, G, H, I, J",
                 question=question,
                 gold_answer=answer,
+                json_example=_format_json_example(["B", "C", "D", "E", "F", "G", "H", "I", "J"]),
             )
             ablation, raw_e = await _call_and_parse(
                 state=state,

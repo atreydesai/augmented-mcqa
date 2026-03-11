@@ -12,6 +12,7 @@ from .modeling import resolve_model_name, safe_name
 from .parsing import (
     LabeledParseError,
     extract_answer_letter,
+    extract_answer_letter_from_json,
     format_choice_lines,
     parse_labeled_distractors,
 )
@@ -32,6 +33,7 @@ __all__ = [
     "safe_name",
     "LabeledParseError",
     "extract_answer_letter",
+    "extract_answer_letter_from_json",
     "format_choice_lines",
     "parse_labeled_distractors",
     "sample_id_for_row",
