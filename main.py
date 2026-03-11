@@ -899,7 +899,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--limit",
         type=int,
         default=None,
-        help="Advanced/debug option: optional cap on the number of samples to generate.",
+        help="Advanced/debug option: optional per-dataset cap on the number of samples to generate.",
     )
     generate.add_argument(
         "--log-root",
@@ -957,7 +957,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--limit",
         type=int,
         default=None,
-        help="Advanced/debug option: optional cap on the number of samples per model.",
+        help="Advanced/debug option: optional per-dataset cap on the number of samples for each model.",
     )
     generate_all.add_argument(
         "--log-root",
@@ -1051,7 +1051,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--limit",
         type=int,
         default=None,
-        help="Advanced/debug option: optional cap on the number of evaluation samples.",
+        help="Advanced/debug option: optional per-dataset cap on the number of evaluation samples.",
     )
     evaluate.add_argument(
         "--log-root",
@@ -1139,7 +1139,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--limit",
         type=int,
         default=None,
-        help="Advanced/debug option: optional cap on the number of evaluation samples.",
+        help="Advanced/debug option: optional per-dataset cap on the number of evaluation samples for each model.",
     )
     evaluate_all.add_argument(
         "--log-root",
@@ -1380,7 +1380,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Optional subset: comma-separated subset of dataset splits to sample from.",
     )
-    smoke_generate.add_argument("--limit", type=int, default=2, help="Number of samples per model to run.")
+    smoke_generate.add_argument("--limit", type=int, default=2, help="Number of samples per selected dataset split to run.")
     smoke_generate.add_argument(
         "--log-root",
         default=str(DEFAULT_GENERATION_LOG_ROOT),
@@ -1467,7 +1467,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Advanced subset override: comma-separated subset of evaluation modes to run in the smoke test.",
     )
-    smoke_evaluate.add_argument("--limit", type=int, default=2, help="Number of samples per task to run.")
+    smoke_evaluate.add_argument("--limit", type=int, default=2, help="Number of samples per selected dataset split to run.")
     smoke_evaluate.add_argument(
         "--generation-log-root",
         default=str(DEFAULT_GENERATION_LOG_ROOT),
