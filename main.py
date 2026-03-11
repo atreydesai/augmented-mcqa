@@ -262,10 +262,11 @@ def _inspect_eval(tasks, *, model: str, log_dir: Path, args: argparse.Namespace)
 
 
 def _prepare_data(args: argparse.Namespace) -> int:
+    download_all = bool(args.all or args.step == "all")
     return prepare_data(
         step=args.step,
         dataset=args.dataset,
-        download_all=args.all,
+        download_all=download_all,
         output_dir=args.output_dir,
         output_path=args.output_path,
         limit=args.limit,
