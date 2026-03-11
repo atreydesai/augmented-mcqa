@@ -4,6 +4,8 @@ Inspect-first Final5 generation and evaluation for `arc_challenge`, `mmlu_pro`, 
 
 The canonical interface is [`main.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/main.py). The old numbered script wrappers have been removed.
 
+![flowchart of repo](diagram-flowchart.png)
+
 ## What Changed
 
 - Generation and evaluation are both built on [Inspect AI](https://inspect.aisi.org.uk/).
