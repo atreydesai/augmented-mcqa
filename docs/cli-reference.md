@@ -124,7 +124,7 @@ Default model sets:
 | `--run-name` | Logical run name used to organize generation logs and caches. |
 | `--processed-dataset` | Processed unified `DatasetDict` to read questions from. |
 | `--dataset-types` | Optional subset: comma-separated subset of dataset splits to generate for. |
-| `--limit` | Advanced/debug option: optional cap on the number of samples to generate. |
+| `--limit` | Advanced/debug option: optional per-dataset cap on the number of samples to generate. |
 | `--log-root` | Advanced override: root directory for Inspect generation logs. |
 | `--cache-root` | Advanced override: root directory where derived augmented caches are stored. |
 | `--augmented-dataset` | Advanced override: exact output path for the augmented cache. |
@@ -143,7 +143,7 @@ Use this when you want to run the full default API generator set instead of one 
 | `--run-name` | Logical run name used to organize generation logs and caches. |
 | `--processed-dataset` | Processed unified `DatasetDict` to read questions from. |
 | `--dataset-types` | Optional subset: comma-separated subset of dataset splits to generate for. |
-| `--limit` | Advanced/debug option: optional cap on the number of samples per model. |
+| `--limit` | Advanced/debug option: optional per-dataset cap on the number of samples for each model. |
 | `--log-root` | Advanced override: root directory for Inspect generation logs. |
 | `--cache-root` | Advanced override: root directory where derived augmented caches are stored. |
 | `--materialize-cache` | Rebuild each augmented cache immediately after generation completes. |
@@ -206,7 +206,7 @@ Default model sets:
 | `--dataset-types` | Optional subset: comma-separated subset of dataset splits to evaluate. |
 | `--settings` | Advanced subset override: comma-separated subset of Final5 settings to evaluate. |
 | `--modes` | Advanced subset override: comma-separated subset of evaluation modes to run. |
-| `--limit` | Advanced/debug option: optional cap on the number of evaluation samples. |
+| `--limit` | Advanced/debug option: optional per-dataset cap on the number of evaluation samples. |
 | `--log-root` | Advanced override: root directory for Inspect evaluation logs. |
 | `--rebuild-cache` | Advanced override: force regeneration of the augmented cache before evaluation. |
 
@@ -231,7 +231,7 @@ Use this when you want to run the full default local evaluation model set direct
 | `--dataset-types` | Optional subset: comma-separated subset of dataset splits to evaluate. |
 | `--settings` | Advanced subset override: comma-separated subset of Final5 settings to evaluate. |
 | `--modes` | Advanced subset override: comma-separated subset of evaluation modes to run. |
-| `--limit` | Advanced/debug option: optional cap on the number of evaluation samples. |
+| `--limit` | Advanced/debug option: optional per-dataset cap on the number of evaluation samples for each model. |
 | `--log-root` | Advanced override: root directory for Inspect evaluation logs. |
 | `--rebuild-cache` | Advanced override: force regeneration of the augmented cache before evaluation. |
 

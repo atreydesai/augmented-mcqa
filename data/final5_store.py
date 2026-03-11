@@ -52,6 +52,8 @@ def _answer_text(row: dict[str, Any]) -> str:
 def iter_processed_rows(
     processed_dataset_path: Path | str,
     dataset_types: list[str] | None = None,
+    *,
+    limit: int | None = None,
 ) -> list[dict[str, Any]]:
     dataset_dict = _load_dataset_dict(processed_dataset_path)
     wanted = dataset_types or list(ACTIVE_DATASET_TYPES)
@@ -61,6 +63,8 @@ def iter_processed_rows(
             continue
         split = dataset_dict[dataset_type]
         for row_index, row in enumerate(split):
+            if limit is not None and row_index >= limit:
+                break
             payload = dict(row)
             payload["dataset_type"] = dataset_type
             payload["row_index"] = row_index
@@ -79,9 +83,7 @@ def build_generation_dataset(
     shard_index: int = 0,
     shard_strategy: str = "contiguous",
 ) -> MemoryDataset:
-    rows = iter_processed_rows(processed_dataset_path, dataset_types=dataset_types)
-    if limit is not None:
-        rows = rows[:limit]
+    rows = iter_processed_rows(processed_dataset_path, dataset_types=dataset_types, limit=limit)
     rows = select_shard(rows, shard_count=shard_count, shard_index=shard_index, strategy=shard_strategy)
 
     samples: list[Sample] = []
@@ -149,15 +151,19 @@ def materialize_augmented_dataset(
         for row_index, row in enumerate(dataset_dict[dataset_type]):
             payload = dict(row)
             sample_id = sample_id_for_row(dataset_type, payload, row_index)
+            generated_row = generated.get(sample_id)
+            if generated_row is None:
+                continue
             payload["dataset_type"] = dataset_type
+            payload["row_index"] = row_index
+            payload["sample_id"] = sample_id
             payload["schema_version"] = "final5_inspect_v1"
             payload.update(_empty_generated_row())
-            generated_row = generated.get(sample_id)
-            if generated_row:
-                for key in FINAL5_SETTINGS:
-                    payload[key] = list(generated_row.get(key) or [])
-                    payload[f"{key}_options_randomized"] = list(generated_row.get(f"{key}_options_randomized") or [])
-                    payload[f"{key}_correct_answer_letter"] = str(generated_row.get(f"{key}_correct_answer_letter", "") or "")
+            payload["generation_status"] = str(generated_row.get("status", "") or "")
+            for key in FINAL5_SETTINGS:
+                payload[key] = list(generated_row.get(key) or [])
+                payload[f"{key}_options_randomized"] = list(generated_row.get(f"{key}_options_randomized") or [])
+                payload[f"{key}_correct_answer_letter"] = str(generated_row.get(f"{key}_correct_answer_letter", "") or "")
             rows.append(payload)
         rebuilt[dataset_type] = Dataset.from_list(rows)
 
@@ -210,9 +216,13 @@ def build_evaluation_dataset(
         if dataset_type not in dataset_dict:
             continue
         split = dataset_dict[dataset_type]
+        selected_for_dataset = 0
         for row_index, row in enumerate(split):
+            if limit is not None and selected_for_dataset >= limit:
+                break
             payload = dict(row)
-            sample_id = sample_id_for_row(dataset_type, payload, row_index)
+            original_row_index = int(payload.get("row_index", row_index))
+            sample_id = str(payload.get("sample_id") or sample_id_for_row(dataset_type, payload, original_row_index))
             options = list(payload.get(f"{setting}_options_randomized") or [])
             correct_letter = str(payload.get(f"{setting}_correct_answer_letter", "") or "")
             if not options or correct_letter not in CHOICE_LABELS[: len(options)]:
@@ -250,7 +260,7 @@ def build_evaluation_dataset(
                     metadata={
                         "sample_id": sample_id,
                         "dataset_type": dataset_type,
-                        "row_index": row_index,
+                        "row_index": original_row_index,
                         "question": str(payload.get("question", "")),
                         "category": str(payload.get("category", "")),
                         "setting": setting,
@@ -264,9 +274,7 @@ def build_evaluation_dataset(
                     },
                 )
             )
-
-    if limit is not None:
-        entries = entries[:limit]
+            selected_for_dataset += 1
     entries = select_shard(entries, shard_count=shard_count, shard_index=shard_index, strategy=shard_strategy)
     return MemoryDataset(entries)
 
