@@ -1,36 +1,5 @@
 # Augmented MCQA
 
-Inspect-first Final5 generation and evaluation for `arc_challenge`, `mmlu_pro`, and `gpqa`.
-
-The canonical interface is [`main.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/main.py). The old numbered script wrappers have been removed.
-
-## What Changed
-
-- Generation and evaluation are both built on [Inspect AI](https://inspect.aisi.org.uk/).
-- Structured outputs are gone. Final5 generation now uses plain-text labeled lines with strict parsing and retry.
-- Inspect `.eval` logs are the canonical run artifact.
-- Augmented Hugging Face datasets under `datasets/augmented/` are derived caches for reuse and export.
-- SLURM support now goes through dataset-aware submit commands that generate one job per `model × dataset`.
-
-## Core Commands
-
-| Command | Purpose |
-|---|---|
-| `main.py prepare-data` | Download and process raw datasets |
-| `main.py generate` | Run one generation model over the processed dataset |
-| `main.py generate-all` | Run the full generator model list |
-| `main.py evaluate` | Evaluate one model against one generation run |
-| `main.py evaluate-all` | Evaluate the full local/API eval model list |
-| `main.py submit-generate-cluster` | Submit local generation jobs as one SLURM array over `model × dataset` |
-| `main.py submit-evaluate-cluster` | Submit local evaluation jobs as one SLURM array over `model × dataset` |
-| `main.py analyze` | Aggregate Inspect logs into plots and summary tables |
-| `main.py signature-table` | Build a behavioral-signature table from Inspect logs |
-| `main.py export` | Export a derived augmented dataset to benchmarker JSONL |
-| `main.py diagnose-failures` | Find incomplete rows in an augmented cache |
-| `main.py diagnose-trace` | Dump generation traces from Inspect logs |
-| `main.py smoke-generate` | Run small generation smoke jobs |
-| `main.py smoke-evaluate` | Run small evaluation smoke jobs |
-
 ## Setup
 
 ```bash
@@ -38,73 +7,228 @@ cp .env.example .env
 uv sync
 ```
 
-For local vLLM-backed runs:
+If you will run local `vllm/...` models:
 
 ```bash
 uv pip install --no-build-isolation 'vllm==0.11.2' 'transformers<5' 'numpy<2.3'
 ```
 
-## Quick Start
+Set the provider keys you actually need in `.env`:
 
-Prepare the unified processed dataset:
+- `OPENAI_API_KEY` for GPT-5.2
+- `ANTHROPIC_API_KEY` for Claude Opus
+- `GOOGLE_API_KEY` for Gemini
+- `TOGETHER_API_KEY` for Together-hosted Qwen 3.5 models
+
+## The Normal Pipeline
+
+This is the path the repo is now optimized for:
+
+1. prepare `datasets/processed/unified_processed_v3`
+2. generate distractors with one generator model
+3. evaluate those generated distractors on the local cluster with `vllm/...` evaluation models
+4. analyze the evaluation logs
+5. export benchmarker files if needed
+
+API evaluation is not the recommended workflow here. The normal evaluation path is local `vllm/...` only.
+
+## Step 1: Prepare Data
 
 ```bash
-uv run python main.py prepare-data --step all --output-path datasets/processed/unified_processed_v2
+uv run python main.py prepare-data \
+  --step all \
+  --output-path datasets/processed/unified_processed_v3
 ```
 
-Run API-backed generation:
+## Step 2: Generate Distractors
+
+Pick one of the generator commands below.
+
+### API generators
+
+GPT-5.2:
 
 ```bash
 uv run python main.py generate \
   --model gpt-5.2-2025-12-11 \
-  --run-name gen_openai \
-  --processed-dataset datasets/processed/unified_processed_v2 \
+  --run-name gen_gpt52 \
+  --processed-dataset datasets/processed/unified_processed_v3 \
   --materialize-cache
 ```
 
-Run local generation against an OpenAI-compatible server:
+Claude Opus 4.6:
 
 ```bash
 uv run python main.py generate \
-  --model my-local-model \
-  --backend openai \
-  --model-base-url http://localhost:8000/v1 \
-  --run-name gen_local \
-  --processed-dataset datasets/processed/unified_processed_v2 \
+  --model claude-opus-4-6 \
+  --run-name gen_claude_opus46 \
+  --processed-dataset datasets/processed/unified_processed_v3 \
   --materialize-cache
 ```
 
-Evaluate with a local vLLM model:
+Gemini 3.1 Pro:
 
 ```bash
-uv run python main.py evaluate \
-  --model Qwen/Qwen3-4B-Instruct-2507 \
-  --run-name eval_local \
-  --generator-run-name gen_openai \
-  --generator-model gpt-5.2-2025-12-11 \
-  --processed-dataset datasets/processed/unified_processed_v2
+uv run python main.py generate \
+  --model gemini-3.1-pro-preview \
+  --run-name gen_gemini31pro \
+  --processed-dataset datasets/processed/unified_processed_v3 \
+  --materialize-cache
 ```
 
-Submit all local generation jobs from the login node:
+TogetherAI Qwen/Qwen3.5-397B-A17B:
+
+```bash
+uv run python main.py generate \
+  --model Qwen/Qwen3.5-397B-A17B \
+  --run-name gen_together_qwen397b \
+  --processed-dataset datasets/processed/unified_processed_v3 \
+  --materialize-cache
+```
+
+TogetherAI Qwen/Qwen3.5-9B:
+
+```bash
+uv run python main.py generate \
+  --model Qwen/Qwen3.5-9B \
+  --run-name gen_together_qwen9b \
+  --processed-dataset datasets/processed/unified_processed_v3 \
+  --materialize-cache
+```
+
+### Local generators on the cluster
+
+Qwen3-4B:
 
 ```bash
 uv run python main.py submit-generate-cluster \
-  --run-name gen_cluster \
-  --processed-dataset datasets/processed/unified_processed_v2
+  --run-name gen_local_qwen3_4b \
+  --models Qwen/Qwen3-4B-Instruct-2507 \
+  --processed-dataset datasets/processed/unified_processed_v3 \
+  --gpu-count 1
 ```
 
-Submit all local evaluation jobs with a 4-GPU concurrency cap:
+Olmo3-7B:
+
+```bash
+uv run python main.py submit-generate-cluster \
+  --run-name gen_local_olmo3_7b \
+  --models allenai/Olmo-3-7B-Instruct \
+  --processed-dataset datasets/processed/unified_processed_v3 \
+  --gpu-count 1
+```
+
+If you want to launch both local generation models at once:
+
+```bash
+uv run python main.py submit-generate-cluster \
+  --run-name gen_local_all \
+  --models Qwen/Qwen3-4B-Instruct-2507,allenai/Olmo-3-7B-Instruct \
+  --processed-dataset datasets/processed/unified_processed_v3 \
+  --gpu-count 2
+```
+
+## Step 3: Evaluate On The Local Cluster
+
+The normal evaluation models are:
+
+- `Qwen/Qwen3-4B-Instruct-2507`
+- `allenai/Olmo-3-7B-Instruct`
+- `meta-llama/Llama-3.1-8B-Instruct`
+
+The recommended command is always `submit-evaluate-cluster`. That one command schedules all three local evaluation models across the dataset splits.
+
+If you generated with GPT-5.2:
 
 ```bash
 uv run python main.py submit-evaluate-cluster \
-  --run-name eval_cluster \
-  --generator-run-name gen_openai \
+  --run-name eval_gpt52 \
+  --generator-run-name gen_gpt52 \
   --generator-model gpt-5.2-2025-12-11 \
-  --processed-dataset datasets/processed/unified_processed_v2 \
-  --gpu-count 4
+  --processed-dataset datasets/processed/unified_processed_v3 \
+  --models Qwen/Qwen3-4B-Instruct-2507,allenai/Olmo-3-7B-Instruct,meta-llama/Llama-3.1-8B-Instruct \
+  --gpu-count 3
 ```
 
-Analyze Inspect logs:
+If you generated with Claude Opus 4.6:
+
+```bash
+uv run python main.py submit-evaluate-cluster \
+  --run-name eval_claude_opus46 \
+  --generator-run-name gen_claude_opus46 \
+  --generator-model claude-opus-4-6 \
+  --processed-dataset datasets/processed/unified_processed_v3 \
+  --models Qwen/Qwen3-4B-Instruct-2507,allenai/Olmo-3-7B-Instruct,meta-llama/Llama-3.1-8B-Instruct \
+  --gpu-count 3
+```
+
+If you generated with Gemini 3.1 Pro:
+
+```bash
+uv run python main.py submit-evaluate-cluster \
+  --run-name eval_gemini31pro \
+  --generator-run-name gen_gemini31pro \
+  --generator-model gemini-3.1-pro-preview \
+  --processed-dataset datasets/processed/unified_processed_v3 \
+  --models Qwen/Qwen3-4B-Instruct-2507,allenai/Olmo-3-7B-Instruct,meta-llama/Llama-3.1-8B-Instruct \
+  --gpu-count 3
+```
+
+If you generated with TogetherAI Qwen/Qwen3.5-397B-A17B:
+
+```bash
+uv run python main.py submit-evaluate-cluster \
+  --run-name eval_together_qwen397b \
+  --generator-run-name gen_together_qwen397b \
+  --generator-model Qwen/Qwen3.5-397B-A17B \
+  --processed-dataset datasets/processed/unified_processed_v3 \
+  --models Qwen/Qwen3-4B-Instruct-2507,allenai/Olmo-3-7B-Instruct,meta-llama/Llama-3.1-8B-Instruct \
+  --gpu-count 3
+```
+
+If you generated with TogetherAI Qwen/Qwen3.5-9B:
+
+```bash
+uv run python main.py submit-evaluate-cluster \
+  --run-name eval_together_qwen9b \
+  --generator-run-name gen_together_qwen9b \
+  --generator-model Qwen/Qwen3.5-9B \
+  --processed-dataset datasets/processed/unified_processed_v3 \
+  --models Qwen/Qwen3-4B-Instruct-2507,allenai/Olmo-3-7B-Instruct,meta-llama/Llama-3.1-8B-Instruct \
+  --gpu-count 3
+```
+
+If you generated with local Qwen3-4B:
+
+```bash
+uv run python main.py submit-evaluate-cluster \
+  --run-name eval_local_qwen3_4b \
+  --generator-run-name gen_local_qwen3_4b \
+  --generator-model Qwen/Qwen3-4B-Instruct-2507 \
+  --processed-dataset datasets/processed/unified_processed_v3 \
+  --models Qwen/Qwen3-4B-Instruct-2507,allenai/Olmo-3-7B-Instruct,meta-llama/Llama-3.1-8B-Instruct \
+  --gpu-count 3
+```
+
+If you generated with local Olmo3-7B:
+
+```bash
+uv run python main.py submit-evaluate-cluster \
+  --run-name eval_local_olmo3_7b \
+  --generator-run-name gen_local_olmo3_7b \
+  --generator-model allenai/Olmo-3-7B-Instruct \
+  --processed-dataset datasets/processed/unified_processed_v3 \
+  --models Qwen/Qwen3-4B-Instruct-2507,allenai/Olmo-3-7B-Instruct,meta-llama/Llama-3.1-8B-Instruct \
+  --gpu-count 3
+```
+
+Notes:
+
+- `submit-generate-cluster` defaults to the two local generation models, so with the default three dataset splits it creates `2 × 3 = 6` tasks.
+- `submit-evaluate-cluster` defaults to the three local evaluation models, so with the default three dataset splits it creates `3 × 3 = 9` tasks.
+- `--gpu-count` is a concurrency cap on the SLURM array. If you omit it, the full array is submitted without a `%N` cap.
+
+## Step 4: Analyze
 
 ```bash
 uv run python main.py analyze \
@@ -112,71 +236,45 @@ uv run python main.py analyze \
   --output-dir results/final5_plots
 ```
 
-Export benchmarker items from the derived augmented cache:
+## Step 5: Export Benchmarker Items
+
+Example for the GPT-5.2 generation run:
 
 ```bash
 uv run python main.py export \
-  --generator-run-name gen_openai \
+  --generator-run-name gen_gpt52 \
   --generator-model gpt-5.2-2025-12-11 \
-  --processed-dataset datasets/processed/unified_processed_v2
+  --processed-dataset datasets/processed/unified_processed_v3
 ```
 
-Run the standalone benchmarker writing-flaw analysis against Inspect eval logs plus the derived augmented cache:
+If you used a different generator, keep the same command shape and change `--generator-run-name` and `--generator-model` to match Step 2.
+
+## Optional: Standalone Benchmarker Writing-Flaw Analysis
+
+Example for the GPT-5.2 generation run:
 
 ```bash
 uv run python analysis/benchmarker_analysis.py \
   --writing-flaw-jsonl datasets/benchmarker_results/atrey_writing_flaw_rows.jsonl.zip \
   --results-root results/inspect/evaluation \
   --cache-root datasets/augmented \
-  --generator-run-name gen_openai \
+  --generator-run-name gen_gpt52 \
   --generator-model gpt-5.2-2025-12-11 \
   --output-dir analysis/figures/benchmarker
 ```
 
-## Execution Modes
-
-API models:
-- Pass a provider-qualified Inspect model id directly, such as `openai/gpt-5.2-2025-12-11`.
-- Or use the short aliases in [`utils/modeling.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/utils/modeling.py).
-
-Local models:
-- Use the built-in aliases such as `Qwen/Qwen3-4B-Instruct-2507`, which resolve to `vllm/...`.
-- Or point at an OpenAI-compatible local endpoint with `--backend openai --model-base-url ...`.
-
-Sharded cluster runs:
-- `submit-generate-cluster` and `submit-evaluate-cluster` are for local `vllm/...` models only.
-- Each array task owns one local model and one dataset split, then runs all work for that pair before exiting.
-- With the default 3 local models and 3 datasets, each command writes 9 tasks.
-- `--gpu-count` adds an array cap like `%4`. If omitted, the full array is submitted without a concurrency cap.
-- Cold starts are avoided within a job because settings and modes stay grouped inside that task. There is still one cold start per `model × dataset` job.
-- Low-level `--shard-count` / `--shard-index` remain available on direct `generate` and `evaluate`, but they are no longer the primary documented cluster interface.
-
 ## Canonical Artifacts
 
-- Generation logs: `results/inspect/generation/<run>/<model>/`
-- Evaluation logs: `results/inspect/evaluation/<run>/<generator_run>/<generator_model>/<eval_model>/`
-- Derived augmented dataset cache: `datasets/augmented/<run>/<model>/`
-- Cluster bundle artifacts: `jobs/generated/<stage>/<run>/`
-- Cluster runtime logs: `logs/slurm/<stage>/<run>/`
+- processed dataset: `datasets/processed/unified_processed_v3`
+- generation logs: `results/inspect/generation/<run>/<model>/`
+- evaluation logs: `results/inspect/evaluation/<run>/<generator_run>/<generator_model>/<eval_model>/`
+- augmented cache: `datasets/augmented/<run>/<model>/`
+- cluster bundles: `jobs/generated/<stage>/<run>/`
+- cluster logs: `logs/slurm/<stage>/<run>/`
 
-Cluster submit generation uses dataset-scoped cache directories under `datasets/augmented/<run>/<model>/<dataset>/` so concurrent jobs do not overwrite each other.
+Cluster generation uses dataset-scoped caches under `datasets/augmented/<run>/<model>/<dataset>/` so concurrent jobs do not overwrite each other.
 
-Analysis reads Inspect logs directly. There is no merge stage in the canonical workflow anymore.
+## More Detail
 
-## Repo Layout
-
-- [`main.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/main.py): primary CLI
-- [`tasks/`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/tasks): Inspect task factories
-- [`solvers/`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/solvers): prompt and parsing logic
-- [`scorers/`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/scorers): Final5 scoring and metadata emission
-- [`data/`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/data): processed dataset loading, cache materialization, export
-- [`utils/`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/utils): constants, model aliasing, sharding, parsing, log helpers
-- [`prompts/`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/prompts): plain-text prompt templates
-
-## Additional Docs
-
-- [`docs/pipeline.md`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/docs/pipeline.md)
-- [`docs/evaluation.md`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/docs/evaluation.md)
-- [`docs/models.md`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/docs/models.md)
-- [`docs/sharding_and_recombination.md`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/docs/sharding_and_recombination.md)
-- [`jobs/README_local_eval.md`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/jobs/README_local_eval.md)
+- [`docs/cli-reference.md`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/docs/cli-reference.md)
+- [`docs/architecture.md`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/docs/architecture.md)

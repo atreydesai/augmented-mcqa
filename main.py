@@ -26,7 +26,8 @@ from utils.constants import (
     DEFAULT_EVALUATION_MODELS,
     DEFAULT_GENERATION_LOG_ROOT,
     DEFAULT_GENERATION_MODELS,
-    DEFAULT_LOCAL_CLUSTER_MODELS,
+    DEFAULT_LOCAL_EVALUATION_MODELS,
+    DEFAULT_LOCAL_GENERATION_MODELS,
     DEFAULT_PROCESSED_DATASET,
     FINAL5_SETTINGS,
     MODE_CHOICES,
@@ -71,8 +72,8 @@ def _cluster_dataset_types(processed_dataset_path: Path, dataset_types: list[str
     return sorted(dataset_types, key=lambda dataset_type: (-sizes.get(dataset_type, 0), indexed[dataset_type]))
 
 
-def _cluster_models(raw: str | None) -> list[str]:
-    models = [resolve_model_name(model) for model in _csv_list(raw, default=list(DEFAULT_LOCAL_CLUSTER_MODELS))]
+def _cluster_models(raw: str | None, *, default: list[str]) -> list[str]:
+    models = [resolve_model_name(model) for model in _csv_list(raw, default=default)]
     if not models:
         raise ValueError("No local models selected.")
     invalid = [model for model in models if not str(model).startswith("vllm/")]
@@ -106,7 +107,7 @@ def _build_generation_cluster_tasks(args: argparse.Namespace) -> list[ClusterTas
     )
     tasks: list[ClusterTask] = []
     for dataset_type in dataset_types:
-        for model in _cluster_models(args.models):
+        for model in _cluster_models(args.models, default=list(args.default_models)):
             tasks.append(
                 ClusterTask(
                     stage="generate",
@@ -155,7 +156,7 @@ def _build_evaluation_cluster_tasks(args: argparse.Namespace) -> list[ClusterTas
             generation_model,
             dataset_type,
         )
-        for model in _cluster_models(args.models):
+        for model in _cluster_models(args.models, default=list(args.default_models)):
             tasks.append(
                 ClusterTask(
                     stage="evaluate",
@@ -678,214 +679,835 @@ def _run_smoke_evaluate(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Inspect-first Final5 pipeline")
+    formatter = argparse.ArgumentDefaultsHelpFormatter
+    parser = argparse.ArgumentParser(
+        description="Inspect-first Final5 pipeline",
+        formatter_class=formatter,
+    )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    prepare = sub.add_parser("prepare-data")
-    prepare.add_argument("--step", choices=["download", "process", "all"], default="all")
-    prepare.add_argument("--dataset", choices=["mmlu_pro", "mmlu", "arc", "gpqa"], default=None)
-    prepare.add_argument("--all", action="store_true")
-    prepare.add_argument("--output-dir", default="datasets/raw")
-    prepare.add_argument("--output-path", default=str(DEFAULT_PROCESSED_DATASET))
-    prepare.add_argument("--limit", type=int, default=None)
+    prepare = sub.add_parser(
+        "prepare-data",
+        help="Download raw datasets and/or build the unified processed dataset.",
+        description="Download raw source datasets and/or process them into the unified Final5 dataset.",
+        formatter_class=formatter,
+    )
+    prepare.add_argument(
+        "--step",
+        choices=["download", "process", "all"],
+        default="all",
+        help="Which stage of data preparation to run.",
+    )
+    prepare.add_argument(
+        "--dataset",
+        choices=["mmlu_pro", "mmlu", "arc", "gpqa"],
+        default=None,
+        help="Specific raw dataset to download when not using --all.",
+    )
+    prepare.add_argument(
+        "--all",
+        action="store_true",
+        help="Download every supported raw dataset instead of a single dataset.",
+    )
+    prepare.add_argument(
+        "--output-dir",
+        default="datasets/raw",
+        help="Advanced override: directory where raw downloaded datasets should be stored.",
+    )
+    prepare.add_argument(
+        "--output-path",
+        default=str(DEFAULT_PROCESSED_DATASET),
+        help="Directory where the processed unified DatasetDict should be written.",
+    )
+    prepare.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Advanced/debug option: optional per-dataset cap when building the processed unified dataset.",
+    )
     prepare.set_defaults(handler=_prepare_data)
 
     def add_runtime_flags(command: argparse.ArgumentParser) -> None:
-        command.add_argument("--backend", default=None)
-        command.add_argument("--model-base-url", default=None)
-        command.add_argument("--max-connections", type=int, default=None)
-        command.add_argument("--max-tokens", type=int, default=512)
-        command.add_argument("--temperature", type=float, default=None)
-        command.add_argument("--reasoning-effort", default=None)
-        command.add_argument("--retry-on-error", type=int, default=2)
-        command.add_argument("--stop-seqs", nargs="*", default=None)
+        command.add_argument(
+            "--backend",
+            default=None,
+            help="Situational: provider prefix to apply to an unqualified model name, such as openai or vllm.",
+        )
+        command.add_argument(
+            "--model-base-url",
+            default=None,
+            help="Situational: base URL for OpenAI-compatible model endpoints or custom provider endpoints.",
+        )
+        command.add_argument(
+            "--max-connections",
+            type=int,
+            default=None,
+            help="Advanced tuning: maximum concurrent model connections Inspect may open for this run.",
+        )
+        command.add_argument(
+            "--max-tokens",
+            type=int,
+            default=1024,
+            help="Advanced tuning: maximum tokens requested from the model for each generation or evaluation call.",
+        )
+        command.add_argument(
+            "--temperature",
+            type=float,
+            default=None,
+            help="Advanced tuning: sampling temperature forwarded to the model backend.",
+        )
+        command.add_argument(
+            "--reasoning-effort",
+            default="high",
+            help="Advanced tuning: optional reasoning-effort hint for models/providers that support it.",
+        )
+        command.add_argument(
+            "--retry-on-error",
+            type=int,
+            default=2,
+            help="Advanced tuning: how many times Inspect should retry a failed model call.",
+        )
+        command.add_argument(
+            "--stop-seqs",
+            nargs="*",
+            default=None,
+            help="Advanced tuning: optional stop sequences forwarded to the model backend.",
+        )
 
     def add_shard_flags(command: argparse.ArgumentParser) -> None:
-        command.add_argument("--shard-count", type=int, default=1)
-        command.add_argument("--shard-index", type=int, default=0)
-        command.add_argument("--shard-strategy", choices=["contiguous", "modulo"], default="contiguous")
+        command.add_argument(
+            "--shard-count",
+            type=int,
+            default=1,
+            help="Manual fallback control: number of deterministic shards to split the selected samples into. Most users should use the cluster submit commands instead.",
+        )
+        command.add_argument(
+            "--shard-index",
+            type=int,
+            default=0,
+            help="Manual fallback control: zero-based shard index to run from the selected shard count.",
+        )
+        command.add_argument(
+            "--shard-strategy",
+            choices=["contiguous", "modulo"],
+            default="contiguous",
+            help="Manual fallback control: how samples are partitioned across shards when using explicit shard flags.",
+        )
 
     def add_cluster_submit_flags(command: argparse.ArgumentParser) -> None:
-        command.add_argument("--models", default=None)
-        command.add_argument("--processed-dataset", default=str(DEFAULT_PROCESSED_DATASET))
-        command.add_argument("--dataset-types", default=None)
-        command.add_argument("--gpu-count", type=int, default=None)
-        command.add_argument("--output-dir", default=None)
-        command.add_argument("--submit", dest="submit", action="store_true", default=True)
-        command.add_argument("--write-only", dest="submit", action="store_false")
-        command.add_argument("--dry-run", action="store_true")
-        command.add_argument("--partition", default="clip")
-        command.add_argument("--account", default="clip")
-        command.add_argument("--qos", default="high")
-        command.add_argument("--time-limit", default="12:00:00")
-        command.add_argument("--mem", default="32G")
-        command.add_argument("--cpus-per-task", type=int, default=4)
-        command.add_argument("--gpu-type", default="rtxa6000")
+        command.add_argument(
+            "--models",
+            default=None,
+            help="Comma-separated list of local models to schedule. Defaults to the stage-specific local model set for this command.",
+        )
+        command.add_argument(
+            "--processed-dataset",
+            default=str(DEFAULT_PROCESSED_DATASET),
+            help="Unified processed DatasetDict to use when building model×dataset tasks.",
+        )
+        command.add_argument(
+            "--dataset-types",
+            default=None,
+            help="Comma-separated subset of dataset splits to schedule, such as arc_challenge,gpqa.",
+        )
+        command.add_argument(
+            "--gpu-count",
+            type=int,
+            default=None,
+            help="Optional SLURM array concurrency cap. If omitted, the array is submitted without a %%N cap.",
+        )
+        command.add_argument(
+            "--output-dir",
+            default=None,
+            help="Advanced override: directory where the generated manifest, sbatch file, and submit helper should be written.",
+        )
+        command.add_argument(
+            "--submit",
+            dest="submit",
+            action="store_true",
+            default=True,
+            help="Advanced control: submit the generated sbatch array after writing bundle files.",
+        )
+        command.add_argument(
+            "--write-only",
+            dest="submit",
+            action="store_false",
+            help="Advanced control: write the manifest and sbatch files but do not call sbatch.",
+        )
+        command.add_argument(
+            "--dry-run",
+            action="store_true",
+            help="Advanced control: print the planned cluster bundle details without writing or submitting anything.",
+        )
+        command.add_argument(
+            "--partition",
+            default="clip",
+            help="Advanced cluster override: SLURM partition to request for each generated array task.",
+        )
+        command.add_argument(
+            "--account",
+            default="clip",
+            help="Advanced cluster override: SLURM account to charge for each generated array task.",
+        )
+        command.add_argument(
+            "--qos",
+            default="high",
+            help="Advanced cluster override: SLURM quality-of-service value to set on the generated array.",
+        )
+        command.add_argument(
+            "--time-limit",
+            default="12:00:00",
+            help="Advanced cluster override: wall-clock time limit for each generated array task.",
+        )
+        command.add_argument(
+            "--mem",
+            default="32G",
+            help="Advanced cluster override: memory request for each generated array task.",
+        )
+        command.add_argument(
+            "--cpus-per-task",
+            type=int,
+            default=4,
+            help="Advanced cluster override: CPU cores requested per generated array task.",
+        )
+        command.add_argument(
+            "--gpu-type",
+            default="rtxa6000",
+            help="Advanced cluster override: GPU type to request in the generated SLURM array.",
+        )
 
-    generate = sub.add_parser("generate")
-    generate.add_argument("--model", required=True)
-    generate.add_argument("--run-name", required=True)
-    generate.add_argument("--processed-dataset", default=str(DEFAULT_PROCESSED_DATASET))
-    generate.add_argument("--dataset-types", default=None)
-    generate.add_argument("--limit", type=int, default=None)
-    generate.add_argument("--log-root", default=str(DEFAULT_GENERATION_LOG_ROOT))
-    generate.add_argument("--cache-root", default=str(DEFAULT_AUGMENTED_CACHE_ROOT))
-    generate.add_argument("--augmented-dataset", default=None)
-    generate.add_argument("--materialize-cache", action="store_true")
-    generate.add_argument("--rebuild-cache", action="store_true")
+    generate = sub.add_parser(
+        "generate",
+        help="Run Final5 distractor generation for one model.",
+        description="Generate Final5 distractor variants for one model over the processed dataset.",
+        formatter_class=formatter,
+    )
+    generate.add_argument("--model", required=True, help="Model name or alias to use for generation.")
+    generate.add_argument("--run-name", required=True, help="Logical run name used to organize logs and caches.")
+    generate.add_argument(
+        "--processed-dataset",
+        default=str(DEFAULT_PROCESSED_DATASET),
+        help="Processed unified DatasetDict to read input questions from.",
+    )
+    generate.add_argument(
+        "--dataset-types",
+        default=None,
+        help="Optional subset: comma-separated subset of dataset splits to generate for.",
+    )
+    generate.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Advanced/debug option: optional cap on the number of samples to generate.",
+    )
+    generate.add_argument(
+        "--log-root",
+        default=str(DEFAULT_GENERATION_LOG_ROOT),
+        help="Advanced override: root directory for Inspect generation logs.",
+    )
+    generate.add_argument(
+        "--cache-root",
+        default=str(DEFAULT_AUGMENTED_CACHE_ROOT),
+        help="Advanced override: root directory where derived augmented dataset caches should be stored.",
+    )
+    generate.add_argument(
+        "--augmented-dataset",
+        default=None,
+        help="Advanced override: exact output path for the augmented cache produced from generation logs.",
+    )
+    generate.add_argument(
+        "--materialize-cache",
+        action="store_true",
+        help="Rebuild the augmented DatasetDict cache immediately after generation completes.",
+    )
+    generate.add_argument(
+        "--rebuild-cache",
+        action="store_true",
+        help="Advanced override: force regeneration of the augmented cache even if it already exists.",
+    )
     generate.set_defaults(default_dataset_types=["arc_challenge", "mmlu_pro", "gpqa"])
     add_runtime_flags(generate)
     add_shard_flags(generate)
     generate.set_defaults(handler=_run_generate)
 
-    generate_all = sub.add_parser("generate-all")
-    generate_all.add_argument("--models", default=None)
-    generate_all.add_argument("--run-name", required=True)
-    generate_all.add_argument("--processed-dataset", default=str(DEFAULT_PROCESSED_DATASET))
-    generate_all.add_argument("--dataset-types", default=None)
-    generate_all.add_argument("--limit", type=int, default=None)
-    generate_all.add_argument("--log-root", default=str(DEFAULT_GENERATION_LOG_ROOT))
-    generate_all.add_argument("--cache-root", default=str(DEFAULT_AUGMENTED_CACHE_ROOT))
-    generate_all.add_argument("--materialize-cache", action="store_true")
-    generate_all.add_argument("--rebuild-cache", action="store_true")
+    generate_all = sub.add_parser(
+        "generate-all",
+        help="Run generation for the default generator model set.",
+        description="Run Final5 distractor generation for every default generation model.",
+        formatter_class=formatter,
+    )
+    generate_all.add_argument(
+        "--models",
+        default=None,
+        help="Comma-separated list of generation models to override the default API generation model set.",
+    )
+    generate_all.add_argument("--run-name", required=True, help="Logical run name used to organize logs and caches.")
+    generate_all.add_argument(
+        "--processed-dataset",
+        default=str(DEFAULT_PROCESSED_DATASET),
+        help="Processed unified DatasetDict to read input questions from.",
+    )
+    generate_all.add_argument(
+        "--dataset-types",
+        default=None,
+        help="Optional subset: comma-separated subset of dataset splits to generate for.",
+    )
+    generate_all.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Advanced/debug option: optional cap on the number of samples per model.",
+    )
+    generate_all.add_argument(
+        "--log-root",
+        default=str(DEFAULT_GENERATION_LOG_ROOT),
+        help="Advanced override: root directory for Inspect generation logs.",
+    )
+    generate_all.add_argument(
+        "--cache-root",
+        default=str(DEFAULT_AUGMENTED_CACHE_ROOT),
+        help="Advanced override: root directory where derived augmented dataset caches should be stored.",
+    )
+    generate_all.add_argument(
+        "--materialize-cache",
+        action="store_true",
+        help="Rebuild each augmented DatasetDict cache immediately after generation completes.",
+    )
+    generate_all.add_argument(
+        "--rebuild-cache",
+        action="store_true",
+        help="Advanced override: force regeneration of each augmented cache even if it already exists.",
+    )
     generate_all.set_defaults(default_dataset_types=["arc_challenge", "mmlu_pro", "gpqa"])
     add_runtime_flags(generate_all)
     add_shard_flags(generate_all)
     generate_all.set_defaults(handler=_run_generate_all)
 
-    evaluate = sub.add_parser("evaluate")
-    evaluate.add_argument("--model", required=True)
-    evaluate.add_argument("--run-name", required=True)
-    evaluate.add_argument("--generator-run-name", required=True)
-    evaluate.add_argument("--generator-model", required=True)
-    evaluate.add_argument("--generator-backend", default=None)
-    evaluate.add_argument("--generation-log-dir", default=None)
-    evaluate.add_argument("--generation-log-root", default=str(DEFAULT_GENERATION_LOG_ROOT))
-    evaluate.add_argument("--processed-dataset", default=str(DEFAULT_PROCESSED_DATASET))
-    evaluate.add_argument("--augmented-dataset", default=None)
-    evaluate.add_argument("--cache-root", default=str(DEFAULT_AUGMENTED_CACHE_ROOT))
-    evaluate.add_argument("--dataset-types", default=None)
-    evaluate.add_argument("--settings", default=None)
-    evaluate.add_argument("--modes", default=None)
-    evaluate.add_argument("--limit", type=int, default=None)
-    evaluate.add_argument("--log-root", default=str(DEFAULT_EVALUATION_LOG_ROOT))
-    evaluate.add_argument("--rebuild-cache", action="store_true")
+    evaluate = sub.add_parser(
+        "evaluate",
+        help="Evaluate one model against one generation run.",
+        description="Evaluate a single model across the requested Final5 settings and modes.",
+        formatter_class=formatter,
+    )
+    evaluate.add_argument("--model", required=True, help="Model name or alias to use for evaluation.")
+    evaluate.add_argument("--run-name", required=True, help="Logical run name used to organize evaluation logs.")
+    evaluate.add_argument(
+        "--generator-run-name",
+        required=True,
+        help="Generation run name whose augmented cache or logs should be evaluated.",
+    )
+    evaluate.add_argument(
+        "--generator-model",
+        required=True,
+        help="Generation model whose outputs should be evaluated.",
+    )
+    evaluate.add_argument(
+        "--generator-backend",
+        default=None,
+        help="Situational: backend prefix to apply when resolving --generator-model.",
+    )
+    evaluate.add_argument(
+        "--generation-log-dir",
+        default=None,
+        help="Advanced override: exact generation log directory to read instead of deriving one from run name and model.",
+    )
+    evaluate.add_argument(
+        "--generation-log-root",
+        default=str(DEFAULT_GENERATION_LOG_ROOT),
+        help="Advanced override: root directory for generation Inspect logs when deriving inputs automatically.",
+    )
+    evaluate.add_argument(
+        "--processed-dataset",
+        default=str(DEFAULT_PROCESSED_DATASET),
+        help="Processed unified DatasetDict used if the augmented cache must be rebuilt from generation logs.",
+    )
+    evaluate.add_argument(
+        "--augmented-dataset",
+        default=None,
+        help="Advanced override: exact augmented DatasetDict path to evaluate instead of deriving one from generation artifacts.",
+    )
+    evaluate.add_argument(
+        "--cache-root",
+        default=str(DEFAULT_AUGMENTED_CACHE_ROOT),
+        help="Advanced override: root directory where augmented dataset caches are stored.",
+    )
+    evaluate.add_argument(
+        "--dataset-types",
+        default=None,
+        help="Optional subset: comma-separated subset of dataset splits to evaluate.",
+    )
+    evaluate.add_argument(
+        "--settings",
+        default=None,
+        help="Advanced subset override: comma-separated subset of Final5 settings to evaluate.",
+    )
+    evaluate.add_argument(
+        "--modes",
+        default=None,
+        help="Advanced subset override: comma-separated subset of evaluation modes to run.",
+    )
+    evaluate.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Advanced/debug option: optional cap on the number of evaluation samples.",
+    )
+    evaluate.add_argument(
+        "--log-root",
+        default=str(DEFAULT_EVALUATION_LOG_ROOT),
+        help="Advanced override: root directory for Inspect evaluation logs.",
+    )
+    evaluate.add_argument(
+        "--rebuild-cache",
+        action="store_true",
+        help="Advanced override: force regeneration of the augmented cache before evaluation.",
+    )
     evaluate.set_defaults(default_dataset_types=["arc_challenge", "mmlu_pro", "gpqa"])
     add_runtime_flags(evaluate)
     add_shard_flags(evaluate)
     evaluate.set_defaults(handler=_run_evaluate)
 
-    evaluate_all = sub.add_parser("evaluate-all")
-    evaluate_all.add_argument("--models", default=None)
-    evaluate_all.add_argument("--run-name", required=True)
-    evaluate_all.add_argument("--generator-run-name", required=True)
-    evaluate_all.add_argument("--generator-model", required=True)
-    evaluate_all.add_argument("--generator-backend", default=None)
-    evaluate_all.add_argument("--generation-log-dir", default=None)
-    evaluate_all.add_argument("--generation-log-root", default=str(DEFAULT_GENERATION_LOG_ROOT))
-    evaluate_all.add_argument("--processed-dataset", default=str(DEFAULT_PROCESSED_DATASET))
-    evaluate_all.add_argument("--augmented-dataset", default=None)
-    evaluate_all.add_argument("--cache-root", default=str(DEFAULT_AUGMENTED_CACHE_ROOT))
-    evaluate_all.add_argument("--dataset-types", default=None)
-    evaluate_all.add_argument("--settings", default=None)
-    evaluate_all.add_argument("--modes", default=None)
-    evaluate_all.add_argument("--limit", type=int, default=None)
-    evaluate_all.add_argument("--log-root", default=str(DEFAULT_EVALUATION_LOG_ROOT))
-    evaluate_all.add_argument("--rebuild-cache", action="store_true")
+    evaluate_all = sub.add_parser(
+        "evaluate-all",
+        help="Evaluate the default local evaluation model set against one generation run.",
+        description="Evaluate every default local evaluation model across the requested Final5 settings and modes.",
+        formatter_class=formatter,
+    )
+    evaluate_all.add_argument(
+        "--models",
+        default=None,
+        help="Comma-separated list of evaluation models to override the default local evaluation model set.",
+    )
+    evaluate_all.add_argument("--run-name", required=True, help="Logical run name used to organize evaluation logs.")
+    evaluate_all.add_argument(
+        "--generator-run-name",
+        required=True,
+        help="Generation run name whose augmented cache or logs should be evaluated.",
+    )
+    evaluate_all.add_argument(
+        "--generator-model",
+        required=True,
+        help="Generation model whose outputs should be evaluated.",
+    )
+    evaluate_all.add_argument(
+        "--generator-backend",
+        default=None,
+        help="Situational: backend prefix to apply when resolving --generator-model.",
+    )
+    evaluate_all.add_argument(
+        "--generation-log-dir",
+        default=None,
+        help="Advanced override: exact generation log directory to read instead of deriving one from run name and model.",
+    )
+    evaluate_all.add_argument(
+        "--generation-log-root",
+        default=str(DEFAULT_GENERATION_LOG_ROOT),
+        help="Advanced override: root directory for generation Inspect logs when deriving inputs automatically.",
+    )
+    evaluate_all.add_argument(
+        "--processed-dataset",
+        default=str(DEFAULT_PROCESSED_DATASET),
+        help="Processed unified DatasetDict used if the augmented cache must be rebuilt from generation logs.",
+    )
+    evaluate_all.add_argument(
+        "--augmented-dataset",
+        default=None,
+        help="Advanced override: exact augmented DatasetDict path to evaluate instead of deriving one from generation artifacts.",
+    )
+    evaluate_all.add_argument(
+        "--cache-root",
+        default=str(DEFAULT_AUGMENTED_CACHE_ROOT),
+        help="Advanced override: root directory where augmented dataset caches are stored.",
+    )
+    evaluate_all.add_argument(
+        "--dataset-types",
+        default=None,
+        help="Optional subset: comma-separated subset of dataset splits to evaluate.",
+    )
+    evaluate_all.add_argument(
+        "--settings",
+        default=None,
+        help="Advanced subset override: comma-separated subset of Final5 settings to evaluate.",
+    )
+    evaluate_all.add_argument(
+        "--modes",
+        default=None,
+        help="Advanced subset override: comma-separated subset of evaluation modes to run.",
+    )
+    evaluate_all.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Advanced/debug option: optional cap on the number of evaluation samples.",
+    )
+    evaluate_all.add_argument(
+        "--log-root",
+        default=str(DEFAULT_EVALUATION_LOG_ROOT),
+        help="Advanced override: root directory for Inspect evaluation logs.",
+    )
+    evaluate_all.add_argument(
+        "--rebuild-cache",
+        action="store_true",
+        help="Advanced override: force regeneration of the augmented cache before evaluation.",
+    )
     evaluate_all.set_defaults(default_dataset_types=["arc_challenge", "mmlu_pro", "gpqa"])
     add_runtime_flags(evaluate_all)
     add_shard_flags(evaluate_all)
     evaluate_all.set_defaults(handler=_run_evaluate_all)
 
-    analyze = sub.add_parser("analyze")
-    analyze.add_argument("--results-root", default=str(DEFAULT_EVALUATION_LOG_ROOT))
-    analyze.add_argument("--output-dir", default="results/final5_plots")
-    analyze.add_argument("--table-output", default="results/final5_plots/tables/final5_results_summary.csv")
-    analyze.add_argument("--skip-tables", action="store_true")
+    analyze = sub.add_parser(
+        "analyze",
+        help="Aggregate evaluation logs into Final5 plots and summary tables.",
+        description="Read Inspect evaluation logs and produce Final5 CSV summaries and comparison plots.",
+        formatter_class=formatter,
+    )
+    analyze.add_argument(
+        "--results-root",
+        default=str(DEFAULT_EVALUATION_LOG_ROOT),
+        help="Usually leave alone: directory containing Inspect evaluation logs to analyze.",
+    )
+    analyze.add_argument(
+        "--output-dir",
+        default="results/final5_plots",
+        help="Situational output override: directory where plots and optional tables should be written.",
+    )
+    analyze.add_argument(
+        "--table-output",
+        default="results/final5_plots/tables/final5_results_summary.csv",
+        help="Advanced output override: CSV path for the flat summary table.",
+    )
+    analyze.add_argument(
+        "--skip-tables",
+        action="store_true",
+        help="Advanced output option: write plots only and skip the pairwise comparison CSV tables.",
+    )
     analyze.set_defaults(handler=_run_analyze)
 
-    signatures = sub.add_parser("signature-table")
-    signatures.add_argument("--dir", required=True)
-    signatures.add_argument("--output", default=None)
+    signatures = sub.add_parser(
+        "signature-table",
+        help="Build a compact behavioral-signature table from .eval logs.",
+        description="Read one or more Inspect .eval logs and print a markdown signature table.",
+        formatter_class=formatter,
+    )
+    signatures.add_argument("--dir", required=True, help="Directory or .eval file to summarize.")
+    signatures.add_argument(
+        "--output",
+        default=None,
+        help="Advanced output override: optional file path to write the rendered signature table.",
+    )
     signatures.set_defaults(handler=_run_signature_table)
 
-    export = sub.add_parser("export")
-    export.add_argument("--input", default=None)
-    export.add_argument("--output-root", default="datasets/benchmarker_items")
-    export.add_argument("--generator-run-name", default=None)
-    export.add_argument("--generator-model", default=None)
-    export.add_argument("--generator-backend", default=None)
-    export.add_argument("--generation-log-dir", default=None)
-    export.add_argument("--generation-log-root", default=str(DEFAULT_GENERATION_LOG_ROOT))
-    export.add_argument("--processed-dataset", default=str(DEFAULT_PROCESSED_DATASET))
-    export.add_argument("--augmented-dataset", default=None)
-    export.add_argument("--cache-root", default=str(DEFAULT_AUGMENTED_CACHE_ROOT))
-    export.add_argument("--dataset-types", default=None)
-    export.add_argument("--rebuild-cache", action="store_true")
+    export = sub.add_parser(
+        "export",
+        help="Export an augmented DatasetDict to benchmarker JSONL files.",
+        description="Export a derived augmented dataset cache into benchmarker-compatible JSONL files.",
+        formatter_class=formatter,
+    )
+    export.add_argument(
+        "--input",
+        default=None,
+        help="Advanced override: exact augmented DatasetDict path to export. If omitted, generation artifacts are resolved automatically.",
+    )
+    export.add_argument(
+        "--output-root",
+        default="datasets/benchmarker_items",
+        help="Situational output override: root directory where benchmarker JSONL outputs should be written.",
+    )
+    export.add_argument(
+        "--generator-run-name",
+        default=None,
+        help="Generation run name to use when deriving the augmented cache automatically.",
+    )
+    export.add_argument(
+        "--generator-model",
+        default=None,
+        help="Generation model to use when deriving the augmented cache automatically.",
+    )
+    export.add_argument(
+        "--generator-backend",
+        default=None,
+        help="Situational: backend prefix to apply when resolving --generator-model.",
+    )
+    export.add_argument(
+        "--generation-log-dir",
+        default=None,
+        help="Advanced override: exact generation log directory to read instead of deriving one from run name and model.",
+    )
+    export.add_argument(
+        "--generation-log-root",
+        default=str(DEFAULT_GENERATION_LOG_ROOT),
+        help="Advanced override: root directory for generation Inspect logs when deriving inputs automatically.",
+    )
+    export.add_argument(
+        "--processed-dataset",
+        default=str(DEFAULT_PROCESSED_DATASET),
+        help="Processed unified DatasetDict used if the augmented cache must be rebuilt from generation logs.",
+    )
+    export.add_argument(
+        "--augmented-dataset",
+        default=None,
+        help="Advanced override: exact augmented DatasetDict path to use instead of deriving one from generation artifacts.",
+    )
+    export.add_argument(
+        "--cache-root",
+        default=str(DEFAULT_AUGMENTED_CACHE_ROOT),
+        help="Advanced override: root directory where augmented dataset caches are stored.",
+    )
+    export.add_argument(
+        "--dataset-types",
+        default=None,
+        help="Advanced subset override: comma-separated subset of dataset splits to include when rebuilding the augmented cache.",
+    )
+    export.add_argument(
+        "--rebuild-cache",
+        action="store_true",
+        help="Advanced override: force regeneration of the augmented cache before export.",
+    )
     export.set_defaults(default_dataset_types=["arc_challenge", "mmlu_pro", "gpqa"])
     export.set_defaults(handler=_run_export)
 
-    submit_generate_cluster = sub.add_parser("submit-generate-cluster")
-    submit_generate_cluster.add_argument("--run-name", required=True)
+    submit_generate_cluster = sub.add_parser(
+        "submit-generate-cluster",
+        help="Submit local generation jobs as one SLURM array over model×dataset tasks.",
+        description="Generate a SLURM array for local vllm-backed generation, one task per model×dataset pair. Defaults to Qwen3-4B and Olmo3-7B.",
+        formatter_class=formatter,
+    )
+    submit_generate_cluster.add_argument(
+        "--run-name",
+        required=True,
+        help="Logical run name used to organize generated manifests, logs, and output caches.",
+    )
     add_cluster_submit_flags(submit_generate_cluster)
+    submit_generate_cluster.set_defaults(default_models=list(DEFAULT_LOCAL_GENERATION_MODELS))
     submit_generate_cluster.set_defaults(default_dataset_types=["arc_challenge", "mmlu_pro", "gpqa"])
     submit_generate_cluster.set_defaults(handler=_run_submit_generate_cluster)
 
-    submit_evaluate_cluster = sub.add_parser("submit-evaluate-cluster")
-    submit_evaluate_cluster.add_argument("--run-name", required=True)
-    submit_evaluate_cluster.add_argument("--generator-run-name", required=True)
-    submit_evaluate_cluster.add_argument("--generator-model", required=True)
+    submit_evaluate_cluster = sub.add_parser(
+        "submit-evaluate-cluster",
+        help="Submit local evaluation jobs as one SLURM array over model×dataset tasks.",
+        description="Generate a SLURM array for local vllm-backed evaluation, one task per model×dataset pair. Defaults to Qwen3-4B, Olmo3-7B, and Llama3.1-8B.",
+        formatter_class=formatter,
+    )
+    submit_evaluate_cluster.add_argument(
+        "--run-name",
+        required=True,
+        help="Logical run name used to organize generated manifests and evaluation logs.",
+    )
+    submit_evaluate_cluster.add_argument(
+        "--generator-run-name",
+        required=True,
+        help="Generation run name whose augmented outputs the cluster jobs should evaluate.",
+    )
+    submit_evaluate_cluster.add_argument(
+        "--generator-model",
+        required=True,
+        help="Generation model whose outputs the cluster jobs should evaluate.",
+    )
     add_cluster_submit_flags(submit_evaluate_cluster)
+    submit_evaluate_cluster.set_defaults(default_models=list(DEFAULT_LOCAL_EVALUATION_MODELS))
     submit_evaluate_cluster.set_defaults(default_dataset_types=["arc_challenge", "mmlu_pro", "gpqa"])
     submit_evaluate_cluster.set_defaults(handler=_run_submit_evaluate_cluster)
 
-    diagnose_failures = sub.add_parser("diagnose-failures")
-    diagnose_failures.add_argument("--dataset-path", required=True)
+    diagnose_failures = sub.add_parser(
+        "diagnose-failures",
+        help="Report rows in an augmented cache that are missing required generated columns.",
+        description="Inspect an augmented DatasetDict and print rows with missing Final5 generation outputs.",
+        formatter_class=formatter,
+    )
+    diagnose_failures.add_argument(
+        "--dataset-path",
+        required=True,
+        help="Augmented DatasetDict path to inspect for missing generation outputs.",
+    )
     diagnose_failures.set_defaults(handler=_run_diagnose_failures)
 
-    diagnose_trace = sub.add_parser("diagnose-trace")
-    diagnose_trace.add_argument("--log-dir", required=True)
-    diagnose_trace.add_argument("--sample-id", default=None)
-    diagnose_trace.add_argument("--only-errors", action="store_true")
-    diagnose_trace.add_argument("--limit", type=int, default=None)
-    diagnose_trace.add_argument("--summary", action="store_true")
-    diagnose_trace.add_argument("--output", default=None)
+    diagnose_trace = sub.add_parser(
+        "diagnose-trace",
+        help="Extract generation traces from Inspect logs.",
+        description="Dump generation prompt/output traces from Inspect generation logs for debugging.",
+        formatter_class=formatter,
+    )
+    diagnose_trace.add_argument("--log-dir", required=True, help="Generation log directory or .eval file to inspect.")
+    diagnose_trace.add_argument(
+        "--sample-id",
+        default=None,
+        help="Advanced/debug filter: sample id so only one question's traces are returned.",
+    )
+    diagnose_trace.add_argument(
+        "--only-errors",
+        action="store_true",
+        help="Restrict output to generation samples whose status is error.",
+    )
+    diagnose_trace.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Advanced/debug option: maximum number of matching trace records to emit.",
+    )
+    diagnose_trace.add_argument(
+        "--summary",
+        action="store_true",
+        help="Print a compact one-line summary per trace instead of full JSON payloads.",
+    )
+    diagnose_trace.add_argument(
+        "--output",
+        default=None,
+        help="Advanced output override: optional JSON file path to write the extracted trace records.",
+    )
     diagnose_trace.set_defaults(handler=_run_diagnose_trace)
 
-    smoke_generate = sub.add_parser("smoke-generate")
-    smoke_generate.add_argument("--models", nargs="+", default=list(DEFAULT_GENERATION_MODELS))
-    smoke_generate.add_argument("--run-name", default="smoke-generate")
-    smoke_generate.add_argument("--processed-dataset", default=str(DEFAULT_PROCESSED_DATASET))
-    smoke_generate.add_argument("--dataset-types", default=None)
-    smoke_generate.add_argument("--limit", type=int, default=2)
-    smoke_generate.add_argument("--log-root", default=str(DEFAULT_GENERATION_LOG_ROOT))
-    smoke_generate.add_argument("--cache-root", default=str(DEFAULT_AUGMENTED_CACHE_ROOT))
-    smoke_generate.add_argument("--backend", default=None)
-    smoke_generate.add_argument("--model-base-url", default=None)
-    smoke_generate.add_argument("--reasoning-effort", default=None)
-    smoke_generate.add_argument("--max-tokens", type=int, default=256)
-    smoke_generate.add_argument("--dry-run", action="store_true")
+    smoke_generate = sub.add_parser(
+        "smoke-generate",
+        help="Run a tiny generation smoke test across one or more models.",
+        description="Launch small generation runs that are useful for validating credentials, prompts, and outputs.",
+        formatter_class=formatter,
+    )
+    smoke_generate.add_argument(
+        "--models",
+        nargs="+",
+        default=list(DEFAULT_GENERATION_MODELS),
+        help="Space-separated list of generation models to smoke test.",
+    )
+    smoke_generate.add_argument("--run-name", default="smoke-generate", help="Run name to use for the smoke test.")
+    smoke_generate.add_argument(
+        "--processed-dataset",
+        default=str(DEFAULT_PROCESSED_DATASET),
+        help="Processed unified DatasetDict to draw smoke-test samples from.",
+    )
+    smoke_generate.add_argument(
+        "--dataset-types",
+        default=None,
+        help="Optional subset: comma-separated subset of dataset splits to sample from.",
+    )
+    smoke_generate.add_argument("--limit", type=int, default=2, help="Number of samples per model to run.")
+    smoke_generate.add_argument(
+        "--log-root",
+        default=str(DEFAULT_GENERATION_LOG_ROOT),
+        help="Advanced override: root directory for Inspect generation logs.",
+    )
+    smoke_generate.add_argument(
+        "--cache-root",
+        default=str(DEFAULT_AUGMENTED_CACHE_ROOT),
+        help="Advanced override: root directory where augmented dataset caches should be stored.",
+    )
+    smoke_generate.add_argument(
+        "--backend",
+        default=None,
+        help="Situational: backend prefix to apply to unqualified smoke-test model names.",
+    )
+    smoke_generate.add_argument(
+        "--model-base-url",
+        default=None,
+        help="Situational: base URL for OpenAI-compatible local or remote model endpoints.",
+    )
+    smoke_generate.add_argument(
+        "--reasoning-effort",
+        default=None,
+        help="Advanced tuning: optional reasoning-effort hint forwarded to the model backend.",
+    )
+    smoke_generate.add_argument(
+        "--max-tokens",
+        type=int,
+        default=256,
+        help="Maximum output tokens per smoke-test generation call.",
+    )
+    smoke_generate.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Advanced/debug option: print the commands that would be run without actually executing them.",
+    )
     smoke_generate.set_defaults(handler=_run_smoke_generate)
 
-    smoke_evaluate = sub.add_parser("smoke-evaluate")
-    smoke_evaluate.add_argument("--models", nargs="+", default=list(DEFAULT_EVALUATION_MODELS))
-    smoke_evaluate.add_argument("--run-name", default="smoke-evaluate")
-    smoke_evaluate.add_argument("--generator-run-name", required=True)
-    smoke_evaluate.add_argument("--generator-model", required=True)
-    smoke_evaluate.add_argument("--generator-backend", default=None)
-    smoke_evaluate.add_argument("--processed-dataset", default=str(DEFAULT_PROCESSED_DATASET))
-    smoke_evaluate.add_argument("--dataset-types", default=None)
-    smoke_evaluate.add_argument("--settings", default=None)
-    smoke_evaluate.add_argument("--modes", default=None)
-    smoke_evaluate.add_argument("--limit", type=int, default=2)
-    smoke_evaluate.add_argument("--generation-log-root", default=str(DEFAULT_GENERATION_LOG_ROOT))
-    smoke_evaluate.add_argument("--cache-root", default=str(DEFAULT_AUGMENTED_CACHE_ROOT))
-    smoke_evaluate.add_argument("--log-root", default=str(DEFAULT_EVALUATION_LOG_ROOT))
-    smoke_evaluate.add_argument("--backend", default=None)
-    smoke_evaluate.add_argument("--model-base-url", default=None)
-    smoke_evaluate.add_argument("--reasoning-effort", default=None)
-    smoke_evaluate.add_argument("--max-tokens", type=int, default=128)
-    smoke_evaluate.add_argument("--dry-run", action="store_true")
+    smoke_evaluate = sub.add_parser(
+        "smoke-evaluate",
+        help="Run a tiny evaluation smoke test across one or more models.",
+        description="Launch small evaluation runs that are useful for validating caches, prompts, and model access.",
+        formatter_class=formatter,
+    )
+    smoke_evaluate.add_argument(
+        "--models",
+        nargs="+",
+        default=list(DEFAULT_EVALUATION_MODELS),
+        help="Space-separated list of evaluation models to smoke test.",
+    )
+    smoke_evaluate.add_argument("--run-name", default="smoke-evaluate", help="Run name to use for the smoke test.")
+    smoke_evaluate.add_argument(
+        "--generator-run-name",
+        required=True,
+        help="Generation run name whose outputs should be used for the smoke test.",
+    )
+    smoke_evaluate.add_argument(
+        "--generator-model",
+        required=True,
+        help="Generation model whose outputs should be used for the smoke test.",
+    )
+    smoke_evaluate.add_argument(
+        "--generator-backend",
+        default=None,
+        help="Situational: backend prefix to apply when resolving --generator-model.",
+    )
+    smoke_evaluate.add_argument(
+        "--processed-dataset",
+        default=str(DEFAULT_PROCESSED_DATASET),
+        help="Processed unified DatasetDict used if the augmented cache must be rebuilt from generation logs.",
+    )
+    smoke_evaluate.add_argument(
+        "--dataset-types",
+        default=None,
+        help="Optional subset: comma-separated subset of dataset splits to evaluate.",
+    )
+    smoke_evaluate.add_argument(
+        "--settings",
+        default=None,
+        help="Advanced subset override: comma-separated subset of Final5 settings to evaluate in the smoke test.",
+    )
+    smoke_evaluate.add_argument(
+        "--modes",
+        default=None,
+        help="Advanced subset override: comma-separated subset of evaluation modes to run in the smoke test.",
+    )
+    smoke_evaluate.add_argument("--limit", type=int, default=2, help="Number of samples per task to run.")
+    smoke_evaluate.add_argument(
+        "--generation-log-root",
+        default=str(DEFAULT_GENERATION_LOG_ROOT),
+        help="Advanced override: root directory for generation Inspect logs when deriving inputs automatically.",
+    )
+    smoke_evaluate.add_argument(
+        "--cache-root",
+        default=str(DEFAULT_AUGMENTED_CACHE_ROOT),
+        help="Advanced override: root directory where augmented dataset caches are stored.",
+    )
+    smoke_evaluate.add_argument(
+        "--log-root",
+        default=str(DEFAULT_EVALUATION_LOG_ROOT),
+        help="Advanced override: root directory for Inspect evaluation logs.",
+    )
+    smoke_evaluate.add_argument(
+        "--backend",
+        default=None,
+        help="Situational: backend prefix to apply to unqualified smoke-test model names.",
+    )
+    smoke_evaluate.add_argument(
+        "--model-base-url",
+        default=None,
+        help="Situational: base URL for OpenAI-compatible local or remote model endpoints.",
+    )
+    smoke_evaluate.add_argument(
+        "--reasoning-effort",
+        default=None,
+        help="Advanced tuning: optional reasoning-effort hint forwarded to the model backend.",
+    )
+    smoke_evaluate.add_argument(
+        "--max-tokens",
+        type=int,
+        default=128,
+        help="Maximum output tokens per smoke-test evaluation call.",
+    )
+    smoke_evaluate.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Advanced/debug option: print the commands that would be run without actually executing them.",
+    )
     smoke_evaluate.set_defaults(handler=_run_smoke_evaluate)
 
     return parser

@@ -48,6 +48,10 @@ GENERATOR_DISPLAY_ALIASES: list[tuple[str, str]] = [
     ("gemini-3.1-pro", "gemini-3.1-pro"),
     ("claude-opus-4-6", "opus-4.6"),
     ("opus-4-6", "opus-4.6"),
+    ("Qwen3.5-397B-A17B", "Qwen3.5-397B"),
+    ("Qwen3.5-9B", "Qwen3.5-9B"),
+    ("Qwen3-4B-Instruct-2507", "Qwen3-4B"),
+    ("Olmo-3-7B-Instruct", "Olmo3-7B"),
 ]
 
 EVAL_MODEL_DISPLAY_LABELS: dict[str, str] = {

@@ -8,7 +8,7 @@ from utils.modeling import resolve_model_name
 def test_main_parser_generate_defaults_use_inspect_first_shape():
     parser = app_main.build_parser()
     args = parser.parse_args(["generate", "--model", "gpt-5.2-2025-12-11", "--run-name", "demo"])
-    assert args.processed_dataset.endswith("unified_processed_v2")
+    assert args.processed_dataset.endswith("unified_processed_v3")
     assert args.shard_count == 1
     assert args.shard_strategy == "contiguous"
     assert Path(args.log_root).relative_to(Path(os.environ["RESULTS_DIR"])) == Path("inspect/generation")
@@ -87,7 +87,31 @@ def test_supported_main_subcommands_match_the_inspect_first_cli():
     }
 
 
+def test_generate_help_describes_materialize_cache_flag(capsys):
+    parser = app_main.build_parser()
+    try:
+        parser.parse_args(["generate", "--help"])
+    except SystemExit as exc:
+        assert exc.code == 0
+    output = capsys.readouterr().out
+    assert "--materialize-cache" in output
+    assert "augmented DatasetDict cache immediately" in output
+
+
+def test_cluster_help_mentions_gpu_count_and_write_only(capsys):
+    parser = app_main.build_parser()
+    try:
+        parser.parse_args(["submit-generate-cluster", "--help"])
+    except SystemExit as exc:
+        assert exc.code == 0
+    output = capsys.readouterr().out
+    assert "--gpu-count" in output
+    assert "concurrency cap" in output
+    assert "--write-only" in output
+
+
 def test_model_alias_resolution_covers_api_and_local_defaults():
     assert resolve_model_name("gpt-5.2-2025-12-11") == "openai/gpt-5.2-2025-12-11"
+    assert resolve_model_name("Qwen/Qwen3.5-397B-A17B") == "together/Qwen/Qwen3.5-397B-A17B"
     assert resolve_model_name("Qwen/Qwen3-4B-Instruct-2507") == "vllm/Qwen/Qwen3-4B-Instruct-2507"
     assert resolve_model_name("custom-model", "openai") == "openai/custom-model"

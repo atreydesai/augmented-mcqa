@@ -49,8 +49,6 @@ env/
 htmlcov/
 
 # Large files (source datasets tracked separately)
-# datasets/*
-# !datasets/.gitkeep
 datasets/**/*.arrow
 
 # Derived caches and generated exports
@@ -81,5 +79,3 @@ Thumbs.db
 
 .claude
 .hf_cache
-test-artifacts/
-analysis/findings_report.md

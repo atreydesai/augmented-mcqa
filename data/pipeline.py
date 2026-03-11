@@ -12,7 +12,7 @@ from data.gpqa_processor import process_gpqa_for_experiments
 from data.mmlu_pro_processor import process_mmlu_pro
 
 
-PROCESSED_SCHEMA_VERSION = "final5_processed_v2"
+PROCESSED_SCHEMA_VERSION = "final5_processed_v3"
 DEFAULT_PER_DATASET_LIMIT = 1000
 
 
@@ -111,7 +111,7 @@ def process_unified_dataset(limit: Optional[int] = None, output_path: Optional[P
         }
     )
 
-    target_path = Path(output_path or (PROCESSED_DATASETS_DIR / "unified_processed_v2"))
+    target_path = Path(output_path or (PROCESSED_DATASETS_DIR / "unified_processed_v3"))
     target_path.parent.mkdir(parents=True, exist_ok=True)
     unified.save_to_disk(str(target_path))
 

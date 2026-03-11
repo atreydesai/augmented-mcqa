@@ -20,7 +20,7 @@ def _read_manifest(path):
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def test_submit_generate_cluster_write_only_writes_nine_model_dataset_tasks(tmp_path):
+def test_submit_generate_cluster_write_only_writes_six_model_dataset_tasks(tmp_path):
     dataset_path = tmp_path / "processed"
     bundle_dir = tmp_path / "bundle"
     _processed_dataset(dataset_path)
@@ -41,9 +41,9 @@ def test_submit_generate_cluster_write_only_writes_nine_model_dataset_tasks(tmp_
     assert rc == 0
     manifest = _read_manifest(bundle_dir / "manifest.json")
     assert manifest["stage"] == "generate"
-    assert manifest["task_count"] == 9
+    assert manifest["task_count"] == 6
     assert {task["dataset_type"] for task in manifest["tasks"]} == {"arc_challenge", "mmlu_pro", "gpqa"}
-    assert len({task["model"] for task in manifest["tasks"]}) == 3
+    assert len({task["model"] for task in manifest["tasks"]}) == 2
     assert (bundle_dir / "submit_all.sh").exists()
     assert next(bundle_dir.glob("*.sbatch")).exists()
 
@@ -70,7 +70,7 @@ def test_submit_generate_cluster_dataset_subset_reduces_manifest(tmp_path):
 
     assert rc == 0
     manifest = _read_manifest(bundle_dir / "manifest.json")
-    assert manifest["task_count"] == 3
+    assert manifest["task_count"] == 2
     assert {task["dataset_type"] for task in manifest["tasks"]} == {"gpqa"}
 
 
@@ -94,7 +94,7 @@ def test_submit_generate_cluster_without_gpu_count_renders_uncapped_array(tmp_pa
 
     assert rc == 0
     sbatch_text = next(bundle_dir.glob("*.sbatch")).read_text(encoding="utf-8")
-    assert "#SBATCH --array=0-8" in sbatch_text
+    assert "#SBATCH --array=0-5" in sbatch_text
     assert "%4" not in sbatch_text
 
 
