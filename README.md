@@ -71,14 +71,14 @@ The schedulable generation strategies are:
 
 ### Direct API generators
 
-GPT-5.2:
+GPT-5.2, all datasets, all questions:
 
 ```bash
 uv run python main.py generate \
   --model gpt-5.2-2025-12-11 \
   --run-name gen_gpt52 \
   --processed-dataset datasets/processed/unified_processed_v3 \
-  --materialize-cache
+  --dataset-types arc_challenge,mmlu_pro,gpqa
 ```
 
 Claude Opus 4.6:
@@ -146,6 +146,23 @@ uv run python main.py submit-generate-cluster \
   --render-status
 ```
 
+Example: write a status dashboard and submission bundle without calling `sbatch` yet:
+
+```bash
+uv run python main.py submit-generate-cluster \
+  --run-name gen_scheduler_preview \
+  --processed-dataset datasets/processed/unified_processed_v3 \
+  --dataset-types arc_challenge,mmlu_pro,gpqa \
+  --models Qwen/Qwen3.5-397B-A17B \
+  --generation-strategies model_from_scratch \
+  --limit 7 \
+  --questions-per-job 2 \
+  --max-tokens 10000 \
+  --cpus-per-task 2 \
+  --write-only \
+  --render-status
+```
+
 Example: rerun only `augment_model` for GPQA after editing that prompt:
 
 ```bash
@@ -179,6 +196,7 @@ The evaluation scheduler slices work by:
 - question chunk
 
 Each evaluation slice depends on the exact generation slice or slices needed for that same dataset chunk. If those generation prerequisites are missing or stale, the scheduler refuses to submit the evaluation slice.
+If a generation chunk contains a mix of successful and failed rows, downstream `augment_model` and evaluation work now skips the bad rows and continues on the rows that materialized correctly.
 
 Example:
 
