@@ -153,6 +153,14 @@ def load_scheduler_manifests(run_dir: Path | str) -> list[dict[str, Any]]:
     return manifests
 
 
+def _log_completed_at(log: Any) -> str:
+    completed_at = str(getattr(log, "completed_at", "") or "")
+    if completed_at:
+        return completed_at
+    stats = getattr(log, "stats", None)
+    return str(getattr(stats, "completed_at", "") or "")
+
+
 def collect_slice_attempts(log_dir: Path | str, *, kind: str) -> dict[str, list[dict[str, Any]]]:
     attempts: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for log_path, log in iter_eval_logs(log_dir, kind=kind):
@@ -176,7 +184,7 @@ def collect_slice_attempts(log_dir: Path | str, *, kind: str) -> dict[str, list[
         else:
             total_samples = len(getattr(log, "samples", []) or [])
             status = "success" if total_samples > 0 and len(scores) == total_samples else "failed"
-        completed_at = str(getattr(log, "completed_at", "") or "")
+        completed_at = _log_completed_at(log)
         attempts[slice_ref].append(
             {
                 "slice_ref": slice_ref,

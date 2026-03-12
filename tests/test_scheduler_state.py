@@ -270,7 +270,7 @@ def test_collect_slice_attempts_treats_errored_logs_as_failed(monkeypatch):
     fake_log = SimpleNamespace(
         eval=SimpleNamespace(metadata={"slice_ref": "generation|run1|model|arc|setting|0|1"}),
         status="error",
-        completed_at="2026-03-11T12:00:00+00:00",
+        stats=SimpleNamespace(completed_at="2026-03-11T12:00:00+00:00"),
         samples=[SimpleNamespace(scores={"final5_generation": SimpleNamespace(value=1.0)})],
     )
 
@@ -281,3 +281,4 @@ def test_collect_slice_attempts_treats_errored_logs_as_failed(monkeypatch):
 
     attempts = collect_slice_attempts("/tmp/unused", kind="generation")
     assert attempts["generation|run1|model|arc|setting|0|1"][-1]["status"] == "failed"
+    assert attempts["generation|run1|model|arc|setting|0|1"][-1]["completed_at"] == "2026-03-11T12:00:00+00:00"
