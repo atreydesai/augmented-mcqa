@@ -154,19 +154,6 @@ uv run python main.py submit-generate-cluster \
 
 If the required `model_from_scratch` slice for the same model, dataset, and question chunk is not already current, the scheduler will stop and tell you to rerun or include that prerequisite slice.
 
-### Reg Scheduler scripts
-
-If you want one bash file with editable variables at the top instead of a long CLI invocation:
-
-- generation helper: [`jobs/submit_generate_scheduler.sh`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/jobs/submit_generate_scheduler.sh)
-- evaluation helper: [`jobs/submit_evaluate_scheduler.sh`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/jobs/submit_evaluate_scheduler.sh)
-
-Each helper:
-
-- writes the scheduler bundle with `--write-only`
-- finds the newest generated `submit_all.sh`
-- runs that master submit script unless `WRITE_ONLY=1`
-
 ## Step 3: Evaluate
 
 The default local evaluation models are:

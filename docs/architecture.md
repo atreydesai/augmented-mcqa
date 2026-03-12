@@ -120,11 +120,6 @@ Local slices request one GPU. API slices request no GPU.
 The SLURM rendering logic lives in [`utils/cluster_submit.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/utils/cluster_submit.py).
 The run-state and dashboard logic lives in [`utils/scheduler_state.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/utils/scheduler_state.py).
 
-Two PI-facing bash helpers wrap the CLI:
-
-- [`jobs/submit_generate_scheduler.sh`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/jobs/submit_generate_scheduler.sh)
-- [`jobs/submit_evaluate_scheduler.sh`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/jobs/submit_evaluate_scheduler.sh)
-
 ## Artifact Layout
 
 - processed dataset: `datasets/processed/unified_processed_v3`

@@ -186,10 +186,6 @@ Supported schedulable generation strategies:
 
 Also supports all flags from `Shared Cluster-Submit Flags`.
 
-Bash wrapper:
-
-- [`jobs/submit_generate_scheduler.sh`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/jobs/submit_generate_scheduler.sh)
-
 ## Step 3: Evaluate
 
 The scheduler can now fan out both local and hosted/API evaluation jobs.
@@ -293,10 +289,6 @@ Each evaluation slice depends on the exact generation slice or slices required b
 | `--modes` | Comma-separated subset of evaluation modes to schedule. |
 
 Also supports all flags from `Shared Cluster-Submit Flags`.
-
-Bash wrapper:
-
-- [`jobs/submit_evaluate_scheduler.sh`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/jobs/submit_evaluate_scheduler.sh)
 
 ## Step 4: Analyze
 
