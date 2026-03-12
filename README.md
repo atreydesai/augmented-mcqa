@@ -13,6 +13,14 @@ If you will run local `vllm/...` models:
 uv pip install --no-build-isolation 'vllm==0.11.2' 'transformers<5' 'numpy<2.3'
 ```
 
+To keep that cluster-only local-model stack installed across project updates, use:
+
+```bash
+uv sync --extra dev --inexact
+```
+
+`--inexact` tells `uv` not to remove extra packages that are present in the environment but not declared in this repo's locked dependencies.
+
 Set the provider keys you actually need in `.env`:
 
 - `OPENAI_API_KEY` for GPT-5.2
