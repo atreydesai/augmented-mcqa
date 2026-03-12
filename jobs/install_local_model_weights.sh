@@ -12,6 +12,7 @@ MODELS=(
   "Qwen/Qwen3-4B-Instruct-2507"
   "allenai/Olmo-3-7B-Instruct"
   "meta-llama/Llama-3.1-8B-Instruct"
+  "nvidia/NVIDIA-Nemotron-Nano-9B-v2"
 )
 
 usage() {
@@ -28,7 +29,8 @@ Options:
 Notes:
   - Reads MODEL_CACHE_DIR and HF_HOME from .env.
   - If MODEL_CACHE_DIR does not end with /hub, /hub is appended.
-  - Downloads are staged into <target>/<model_id_with_slashes_replaced>.
+  - Downloads are staged into the standard Hugging Face cache layout under
+    <target>/models--<org>--<model>.
 USAGE
 }
 
@@ -81,26 +83,22 @@ if [[ "$(basename "$TARGET_DIR")" != "hub" ]]; then
 fi
 
 export HF_HOME="$TARGET_DIR"
+export HF_HUB_CACHE="$TARGET_DIR"
 mkdir -p "$TARGET_DIR"
 
 echo "Using target cache: $TARGET_DIR"
 echo "Dry run: $DRY_RUN"
 
 for model in "${MODELS[@]}"; do
-  safe_name="${model//\//__}"
-  local_dir="$TARGET_DIR/$safe_name"
   cmd=(
-    huggingface-cli
+    hf
     download
     "$model"
-    --local-dir
-    "$local_dir"
-    --local-dir-use-symlinks
-    False
   )
 
   if [[ "$DRY_RUN" == "1" ]]; then
-    printf 'DRY RUN: %q ' "${cmd[@]}"
+    printf 'DRY RUN: '
+    printf '%q ' "${cmd[@]}"
     printf '\n'
   else
     echo "Staging weights for $model"

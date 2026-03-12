@@ -14,6 +14,15 @@ from data.mmlu_pro_processor import process_mmlu_pro
 
 PROCESSED_SCHEMA_VERSION = "final5_processed_v3"
 DEFAULT_PER_DATASET_LIMIT = 1000
+EXCLUDED_QUESTION_IDS = {
+    "gpqa": {
+        "recDjE01bu72pPUU2",
+        "recZSGUkn56v9kEp1",
+        "recnGEpF1srQpaqWq",
+        "recnTTKdBzfuoZ7w7",
+    },
+    "mmlu_pro": {"996"},
+}
 
 
 def _limit_dataset(ds: Dataset, limit: Optional[int]) -> Dataset:
@@ -26,6 +35,30 @@ def _add_or_replace_column(ds: Dataset, name: str, values: list) -> Dataset:
     if name in ds.column_names:
         ds = ds.remove_columns([name])
     return ds.add_column(name, values)
+
+
+def _row_identifier(ds: Dataset, dataset_type: str, row_index: int) -> str:
+    row = ds[row_index]
+    if dataset_type == "mmlu_pro":
+        value = row.get("question_id")
+    else:
+        value = row.get("id")
+    return str(value).strip()
+
+
+def _exclude_known_bad_questions(ds: Dataset, dataset_type: str) -> Dataset:
+    excluded_ids = EXCLUDED_QUESTION_IDS.get(dataset_type)
+    if not excluded_ids:
+        return ds
+
+    keep_indices = [
+        row_index
+        for row_index in range(len(ds))
+        if _row_identifier(ds, dataset_type, row_index) not in excluded_ids
+    ]
+    if len(keep_indices) == len(ds):
+        return ds
+    return ds.select(keep_indices)
 
 
 def _ensure_common_columns(ds: Dataset, dataset_type: str) -> Dataset:
@@ -69,6 +102,7 @@ def _process_mmlu_pro(limit: Optional[int]) -> Dataset:
         raise ValueError("MMLU-Pro processor returned no train/test split")
 
     merged = _limit_dataset(merged, limit)
+    merged = _exclude_known_bad_questions(merged, "mmlu_pro")
     return _ensure_common_columns(merged, "mmlu_pro")
 
 
@@ -79,6 +113,7 @@ def _process_arc_challenge(limit: Optional[int]) -> Dataset:
         limit=None,
     )
     ds = _limit_dataset(ds, limit)
+    ds = _exclude_known_bad_questions(ds, "arc_challenge")
     return _ensure_common_columns(ds, "arc_challenge")
 
 
@@ -88,6 +123,7 @@ def _process_gpqa(limit: Optional[int]) -> Dataset:
         limit=None,
     )
     ds = _limit_dataset(ds, limit)
+    ds = _exclude_known_bad_questions(ds, "gpqa")
     return _ensure_common_columns(ds, "gpqa")
 
 
