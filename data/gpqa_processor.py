@@ -13,7 +13,12 @@ from typing import Any, Dict, List, Optional
 from datasets import Dataset, load_dataset
 
 from config import HF_TOKEN, PROCESSED_DATASETS_DIR
-from data.augmentor import _safe_text
+
+
+def _safe_text(value: Any) -> str:
+    if value is None:
+        return ""
+    return str(value).strip()
 
 
 def load_gpqa_dataset(
@@ -98,15 +103,3 @@ def process_gpqa_for_experiments(
     print(f"Saved {len(dataset)} GPQA rows to {output_path}")
 
     return dataset
-
-
-def get_gpqa_stats(entries: List[Dict[str, Any]]) -> Dict[str, Any]:
-    """Simple summary stats for mapped GPQA rows."""
-    return {
-        "total_entries": len(entries),
-        "with_three_human_distractors": sum(
-            1 for e in entries if len(e.get("choices_human", [])) == 3
-        ),
-        "with_nonempty_answer": sum(1 for e in entries if bool(e.get("answer"))),
-        "with_nonempty_subfield": sum(1 for e in entries if bool(e.get("subfield"))),
-    }

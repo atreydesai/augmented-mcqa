@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import math
 from pathlib import Path
 from typing import Iterable
@@ -10,6 +9,8 @@ from typing import Iterable
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+
+from utils.logs import iter_eval_logs, read_log
 
 
 SETTING_OPTION_COUNTS: dict[str, int] = {
@@ -47,6 +48,10 @@ GENERATOR_DISPLAY_ALIASES: list[tuple[str, str]] = [
     ("gemini-3.1-pro", "gemini-3.1-pro"),
     ("claude-opus-4-6", "opus-4.6"),
     ("opus-4-6", "opus-4.6"),
+    ("Qwen3.5-397B-A17B", "Qwen3.5-397B"),
+    ("Qwen3.5-9B", "Qwen3.5-9B"),
+    ("Qwen3-4B-Instruct-2507", "Qwen3-4B"),
+    ("Olmo-3-7B-Instruct", "Olmo3-7B"),
 ]
 
 EVAL_MODEL_DISPLAY_LABELS: dict[str, str] = {
@@ -97,20 +102,6 @@ def _display_eval_model(model: str) -> str:
 
 def _display_setting(setting: str) -> str:
     return SETTING_DISPLAY_LABELS.get(str(setting), str(setting))
-
-
-def _safe_float(value: object, default: float = 0.0) -> float:
-    try:
-        return float(value)
-    except (TypeError, ValueError):
-        return default
-
-
-def _safe_int(value: object, default: int = 0) -> int:
-    try:
-        return int(value)
-    except (TypeError, ValueError):
-        return default
 
 
 def _binomial_stderr(correct: int, total: int) -> float:
@@ -168,30 +159,18 @@ def _load_correctness_map(config_root: Path, cache: dict[str, dict[int, bool] | 
     if key in cache:
         return cache[key]
 
-    rows_path = config_root / "rows"
-    if rows_path.exists():
-        try:
-            from datasets import load_from_disk  # type: ignore
-        except Exception:
-            cache[key] = None
-            return None
+    if config_root.is_file() and config_root.suffix == ".eval":
+        log = read_log(config_root)
         out: dict[int, bool] = {}
-        dataset = load_from_disk(str(rows_path))
-        for row in dataset:
-            idx = row.get("question_idx")
+        for sample in log.samples:
+            if not sample.scores:
+                continue
+            score = next(iter(sample.scores.values()))
+            metadata = getattr(score, "metadata", {}) or {}
+            idx = metadata.get("question_idx")
             if idx is None:
                 continue
-            out[int(idx)] = bool(row.get("is_correct", False))
-        cache[key] = out
-        return out
-
-    legacy_results = config_root / "results.json"
-    if legacy_results.exists():
-        payload = json.loads(legacy_results.read_text(encoding="utf-8"))
-        out = {}
-        for local_idx, row in enumerate(payload.get("results", [])):
-            q_idx = row.get("question_idx", local_idx)
-            out[int(q_idx)] = bool(row.get("is_correct", False))
+            out[int(idx)] = bool(getattr(score, "value", False))
         cache[key] = out
         return out
 
@@ -204,51 +183,65 @@ def collect_final5_results(results_root: Path | str) -> pd.DataFrame:
     root = Path(results_root)
     rows: list[dict[str, object]] = []
 
-    summary_paths = sorted(root.glob("*/*/*/*/*/summary.json"))
-    summary_parents = {p.parent for p in summary_paths}
-    legacy_paths = [
-        p for p in sorted(root.glob("*/*/*/*/*/results.json"))
-        if p.parent not in summary_parents
-    ]
+    inspect_logs = list(iter_eval_logs(root, kind="evaluation"))
+    if inspect_logs:
+        grouped_rows: dict[tuple[str, str, str, str, str], dict[str, object]] = {}
+        correctness_rows: dict[tuple[str, str, str, str, str], int] = {}
+        for log_path, log in inspect_logs:
+            log_meta = getattr(log.eval, "metadata", {}) or {}
+            generator = str(log_meta.get("generation_model", ""))
+            mode = str(log_meta.get("mode", ""))
+            setting = str(log_meta.get("setting", ""))
+            eval_model = str(log_meta.get("evaluation_model") or log.eval.model)
+            for sample in log.samples:
+                if not sample.scores:
+                    continue
+                score = next(iter(sample.scores.values()))
+                score_meta = getattr(score, "metadata", {}) or {}
+                dataset = str(score_meta.get("dataset_type", ""))
+                if not dataset:
+                    continue
+                group_key = (generator, eval_model, mode, dataset, setting)
+                bucket = grouped_rows.setdefault(
+                    group_key,
+                    {
+                        "generator": generator,
+                        "eval_model": eval_model,
+                        "mode": mode,
+                        "dataset": dataset,
+                        "setting": setting,
+                        "total": 0,
+                        "correct": 0,
+                        "results_path": str(log_path),
+                        "config_root": str(log_path),
+                    },
+                )
+                bucket["total"] = int(bucket["total"]) + 1
+                is_correct = bool(getattr(score, "value", False))
+                if is_correct:
+                    bucket["correct"] = int(bucket["correct"]) + 1
+                correctness_rows[group_key] = int(bucket["correct"])
 
-    for path in [*summary_paths, *legacy_paths]:
-        rel = path.relative_to(root)
-        if len(rel.parts) != 6:
-            continue
+        for key, bucket in grouped_rows.items():
+            _generator, _eval_model, _mode, _dataset, setting = key
+            total = int(bucket["total"])
+            correct = int(bucket["correct"])
+            accuracy = (correct / total) if total else 0.0
+            random_baseline = SETTING_RANDOM_BASELINES.get(setting)
+            if random_baseline is None:
+                continue
+            rows.append(
+                {
+                    **bucket,
+                    "accuracy": accuracy,
+                    "stderr": _binomial_stderr(correct, total),
+                    "random_baseline": random_baseline,
+                    "delta_over_random": accuracy - random_baseline,
+                }
+            )
 
-        generator, eval_model, mode, dataset, setting, _ = rel.parts
-
-        payload = json.loads(path.read_text(encoding="utf-8"))
-        summary = payload.get("summary", {})
-        results = payload.get("results", [])
-
-        total = _safe_int(summary.get("total"), len(results))
-        if total <= 0:
-            total = len(results)
-        correct = _safe_int(summary.get("correct"), sum(1 for r in results if r.get("is_correct")))
-        accuracy = _safe_float(summary.get("accuracy"), (correct / total) if total else 0.0)
-
-        random_baseline = SETTING_RANDOM_BASELINES.get(setting)
-        if random_baseline is None:
-            continue
-
-        rows.append(
-            {
-                "generator": generator,
-                "eval_model": eval_model,
-                "mode": mode,
-                "dataset": dataset,
-                "setting": setting,
-                "total": total,
-                "correct": correct,
-                "accuracy": accuracy,
-                "stderr": _binomial_stderr(correct, total),
-                "random_baseline": random_baseline,
-                "delta_over_random": accuracy - random_baseline,
-                "results_path": str(path),
-                "config_root": str(path.parent),
-            }
-        )
+        if rows:
+            return pd.DataFrame(rows)
 
     if not rows:
         return pd.DataFrame(

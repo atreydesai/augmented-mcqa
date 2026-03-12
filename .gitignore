@@ -48,23 +48,21 @@ env/
 .coverage
 htmlcov/
 
-# Large files (datasets tracked separately, results included)
-# datasets/*
-# !datasets/.gitkeep
+# Large files (source datasets tracked separately)
 datasets/**/*.arrow
-# results are intentionally tracked
-!results/**/*.arrow
+
+# Derived caches and generated exports
+datasets/augmented/
+datasets/benchmarker_results/
+analysis/figures/
 
 # Model weights
 *.bin
 *.pt
 *.pth
 *.safetensors
+!datasets/augmented
 
-# Logs
-*.log
-logs/
-# results/*
 
 # Intermediate files
 intermediate_*.json
@@ -76,4 +74,3 @@ Thumbs.db
 
 .claude
 .hf_cache
-analysis/findings_report.md

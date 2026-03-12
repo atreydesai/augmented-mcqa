@@ -1,0 +1,23 @@
+---------------------------------------------------------                                              
+final5_generate_model_from_scratch (1 sample): openai/gpt-5.2-2025-12-11                               
+max_tokens: 2048, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)
+---------------------------------------------------------                                              
+                                                                                                       
+Steps:   1/1 100% | Samples:   1/  1 | mean:  n/a | openai:  0/10 | HTTP retries: 0
+
+---------------------------------------------------------                                                                                                        
+final5_generate_model_from_scratch (1 sample): openai/gpt-5.2-2025-12-11                                                                                         
+max_tokens: 2048, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)                                                          
+                                                                                                                                                                 
+total time:                                                        0:00:14                                                                                       
+openai/gpt-5.2-2025-12-11                                          726 tokens [I: 364, O: 362, R: 288]                                                           
+final5_generation                                                                                                                                                
+mean               1.000                                                                                                                                         
+stderr             0.000                                                                                                                                         
+Log:                                                                                                                                                             
+results/inspect/generation/gen_gpt52_model_from_scratch_smoke2/openai_gpt-5.2-2025-12-11/2026-03-12T05-56-37+00-00_final5-generate-model-from-scratch_mi7NLWWzgi…
+---------------------------------------------------------                                                                                                        
+                                                                                                                                                                 
+Generation logs: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/generation/gen_gpt52_model_from_scratch_smoke2/openai_gpt-5.2-2025-12-11
+Augmented dataset cache: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/augmented/gen_gpt52_model_from_scratch_smoke2/openai_gpt-5.2-2025-12-11/_cluster_slices/gpqa/model_from_scratch/0-1
+Running: python main.py generate --model openai/gpt-5.2-2025-12-11 --run-name gen_gpt52_model_from_scratch_smoke2 --processed-dataset datasets/processed/unified_processed_v3 --dataset-types gpqa --generation-strategies model_from_scratch --question-start 0 --limit 1 --augmented-dataset /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/augmented/gen_gpt52_model_from_scratch_smoke2/openai_gpt-5.2-2025-12-11/_cluster_slices/gpqa/model_from_scratch/0-1 --max-tokens 2048 --reasoning-effort medium --retry-on-error 2

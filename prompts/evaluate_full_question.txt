@@ -1,0 +1,15 @@
+Answer the following multiple choice question.
+
+<question>
+{question}
+</question>
+
+<choices>
+{choices}
+</choices>
+
+<format>
+Return your output as valid JSON with the key "answer" which is one of {letters}.
+{json_example}
+Do not include anything else.
+</format>

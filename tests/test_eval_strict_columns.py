@@ -1,49 +1,69 @@
-from pathlib import Path
+from datasets import Dataset, DatasetDict
 
-from experiments.config import ExperimentConfig
-from experiments.runner import ExperimentRunner
-
-
-class _Client:
-    def generate_batch(self, prompts, **kwargs):  # noqa: ANN001
-        class _Resp:
-            text = "The answer is A"
-
-            @staticmethod
-            def extract_answer() -> str:
-                return "A"
-
-        return [_Resp() for _ in prompts]
+from data.final5_store import build_evaluation_dataset
 
 
-def test_eval_requires_new_final5_columns_without_legacy_fallback(tmp_path, monkeypatch):
-    cfg = ExperimentConfig(
-        name="strict_cols",
-        dataset_path=Path("datasets/augmented/final5"),
-        model_name="Qwen/Qwen3-4B-Instruct-2507",
-        generator_dataset_label="gpt-5.2-2025-12-11",
-        setting_id="human_from_scratch",
-        num_human=3,
-        num_model=0,
-        output_dir=tmp_path / "out",
-    )
-
-    runner = ExperimentRunner(cfg, client=_Client())
-
-    # Legacy-only row: has choices_human but missing human_from_scratch.
-    rows = [
+def _augmented_dataset(path):
+    dataset = DatasetDict(
         {
-            "question": "Q0",
-            "answer": "A",
-            "choices_answer": ["A"],
-            "choices_human": ["B", "C", "D"],
+            "arc_challenge": Dataset.from_list(
+                [
+                    {
+                        "id": "arc-1",
+                        "question": "Q1",
+                        "answer": "Gold",
+                        "category": "cat",
+                        "human_from_scratch": ["H1", "H2", "H3"],
+                        "human_from_scratch_options_randomized": ["Gold", "H1", "H2", "H3"],
+                        "human_from_scratch_correct_answer_letter": "A",
+                        "model_from_scratch": [],
+                        "model_from_scratch_options_randomized": [],
+                        "model_from_scratch_correct_answer_letter": "",
+                        "augment_human": [],
+                        "augment_human_options_randomized": [],
+                        "augment_human_correct_answer_letter": "",
+                        "augment_model": [],
+                        "augment_model_options_randomized": [],
+                        "augment_model_correct_answer_letter": "",
+                        "augment_ablation": [],
+                        "augment_ablation_options_randomized": [],
+                        "augment_ablation_correct_answer_letter": "",
+                    },
+                    {
+                        "id": "arc-2",
+                        "question": "Q2",
+                        "answer": "Gold2",
+                        "category": "cat",
+                        "choices_human": ["legacy-1", "legacy-2", "legacy-3"],
+                        "human_from_scratch": ["legacy-1", "legacy-2", "legacy-3"],
+                        "human_from_scratch_options_randomized": [],
+                        "human_from_scratch_correct_answer_letter": "",
+                        "model_from_scratch": [],
+                        "model_from_scratch_options_randomized": [],
+                        "model_from_scratch_correct_answer_letter": "",
+                        "augment_human": [],
+                        "augment_human_options_randomized": [],
+                        "augment_human_correct_answer_letter": "",
+                        "augment_model": [],
+                        "augment_model_options_randomized": [],
+                        "augment_model_correct_answer_letter": "",
+                        "augment_ablation": [],
+                        "augment_ablation_options_randomized": [],
+                        "augment_ablation_correct_answer_letter": "",
+                    },
+                ]
+            ),
+            "mmlu_pro": Dataset.from_list([]),
+            "gpqa": Dataset.from_list([]),
         }
-    ]
-    monkeypatch.setattr(runner, "_load_data", lambda: rows)
+    )
+    dataset.save_to_disk(str(path))
 
-    result = runner.run()
 
-    # No fallback to choices_human for human_from_scratch.
-    assert result.successful_entries == 0
-    assert result.failed_entries == 1
-    assert result.entry_failures
+def test_build_evaluation_dataset_requires_new_randomized_columns_without_legacy_fallback(tmp_path):
+    path = tmp_path / "augmented"
+    _augmented_dataset(path)
+
+    dataset = build_evaluation_dataset(path, setting="human_from_scratch", mode="full_question")
+    assert len(dataset) == 1
+    assert dataset[0].id == "arc_challenge:arc-1"

@@ -1,147 +1,146 @@
+import os
 from pathlib import Path
 
-from config import (
-    DEFAULT_EVAL_KEEP_CHECKPOINTS,
-    DEFAULT_EVAL_MAX_TOKENS,
-    DEFAULT_EVAL_SAVE_INTERVAL,
-    DEFAULT_EVAL_SEED,
-    DEFAULT_EVAL_TEMPERATURE,
-    DEFAULT_MATRIX_PRESET,
-)
-from experiments.config import ExperimentConfig
-from experiments.matrix import build_manifest, build_matrix_configs, save_manifest
-from importlib import import_module as _import_module
-
-eval_matrix = _import_module("scripts.04_eval_matrix")
+import main as app_main
+from utils.modeling import resolve_model_name
 
 
-def test_experiment_config_defaults_use_shared_constants(tmp_path):
-    cfg = ExperimentConfig(
-        name="defaults",
-        dataset_path=Path("datasets/augmented/final5"),
-        model_name="Qwen/Qwen3-4B-Instruct-2507",
-        generator_dataset_label="gpt-5.2-2025-12-11",
-        output_dir=tmp_path / "defaults",
-    )
-    assert cfg.seed == DEFAULT_EVAL_SEED
-    assert cfg.temperature == DEFAULT_EVAL_TEMPERATURE
-    assert cfg.max_tokens == DEFAULT_EVAL_MAX_TOKENS
-    assert cfg.save_interval == DEFAULT_EVAL_SAVE_INTERVAL
+def test_main_parser_generate_defaults_use_inspect_first_shape():
+    parser = app_main.build_parser()
+    args = parser.parse_args(["generate", "--model", "gpt-5.2-2025-12-11", "--run-name", "demo"])
+    assert args.processed_dataset.endswith("unified_processed_v3")
+    assert args.shard_count == 1
+    assert args.shard_strategy == "contiguous"
+    assert Path(args.log_root).relative_to(Path(os.environ["RESULTS_DIR"])) == Path("inspect/generation")
 
 
-def test_build_matrix_configs_defaults_use_shared_constants(tmp_path):
-    cfg = build_matrix_configs(
-        model="Qwen/Qwen3-4B-Instruct-2507",
-        dataset_path=Path("datasets/augmented/final5"),
-        generator_dataset_label="gpt-5.2-2025-12-11",
-        dataset_types=["mmlu_pro"],
-        output_base=tmp_path,
-    )[0]
-    assert cfg.seed == DEFAULT_EVAL_SEED
-    assert cfg.temperature == DEFAULT_EVAL_TEMPERATURE
-    assert cfg.max_tokens == DEFAULT_EVAL_MAX_TOKENS
-    assert cfg.save_interval == DEFAULT_EVAL_SAVE_INTERVAL
-
-
-def test_eval_matrix_parser_defaults_use_shared_constants():
-    parser = eval_matrix.build_parser()
+def test_main_parser_evaluate_defaults_use_inspect_first_shape():
+    parser = app_main.build_parser()
     args = parser.parse_args(
         [
-            "plan",
+            "evaluate",
             "--model",
             "Qwen/Qwen3-4B-Instruct-2507",
-            "--dataset-path",
-            "datasets/augmented/final5",
-            "--generator-dataset-label",
+            "--run-name",
+            "eval",
+            "--generator-run-name",
+            "gen",
+            "--generator-model",
             "gpt-5.2-2025-12-11",
         ]
     )
-    assert args.preset == DEFAULT_MATRIX_PRESET
-    assert args.seed == DEFAULT_EVAL_SEED
-    assert args.temperature == DEFAULT_EVAL_TEMPERATURE
-    assert args.max_tokens == DEFAULT_EVAL_MAX_TOKENS
-    assert args.save_interval == DEFAULT_EVAL_SAVE_INTERVAL
-    assert args.entry_shard_strategy == "contiguous"
+    assert Path(args.cache_root).relative_to(Path(os.environ["DATASETS_DIR"])) == Path("augmented")
+    assert Path(args.log_root).relative_to(Path(os.environ["RESULTS_DIR"])) == Path("inspect/evaluation")
+    assert args.shard_count == 1
 
-    run_args = parser.parse_args(
+
+def test_main_parser_submit_generate_cluster_defaults_use_local_cluster_shape():
+    parser = app_main.build_parser()
+    args = parser.parse_args(["submit-generate-cluster", "--run-name", "cluster-gen"])
+    assert args.gpu_count is None
+    assert args.limit is None
+    assert args.partition == "clip"
+    assert args.account == "clip"
+    assert args.qos == "high"
+    assert args.gpu_type == "rtxa6000"
+    assert args.submit is True
+
+
+def test_main_parser_submit_evaluate_cluster_defaults_use_local_cluster_shape():
+    parser = app_main.build_parser()
+    args = parser.parse_args(
         [
-            "run",
-            "--manifest",
-            "manifest.json",
-            "--generator-dataset-label",
+            "submit-evaluate-cluster",
+            "--run-name",
+            "cluster-eval",
+            "--generator-run-name",
+            "gen",
+            "--generator-model",
             "gpt-5.2-2025-12-11",
         ]
     )
-    assert run_args.keep_checkpoints == DEFAULT_EVAL_KEEP_CHECKPOINTS
-    assert run_args.entry_shard_strategy == "contiguous"
+    assert args.gpu_count is None
+    assert args.limit is None
+    assert args.partition == "clip"
+    assert args.account == "clip"
+    assert args.qos == "high"
+    assert args.gpu_type == "rtxa6000"
+    assert args.submit is True
 
 
-def test_legacy_presets_are_rejected():
-    for preset in ["core16", "branching21"]:
-        try:
-            eval_matrix._validate_preset(preset)
-        except ValueError as exc:
-            assert "archived" in str(exc)
-        else:
-            raise AssertionError(f"Expected ValueError for preset={preset}")
+def test_supported_main_subcommands_match_the_inspect_first_cli():
+    parser = app_main.build_parser()
+    subparser_action = next(action for action in parser._actions if getattr(action, "choices", None))
+    assert set(subparser_action.choices) == {
+        "prepare-data",
+        "generate",
+        "generate-all",
+        "evaluate",
+        "evaluate-all",
+        "analyze",
+        "signature-table",
+        "export",
+        "submit-generate-cluster",
+        "submit-evaluate-cluster",
+        "materialize-generation-cache",
+        "diagnose-failures",
+        "diagnose-trace",
+        "smoke-generate",
+        "smoke-evaluate",
+    }
 
 
-def test_eval_matrix_plan_no_manifest_attribute_crash(tmp_path):
-    out_manifest = tmp_path / "plan_manifest.json"
-    rc = eval_matrix.main(
+def test_generate_help_describes_materialize_cache_flag(capsys):
+    parser = app_main.build_parser()
+    try:
+        parser.parse_args(["generate", "--help"])
+    except SystemExit as exc:
+        assert exc.code == 0
+    output = capsys.readouterr().out
+    assert "--materialize-cache" in output
+    assert "augmented DatasetDict cache immediately" in output
+
+
+def test_cluster_help_mentions_gpu_count_and_write_only(capsys):
+    parser = app_main.build_parser()
+    try:
+        parser.parse_args(["submit-generate-cluster", "--help"])
+    except SystemExit as exc:
+        assert exc.code == 0
+    output = capsys.readouterr().out
+    assert "--gpu-count" in output
+    assert "--limit" in output
+    assert "concurrency cap" in output
+    assert "--write-only" in output
+
+
+def test_prepare_data_step_all_implies_download_all(monkeypatch):
+    captured = {}
+
+    def fake_prepare_data(**kwargs):
+        captured.update(kwargs)
+        return 0
+
+    monkeypatch.setattr(app_main, "prepare_data", fake_prepare_data)
+
+    rc = app_main.main(
         [
-            "plan",
-            "--model",
-            "Qwen/Qwen3-4B-Instruct-2507",
-            "--dataset-path",
-            "datasets/augmented/final5",
-            "--generator-dataset-label",
-            "gpt-5.2-2025-12-11",
-            "--manifest-out",
-            str(out_manifest),
+            "prepare-data",
+            "--step",
+            "all",
+            "--output-path",
+            "datasets/processed/unified_processed_v3",
         ]
     )
+
     assert rc == 0
-    assert out_manifest.exists()
+    assert captured["step"] == "all"
+    assert captured["download_all"] is True
+    assert captured["dataset"] is None
 
 
-def test_eval_matrix_manifest_run_preserves_entry_shards(tmp_path):
-    model = "Qwen/Qwen3-4B-Instruct-2507"
-    dataset_path = Path("datasets/augmented/final5")
-    generator_label = "gpt-5.2-2025-12-11"
-
-    configs = build_matrix_configs(
-        model=model,
-        dataset_path=dataset_path,
-        generator_dataset_label=generator_label,
-        dataset_types=["arc_challenge"],
-        output_base=tmp_path,
-        entry_shards=2,
-        entry_shard_index=1,
-        entry_shard_strategy="contiguous",
-    )
-    manifest = build_manifest(
-        configs,
-        preset="final5",
-        model=model,
-        dataset_path=dataset_path,
-        generator_dataset_label=generator_label,
-        dataset_types=["arc_challenge"],
-    )
-    manifest_path = save_manifest(manifest, tmp_path / "run_manifest.json")
-
-    parser = eval_matrix.build_parser()
-    args = parser.parse_args(
-        [
-            "run",
-            "--manifest",
-            str(manifest_path),
-            "--generator-dataset-label",
-            generator_label,
-        ]
-    )
-    resolved = eval_matrix._resolve_configs(args)
-    assert resolved
-    assert all(cfg.entry_shards == 2 for cfg in resolved)
-    assert all(cfg.entry_shard_index == 1 for cfg in resolved)
-    assert all(cfg.entry_shard_strategy == "contiguous" for cfg in resolved)
+def test_model_alias_resolution_covers_api_and_local_defaults():
+    assert resolve_model_name("gpt-5.2-2025-12-11") == "openai/gpt-5.2-2025-12-11"
+    assert resolve_model_name("Qwen/Qwen3.5-397B-A17B") == "together/Qwen/Qwen3.5-397B-A17B"
+    assert resolve_model_name("Qwen/Qwen3-4B-Instruct-2507") == "vllm/Qwen/Qwen3-4B-Instruct-2507"
+    assert resolve_model_name("custom-model", "openai") == "openai/custom-model"

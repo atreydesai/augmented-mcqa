@@ -1,100 +1,64 @@
-import json
 from pathlib import Path
 
-from analysis.visualize import collect_final5_results, plot_final5_pairwise
+from inspect_ai import Task, eval
+from inspect_ai.dataset import MemoryDataset, Sample
+from inspect_ai.scorer import Score, scorer
+from inspect_ai.solver import solver
+
+from analysis.visualize import collect_final5_results
 
 
-def _write_summary(path: Path, *, total: int, correct: int) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    payload = {
-        "config": {"name": "cfg"},
-        "summary": {
-            "total": total,
-            "correct": correct,
-            "accuracy": correct / total,
-            "attempted_entries": total,
-            "successful_entries": total,
-            "failed_entries": 0,
-            "entry_failure_count": 0,
-            "behavioral_counts": {"G": correct, "H": total - correct, "M": 0, "?": 0},
-            "accuracy_by_category": {"cat": correct / total},
-        },
-        "timing": {"start": "2026-01-01T00:00:00Z", "end": "2026-01-01T00:00:10Z"},
-        "entry_failures": [],
-    }
-    path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+@solver
+def _solver():
+    async def solve(state, generate):  # noqa: ANN001
+        state.output.completion = "A"
+        return state
+
+    return solve
 
 
-def test_collect_and_plot_final5_outputs_include_random_baseline_and_ci(tmp_path):
-    root = tmp_path / "results"
-    generator = "gpt-5.2-2025-12-11"
-    dataset = "mmlu_pro"
-    mode = "full_question"
-    eval_models = ["Qwen_Qwen3-4B-Instruct-2507", "allenai_Olmo-3-7B-Instruct"]
+@scorer(metrics=[])
+def _scorer(setting: str, mode: str, dataset_type: str):
+    async def score(state, target):  # noqa: ANN001
+        return Score(
+            value=1.0,
+            metadata={
+                "dataset_type": dataset_type,
+                "question_idx": 0,
+                "prediction_type": "G",
+                "category": "cat",
+            },
+        )
 
-    settings = [
-        "human_from_scratch",
-        "model_from_scratch",
-        "augment_human",
-        "augment_model",
-        "augment_ablation",
-    ]
+    return score
 
-    for model_idx, eval_model in enumerate(eval_models):
-        for setting_idx, setting in enumerate(settings):
-            total = 100
-            correct = 20 + model_idx * 5 + setting_idx
-            out = root / generator / eval_model / mode / dataset / setting / "summary.json"
-            _write_summary(out, total=total, correct=correct)
+
+def _write_log(root: Path, *, task_name: str, setting: str, mode: str, dataset_type: str):
+    eval(
+        Task(
+            name=task_name,
+            dataset=MemoryDataset([Sample(input="Q", choices=["x", "y"], target="A", id=f"{dataset_type}:0")]),
+            solver=_solver(),
+            scorer=_scorer(setting, mode, dataset_type),
+            metadata={
+                "kind": "evaluation",
+                "generation_model": "openai/gpt-5.2-2025-12-11",
+                "evaluation_model": "vllm/Qwen/Qwen3-4B-Instruct-2507",
+                "setting": setting,
+                "mode": mode,
+            },
+        ),
+        log_dir=str(root),
+        display="none",
+    )
+
+
+def test_collect_final5_results_reads_inspect_eval_logs(tmp_path):
+    root = tmp_path / "inspect"
+    _write_log(root, task_name="eval_hfs_full", setting="human_from_scratch", mode="full_question", dataset_type="arc_challenge")
+    _write_log(root, task_name="eval_mfs_choices", setting="model_from_scratch", mode="choices_only", dataset_type="gpqa")
 
     df = collect_final5_results(root)
-    assert not df.empty
-    assert {"random_baseline", "delta_over_random", "stderr"}.issubset(df.columns)
-
-    # 3H+0M and 0H+3M both have 4 answer choices -> random 0.25
-    baseline_h = df[df["setting"] == "human_from_scratch"].iloc[0]["random_baseline"]
-    baseline_m = df[df["setting"] == "model_from_scratch"].iloc[0]["random_baseline"]
-    assert baseline_h == 0.25
-    assert baseline_m == 0.25
-
-    output_dir = tmp_path / "plots"
-    outputs = plot_final5_pairwise(root, output_dir, include_tables=True)
-
-    assert outputs
-    png_outputs = [path for path in outputs if path.suffix == ".png"]
-    assert len(png_outputs) == 2
-    assert (output_dir / "tables" / "final5_results_summary.csv").exists()
-
-
-def test_plot_final5_pairwise_groups_datasets_side_by_side_into_four_mode_plots(tmp_path):
-    root = tmp_path / "results"
-    generator = "gpt-5.2-2025-12-11"
-    modes = ["full_question", "choices_only"]
-    datasets = ["arc_challenge", "mmlu_pro", "gpqa"]
-    eval_models = ["Qwen_Qwen3-4B-Instruct-2507", "allenai_Olmo-3-7B-Instruct"]
-    settings = [
-        "human_from_scratch",
-        "model_from_scratch",
-        "augment_human",
-        "augment_model",
-        "augment_ablation",
-    ]
-
-    for mode_idx, mode in enumerate(modes):
-        for dataset_idx, dataset in enumerate(datasets):
-            for model_idx, eval_model in enumerate(eval_models):
-                for setting_idx, setting in enumerate(settings):
-                    total = 40
-                    correct = 10 + mode_idx + dataset_idx + model_idx + setting_idx
-                    out = root / generator / eval_model / mode / dataset / setting / "summary.json"
-                    _write_summary(out, total=total, correct=correct)
-
-    output_dir = tmp_path / "plots"
-    outputs = plot_final5_pairwise(root, output_dir, include_tables=True)
-
-    png_outputs = [path for path in outputs if path.suffix == ".png"]
-    assert len(png_outputs) == 4
-
-    csv_outputs = [path for path in outputs if path.suffix == ".csv"]
-    assert len(csv_outputs) == 5  # 4 per-plot csv + 1 full summary csv
-    assert all(path.parent == output_dir / "tables" for path in csv_outputs)
+    assert set(df["setting"]) == {"human_from_scratch", "model_from_scratch"}
+    assert set(df["dataset"]) == {"arc_challenge", "gpqa"}
+    assert all(df["accuracy"] == 1.0)

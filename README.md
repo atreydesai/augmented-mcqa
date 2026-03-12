@@ -1,287 +1,275 @@
 # Augmented MCQA
-
-Final5 pipeline for distractor generation and evaluation.
-
-## Pipeline Overview
-
-The numbered scripts in `scripts/` follow the pipeline order:
-
-| # | Script | Purpose |
-|---|--------|---------|
-| 01 | `01_data_pipeline.py` | Download raw datasets and process into unified schema |
-| 02 | `02_generate_distractors.py` | Generate Final5 distractor columns using LLMs |
-| 03 | `03_regenerate_experiments.py` | Orchestrate step 02 across all generator models |
-| 04 | `04_eval_matrix.py` | Plan and run evaluation configs |
-| 05 | `05_build_eval_slurm_bundle.py` | Build balanced SLURM bundles for distributed eval |
-| 06 | `06_merge_eval_subshards.py` | Merge entry sub-shards into canonical results |
-| 07 | `07_export_benchmarker_items.py` | Export to benchmarker JSONL format |
-| 08 | `08_analyze.py` | Analyze results and generate plots |
-
-Utility scripts (not part of the main pipeline):
-- `diagnose.py` — Debug generation failures and structured output issues
-- `smoke_test.py` — Live API smoke tests for structured outputs
-
-## Active Scope
-
-- Datasets: `arc_challenge`, `mmlu_pro`, `gpqa`
-- Generator models:
-  - `gpt-5.2-2025-12-11`
-  - `claude-opus-4-6`
-  - `gemini-3.1-pro-preview`
-- Local evaluation models:
-  - `Qwen/Qwen3-4B-Instruct-2507`
-  - `allenai/Olmo-3-7B-Instruct`
-  - `meta-llama/Llama-3.1-8B-Instruct`
-- Eval preset: `final5` only
-
-Legacy experiment surfaces are archived in `archive/legacy_experiments/`.
-
-## Final5 Settings
-
-Generation/evaluation setting IDs:
-
-1. `human_from_scratch` (A): `Q + A -> 3H` (passthrough)
-2. `model_from_scratch` (B): `Q + A -> 3M`
-3. `augment_human` (A + C): `Q + A + 3H -> +6M`
-4. `augment_model` (B + D): `Q + A + 3M -> +6M` (stored as `augment_model_delta_6m` + combined `augment_model`)
-5. `augment_ablation` (E): `Q + A -> 9M`
-
+![diagram](diagram-flowchart.png)
 ## Setup
 
 ```bash
 cp .env.example .env
-# fill API keys and path values in .env
 uv sync
 ```
 
-For local-model eval, install vLLM after sync:
+If you will run local `vllm/...` models:
 
 ```bash
 uv pip install --no-build-isolation 'vllm==0.11.2' 'transformers<5' 'numpy<2.3'
 ```
 
-Stage local model weights (script reads `.env` and targets scratch cache):
+To keep that cluster-only local-model stack installed across project updates, use:
 
 ```bash
-jobs/install_local_model_weights.sh --dry-run
-# then run without --dry-run on remote GPU host
+uv sync --extra dev --inexact
 ```
 
-## End-to-End Commands
+`--inexact` tells `uv` not to remove extra packages that are present in the environment but not declared in this repo's locked dependencies.
 
-1. Download raw datasets:
+Set the provider keys you actually need in `.env`:
+
+- `OPENAI_API_KEY` for GPT-5.2
+- `ANTHROPIC_API_KEY` for Claude Opus
+- `GOOGLE_API_KEY` for Gemini
+- `TOGETHER_API_KEY` for Together-hosted Qwen 3.5 models
+
+## The Normal Pipeline
+
+This is the path the repo is now optimized for:
+
+1. prepare `datasets/processed/unified_processed_v3`
+2. generate distractors with either direct runs or the dependency-aware scheduler
+3. evaluate those generated distractors with either direct runs or the dependency-aware scheduler
+4. analyze the evaluation logs
+5. export benchmarker files if needed
+
+The scheduler supports both:
+
+- local `vllm/...` jobs that request GPUs
+- hosted/API jobs that request no GPU and just fan out `sbatch` workers
+
+## Step 1: Prepare Data
 
 ```bash
-uv run python scripts/01_data_pipeline.py download --all
+uv run python main.py prepare-data \
+  --step all \
+  --output-path datasets/processed/unified_processed_v3
 ```
 
-2. Process to Final5 unified schema (deterministic first 1000 per dataset):
+## Step 2: Generate Distractors
+
+Pick one of the direct-run commands below for a simple single-process run, or use `submit-generate-cluster` to slice generation by:
+
+- model
+- dataset
+- generation strategy
+- question chunk
+
+The schedulable generation strategies are:
+
+- `model_from_scratch`
+- `augment_human`
+- `augment_model`
+- `augment_ablation`
+
+`human_from_scratch` remains implicit and is not scheduled as its own job.
+
+### Direct API generators
+
+GPT-5.2, all datasets, all questions:
 
 ```bash
-uv run python scripts/01_data_pipeline.py process --output-path datasets/processed/unified_processed_v2
+uv run python main.py generate \
+  --model gpt-5.2-2025-12-11 \
+  --run-name gen_gpt52 \
+  --processed-dataset datasets/processed/unified_processed_v3 \
+  --dataset-types arc_challenge,mmlu_pro,gpqa
 ```
 
-Or do both in one step:
+Claude Opus 4.6:
 
 ```bash
-uv run python scripts/01_data_pipeline.py all --output-path datasets/processed/unified_processed_v2
+uv run python main.py generate \
+  --model claude-opus-4-6 \
+  --run-name gen_claude_opus46 \
+  --processed-dataset datasets/processed/unified_processed_v3 \
+  --materialize-cache
 ```
 
-`mmlu_pro` keeps the existing exact-match filtering behavior against `mmlu` (unchanged).
-
-3. Regenerate all generator datasets and write manifest:
+Gemini 3.1 Pro:
 
 ```bash
-uv run python scripts/03_regenerate_experiments.py \
-  --processed-dataset datasets/processed/unified_processed_v2 \
-  --output-root datasets/augmented
+uv run python main.py generate \
+  --model gemini-3.1-pro-preview \
+  --run-name gen_gemini31pro \
+  --processed-dataset datasets/processed/unified_processed_v3 \
+  --materialize-cache
 ```
 
-4. Build eval SLURM bundle (per-pair balanced work units):
+TogetherAI Qwen/Qwen3.5-397B-A17B:
 
 ```bash
-uv run python scripts/05_build_eval_slurm_bundle.py \
-  --manifest datasets/augmented/<manifest>.json \
-  --target-rows-per-subsplit 500
+uv run python main.py generate \
+  --model Qwen/Qwen3.5-397B-A17B \
+  --run-name gen_together_qwen397b \
+  --processed-dataset datasets/processed/unified_processed_v3 \
+  --materialize-cache
 ```
 
-5. Submit jobs:
+TogetherAI Qwen/Qwen3.5-9B:
 
 ```bash
-bash jobs/generated/<timestamp>/submit_all.sh
+uv run python main.py generate \
+  --model Qwen/Qwen3.5-9B \
+  --run-name gen_together_qwen9b \
+  --processed-dataset datasets/processed/unified_processed_v3 \
+  --materialize-cache
 ```
 
-6. Merge entry sub-shards into canonical results:
+### Dependency-aware scheduler for generation
+
+Local and API models can be mixed in the same scheduler submission. The scheduler will:
+
+- create one submission slice per `model × dataset × strategy × question_chunk`
+- submit exact `afterok` dependencies when a slice needs another slice first
+- use `afterany` throttling when `--gpu-count` is set as a concurrency cap
+- skip already-current slices unless `--force` is used
+- mark downstream slices stale when an upstream slice is rerun
+- always refresh `scheduler_state.json`
+- optionally write `scheduler_status.html`
+
+Example: local + API generation in one run, chunked by 200 questions, with a status dashboard:
 
 ```bash
-uv run python scripts/06_merge_eval_subshards.py \
-  --bundle-manifest jobs/generated/<timestamp>/bundle_manifest.json \
-  --strict
+uv run python main.py submit-generate-cluster \
+  --run-name gen_scheduler_all \
+  --models Qwen/Qwen3-4B-Instruct-2507,allenai/Olmo-3-7B-Instruct,gpt-5.2-2025-12-11 \
+  --processed-dataset datasets/processed/unified_processed_v3 \
+  --generation-strategies model_from_scratch,augment_human,augment_model,augment_ablation \
+  --questions-per-job 200 \
+  --gpu-count 4 \
+  --render-status
 ```
 
-Canonical outputs are now:
-
-- `.../summary.json` (lightweight metrics + metadata)
-- `.../rows/` (HuggingFace Arrow row store)
-
-7. Plot required Final5 pairwise comparisons:
+Example: write a status dashboard and submission bundle without calling `sbatch` yet:
 
 ```bash
-uv run python scripts/08_analyze.py plot --results-root results --output-dir results/final5_plots
+uv run python main.py submit-generate-cluster \
+  --run-name gen_scheduler_preview \
+  --processed-dataset datasets/processed/unified_processed_v3 \
+  --dataset-types arc_challenge,mmlu_pro,gpqa \
+  --models Qwen/Qwen3.5-397B-A17B \
+  --generation-strategies model_from_scratch \
+  --limit 7 \
+  --questions-per-job 2 \
+  --max-tokens 10000 \
+  --cpus-per-task 2 \
+  --write-only \
+  --render-status
 ```
 
-## Sanity Counts
-
-- Ideal generation target rows (if every dataset has 1000 rows): `3 * 4 * 3 * 1000 = 36,000`
-- Ideal eval target rows (if every dataset has 1000 rows): `3 * 5 * 3 * 2 * 1000 * 3 = 270,000`
-
-Actual totals can be lower when a source dataset has fewer than `limit` rows after filtering/validation
-(for example, GPQA may be `<1000` rows in some runs).
-
-## Live API Smoke
-
-Runs 1-2 rows per split through all 3 generator APIs:
+Example: rerun only `augment_model` for GPQA after editing that prompt:
 
 ```bash
-uv run python scripts/smoke_test.py generate --limit 2 --dry-run
+uv run python main.py submit-generate-cluster \
+  --run-name gen_scheduler_all \
+  --models gpt-5.2-2025-12-11 \
+  --processed-dataset datasets/processed/unified_processed_v3 \
+  --dataset-types gpqa \
+  --generation-strategies augment_model \
+  --questions-per-job 200 \
+  --force \
+  --render-status
 ```
 
-## Remote Eval Sharding Smoke
+If the required `model_from_scratch` slice for the same model, dataset, and question chunk is not already current, the scheduler will stop and tell you to rerun or include that prerequisite slice.
 
-Runs a minimum-question end-to-end Final5 eval sharding test on one GPU host
-with all eval models and all 5 settings.
+## Step 3: Evaluate
+
+The default local evaluation models are:
+
+- `Qwen/Qwen3-4B-Instruct-2507`
+- `allenai/Olmo-3-7B-Instruct`
+- `meta-llama/Llama-3.1-8B-Instruct`
+
+The evaluation scheduler slices work by:
+
+- model
+- dataset
+- Final5 setting
+- mode (`full_question` or `choices_only`)
+- question chunk
+
+Each evaluation slice depends on the exact generation slice or slices needed for that same dataset chunk. If those generation prerequisites are missing or stale, the scheduler refuses to submit the evaluation slice.
+If a generation chunk contains a mix of successful and failed rows, downstream `augment_model` and evaluation work now skips the bad rows and continues on the rows that materialized correctly.
+
+Example:
 
 ```bash
-scripts/run_final5_remote_smoke.sh
+uv run python main.py submit-evaluate-cluster \
+  --run-name eval_scheduler_all \
+  --generator-run-name gen_scheduler_all \
+  --generator-model gpt-5.2-2025-12-11 \
+  --processed-dataset datasets/processed/unified_processed_v3 \
+  --models Qwen/Qwen3-4B-Instruct-2507,allenai/Olmo-3-7B-Instruct,meta-llama/Llama-3.1-8B-Instruct \
+  --settings human_from_scratch,model_from_scratch,augment_human,augment_model,augment_ablation \
+  --modes full_question,choices_only \
+  --questions-per-job 200 \
+  --gpu-count 3 \
+  --render-status
 ```
 
-Useful overrides:
+If you want to rerun only one evaluation slice family after a generation change, narrow it down with `--dataset-types`, `--settings`, `--modes`, and `--models`, then use `--force`.
+
+Scheduler notes:
+
+- `--questions-per-job` creates contiguous question chunks within each `model × dataset × strategy` or `model × dataset × setting × mode` slice family.
+- `--gpu-count` is now a per-resource-class concurrency cap for the master submit script, not an array width.
+- `--write-only` bundles show up as `planned` until `submit_all.sh` is actually run.
+- manifests and master submit scripts live under `jobs/generated/<stage>/<run>/submissions/<submission_id>/`
+- scheduler state lives at `jobs/generated/<stage>/<run>/scheduler_state.json`
+- optional dashboard lives at `jobs/generated/<stage>/<run>/scheduler_status.html`
+
+## Step 4: Analyze
 
 ```bash
-scripts/run_final5_remote_smoke.sh \
-  --gen-full-ds datasets/augmented/final5_full_<timestamp>_<generator> \
-  --target-rows 3 \
-  --save-interval 2 \
-  --max-tokens 32
+uv run python main.py analyze \
+  --results-root results/inspect/evaluation \
+  --output-dir results/final5_plots
 ```
 
-## Remote Full Eval Runbook (clip + A6000)
+## Step 5: Export Benchmarker Items
 
-Assumes:
-
-- repo path: `/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa`
-- venv path: `/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/activate`
-- model cache: `/fs/nexus-scratch/adesai10/hub`
-- one generated Final5 dataset as eval input
-
-1. Environment setup:
+Example for the GPT-5.2 generation run:
 
 ```bash
-cd /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa
-source /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/activate
-set -eo pipefail
-
-export HF_HOME=/fs/nexus-scratch/adesai10/hub
-export MODEL_CACHE_DIR=/fs/nexus-scratch/adesai10/hub
+uv run python main.py export \
+  --generator-run-name gen_gpt52 \
+  --generator-model gpt-5.2-2025-12-11 \
+  --processed-dataset datasets/processed/unified_processed_v3
 ```
 
-2. Create regeneration manifest and paths:
+If you used a different generator, keep the same command shape and change `--generator-run-name` and `--generator-model` to match Step 2.
+
+## Optional: Standalone Benchmarker Writing-Flaw Analysis
+
+Example for the GPT-5.2 generation run:
 
 ```bash
-GEN_FULL_DS="/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/augmented/final5_full_20260225_004316_gpt-5.2-2025-12-11"
-GENERATOR_LABEL="$(basename "$GEN_FULL_DS" | sed -E 's/^final5_full_[0-9]{8}_[0-9]{6}_//')"
-TS="$(date +%Y%m%d_%H%M%S)"
-
-REGEN_MANIFEST="datasets/augmented/final5_regeneration_manifest_${GENERATOR_LABEL}_${TS}.json"
-BUNDLE="jobs/generated/final5_full_${GENERATOR_LABEL}_${TS}"
-OUT="results/final5_full_${GENERATOR_LABEL}_${TS}"
-
-cat > "$REGEN_MANIFEST" <<JSON
-{
-  "manifest_version": 1,
-  "schema_version": "final5_v1",
-  "generators": [
-    {"model": "${GENERATOR_LABEL}", "dataset_path": "${GEN_FULL_DS}", "returncode": 0}
-  ]
-}
-JSON
+uv run python analysis/benchmarker_analysis.py \
+  --writing-flaw-jsonl datasets/benchmarker_results/atrey_writing_flaw_rows.jsonl.zip \
+  --results-root results/inspect/evaluation \
+  --cache-root datasets/augmented \
+  --generator-run-name gen_gpt52 \
+  --generator-model gpt-5.2-2025-12-11 \
+  --output-dir analysis/figures/benchmarker
 ```
 
-3. Build bundle:
+## Canonical Artifacts
 
-```bash
-python scripts/05_build_eval_slurm_bundle.py \
-  --manifest "$REGEN_MANIFEST" \
-  --output-dir "$BUNDLE" \
-  --output-base "$OUT" \
-  --target-rows-per-subsplit 500 \
-  --save-interval 50 \
-  --max-tokens 100
-```
+- processed dataset: `datasets/processed/unified_processed_v3`
+- generation logs: `results/inspect/generation/<run>/<model>/`
+- evaluation logs: `results/inspect/evaluation/<run>/<generator_run>/<generator_model>/<eval_model>/`
+- augmented cache: `datasets/augmented/<run>/<model>/`
+- cluster bundles: `jobs/generated/<stage>/<run>/`
+- cluster logs: `logs/slurm/<stage>/<run>/`
 
-4. Preflight checks:
+## More Detail
 
-```bash
-jq '.total_sbatch_files, .total_work_units, .dataset_part_counts' "$BUNDLE/bundle_manifest.json"
-for f in "$BUNDLE"/final5_pair__*.sbatch; do sbatch --test-only "$f"; done
-```
-
-5. Submit full evaluation:
-
-```bash
-bash "$BUNDLE/submit_all.sh" | tee "$BUNDLE/submit.log"
-awk '/Submitted batch job/{print $4}' "$BUNDLE/submit.log" > "$BUNDLE/job_ids.txt"
-cat "$BUNDLE/job_ids.txt"
-```
-
-6. Monitor:
-
-```bash
-JOB_CSV="$(paste -sd, "$BUNDLE/job_ids.txt")"
-while squeue -h -j "$JOB_CSV" | grep -q .; do
-  date
-  squeue -j "$JOB_CSV" -o "%.18i %.9P %.30j %.8T %.10M %.20R"
-  sleep 60
-done
-
-while read -r j; do
-  sacct -j "$j" --format=JobID,State,ExitCode,Elapsed,NodeList -n -P
-done < "$BUNDLE/job_ids.txt"
-```
-
-7. Merge shards:
-
-```bash
-python scripts/06_merge_eval_subshards.py \
-  --bundle-manifest "$BUNDLE/bundle_manifest.json" \
-  --strict | tee "$BUNDLE/merge.log"
-```
-
-8. Validate summary counts (for 1 generator x 3 eval models, with part counts `2/2/1`):
-
-```bash
-CANONICAL=$(find "$OUT" -path '*/summary.json' | grep -E '/(human_from_scratch|model_from_scratch|augment_human|augment_model|augment_ablation)/summary.json$' | wc -l)
-PARTIAL=$(find "$OUT" -path '*/_partials/entry_shard_*_of_*/summary.json' | wc -l)
-echo "canonical=$CANONICAL expected=90"
-echo "partial=$PARTIAL expected=150"
-```
-
-If your `dataset_part_counts` differ, recompute expected partial count from the bundle manifest.
-
-9. Generate visuals:
-
-```bash
-python scripts/08_analyze.py plot \
-  --results-root "$OUT" \
-  --output-dir "$OUT/final5_plots"
-
-find "$OUT/final5_plots" -maxdepth 2 -type f | sort
-```
-
-## Documentation
-
-- `docs/pipeline.md` — End-to-end pipeline guide with quick start
-- `docs/models.md` — Model registry, providers, reasoning policies
-- `docs/evaluation.md` — Evaluation settings, modes, result paths
-- `docs/sharding_and_recombination.md` — Sharding model and recombination
-- `jobs/README_local_eval.md` — Local eval on SLURM
+- [`docs/cli-reference.md`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/docs/cli-reference.md)
+- [`docs/architecture.md`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/docs/architecture.md)

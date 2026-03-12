@@ -1,26 +1,12 @@
-"""
-ARC Dataset Processor.
+"""ARC dataset loader and processor."""
 
-Processes ARC-Challenge dataset with:
-1. Exact column parsing based on HuggingFace structure
-2. Conversion to unified format
-"""
-
-import json
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
+
 from datasets import load_dataset
 from tqdm import tqdm
 
-from config import (
-    DATASETS_DIR,
-    PROCESSED_DATASETS_DIR,
-    DatasetType,
-    DATASET_SCHEMA,
-    DistractorType,
-    get_options_from_entry,
-    get_answer_index,
-)
+from config import DATASET_SCHEMA, PROCESSED_DATASETS_DIR, DatasetType
 
 
 def load_arc_dataset(
@@ -141,34 +127,4 @@ def process_arc_for_experiments(
     dataset.save_to_disk(str(output_path))
     print(f"Saved {len(entries)} entries to {output_path}")
     
-    # Push to Hugging Face
-    from data.hub_utils import push_dataset_to_hub
-    repo_id = "atreydesai/qgqa-arc-challenge-processed"
-    push_dataset_to_hub(dataset, repo_id=repo_id)
-    
     return dataset
-
-
-def get_arc_stats(entries: List[Dict[str, Any]]) -> Dict[str, Any]:
-    """Get statistics about processed ARC entries."""
-    stats = {
-        "total_entries": len(entries),
-        "has_human_distractors": sum(
-            1 for e in entries if DistractorType.COND_HUMAN_Q_A.value in e
-        ),
-        "has_model_distractors": sum(
-            1 for e in entries if DistractorType.COND_MODEL_Q_A_SCRATCH.value in e
-        ),
-        "has_conditioned_distractors": sum(
-            1 for e in entries if DistractorType.COND_MODEL_Q_A_DMODEL.value in e
-        ),
-    }
-    return stats
-
-
-if __name__ == "__main__":
-    # Test loading
-    print("Testing ARC-Challenge loading...")
-    challenge_entries = load_arc_dataset("challenge", limit=5)
-    print(f"Loaded {len(challenge_entries)} entries")
-    print(f"Sample entry keys: {list(challenge_entries[0].keys())}")

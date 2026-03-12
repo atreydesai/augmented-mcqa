@@ -12,8 +12,8 @@ from .settings import (
     OPENAI_API_KEY,
     ANTHROPIC_API_KEY,
     GOOGLE_API_KEY,
+    TOGETHER_API_KEY,
     HF_TOKEN,
-    HF_SKIP_PUSH,
     
     # Shared constants
     CHOICE_LABELS,
@@ -21,20 +21,6 @@ from .settings import (
     # Experiment settings
     RANDOM_SEED,
     DEFAULT_LIMIT,
-    DEFAULT_MATRIX_PRESET,
-    DEFAULT_EVAL_MODE,
-    DEFAULT_EVAL_SEED,
-    DEFAULT_EVAL_TEMPERATURE,
-    DEFAULT_EVAL_MAX_TOKENS,
-    DEFAULT_EVAL_SAVE_INTERVAL,
-    DEFAULT_EVAL_KEEP_CHECKPOINTS,
-    DEFAULT_EVAL_STOP,
-    DEFAULT_NUM_HUMAN_DISTRACTORS,
-    DEFAULT_NUM_MODEL_DISTRACTORS,
-    
-    # Distractor naming
-    DistractorType,
-
     # Dataset types and schema
     DatasetType,
     ACTIVE_DATASET_TYPES,
@@ -46,14 +32,6 @@ from .settings import (
     DatasetConfig,
     DATASET_CONFIGS,
     
-    # Prompts
-    MCQA_PROMPT_FULL,
-    MCQA_PROMPT_CHOICES_ONLY,
-    DISTRACTOR_GENERATION_PROMPT_QA_TEMPLATE,
-    DISTRACTOR_GENERATION_PROMPT_CONDITIONED_TEMPLATE,
-    
-    # Utilities
-    get_api_key,
 )
 
 __all__ = [
@@ -67,11 +45,10 @@ __all__ = [
     "OPENAI_API_KEY",
     "ANTHROPIC_API_KEY",
     "GOOGLE_API_KEY",
+    "TOGETHER_API_KEY",
     "HF_TOKEN",
-    "HF_SKIP_PUSH",
     "RANDOM_SEED",
     "DEFAULT_LIMIT",
-    "DistractorType",
     "DatasetType",
     "ACTIVE_DATASET_TYPES",
     "DATASET_SCHEMA",
@@ -79,20 +56,5 @@ __all__ = [
     "get_options_from_entry",
     "DatasetConfig",
     "DATASET_CONFIGS",
-    "MCQA_PROMPT_FULL",
-    "MCQA_PROMPT_CHOICES_ONLY",
-    "DISTRACTOR_GENERATION_PROMPT_QA_TEMPLATE",
-    "DISTRACTOR_GENERATION_PROMPT_CONDITIONED_TEMPLATE",
-    "get_api_key",
     "CHOICE_LABELS",
-    "DEFAULT_MATRIX_PRESET",
-    "DEFAULT_EVAL_MODE",
-    "DEFAULT_EVAL_SEED",
-    "DEFAULT_EVAL_TEMPERATURE",
-    "DEFAULT_EVAL_MAX_TOKENS",
-    "DEFAULT_EVAL_SAVE_INTERVAL",
-    "DEFAULT_EVAL_KEEP_CHECKPOINTS",
-    "DEFAULT_EVAL_STOP",
-    "DEFAULT_NUM_HUMAN_DISTRACTORS",
-    "DEFAULT_NUM_MODEL_DISTRACTORS",
 ]

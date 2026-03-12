@@ -14,8 +14,6 @@ _SYMBOL_TO_MODULE = {
     "download_mmlu_all_configs": "downloader",
     "download_arc": "downloader",
     "download_gpqa": "downloader",
-    "get_dataset_info": "downloader",
-    "print_dataset_info": "downloader",
     # MMLU-Pro Processor
     "process_mmlu_pro": "mmlu_pro_processor",
     "sort_distractors": "mmlu_pro_processor",
@@ -24,24 +22,23 @@ _SYMBOL_TO_MODULE = {
     "clean_options": "mmlu_pro_processor",
     "verify_sorting": "mmlu_pro_processor",
     "WHITESPACE_BUG_CATEGORIES": "mmlu_pro_processor",
-    # Augmentor
-    "AugmentorMode": "augmentor",
-    "GenerationConfig": "augmentor",
-    "augment_dataset": "augmentor",
-    "parse_generated_distractors": "augmentor",
-    "get_output_column": "augmentor",
     # ARC Processor
     "load_arc_dataset": "arc_processor",
     "process_arc_for_experiments": "arc_processor",
-    "get_arc_stats": "arc_processor",
     # GPQA Processor
     "load_gpqa_dataset": "gpqa_processor",
     "process_gpqa_for_experiments": "gpqa_processor",
-    "get_gpqa_stats": "gpqa_processor",
     # Benchmarker export
     "export_benchmarker_items": "benchmarker_export",
-    # Hub Utils
-    "push_dataset_to_hub": "hub_utils",
+    # Unified data pipeline
+    "download_raw_datasets": "pipeline",
+    "process_unified_dataset": "pipeline",
+    "prepare_data": "pipeline",
+    # Inspect-native Final5 store
+    "build_generation_dataset": "final5_store",
+    "build_evaluation_dataset": "final5_store",
+    "ensure_augmented_dataset": "final5_store",
+    "materialize_augmented_dataset": "final5_store",
 }
 
 __all__ = list(_SYMBOL_TO_MODULE.keys())
