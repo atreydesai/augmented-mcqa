@@ -9,7 +9,7 @@ from typing import Any
 from inspect_ai.solver import Generate, TaskState, solver
 
 from utils.constants import CHOICE_LABELS, GENERATION_RETRY_LIMIT, PROMPTS_DIR
-from utils.parsing import LabeledParseError, format_choice_lines, parse_labeled_distractors
+from utils.parsing import LabeledParseError, format_choice_lines, parse_distractors
 from utils.scheduler_state import SCHEDULABLE_GENERATION_STRATEGIES
 
 
@@ -41,33 +41,9 @@ def _fresh_state(state: TaskState, prompt: str) -> TaskState:
     return working_state
 
 
-def _format_json_example(labels: list[str]) -> str:
-    return "{\n" + ",\n".join(f'  "{label}": "text for distractor {label}"' for label in labels) + "\n}"
-
-
-def _format_forbidden_values(values: list[str]) -> str:
-    cleaned = [str(value).strip() for value in values if str(value).strip()]
-    if not cleaned:
-        return "(none)"
-    return "\n".join(f"- {value}" for value in cleaned)
-
-
-def _retry_prompt(base_prompt: str, *, labels: list[str], forbidden: list[str], error: str, raw_output: str) -> str:
-    return (
-        f"{base_prompt}\n\n"
-        "<retry instructions>\n"
-        f"Your previous response was invalid: {error}\n"
-        f"You must return a fresh valid JSON object with exactly these keys: {', '.join(labels)}.\n"
-        "Do not repeat any forbidden value.\n"
-        "Do not include commentary, apologies, markdown fences, or any text outside the JSON object.\n"
-        "</retry instructions>\n\n"
-        "<forbidden values reminder>\n"
-        f"{_format_forbidden_values(forbidden)}\n"
-        "</forbidden values reminder>\n\n"
-        "<previous invalid response>\n"
-        f"{raw_output}\n"
-        "</previous invalid response>"
-    )
+def _format_json_example(count: int) -> str:
+    items = ",\n".join(f'    "incorrect answer choice {idx}"' for idx in range(1, count + 1))
+    return '{\n  "distractors": [\n' + items + "\n  ]\n}"
 
 
 async def _call_and_parse(
@@ -75,29 +51,20 @@ async def _call_and_parse(
     state: TaskState,
     generate: Generate,
     prompt: str,
-    labels: list[str],
+    count: int,
     forbidden: list[str],
 ) -> tuple[list[str], str, list[dict[str, Any]]]:
     last_error: Exception | None = None
-    current_prompt = prompt
     attempts: list[dict[str, Any]] = []
     for attempt in range(1, GENERATION_RETRY_LIMIT + 1):
-        working_state = _fresh_state(state, current_prompt)
+        working_state = _fresh_state(state, prompt)
         working_state = await generate(working_state)
         raw_output = str(working_state.output.completion or "")
-        attempts.append({"attempt": attempt, "prompt": current_prompt, "output": raw_output})
+        attempts.append({"attempt": attempt, "prompt": prompt, "output": raw_output})
         try:
-            return parse_labeled_distractors(raw_output, labels, forbidden=forbidden), raw_output, attempts
+            return parse_distractors(raw_output, count, forbidden=forbidden), raw_output, attempts
         except Exception as exc:  # noqa: BLE001
             last_error = exc
-            if attempt < GENERATION_RETRY_LIMIT:
-                current_prompt = _retry_prompt(
-                    prompt,
-                    labels=labels,
-                    forbidden=forbidden,
-                    error=str(exc),
-                    raw_output=raw_output,
-                )
     raise LabeledParseError(str(last_error or "generation failed"))
 
 
@@ -141,17 +108,15 @@ def final5_generation_solver(strategy: str):
             if strategy == "model_from_scratch":
                 prompt_b = GENERATE_QA_PROMPT.format(
                     count=3,
-                    labels="B, C, D",
                     question=question,
                     gold_answer=answer,
-                    json_example=_format_json_example(["B", "C", "D"]),
-                    forbidden_values=_format_forbidden_values([answer]),
+                    json_example=_format_json_example(3),
                 )
                 model3, raw_b, attempts_b = await _call_and_parse(
                     state=state,
                     generate=generate,
                     prompt=prompt_b,
-                    labels=["B", "C", "D"],
+                    count=3,
                     forbidden=[answer],
                 )
                 result["model_from_scratch"] = model3
@@ -160,20 +125,20 @@ def final5_generation_solver(strategy: str):
                 result["model_from_scratch_correct_answer_letter"] = correct
                 traces["model_from_scratch"] = {"prompt": prompt_b, "output": raw_b, "attempts": attempts_b}
             elif strategy == "augment_human":
+                existing_human_choices = [answer, *human3]
                 prompt_c = GENERATE_CONDITIONED_PROMPT.format(
                     count=6,
-                    labels="E, F, G, H, I, J",
+                    old_count=len(existing_human_choices),
                     question=question,
                     gold_answer=answer,
-                    existing_options_block=format_choice_lines([answer, *human3]),
-                    json_example=_format_json_example(["E", "F", "G", "H", "I", "J"]),
-                    forbidden_values=_format_forbidden_values([answer, *human3]),
+                    choices=format_choice_lines(existing_human_choices),
+                    json_example=_format_json_example(6),
                 )
                 delta_human, raw_c, attempts_c = await _call_and_parse(
                     state=state,
                     generate=generate,
                     prompt=prompt_c,
-                    labels=["E", "F", "G", "H", "I", "J"],
+                    count=6,
                     forbidden=[answer, *human3],
                 )
                 result["augment_human"] = delta_human
@@ -197,18 +162,17 @@ def final5_generation_solver(strategy: str):
 
                 prompt_d = GENERATE_CONDITIONED_PROMPT.format(
                     count=6,
-                    labels="E, F, G, H, I, J",
+                    old_count=1 + len(model3),
                     question=question,
                     gold_answer=answer,
-                    existing_options_block=format_choice_lines([answer, *model3]),
-                    json_example=_format_json_example(["E", "F", "G", "H", "I", "J"]),
-                    forbidden_values=_format_forbidden_values([answer, *model3]),
+                    choices=format_choice_lines([answer, *model3]),
+                    json_example=_format_json_example(6),
                 )
                 delta_model, raw_d, attempts_d = await _call_and_parse(
                     state=state,
                     generate=generate,
                     prompt=prompt_d,
-                    labels=["E", "F", "G", "H", "I", "J"],
+                    count=6,
                     forbidden=[answer, *model3],
                 )
                 combined_model = model3 + delta_model
@@ -220,17 +184,15 @@ def final5_generation_solver(strategy: str):
             else:
                 prompt_e = GENERATE_QA_PROMPT.format(
                     count=9,
-                    labels="B, C, D, E, F, G, H, I, J",
                     question=question,
                     gold_answer=answer,
-                    json_example=_format_json_example(["B", "C", "D", "E", "F", "G", "H", "I", "J"]),
-                    forbidden_values=_format_forbidden_values([answer]),
+                    json_example=_format_json_example(9),
                 )
                 ablation, raw_e, attempts_e = await _call_and_parse(
                     state=state,
                     generate=generate,
                     prompt=prompt_e,
-                    labels=["B", "C", "D", "E", "F", "G", "H", "I", "J"],
+                    count=9,
                     forbidden=[answer],
                 )
                 result["augment_ablation"] = ablation

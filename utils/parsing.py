@@ -61,66 +61,52 @@ def format_choice_lines(options: Iterable[str]) -> str:
     return "\n".join(lines)
 
 
+def parse_distractors(
+    text: str,
+    count: int,
+    *,
+    forbidden: Iterable[str] | None = None,
+) -> list[str]:
+    forbidden_normalized = {normalize_text(item).casefold() for item in forbidden or [] if normalize_text(item)}
+    payload = _extract_json_object(text)
+
+    unexpected = sorted(set(payload.keys()) - {"distractors"})
+    if "distractors" not in payload:
+        raise LabeledParseError('Missing required key: "distractors"')
+    if unexpected:
+        raise LabeledParseError(f"Unexpected distractor keys: {', '.join(unexpected)}")
+
+    raw_distractors = payload.get("distractors")
+    if not isinstance(raw_distractors, list):
+        raise LabeledParseError('Expected "distractors" to be a list')
+    if len(raw_distractors) != count:
+        raise LabeledParseError(f'Expected {count} distractors, got {len(raw_distractors)}')
+
+    seen_normalized: set[str] = set()
+    distractors: list[str] = []
+    for idx, raw_value in enumerate(raw_distractors, start=1):
+        if not isinstance(raw_value, str):
+            raise LabeledParseError(f"Distractor {idx} must be a string")
+        text_value = normalize_text(raw_value)
+        if not text_value:
+            raise LabeledParseError(f"Distractor {idx} is empty")
+        normalized = text_value.casefold()
+        if normalized in seen_normalized:
+            raise LabeledParseError(f"Duplicate distractor at position {idx}: {text_value!r}")
+        if normalized in forbidden_normalized:
+            raise LabeledParseError(f"Forbidden distractor at position {idx}: {text_value!r}")
+        seen_normalized.add(normalized)
+        distractors.append(text_value)
+    return distractors
+
+
 def parse_labeled_distractors(
     text: str,
     labels: list[str],
     *,
     forbidden: Iterable[str] | None = None,
 ) -> list[str]:
-    forbidden_normalized = {normalize_text(item).casefold() for item in forbidden or [] if normalize_text(item)}
-    try:
-        payload = _extract_json_object(text)
-    except LabeledParseError:
-        payload = None
-
-    if payload is not None:
-        seen_normalized: set[str] = set()
-        distractors: list[str] = []
-        unexpected = sorted(set(payload.keys()) - set(labels))
-        missing = [label for label in labels if label not in payload]
-        if missing:
-            raise LabeledParseError(f"Missing distractor keys: {', '.join(missing)}")
-        if unexpected:
-            raise LabeledParseError(f"Unexpected distractor keys: {', '.join(unexpected)}")
-
-        for label in labels:
-            text_value = normalize_text(payload.get(label, ""))
-            if not text_value:
-                raise LabeledParseError(f"Empty distractor for label {label}")
-            normalized = text_value.casefold()
-            if normalized in seen_normalized:
-                raise LabeledParseError(f"Duplicate distractor for label {label}: {text_value!r}")
-            if normalized in forbidden_normalized:
-                raise LabeledParseError(f"Forbidden distractor generated for label {label}: {text_value!r}")
-            seen_normalized.add(normalized)
-            distractors.append(text_value)
-        return distractors
-
-    seen_normalized = set()
-    distractors = []
-    payload_text = strip_code_fences(text)
-    lines = [line.strip() for line in payload_text.splitlines() if line.strip()]
-    if len(lines) != len(labels):
-        raise LabeledParseError(f"Expected {len(labels)} labeled lines, got {len(lines)}")
-
-    for expected_label, line in zip(labels, lines):
-        match = re.fullmatch(r"([A-J])[\.\):]\s*(.+)", line)
-        if not match:
-            raise LabeledParseError(f"Line does not match expected labeled format: {line!r}")
-        label = match.group(1)
-        text_value = normalize_text(match.group(2))
-        if label != expected_label:
-            raise LabeledParseError(f"Expected label {expected_label}, got {label}")
-        if not text_value:
-            raise LabeledParseError(f"Empty distractor for label {label}")
-        normalized = text_value.casefold()
-        if normalized in seen_normalized:
-            raise LabeledParseError(f"Duplicate distractor for label {label}: {text_value!r}")
-        if normalized in forbidden_normalized:
-            raise LabeledParseError(f"Forbidden distractor generated for label {label}: {text_value!r}")
-        seen_normalized.add(normalized)
-        distractors.append(text_value)
-    return distractors
+    return parse_distractors(text, len(labels), forbidden=forbidden)
 
 
 def extract_answer_letter(text: str, valid_letters: str) -> str:

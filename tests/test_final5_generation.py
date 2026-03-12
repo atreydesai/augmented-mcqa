@@ -11,7 +11,7 @@ from datasets import Dataset, DatasetDict
 
 from data.final5_store import _load_dataset_dict, build_evaluation_dataset, build_generation_dataset, materialize_augmented_dataset
 from solvers.final5_generation import _fresh_state
-from utils.parsing import LabeledParseError, parse_labeled_distractors
+from utils.parsing import LabeledParseError, parse_distractors
 
 
 def _processed_dataset(path):
@@ -99,66 +99,111 @@ def _write_generation_log(root: Path, samples: list[Sample]):
     )
 
 
-def test_parse_labeled_distractors_accepts_exact_plain_text_labels():
-    parsed = parse_labeled_distractors("B. One\nC. Two\nD. Three", ["B", "C", "D"], forbidden=["Gold"])
+def test_generate_qa_prompt_uses_single_distractors_list_contract():
+    prompt = (Path("prompts") / "generate_qa.txt").read_text(encoding="utf-8")
+    assert 'exactly one key: "distractors"' in prompt
+    assert '"distractors"' in prompt
+    assert "JSON keys" not in prompt
+    assert "forbidden value" not in prompt
+
+
+def test_generate_conditioned_prompt_uses_choices_block_and_single_distractors_list_contract():
+    prompt = (Path("prompts") / "generate_conditioned.txt").read_text(encoding="utf-8")
+    assert "{old_count}" in prompt
+    assert "{choices}" in prompt
+    assert 'exactly one key: "distractors"' in prompt
+    assert "forbidden value" not in prompt
+
+
+def test_parse_distractors_accepts_exact_json_list():
+    payload = '{"distractors": ["One", "Two", "Three"]}'
+    parsed = parse_distractors(payload, 3, forbidden=["Gold"])
     assert parsed == ["One", "Two", "Three"]
 
 
-def test_parse_labeled_distractors_accepts_exact_json_labels():
-    payload = '{"B": "One", "C": "Two", "D": "Three"}'
-    parsed = parse_labeled_distractors(payload, ["B", "C", "D"], forbidden=["Gold"])
-    assert parsed == ["One", "Two", "Three"]
-
-
-def test_parse_labeled_distractors_recovers_last_valid_json_object_from_messy_response():
+def test_parse_distractors_recovers_last_valid_json_object_from_messy_response():
     payload = """{
-  "B": "broken start",
-  "C": "
+  "distractors": "
 
 Let me redo that properly.
 
 ```json
 {
-  "B": "still broken",
-  "C": "also broken",
-  "D": "
+  "distractors": "still broken"
 
 I need to start over cleanly.
 
 {
-  "B": "One",
-  "C": "Two",
-  "D": "Three"
+  "distractors": ["One", "Two", "Three"]
 }
 """
-    parsed = parse_labeled_distractors(payload, ["B", "C", "D"], forbidden=["Gold"])
+    parsed = parse_distractors(payload, 3, forbidden=["Gold"])
     assert parsed == ["One", "Two", "Three"]
 
 
-def test_parse_labeled_distractors_rejects_extra_or_mislabeled_lines():
+def test_parse_distractors_rejects_missing_distractors_key():
     try:
-        parse_labeled_distractors("B. One\nD. Two\nE. Three", ["B", "C", "D"])
+        parse_distractors('{"wrong_key": ["One", "Two", "Three"]}', 3)
     except LabeledParseError as exc:
-        assert "Expected label C" in str(exc)
+        assert 'Missing required key: "distractors"' in str(exc)
     else:
-        raise AssertionError("Expected strict label validation error")
+        raise AssertionError("Expected parser failure")
 
 
-def test_parse_labeled_distractors_rejects_duplicates_and_forbidden_answers():
-    for payload in ("B. Same\nC. Same\nD. Different", "B. Gold\nC. Two\nD. Three"):
+def test_parse_distractors_rejects_extra_keys():
+    try:
+        parse_distractors('{"distractors": ["One", "Two", "Three"], "extra": 1}', 3)
+    except LabeledParseError as exc:
+        assert "Unexpected distractor keys: extra" in str(exc)
+    else:
+        raise AssertionError("Expected parser failure")
+
+
+def test_parse_distractors_rejects_non_list_payload():
+    try:
+        parse_distractors('{"distractors": "One"}', 1)
+    except LabeledParseError as exc:
+        assert 'Expected "distractors" to be a list' in str(exc)
+    else:
+        raise AssertionError("Expected parser failure")
+
+
+def test_parse_distractors_rejects_wrong_list_length():
+    try:
+        parse_distractors('{"distractors": ["One", "Two"]}', 3)
+    except LabeledParseError as exc:
+        assert "Expected 3 distractors, got 2" in str(exc)
+    else:
+        raise AssertionError("Expected parser failure")
+
+
+def test_parse_distractors_rejects_empty_items():
+    try:
+        parse_distractors('{"distractors": ["One", "   ", "Three"]}', 3)
+    except LabeledParseError as exc:
+        assert "Distractor 2 is empty" in str(exc)
+    else:
+        raise AssertionError("Expected parser failure")
+
+
+def test_parse_distractors_rejects_duplicates_and_forbidden_answers():
+    for payload in (
+        '{"distractors": ["Same", "Same", "Different"]}',
+        '{"distractors": ["Gold", "Two", "Three"]}',
+    ):
         try:
-            parse_labeled_distractors(payload, ["B", "C", "D"], forbidden=["Gold"])
+            parse_distractors(payload, 3, forbidden=["Gold"])
         except LabeledParseError:
             pass
         else:
             raise AssertionError("Expected parser failure")
 
 
-def test_parse_labeled_distractors_rejects_missing_json_keys():
+def test_parse_distractors_rejects_non_string_items():
     try:
-        parse_labeled_distractors('{"B": "One", "D": "Three"}', ["B", "C", "D"], forbidden=["Gold"])
+        parse_distractors('{"distractors": ["One", 2, "Three"]}', 3)
     except LabeledParseError as exc:
-        assert "Missing distractor keys: C" in str(exc)
+        assert "Distractor 2 must be a string" in str(exc)
     else:
         raise AssertionError("Expected parser failure")
 
