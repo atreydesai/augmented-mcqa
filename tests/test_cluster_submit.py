@@ -120,6 +120,73 @@ def test_submit_generate_cluster_write_only_can_be_replanned(tmp_path):
     assert len(list(bundle_dir.glob("submissions/*/manifest.json"))) == 2
 
 
+def test_submit_generate_cluster_noop_write_only_can_refresh_status_outputs(tmp_path, monkeypatch):
+    dataset_path = tmp_path / "processed"
+    bundle_dir = tmp_path / "bundle"
+    _processed_dataset(dataset_path, counts={"arc_challenge": 1, "mmlu_pro": 0, "gpqa": 0})
+    model = resolve_model_name("Qwen/Qwen3-4B-Instruct-2507", None)
+
+    initial = [
+        "submit-generate-cluster",
+        "--run-name",
+        "cluster-gen",
+        "--processed-dataset",
+        str(dataset_path),
+        "--dataset-types",
+        "arc_challenge",
+        "--models",
+        "Qwen/Qwen3-4B-Instruct-2507",
+        "--generation-strategies",
+        "model_from_scratch",
+        "--output-dir",
+        str(bundle_dir),
+        "--write-only",
+        "--render-status",
+    ]
+    assert app_main.main(initial) == 0
+
+    def fake_state(*, stage, run_name, output_dir=None):
+        return {
+            "slices": [
+                {
+                    "slice_ref": generation_slice_ref(
+                        run_name="cluster-gen",
+                        model=model,
+                        dataset_type="arc_challenge",
+                        strategy="model_from_scratch",
+                        question_start=0,
+                        question_end=1,
+                    ),
+                    "status": "current",
+                }
+            ]
+        }
+
+    monkeypatch.setattr(app_main, "_current_stage_state", fake_state)
+
+    refresh = [
+        "submit-generate-cluster",
+        "--run-name",
+        "cluster-gen",
+        "--processed-dataset",
+        str(dataset_path),
+        "--dataset-types",
+        "arc_challenge",
+        "--models",
+        "Qwen/Qwen3-4B-Instruct-2507",
+        "--generation-strategies",
+        "model_from_scratch",
+        "--output-dir",
+        str(bundle_dir),
+        "--write-only",
+        "--render-status",
+    ]
+    assert app_main.main(refresh) == 0
+    assert len(list(bundle_dir.glob("submissions/*/manifest.json"))) == 1
+    assert (bundle_dir / "scheduler_state.json").exists()
+    assert (bundle_dir / "scheduler_status.html").exists()
+
+
 def test_submit_generate_cluster_relative_output_dir_writes_absolute_runtime_paths(tmp_path, monkeypatch):
     dataset_path = tmp_path / "processed"
     bundle_dir = tmp_path / "bundle"

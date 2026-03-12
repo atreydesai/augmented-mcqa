@@ -476,7 +476,18 @@ def _run_cluster_submit(
 ) -> int:
     if not tasks:
         print("No cluster tasks selected.")
-        return 1
+        if dry_run:
+            return 0
+        state_path, dashboard_path = _write_scheduler_outputs(
+            stage=stage,
+            run_name=run_name,
+            output_dir=output_dir,
+            render_status=render_status,
+        )
+        print(state_path)
+        if render_status:
+            print(dashboard_path)
+        return 0
 
     paths = build_bundle_paths(stage=stage, run_name=run_name, output_dir=output_dir)
     manifest_text = render_manifest(
