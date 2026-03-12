@@ -9,7 +9,7 @@ from inspect_ai import eval as inspect_eval
 from analysis.analyzer import analyze_experiment, format_signature_table
 from analysis.visualize import plot_final5_pairwise, write_final5_summary_table
 from data import export_benchmarker_items, prepare_data
-from data.final5_store import _load_dataset_dict, ensure_augmented_dataset
+from data.final5_store import _load_dataset_dict, build_evaluation_dataset, build_generation_dataset, ensure_augmented_dataset
 from tasks import build_evaluation_tasks, build_generation_tasks
 from utils.cluster_submit import (
     ClusterTask,
@@ -201,6 +201,7 @@ def _evaluation_generation_dependencies(
     generation_state: dict[str, dict[str, object]],
 ) -> list[str]:
     if setting == "human_from_scratch":
+        failed_candidate: str | None = None
         for strategy in SCHEDULABLE_GENERATION_STRATEGIES:
             candidate_ref = generation_slice_ref(
                 run_name=generator_run_name,
@@ -210,8 +211,13 @@ def _evaluation_generation_dependencies(
                 question_start=question_start,
                 question_end=question_end,
             )
-            if str((generation_state.get(candidate_ref) or {}).get("status", "")) == "current":
+            candidate_status = str((generation_state.get(candidate_ref) or {}).get("status", ""))
+            if candidate_status == "current":
                 return [candidate_ref]
+            if candidate_status == "failed" and failed_candidate is None:
+                failed_candidate = candidate_ref
+        if failed_candidate is not None:
+            return [failed_candidate]
         raise ValueError(
             "Missing current generation prerequisite for "
             f"human_from_scratch on {dataset_type} {question_start}:{question_end}. "
@@ -333,21 +339,53 @@ def _build_generation_cluster_tasks(args: argparse.Namespace) -> tuple[list[Clus
                         force=bool(args.force),
                     )
 
+    runnable_counts: dict[tuple[str, str, str, int, int], int] = {}
+
+    def runnable_generation_sample_count(task: ClusterTask) -> int:
+        key = (task.model, task.dataset_type, str(task.strategy or ""), task.question_start, task.question_end)
+        if key not in runnable_counts:
+            dataset = build_generation_dataset(
+                processed_dataset,
+                strategy=str(task.strategy or ""),
+                dataset_types=[task.dataset_type],
+                question_start=task.question_start,
+                limit=task.question_end - task.question_start,
+                generation_log_dir=_generation_log_dir(Path(DEFAULT_GENERATION_LOG_ROOT), args.run_name, task.model),
+                shard_count=1,
+                shard_index=0,
+                shard_strategy="contiguous",
+            )
+            runnable_counts[key] = len(dataset)
+        return runnable_counts[key]
+
+    filtered_tasks: list[ClusterTask] = []
     for task in tasks_by_ref.values():
         submit_dependency_refs: list[str] = []
+        skip_task = False
         for dependency_ref in task.state_dependency_refs or []:
             if dependency_ref in tasks_by_ref:
                 submit_dependency_refs.append(dependency_ref)
             else:
                 dependency_state = existing.get(dependency_ref)
-                if str((dependency_state or {}).get("status", "")) != "current":
+                dependency_status = str((dependency_state or {}).get("status", ""))
+                if dependency_status == "current":
+                    continue
+                if dependency_status == "failed" and task.strategy == "augment_model":
+                    if runnable_generation_sample_count(task) > 0:
+                        continue
+                    skip_task = True
+                    break
+                if dependency_status != "current":
                     raise ValueError(
                         f"Missing current prerequisite for {task.slice_ref}: {dependency_ref}. "
                         "Select the prerequisite slice in this submission or rerun it first."
                     )
+        if skip_task:
+            continue
         task.submit_dependency_refs = submit_dependency_refs
+        filtered_tasks.append(task)
 
-    return list(tasks_by_ref.values()), {"local": args.gpu_count, "api": args.gpu_count}
+    return filtered_tasks, {"local": args.gpu_count, "api": args.gpu_count}
 
 
 def _build_evaluation_cluster_tasks(args: argparse.Namespace) -> tuple[list[ClusterTask], dict[str, int | None]]:
@@ -364,6 +402,44 @@ def _build_evaluation_cluster_tasks(args: argparse.Namespace) -> tuple[list[Clus
 
     existing = _slice_status_lookup(_current_stage_state(stage="evaluate", run_name=args.run_name, output_dir=args.output_dir))
     generation_state = _slice_status_lookup(_current_stage_state(stage="generate", run_name=args.generator_run_name))
+    evaluation_counts: dict[tuple[str, str, str, int, int], int] = {}
+    augmented_cache_dir: Path | None = None
+
+    def runnable_evaluation_sample_count(
+        *,
+        dataset_type: str,
+        setting: str,
+        mode: str,
+        question_start: int,
+        question_end: int,
+    ) -> int:
+        nonlocal augmented_cache_dir
+        key = (dataset_type, setting, mode, question_start, question_end)
+        if key not in evaluation_counts:
+            if augmented_cache_dir is None:
+                generation_log_dir = _generation_log_dir(Path(DEFAULT_GENERATION_LOG_ROOT), args.generator_run_name, generation_model)
+                augmented_cache_dir = _augmented_cache_dir(Path(DEFAULT_AUGMENTED_CACHE_ROOT), args.generator_run_name, generation_model)
+                ensure_augmented_dataset(
+                    processed_dataset_path=processed_dataset,
+                    generation_log_dir=generation_log_dir,
+                    output_path=augmented_cache_dir,
+                    dataset_types=dataset_types,
+                    rebuild=True,
+                )
+            dataset = build_evaluation_dataset(
+                augmented_cache_dir,
+                setting=setting,
+                mode=mode,
+                dataset_types=[dataset_type],
+                question_start=question_start,
+                limit=question_end - question_start,
+                shard_count=1,
+                shard_index=0,
+                shard_strategy="contiguous",
+            )
+            evaluation_counts[key] = len(dataset)
+        return evaluation_counts[key]
+
     tasks: list[ClusterTask] = []
     for dataset_type in dataset_types:
         for model in models:
@@ -396,11 +472,27 @@ def _build_evaluation_cluster_tasks(args: argparse.Namespace) -> tuple[list[Clus
                         )
                         for dependency_ref in state_dependency_refs:
                             dependency_state = generation_state.get(dependency_ref)
-                            if str((dependency_state or {}).get("status", "")) != "current":
+                            dependency_status = str((dependency_state or {}).get("status", ""))
+                            if dependency_status == "current":
+                                continue
+                            if dependency_status == "failed":
+                                if runnable_evaluation_sample_count(
+                                    dataset_type=dataset_type,
+                                    setting=setting,
+                                    mode=mode,
+                                    question_start=question_start,
+                                    question_end=question_end,
+                                ) > 0:
+                                    continue
+                                state_dependency_refs = []
+                                break
+                            if dependency_status != "current":
                                 raise ValueError(
                                     f"Missing current generation prerequisite for {slice_ref}: {dependency_ref}. "
                                     "Rerun or complete the required generation slice before scheduling evaluation."
                                 )
+                        if not state_dependency_refs:
+                            continue
 
                         argv = [
                             "evaluate",

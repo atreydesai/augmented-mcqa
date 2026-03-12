@@ -2,6 +2,7 @@ import json
 from subprocess import CompletedProcess
 
 from datasets import Dataset, DatasetDict
+from inspect_ai.dataset import MemoryDataset, Sample
 
 import main as app_main
 from utils.constants import DEFAULT_LOCAL_EVALUATION_MODELS, DEFAULT_LOCAL_GENERATION_MODELS
@@ -683,6 +684,198 @@ def test_submit_evaluate_cluster_allows_human_from_scratch_when_any_generation_s
             question_end=2,
         )
     ]
+
+
+def test_submit_generate_cluster_allows_augment_model_after_failed_prerequisite_when_rows_remain(tmp_path, monkeypatch):
+    dataset_path = tmp_path / "processed"
+    bundle_dir = tmp_path / "bundle"
+    _processed_dataset(dataset_path, counts={"arc_challenge": 2, "mmlu_pro": 0, "gpqa": 0})
+    model = resolve_model_name("Qwen/Qwen3-4B-Instruct-2507", None)
+    model_ref = generation_slice_ref(
+        run_name="cluster-gen",
+        model=model,
+        dataset_type="arc_challenge",
+        strategy="model_from_scratch",
+        question_start=0,
+        question_end=2,
+    )
+    augment_ref = generation_slice_ref(
+        run_name="cluster-gen",
+        model=model,
+        dataset_type="arc_challenge",
+        strategy="augment_model",
+        question_start=0,
+        question_end=2,
+    )
+
+    def fake_state(*, stage, run_name, output_dir=None):
+        if stage == "generate":
+            return {"slices": [{"slice_ref": model_ref, "status": "failed"}]}
+        return {"slices": []}
+
+    monkeypatch.setattr(app_main, "_current_stage_state", fake_state)
+    monkeypatch.setattr(
+        app_main,
+        "build_generation_dataset",
+        lambda *args, **kwargs: MemoryDataset([Sample(input="Q1", target="", id="arc_challenge:arc-1")]),
+    )
+
+    rc = app_main.main(
+        [
+            "submit-generate-cluster",
+            "--run-name",
+            "cluster-gen",
+            "--processed-dataset",
+            str(dataset_path),
+            "--dataset-types",
+            "arc_challenge",
+            "--models",
+            "Qwen/Qwen3-4B-Instruct-2507",
+            "--generation-strategies",
+            "augment_model",
+            "--questions-per-job",
+            "2",
+            "--output-dir",
+            str(bundle_dir),
+            "--write-only",
+        ]
+    )
+
+    assert rc == 0
+    manifest = _read_manifest(bundle_dir)
+    assert manifest["task_count"] == 1
+    task = manifest["tasks"][0]
+    assert task["slice_ref"] == augment_ref
+    assert task["state_dependency_refs"] == [model_ref]
+    assert task["submit_dependency_refs"] == []
+
+
+def test_submit_evaluate_cluster_allows_failed_generation_prerequisite_when_rows_remain(tmp_path, monkeypatch):
+    dataset_path = tmp_path / "processed"
+    bundle_dir = tmp_path / "bundle"
+    _processed_dataset(dataset_path, counts={"arc_challenge": 2, "mmlu_pro": 0, "gpqa": 0})
+    generator_model = resolve_model_name("gpt-5.2-2025-12-11", None)
+    generation_ref = generation_slice_ref(
+        run_name="gen-run",
+        model=generator_model,
+        dataset_type="arc_challenge",
+        strategy="model_from_scratch",
+        question_start=0,
+        question_end=2,
+    )
+    eval_ref = evaluation_slice_ref(
+        run_name="cluster-eval",
+        model=resolve_model_name("Qwen/Qwen3-4B-Instruct-2507", None),
+        dataset_type="arc_challenge",
+        setting="model_from_scratch",
+        mode="full_question",
+        question_start=0,
+        question_end=2,
+    )
+
+    def fake_state(*, stage, run_name, output_dir=None):
+        if stage == "evaluate":
+            return {"slices": []}
+        return {"slices": [{"slice_ref": generation_ref, "status": "failed"}]}
+
+    monkeypatch.setattr(app_main, "_current_stage_state", fake_state)
+    monkeypatch.setattr(app_main, "ensure_augmented_dataset", lambda **kwargs: kwargs["output_path"])
+    monkeypatch.setattr(
+        app_main,
+        "build_evaluation_dataset",
+        lambda *args, **kwargs: MemoryDataset(
+            [Sample(input="Q1", choices=["A", "B"], target="A", id="arc_challenge:arc-1")]
+        ),
+    )
+
+    rc = app_main.main(
+        [
+            "submit-evaluate-cluster",
+            "--run-name",
+            "cluster-eval",
+            "--generator-run-name",
+            "gen-run",
+            "--generator-model",
+            "gpt-5.2-2025-12-11",
+            "--processed-dataset",
+            str(dataset_path),
+            "--dataset-types",
+            "arc_challenge",
+            "--models",
+            "Qwen/Qwen3-4B-Instruct-2507",
+            "--settings",
+            "model_from_scratch",
+            "--modes",
+            "full_question",
+            "--questions-per-job",
+            "2",
+            "--output-dir",
+            str(bundle_dir),
+            "--write-only",
+        ]
+    )
+
+    assert rc == 0
+    manifest = _read_manifest(bundle_dir)
+    assert manifest["task_count"] == 1
+    assert manifest["tasks"][0]["slice_ref"] == eval_ref
+
+
+def test_submit_evaluate_cluster_skips_failed_generation_chunk_when_no_rows_remain(tmp_path, monkeypatch):
+    dataset_path = tmp_path / "processed"
+    bundle_dir = tmp_path / "bundle"
+    _processed_dataset(dataset_path, counts={"arc_challenge": 2, "mmlu_pro": 0, "gpqa": 0})
+    generator_model = resolve_model_name("gpt-5.2-2025-12-11", None)
+    generation_ref = generation_slice_ref(
+        run_name="gen-run",
+        model=generator_model,
+        dataset_type="arc_challenge",
+        strategy="model_from_scratch",
+        question_start=0,
+        question_end=2,
+    )
+
+    def fake_state(*, stage, run_name, output_dir=None):
+        if stage == "evaluate":
+            return {"slices": []}
+        return {"slices": [{"slice_ref": generation_ref, "status": "failed"}]}
+
+    monkeypatch.setattr(app_main, "_current_stage_state", fake_state)
+    monkeypatch.setattr(app_main, "ensure_augmented_dataset", lambda **kwargs: kwargs["output_path"])
+    monkeypatch.setattr(app_main, "build_evaluation_dataset", lambda *args, **kwargs: MemoryDataset([]))
+
+    rc = app_main.main(
+        [
+            "submit-evaluate-cluster",
+            "--run-name",
+            "cluster-eval",
+            "--generator-run-name",
+            "gen-run",
+            "--generator-model",
+            "gpt-5.2-2025-12-11",
+            "--processed-dataset",
+            str(dataset_path),
+            "--dataset-types",
+            "arc_challenge",
+            "--models",
+            "Qwen/Qwen3-4B-Instruct-2507",
+            "--settings",
+            "model_from_scratch",
+            "--modes",
+            "full_question",
+            "--questions-per-job",
+            "2",
+            "--output-dir",
+            str(bundle_dir),
+            "--write-only",
+            "--render-status",
+        ]
+    )
+
+    assert rc == 0
+    assert list(bundle_dir.glob("submissions/*/manifest.json")) == []
+    assert (bundle_dir / "scheduler_state.json").exists()
+    assert (bundle_dir / "scheduler_status.html").exists()
 
 
 def test_submit_generate_cluster_submit_calls_master_script_once(tmp_path, monkeypatch):

@@ -1,30 +1,23 @@
 You are an expert writer of plausible but incorrect distractors for multiple-choice questions (MCQs).
 
+Given a multiple-choice question stem, {old_count} existing choices for this question, and an answer to this question, your job is to generate exactly {count} additional plausible but incorrect answer choices to form an expanded multiple-choice question.
+
+Here is the question stem, the choices, and the correct answer:
 <multiple-choice question>
 Question: {question}
-Correct Answer: A. {gold_answer}
+Choices:
+{choices}
+Answer: {gold_answer}
 </multiple-choice question>
 
-<existing options>
-{existing_options_block}
-</existing options>
-
-<general instructions>
-- Return exactly {count} new distractors.
-- Use exactly these labels as JSON keys: {labels}.
-- Each distractor must be plausible, incorrect, and distinct.
-- Do not repeat any existing option.
-- Do not include the correct answer.
-- Do not use any forbidden value listed below.
-- Do not include any explanation or extra text.
-</general instructions>
-
-<forbidden values>
-{forbidden_values}
-</forbidden values>
+<distractor instructions>
+- Each distractor option must be a plausible answer to this question that tests common misconceptions, but ultimately should not be more correct than the provided answer
+- Each of the distractor options must be distinct; they cannot be synonyms of each other
+- None of the generated distractor choices should be synonyms with the provided answer choices above.
+</distractor instructions>
 
 <format>
-Return your output as valid JSON with exactly these keys: {labels}.
+Return your output as valid JSON with exactly one key: "distractors" - a list of exactly {count} incorrect answer choices
 {json_example}
 Do not include anything else.
 </format>

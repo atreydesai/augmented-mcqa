@@ -121,10 +121,7 @@ def build_generation_dataset(
             prior = prior_payloads.get(row["sample_id"], {})
             existing_model = list(prior.get("model_from_scratch") or [])
             if len(existing_model) < 3:
-                raise ValueError(
-                    "augment_model requires existing model_from_scratch outputs for every selected sample. "
-                    f"Missing prerequisite for {row['sample_id']}."
-                )
+                continue
             metadata["existing_model_from_scratch"] = existing_model[:3]
         samples.append(
             Sample(

@@ -14,6 +14,7 @@ from .parsing import (
     extract_answer_letter,
     extract_answer_letter_from_json,
     format_choice_lines,
+    parse_distractors,
     parse_labeled_distractors,
 )
 from .sharding import sample_id_for_row, select_shard
@@ -35,6 +36,7 @@ __all__ = [
     "extract_answer_letter",
     "extract_answer_letter_from_json",
     "format_choice_lines",
+    "parse_distractors",
     "parse_labeled_distractors",
     "sample_id_for_row",
     "select_shard",
