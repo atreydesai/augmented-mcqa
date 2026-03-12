@@ -186,7 +186,7 @@ Supported schedulable generation strategies:
 
 Also supports all flags from `Shared Cluster-Submit Flags`.
 
-PI-facing wrapper:
+Bash wrapper:
 
 - [`jobs/submit_generate_scheduler.sh`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/jobs/submit_generate_scheduler.sh)
 
@@ -294,7 +294,7 @@ Each evaluation slice depends on the exact generation slice or slices required b
 
 Also supports all flags from `Shared Cluster-Submit Flags`.
 
-PI-facing wrapper:
+Bash wrapper:
 
 - [`jobs/submit_evaluate_scheduler.sh`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/jobs/submit_evaluate_scheduler.sh)
 

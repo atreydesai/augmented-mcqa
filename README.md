@@ -154,7 +154,7 @@ uv run python main.py submit-generate-cluster \
 
 If the required `model_from_scratch` slice for the same model, dataset, and question chunk is not already current, the scheduler will stop and tell you to rerun or include that prerequisite slice.
 
-### PI-friendly scheduler scripts
+### Reg Scheduler scripts
 
 If you want one bash file with editable variables at the top instead of a long CLI invocation:
 
