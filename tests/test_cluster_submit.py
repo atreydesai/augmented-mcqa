@@ -81,6 +81,12 @@ def test_submit_generate_cluster_write_only_writes_strategy_slice_manifest(tmp_p
     submit_text = _submit_path(bundle_dir).read_text(encoding="utf-8")
     assert 'task["task_stdout"]' in submit_text
     assert 'task["bootstrap_stdout"]' not in submit_text
+    assert "${{" not in submit_text
+    assert "{{}}" not in submit_text
+    local_wrapper_text = next(bundle_dir.glob("submissions/*/run_local_task.sbatch")).read_text(encoding="utf-8")
+    api_wrapper_text = next(bundle_dir.glob("submissions/*/run_api_task.sbatch")).read_text(encoding="utf-8")
+    assert "${{" not in local_wrapper_text
+    assert "${{" not in api_wrapper_text
     assert (bundle_dir / "scheduler_state.json").exists()
     assert (bundle_dir / "scheduler_status.html").exists()
     assert next(bundle_dir.glob("submissions/*/run_local_task.sbatch")).exists()

@@ -16,8 +16,8 @@ set -euo pipefail
 
 MANIFEST_PATH="$1"
 TASK_INDEX="$2"
-PROJECT_ROOT="${{3:-$SLURM_SUBMIT_DIR}}"
-PYTHON_BIN="${{4:-python}}"
+PROJECT_ROOT="${3:-$SLURM_SUBMIT_DIR}"
+PYTHON_BIN="${4:-python}"
 
 cd "$PROJECT_ROOT"
 
@@ -44,10 +44,10 @@ PY
 MASTER_SUBMIT_TEMPLATE = """#!/bin/bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${{BASH_SOURCE[0]}}")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
-PROJECT_ROOT="${{PROJECT_ROOT:-__PROJECT_ROOT__}}"
-PYTHON_BIN="${{PYTHON_BIN:-python}}"
+PROJECT_ROOT="${PROJECT_ROOT:-__PROJECT_ROOT__}"
+PYTHON_BIN="${PYTHON_BIN:-python}"
 
 "$PYTHON_BIN" - <<'PY' "__MANIFEST_PATH__" "__LOCAL_WRAPPER__" "__API_WRAPPER__" "$PROJECT_ROOT" "$PYTHON_BIN"
 import json
@@ -63,10 +63,10 @@ project_root = sys.argv[4]
 python_bin = sys.argv[5]
 
 manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-job_ids = {{}}
-slot_previous = {{}}
-slot_counters = {{}}
-concurrency_caps = dict(manifest.get("concurrency_caps", {{}}))
+job_ids = {}
+slot_previous = {}
+slot_counters = {}
+concurrency_caps = dict(manifest.get("concurrency_caps", {}))
 
 def record_submission(task_index, job_id):
     task_record = manifest["tasks"][task_index]
