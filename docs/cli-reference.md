@@ -48,6 +48,7 @@ These flags apply to `submit-generate-cluster` and `submit-evaluate-cluster`.
 | `--models` | Comma-separated list of models to schedule. Models can be local `vllm/...` or hosted/API models. |
 | `--processed-dataset` | Processed unified `DatasetDict` used to build scheduler slices. |
 | `--dataset-types` | Comma-separated subset of dataset splits to schedule. |
+| `--limit` | Advanced/debug option: optional per-dataset cap on the number of samples to schedule before chunking. |
 | `--questions-per-job` | Optional contiguous question-chunk size per scheduled slice. If omitted, each slice family stays in one chunk. |
 | `--gpu-count` | Optional concurrency cap applied per resource class by the master submit script. |
 | `--output-dir` | Advanced override: run directory where manifests, wrappers, state, dashboard, and submit helpers are written. |

@@ -18,13 +18,11 @@ MANIFEST_PATH="$1"
 TASK_INDEX="$2"
 PROJECT_ROOT="${{3:-$SLURM_SUBMIT_DIR}}"
 PYTHON_BIN="${{4:-python}}"
-TASK_LOG_DIR="$5"
 
 cd "$PROJECT_ROOT"
 
-"$PYTHON_BIN" - <<'PY' "$MANIFEST_PATH" "$TASK_INDEX" "$PROJECT_ROOT" "$PYTHON_BIN" "$TASK_LOG_DIR"
+"$PYTHON_BIN" - <<'PY' "$MANIFEST_PATH" "$TASK_INDEX" "$PROJECT_ROOT" "$PYTHON_BIN"
 import json
-import os
 import subprocess
 import sys
 from pathlib import Path
@@ -33,23 +31,12 @@ manifest_path = Path(sys.argv[1])
 task_index = int(sys.argv[2])
 project_root = Path(sys.argv[3])
 python_bin = sys.argv[4]
-task_log_dir = Path(sys.argv[5])
 
 manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
 task = manifest["tasks"][task_index]
-job_id = os.environ.get("SLURM_JOB_ID", "job")
-stdout_path = task_log_dir / f"{task['task_slug']}__{job_id}.out"
-stderr_path = task_log_dir / f"{task['task_slug']}__{job_id}.err"
-stdout_path.parent.mkdir(parents=True, exist_ok=True)
-
 cmd = [python_bin, "main.py", *task["argv"]]
 print(f"Running: {' '.join(cmd)}")
-print(f"Stdout: {stdout_path}")
-print(f"Stderr: {stderr_path}")
-
-with stdout_path.open("a", encoding="utf-8") as out, stderr_path.open("a", encoding="utf-8") as err:
-    rc = subprocess.run(cmd, cwd=str(project_root), stdout=out, stderr=err, check=False).returncode
-sys.exit(rc)
+sys.exit(subprocess.run(cmd, cwd=str(project_root), check=False).returncode)
 PY
 """
 
@@ -110,8 +97,8 @@ for task in manifest["tasks"]:
         "sbatch",
         "--parsable",
         "--job-name", task["job_name"],
-        "--output", task["bootstrap_stdout"],
-        "--error", task["bootstrap_stderr"],
+        "--output", task["task_stdout"],
+        "--error", task["task_stderr"],
         "--partition", task["resources"]["partition"],
         "--account", task["resources"]["account"],
         "--qos", task["resources"]["qos"],
@@ -147,7 +134,6 @@ for task in manifest["tasks"]:
             str(task["task_index"]),
             project_root,
             python_bin,
-            task["task_log_dir"],
         ]
     )
 
@@ -198,9 +184,9 @@ class ClusterTask:
     generation_run_name: str | None = None
     generation_model: str | None = None
 
-    def as_dict(self, *, task_index: int, submission_created_at: str, submission_id: str, task_log_dir: Path, bootstrap_log_dir: Path) -> dict[str, Any]:
-        bootstrap_stdout = bootstrap_log_dir / f"{self.task_slug}__%j.bootstrap.out"
-        bootstrap_stderr = bootstrap_log_dir / f"{self.task_slug}__%j.bootstrap.err"
+    def as_dict(self, *, task_index: int, submission_created_at: str, submission_id: str, task_log_dir: Path) -> dict[str, Any]:
+        task_stdout = task_log_dir / f"{self.task_slug}__%j.out"
+        task_stderr = task_log_dir / f"{self.task_slug}__%j.err"
         return {
             "task_index": task_index,
             "stage": self.stage,
@@ -228,8 +214,8 @@ class ClusterTask:
             "argv": list(self.argv),
             "resources": dict(self.resources),
             "task_log_dir": str(task_log_dir),
-            "bootstrap_stdout": str(bootstrap_stdout),
-            "bootstrap_stderr": str(bootstrap_stderr),
+            "task_stdout": str(task_stdout),
+            "task_stderr": str(task_stderr),
             "job_name": f"final5-{self.stage}-{self.task_slug}",
             "submitted_at": "",
             "submitted_job_id": "",
@@ -245,7 +231,6 @@ class ClusterBundlePaths:
     local_wrapper_path: Path
     api_wrapper_path: Path
     log_dir: Path
-    bootstrap_log_dir: Path
     state_path: Path
     dashboard_path: Path
     submission_id: str
@@ -259,7 +244,6 @@ def build_bundle_paths(*, stage: str, run_name: str, output_dir: str | Path | No
     submission_id = safe_name(f"{submission_created_at}_{uuid4().hex[:8]}")
     submission_dir = run_dir / "submissions" / submission_id
     log_dir = Path("logs/slurm") / stage / run_slug
-    bootstrap_log_dir = log_dir / "_bootstrap"
     return ClusterBundlePaths(
         run_dir=run_dir,
         submission_dir=submission_dir,
@@ -268,7 +252,6 @@ def build_bundle_paths(*, stage: str, run_name: str, output_dir: str | Path | No
         local_wrapper_path=submission_dir / "run_local_task.sbatch",
         api_wrapper_path=submission_dir / "run_api_task.sbatch",
         log_dir=log_dir,
-        bootstrap_log_dir=bootstrap_log_dir,
         state_path=run_dir / "scheduler_state.json",
         dashboard_path=run_dir / "scheduler_status.html",
         submission_id=submission_id,
@@ -322,7 +305,6 @@ def render_manifest(
                 submission_created_at=paths.submission_created_at,
                 submission_id=paths.submission_id,
                 task_log_dir=paths.log_dir,
-                bootstrap_log_dir=paths.bootstrap_log_dir,
             )
             for index, task in enumerate(ordered_tasks)
         ],
@@ -354,7 +336,6 @@ def write_bundle(
     paths.run_dir.mkdir(parents=True, exist_ok=True)
     paths.submission_dir.mkdir(parents=True, exist_ok=True)
     paths.log_dir.mkdir(parents=True, exist_ok=True)
-    paths.bootstrap_log_dir.mkdir(parents=True, exist_ok=True)
     paths.manifest_path.write_text(manifest_text, encoding="utf-8")
     paths.submit_path.write_text(submit_text, encoding="utf-8")
     paths.local_wrapper_path.write_text(local_wrapper_text, encoding="utf-8")

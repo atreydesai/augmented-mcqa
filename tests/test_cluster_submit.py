@@ -73,7 +73,14 @@ def test_submit_generate_cluster_write_only_writes_strategy_slice_manifest(tmp_p
         "augment_ablation",
     }
     assert {task["resource_class"] for task in manifest["tasks"]} == {"local"}
-    assert (_submit_path(bundle_dir)).exists()
+    first_task = manifest["tasks"][0]
+    assert "bootstrap_stdout" not in first_task
+    assert "bootstrap_stderr" not in first_task
+    assert first_task["task_stdout"].endswith(".out")
+    assert first_task["task_stderr"].endswith(".err")
+    submit_text = _submit_path(bundle_dir).read_text(encoding="utf-8")
+    assert 'task["task_stdout"]' in submit_text
+    assert 'task["bootstrap_stdout"]' not in submit_text
     assert (bundle_dir / "scheduler_state.json").exists()
     assert (bundle_dir / "scheduler_status.html").exists()
     assert next(bundle_dir.glob("submissions/*/run_local_task.sbatch")).exists()
@@ -234,6 +241,61 @@ def test_submit_generate_cluster_submit_script_uses_afterany_for_concurrency_cap
     assert "afterany:" in submit_text
 
 
+def test_submit_generate_cluster_limit_caps_per_dataset_before_chunking(tmp_path):
+    dataset_path = tmp_path / "processed"
+    bundle_dir = tmp_path / "bundle"
+    _processed_dataset(dataset_path, counts={"arc_challenge": 5, "mmlu_pro": 0, "gpqa": 0})
+    model = resolve_model_name("Qwen/Qwen3-4B-Instruct-2507", None)
+
+    rc = app_main.main(
+        [
+            "submit-generate-cluster",
+            "--run-name",
+            "cluster-gen",
+            "--processed-dataset",
+            str(dataset_path),
+            "--dataset-types",
+            "arc_challenge",
+            "--models",
+            "Qwen/Qwen3-4B-Instruct-2507",
+            "--generation-strategies",
+            "model_from_scratch",
+            "--limit",
+            "3",
+            "--questions-per-job",
+            "2",
+            "--output-dir",
+            str(bundle_dir),
+            "--write-only",
+        ]
+    )
+
+    assert rc == 0
+    manifest = _read_manifest(bundle_dir)
+    assert manifest["task_count"] == 2
+    refs = {
+        generation_slice_ref(
+            run_name="cluster-gen",
+            model=model,
+            dataset_type="arc_challenge",
+            strategy="model_from_scratch",
+            question_start=0,
+            question_end=2,
+        ),
+        generation_slice_ref(
+            run_name="cluster-gen",
+            model=model,
+            dataset_type="arc_challenge",
+            strategy="model_from_scratch",
+            question_start=2,
+            question_end=3,
+        ),
+    }
+    assert {task["slice_ref"] for task in manifest["tasks"]} == refs
+    limits = sorted(int(task["argv"][task["argv"].index("--limit") + 1]) for task in manifest["tasks"])
+    assert limits == [1, 2]
+
+
 def test_submit_evaluate_cluster_requires_current_generation_prerequisite(tmp_path, capsys):
     dataset_path = tmp_path / "processed"
     bundle_dir = tmp_path / "bundle"
@@ -366,6 +428,82 @@ def test_submit_evaluate_cluster_writes_setting_mode_chunk_tasks_when_generation
 
     assert {task["resource_class"] for task in task_by_model[local_eval_model]} == {"local"}
     assert {task["resource_class"] for task in task_by_model[api_eval_model]} == {"api"}
+
+
+def test_submit_evaluate_cluster_limit_caps_per_dataset_before_chunking(tmp_path, monkeypatch):
+    dataset_path = tmp_path / "processed"
+    bundle_dir = tmp_path / "bundle"
+    _processed_dataset(dataset_path, counts={"arc_challenge": 3, "mmlu_pro": 0, "gpqa": 0})
+    generator_model = resolve_model_name("gpt-5.2-2025-12-11", None)
+
+    def fake_state(*, stage, run_name, output_dir=None):
+        if stage == "evaluate":
+            return {"slices": []}
+        return {
+            "slices": [
+                {
+                    "slice_ref": generation_slice_ref(
+                        run_name="gen-run",
+                        model=generator_model,
+                        dataset_type="arc_challenge",
+                        strategy="model_from_scratch",
+                        question_start=0,
+                        question_end=2,
+                    ),
+                    "status": "current",
+                },
+                {
+                    "slice_ref": generation_slice_ref(
+                        run_name="gen-run",
+                        model=generator_model,
+                        dataset_type="arc_challenge",
+                        strategy="model_from_scratch",
+                        question_start=2,
+                        question_end=3,
+                    ),
+                    "status": "current",
+                },
+            ]
+        }
+
+    monkeypatch.setattr(app_main, "_current_stage_state", fake_state)
+
+    rc = app_main.main(
+        [
+            "submit-evaluate-cluster",
+            "--run-name",
+            "cluster-eval",
+            "--generator-run-name",
+            "gen-run",
+            "--generator-model",
+            "gpt-5.2-2025-12-11",
+            "--processed-dataset",
+            str(dataset_path),
+            "--dataset-types",
+            "arc_challenge",
+            "--models",
+            "Qwen/Qwen3-4B-Instruct-2507",
+            "--settings",
+            "model_from_scratch",
+            "--modes",
+            "full_question",
+            "--limit",
+            "2",
+            "--questions-per-job",
+            "2",
+            "--output-dir",
+            str(bundle_dir),
+            "--write-only",
+        ]
+    )
+
+    assert rc == 0
+    manifest = _read_manifest(bundle_dir)
+    assert manifest["task_count"] == 1
+    task = manifest["tasks"][0]
+    assert task["question_start"] == 0
+    assert task["question_end"] == 2
+    assert task["argv"][task["argv"].index("--limit") + 1] == "2"
 
 
 def test_submit_evaluate_cluster_allows_human_from_scratch_when_any_generation_slice_is_current(tmp_path, monkeypatch):

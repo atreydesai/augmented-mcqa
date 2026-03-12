@@ -38,6 +38,7 @@ def test_main_parser_submit_generate_cluster_defaults_use_local_cluster_shape():
     parser = app_main.build_parser()
     args = parser.parse_args(["submit-generate-cluster", "--run-name", "cluster-gen"])
     assert args.gpu_count is None
+    assert args.limit is None
     assert args.partition == "clip"
     assert args.account == "clip"
     assert args.qos == "high"
@@ -59,6 +60,7 @@ def test_main_parser_submit_evaluate_cluster_defaults_use_local_cluster_shape():
         ]
     )
     assert args.gpu_count is None
+    assert args.limit is None
     assert args.partition == "clip"
     assert args.account == "clip"
     assert args.qos == "high"
@@ -106,6 +108,7 @@ def test_cluster_help_mentions_gpu_count_and_write_only(capsys):
         assert exc.code == 0
     output = capsys.readouterr().out
     assert "--gpu-count" in output
+    assert "--limit" in output
     assert "concurrency cap" in output
     assert "--write-only" in output
 

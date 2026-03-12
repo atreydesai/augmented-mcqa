@@ -103,9 +103,20 @@ def _cluster_dataset_types(processed_dataset_path: Path, dataset_types: list[str
     return sorted(dataset_types, key=lambda dataset_type: (-sizes.get(dataset_type, 0), indexed[dataset_type]))
 
 
-def _dataset_sizes(processed_dataset_path: Path, dataset_types: list[str]) -> dict[str, int]:
+def _dataset_sizes(
+    processed_dataset_path: Path,
+    dataset_types: list[str],
+    *,
+    limit: int | None = None,
+) -> dict[str, int]:
     dataset_dict = _load_dataset_dict(processed_dataset_path)
-    return {dataset_type: len(dataset_dict[dataset_type]) if dataset_type in dataset_dict else 0 for dataset_type in dataset_types}
+    sizes: dict[str, int] = {}
+    for dataset_type in dataset_types:
+        size = len(dataset_dict[dataset_type]) if dataset_type in dataset_dict else 0
+        if limit is not None and limit >= 0:
+            size = min(size, limit)
+        sizes[dataset_type] = size
+    return sizes
 
 
 def _cluster_models(raw: str | None, *, default: list[str], backend: str | None = None) -> list[str]:
@@ -226,7 +237,7 @@ def _build_generation_cluster_tasks(args: argparse.Namespace) -> tuple[list[Clus
         processed_dataset,
         _csv_list(args.dataset_types, default=args.default_dataset_types),
     )
-    dataset_sizes = _dataset_sizes(processed_dataset, dataset_types)
+    dataset_sizes = _dataset_sizes(processed_dataset, dataset_types, limit=args.limit)
     models = _cluster_models(args.models, default=list(args.default_models), backend=args.backend)
     strategies = _csv_list(args.generation_strategies, default=list(SCHEDULABLE_GENERATION_STRATEGIES))
     invalid = [strategy for strategy in strategies if strategy not in SCHEDULABLE_GENERATION_STRATEGIES]
@@ -345,7 +356,7 @@ def _build_evaluation_cluster_tasks(args: argparse.Namespace) -> tuple[list[Clus
         processed_dataset,
         _csv_list(args.dataset_types, default=args.default_dataset_types),
     )
-    dataset_sizes = _dataset_sizes(processed_dataset, dataset_types)
+    dataset_sizes = _dataset_sizes(processed_dataset, dataset_types, limit=args.limit)
     generation_model = resolve_model_name(args.generator_model, args.generator_backend)
     models = _cluster_models(args.models, default=list(args.default_models), backend=args.backend)
     settings = _csv_list(args.settings, default=list(FINAL5_SETTINGS))
@@ -1175,6 +1186,12 @@ def build_parser() -> argparse.ArgumentParser:
             "--dataset-types",
             default=None,
             help="Comma-separated subset of dataset splits to schedule, such as arc_challenge,gpqa.",
+        )
+        command.add_argument(
+            "--limit",
+            type=int,
+            default=None,
+            help="Advanced/debug option: optional per-dataset cap on the number of samples to schedule before chunking.",
         )
         command.add_argument(
             "--questions-per-job",
