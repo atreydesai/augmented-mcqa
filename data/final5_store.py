@@ -14,6 +14,26 @@ from utils.scheduler_state import SCHEDULABLE_GENERATION_STRATEGIES
 from utils.sharding import sample_id_for_row, select_shard
 
 
+def _latest_mtime(path: Path, *, suffix: str | None = None) -> float | None:
+    if not path.exists():
+        return None
+    if path.is_file():
+        if suffix is not None and path.suffix != suffix:
+            return None
+        return path.stat().st_mtime
+
+    latest: float | None = None
+    for candidate in path.rglob("*"):
+        if not candidate.is_file():
+            continue
+        if suffix is not None and candidate.suffix != suffix:
+            continue
+        candidate_mtime = candidate.stat().st_mtime
+        if latest is None or candidate_mtime > latest:
+            latest = candidate_mtime
+    return latest
+
+
 def _load_dataset_dict(path: Path | str):
     dataset_path = Path(path)
     dataset_dict_file = dataset_path / "dataset_dict.json"
@@ -255,7 +275,10 @@ def ensure_augmented_dataset(
 ) -> Path:
     out = Path(output_path)
     if out.exists() and not rebuild:
-        return out
+        cache_mtime = _latest_mtime(out)
+        log_mtime = _latest_mtime(Path(generation_log_dir), suffix=".eval")
+        if cache_mtime is not None and (log_mtime is None or log_mtime <= cache_mtime):
+            return out
     return materialize_augmented_dataset(
         processed_dataset_path=processed_dataset_path,
         generation_log_dir=generation_log_dir,

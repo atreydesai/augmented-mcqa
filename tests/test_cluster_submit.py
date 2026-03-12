@@ -66,6 +66,7 @@ def test_submit_generate_cluster_write_only_writes_strategy_slice_manifest(tmp_p
     manifest = _read_manifest(bundle_dir)
     assert manifest["stage"] == "generate"
     assert manifest["task_count"] == len(DEFAULT_LOCAL_GENERATION_MODELS) * 3 * 4
+    assert len(manifest["finalizers"]) == len(DEFAULT_LOCAL_GENERATION_MODELS)
     assert {task["dataset_type"] for task in manifest["tasks"]} == {"arc_challenge", "mmlu_pro", "gpqa"}
     assert {task["strategy"] for task in manifest["tasks"]} == {
         "model_from_scratch",
@@ -86,12 +87,15 @@ def test_submit_generate_cluster_write_only_writes_strategy_slice_manifest(tmp_p
     assert "{{}}" not in submit_text
     local_wrapper_text = next(bundle_dir.glob("submissions/*/run_local_task.sbatch")).read_text(encoding="utf-8")
     api_wrapper_text = next(bundle_dir.glob("submissions/*/run_api_task.sbatch")).read_text(encoding="utf-8")
+    finalizer_wrapper_text = next(bundle_dir.glob("submissions/*/run_finalize_task.sbatch")).read_text(encoding="utf-8")
     assert "${{" not in local_wrapper_text
     assert "${{" not in api_wrapper_text
+    assert "${{" not in finalizer_wrapper_text
     assert (bundle_dir / "scheduler_state.json").exists()
     assert (bundle_dir / "scheduler_status.html").exists()
     assert next(bundle_dir.glob("submissions/*/run_local_task.sbatch")).exists()
     assert next(bundle_dir.glob("submissions/*/run_api_task.sbatch")).exists()
+    assert next(bundle_dir.glob("submissions/*/run_finalize_task.sbatch")).exists()
 
 
 def test_submit_generate_cluster_write_only_can_be_replanned(tmp_path):

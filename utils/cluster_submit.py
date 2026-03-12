@@ -41,6 +41,36 @@ PY
 """
 
 
+FINALIZER_WRAPPER_TEMPLATE = """#!/bin/bash
+set -euo pipefail
+
+MANIFEST_PATH="$1"
+FINALIZER_INDEX="$2"
+PROJECT_ROOT="${3:-$SLURM_SUBMIT_DIR}"
+PYTHON_BIN="${4:-python}"
+
+cd "$PROJECT_ROOT"
+
+"$PYTHON_BIN" - <<'PY' "$MANIFEST_PATH" "$FINALIZER_INDEX" "$PROJECT_ROOT" "$PYTHON_BIN"
+import json
+import subprocess
+import sys
+from pathlib import Path
+
+manifest_path = Path(sys.argv[1])
+finalizer_index = int(sys.argv[2])
+project_root = Path(sys.argv[3])
+python_bin = sys.argv[4]
+
+manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+task = manifest["finalizers"][finalizer_index]
+cmd = [python_bin, "main.py", *task["argv"]]
+print(f"Running: {' '.join(cmd)}")
+sys.exit(subprocess.run(cmd, cwd=str(project_root), check=False).returncode)
+PY
+"""
+
+
 MASTER_SUBMIT_TEMPLATE = """#!/bin/bash
 set -euo pipefail
 
@@ -49,7 +79,7 @@ cd "$SCRIPT_DIR"
 PROJECT_ROOT="${PROJECT_ROOT:-__PROJECT_ROOT__}"
 PYTHON_BIN="${PYTHON_BIN:-python}"
 
-"$PYTHON_BIN" - <<'PY' "__MANIFEST_PATH__" "__LOCAL_WRAPPER__" "__API_WRAPPER__" "$PROJECT_ROOT" "$PYTHON_BIN"
+"$PYTHON_BIN" - <<'PY' "__MANIFEST_PATH__" "__LOCAL_WRAPPER__" "__API_WRAPPER__" "__FINALIZER_WRAPPER__" "$PROJECT_ROOT" "$PYTHON_BIN"
 import json
 import subprocess
 import sys
@@ -59,8 +89,9 @@ from pathlib import Path
 manifest_path = Path(sys.argv[1])
 local_wrapper = Path(sys.argv[2])
 api_wrapper = Path(sys.argv[3])
-project_root = sys.argv[4]
-python_bin = sys.argv[5]
+finalizer_wrapper = Path(sys.argv[4])
+project_root = sys.argv[5]
+python_bin = sys.argv[6]
 
 manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
 job_ids = {}
@@ -155,6 +186,52 @@ for task in manifest["tasks"]:
     record_submission(task["task_index"], job_id)
     if cap:
         slot_previous[(resource_class, slot_index)] = job_id
+
+for finalizer in manifest.get("finalizers", []):
+    dependency_job_ids = []
+    for dependency_ref in finalizer.get("dependency_refs", []):
+        dependency_job_id = job_ids.get(dependency_ref)
+        if dependency_job_id:
+            dependency_job_ids.append(dependency_job_id)
+    cmd = [
+        "sbatch",
+        "--parsable",
+        "--job-name", finalizer["job_name"],
+        "--output", finalizer["task_stdout"],
+        "--error", finalizer["task_stderr"],
+        "--partition", finalizer["resources"]["partition"],
+        "--account", finalizer["resources"]["account"],
+        "--qos", finalizer["resources"]["qos"],
+        "--time", finalizer["resources"]["time_limit"],
+        "--mem", finalizer["resources"]["memory"],
+        "--cpus-per-task", str(finalizer["resources"]["cpus_per_task"]),
+    ]
+    if dependency_job_ids:
+        ordered = []
+        seen = set()
+        for dependency_job_id in dependency_job_ids:
+            if dependency_job_id not in seen:
+                seen.add(dependency_job_id)
+                ordered.append(dependency_job_id)
+        cmd.extend(["--dependency", "afterany:" + ":".join(ordered)])
+    cmd.extend(
+        [
+            str(finalizer_wrapper),
+            str(manifest_path),
+            str(finalizer["finalizer_index"]),
+            project_root,
+            python_bin,
+        ]
+    )
+
+    print("Submitting:", " ".join(cmd))
+    result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+    if result.stdout:
+        print(result.stdout.strip())
+    if result.returncode != 0:
+        if result.stderr:
+            print(result.stderr.strip(), file=sys.stderr)
+        sys.exit(result.returncode)
 PY
 """
 
@@ -230,6 +307,7 @@ class ClusterBundlePaths:
     submit_path: Path
     local_wrapper_path: Path
     api_wrapper_path: Path
+    finalizer_wrapper_path: Path
     log_dir: Path
     state_path: Path
     dashboard_path: Path
@@ -251,6 +329,7 @@ def build_bundle_paths(*, stage: str, run_name: str, output_dir: str | Path | No
         submit_path=submission_dir / "submit_all.sh",
         local_wrapper_path=submission_dir / "run_local_task.sbatch",
         api_wrapper_path=submission_dir / "run_api_task.sbatch",
+        finalizer_wrapper_path=submission_dir / "run_finalize_task.sbatch",
         log_dir=log_dir,
         state_path=run_dir / "scheduler_state.json",
         dashboard_path=run_dir / "scheduler_status.html",
@@ -291,6 +370,44 @@ def render_manifest(
     concurrency_caps: dict[str, int | None],
 ) -> str:
     ordered_tasks = _topological_order(tasks)
+    finalizers: list[dict[str, Any]] = []
+    if stage == "generate":
+        models = sorted({task.model for task in ordered_tasks})
+        for finalizer_index, model in enumerate(models):
+            representative_task = next(task for task in ordered_tasks if task.model == model)
+            model_slug = safe_name(model)
+            dependency_refs = [task.slice_ref for task in ordered_tasks if task.model == model]
+            if not dependency_refs:
+                continue
+            argv = [
+                "materialize-generation-cache",
+                "--run-name",
+                run_name,
+                "--model",
+                model,
+                "--processed-dataset",
+                str(representative_task.argv[representative_task.argv.index("--processed-dataset") + 1]),
+            ]
+            finalizers.append(
+                {
+                    "finalizer_index": finalizer_index,
+                    "kind": "materialize_generation_cache",
+                    "model": model,
+                    "dependency_refs": dependency_refs,
+                    "argv": argv,
+                    "resources": {
+                        "partition": resources["partition"],
+                        "account": resources["account"],
+                        "qos": resources["qos"],
+                        "time_limit": "00:30:00",
+                        "memory": "8G",
+                        "cpus_per_task": 2,
+                    },
+                    "task_stdout": str(paths.log_dir / f"materialize__{model_slug}__%j.out"),
+                    "task_stderr": str(paths.log_dir / f"materialize__{model_slug}__%j.err"),
+                    "job_name": f"final5-generate-materialize__{model_slug}",
+                }
+            )
     payload = {
         "stage": stage,
         "run_name": run_name,
@@ -299,6 +416,7 @@ def render_manifest(
         "task_count": len(ordered_tasks),
         "resources": resources,
         "concurrency_caps": concurrency_caps,
+        "finalizers": finalizers,
         "tasks": [
             task.as_dict(
                 task_index=index,
@@ -316,11 +434,16 @@ def render_wrapper_script() -> str:
     return WRAPPER_TEMPLATE
 
 
+def render_finalizer_wrapper_script() -> str:
+    return FINALIZER_WRAPPER_TEMPLATE
+
+
 def render_submit_script(paths: ClusterBundlePaths) -> str:
     return (
         MASTER_SUBMIT_TEMPLATE.replace("__MANIFEST_PATH__", str(paths.manifest_path))
         .replace("__LOCAL_WRAPPER__", str(paths.local_wrapper_path))
         .replace("__API_WRAPPER__", str(paths.api_wrapper_path))
+        .replace("__FINALIZER_WRAPPER__", str(paths.finalizer_wrapper_path))
         .replace("__PROJECT_ROOT__", str(Path(__file__).resolve().parent.parent))
     )
 
@@ -332,6 +455,7 @@ def write_bundle(
     submit_text: str,
     local_wrapper_text: str,
     api_wrapper_text: str,
+    finalizer_wrapper_text: str,
 ) -> None:
     paths.run_dir.mkdir(parents=True, exist_ok=True)
     paths.submission_dir.mkdir(parents=True, exist_ok=True)
@@ -340,9 +464,11 @@ def write_bundle(
     paths.submit_path.write_text(submit_text, encoding="utf-8")
     paths.local_wrapper_path.write_text(local_wrapper_text, encoding="utf-8")
     paths.api_wrapper_path.write_text(api_wrapper_text, encoding="utf-8")
+    paths.finalizer_wrapper_path.write_text(finalizer_wrapper_text, encoding="utf-8")
     paths.submit_path.chmod(0o755)
     paths.local_wrapper_path.chmod(0o755)
     paths.api_wrapper_path.chmod(0o755)
+    paths.finalizer_wrapper_path.chmod(0o755)
 
 
 def submit_bundle(paths: ClusterBundlePaths) -> subprocess.CompletedProcess[str]:
@@ -358,6 +484,7 @@ __all__ = [
     "ClusterBundlePaths",
     "ClusterTask",
     "build_bundle_paths",
+    "render_finalizer_wrapper_script",
     "render_manifest",
     "render_submit_script",
     "render_wrapper_script",

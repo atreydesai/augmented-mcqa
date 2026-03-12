@@ -1,4 +1,5 @@
 from pathlib import Path
+import os
 
 from inspect_ai import Task, eval as inspect_eval
 from inspect_ai.dataset import MemoryDataset, Sample
@@ -10,6 +11,7 @@ from inspect_ai.solver import solver as inspect_solver
 from datasets import Dataset, DatasetDict
 
 from data.final5_store import _load_dataset_dict, build_evaluation_dataset, build_generation_dataset, materialize_augmented_dataset
+from data.final5_store import ensure_augmented_dataset
 from solvers.final5_generation import _fresh_state
 from utils.parsing import LabeledParseError, parse_distractors
 
@@ -348,6 +350,64 @@ def test_materialized_augmented_cache_only_keeps_rows_present_in_generation_logs
     assert len(dataset["gpqa"]) == 0
     assert dataset["arc_challenge"][0]["sample_id"] == "arc_challenge:arc-1"
     assert dataset["mmlu_pro"][0]["sample_id"] == "mmlu_pro:101"
+
+
+def test_ensure_augmented_dataset_refreshes_existing_cache_when_new_shard_logs_arrive(tmp_path):
+    processed_path = tmp_path / "processed"
+    log_dir = tmp_path / "logs"
+    cache_path = tmp_path / "augmented"
+    _processed_dataset(processed_path)
+
+    shard0 = [
+        Sample(
+            input="Q1",
+            target="",
+            id="arc_challenge:arc-1",
+            metadata={
+                "generation_payload": {
+                    "status": "success",
+                    "human_from_scratch": ["H1", "H2", "H3"],
+                    "human_from_scratch_options_randomized": ["Gold 1", "H1", "H2", "H3"],
+                    "human_from_scratch_correct_answer_letter": "A",
+                }
+            },
+        )
+    ]
+    _write_generation_log(log_dir, shard0)
+    first_log = max(log_dir.glob("*.eval"), key=lambda path: path.stat().st_mtime)
+    os.utime(first_log, (1000, 1000))
+
+    ensure_augmented_dataset(processed_path, log_dir, cache_path)
+    dataset = _load_dataset_dict(cache_path)
+    assert [row["sample_id"] for row in dataset["arc_challenge"]] == ["arc_challenge:arc-1"]
+
+    cache_mtime = max(path.stat().st_mtime for path in cache_path.rglob("*") if path.is_file())
+
+    shard1 = [
+        Sample(
+            input="Q2",
+            target="",
+            id="arc_challenge:arc-2",
+            metadata={
+                "generation_payload": {
+                    "status": "success",
+                    "human_from_scratch": ["A", "B", "C"],
+                    "human_from_scratch_options_randomized": ["Gold 2", "A", "B", "C"],
+                    "human_from_scratch_correct_answer_letter": "A",
+                }
+            },
+        )
+    ]
+    _write_generation_log(log_dir, shard1)
+    second_log = max(log_dir.glob("*.eval"), key=lambda path: path.stat().st_mtime)
+    os.utime(second_log, (cache_mtime + 10, cache_mtime + 10))
+
+    ensure_augmented_dataset(processed_path, log_dir, cache_path)
+    refreshed = _load_dataset_dict(cache_path)
+    assert [row["sample_id"] for row in refreshed["arc_challenge"]] == [
+        "arc_challenge:arc-1",
+        "arc_challenge:arc-2",
+    ]
 
 
 def test_build_evaluation_dataset_limit_applies_per_dataset_split(tmp_path):

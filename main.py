@@ -14,6 +14,7 @@ from tasks import build_evaluation_tasks, build_generation_tasks
 from utils.cluster_submit import (
     ClusterTask,
     build_bundle_paths,
+    render_finalizer_wrapper_script,
     render_manifest,
     render_submit_script,
     render_wrapper_script,
@@ -423,7 +424,6 @@ def _build_evaluation_cluster_tasks(args: argparse.Namespace) -> tuple[list[Clus
                     processed_dataset_path=processed_dataset,
                     generation_log_dir=generation_log_dir,
                     output_path=augmented_cache_dir,
-                    dataset_types=dataset_types,
                     rebuild=True,
                 )
             dataset = build_evaluation_dataset(
@@ -592,6 +592,7 @@ def _run_cluster_submit(
     )
     submit_text = render_submit_script(paths)
     wrapper_text = render_wrapper_script()
+    finalizer_wrapper_text = render_finalizer_wrapper_script()
 
     if dry_run:
         print(f"Cluster stage: {stage}")
@@ -608,10 +609,12 @@ def _run_cluster_submit(
         submit_text=submit_text,
         local_wrapper_text=wrapper_text,
         api_wrapper_text=wrapper_text,
+        finalizer_wrapper_text=finalizer_wrapper_text,
     )
     print(paths.manifest_path)
     print(paths.local_wrapper_path)
     print(paths.api_wrapper_path)
+    print(paths.finalizer_wrapper_path)
     print(paths.submit_path)
 
     state_path, dashboard_path = _write_scheduler_outputs(
@@ -917,6 +920,25 @@ def _run_export(args: argparse.Namespace) -> int:
         _generation_log_dir, dataset_path = _resolve_generation_artifacts(args)
     summary_path = export_benchmarker_items(dataset_path, args.output_root)
     print(summary_path)
+    return 0
+
+
+def _run_materialize_generation_cache(args: argparse.Namespace) -> int:
+    raw_model = resolve_model_name(args.model, args.backend)
+    log_dir = _generation_log_dir(Path(args.generation_log_root), args.run_name, raw_model)
+    output_path = (
+        Path(args.output_path)
+        if args.output_path
+        else _augmented_cache_dir(Path(args.cache_root), args.run_name, raw_model)
+    )
+    ensure_augmented_dataset(
+        processed_dataset_path=Path(args.processed_dataset),
+        generation_log_dir=log_dir,
+        output_path=output_path,
+        dataset_types=_csv_list(args.dataset_types, default=args.default_dataset_types),
+        rebuild=args.rebuild_cache,
+    )
+    print(output_path)
     return 0
 
 
@@ -1801,6 +1823,60 @@ def build_parser() -> argparse.ArgumentParser:
     )
     export.set_defaults(default_dataset_types=["arc_challenge", "mmlu_pro", "gpqa"])
     export.set_defaults(handler=_run_export)
+
+    materialize_generation_cache = sub.add_parser(
+        "materialize-generation-cache",
+        help="Rebuild or refresh an augmented cache from generation logs.",
+        description="Materialize the merged augmented DatasetDict for one generation run/model directly from Inspect generation logs.",
+        formatter_class=formatter,
+    )
+    materialize_generation_cache.add_argument(
+        "--run-name",
+        required=True,
+        help="Generation run name whose Inspect logs should be merged.",
+    )
+    materialize_generation_cache.add_argument(
+        "--model",
+        required=True,
+        help="Generation model whose Inspect logs should be merged.",
+    )
+    materialize_generation_cache.add_argument(
+        "--backend",
+        default=None,
+        help="Situational: provider prefix to apply to an unqualified model name.",
+    )
+    materialize_generation_cache.add_argument(
+        "--generation-log-root",
+        default=str(DEFAULT_GENERATION_LOG_ROOT),
+        help="Advanced override: root directory containing generation Inspect logs.",
+    )
+    materialize_generation_cache.add_argument(
+        "--processed-dataset",
+        default=str(DEFAULT_PROCESSED_DATASET),
+        help="Processed unified DatasetDict used to rebuild the augmented cache from logs.",
+    )
+    materialize_generation_cache.add_argument(
+        "--cache-root",
+        default=str(DEFAULT_AUGMENTED_CACHE_ROOT),
+        help="Advanced override: root directory where augmented caches are stored.",
+    )
+    materialize_generation_cache.add_argument(
+        "--output-path",
+        default=None,
+        help="Advanced override: exact output path for the rebuilt augmented cache.",
+    )
+    materialize_generation_cache.add_argument(
+        "--dataset-types",
+        default=None,
+        help="Optional subset: comma-separated subset of dataset splits to materialize.",
+    )
+    materialize_generation_cache.add_argument(
+        "--rebuild-cache",
+        action="store_true",
+        help="Advanced override: force regeneration even if the cache appears up to date.",
+    )
+    materialize_generation_cache.set_defaults(default_dataset_types=["arc_challenge", "mmlu_pro", "gpqa"])
+    materialize_generation_cache.set_defaults(handler=_run_materialize_generation_cache)
 
     submit_generate_cluster = sub.add_parser(
         "submit-generate-cluster",
