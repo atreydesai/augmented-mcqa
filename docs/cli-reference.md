@@ -102,12 +102,16 @@ Recommended scheduler generator command:
 
 ```bash
 uv run python main.py submit-generate-cluster \
-  --run-name gen_scheduler_all \
-  --models Qwen/Qwen3-4B-Instruct-2507,allenai/Olmo-3-7B-Instruct,gpt-5.2-2025-12-11 \
+  --run-name gen_scheduler_preview \
   --processed-dataset datasets/processed/unified_processed_v3 \
-  --generation-strategies model_from_scratch,augment_human,augment_model,augment_ablation \
-  --questions-per-job 200 \
-  --gpu-count 4 \
+  --dataset-types arc_challenge,mmlu_pro,gpqa \
+  --models Qwen/Qwen3.5-397B-A17B \
+  --generation-strategies model_from_scratch \
+  --limit 7 \
+  --questions-per-job 2 \
+  --max-tokens 10000 \
+  --cpus-per-task 2 \
+  --write-only \
   --render-status
 ```
 
@@ -179,6 +183,8 @@ Supported schedulable generation strategies:
 `augment_model` depends on the matching `model_from_scratch` slice for the same model, dataset, and question chunk. `human_from_scratch` remains implicit and is not scheduled as its own slice.
 
 `--write-only` bundles remain `planned` in `scheduler_state.json` until `submit_all.sh` is actually run.
+
+If a generation chunk contains a mix of successful and failed rows, downstream `augment_model` work skips the bad rows and continues on the rows that materialized correctly.
 
 | Flag | Meaning |
 |---|---|
