@@ -187,6 +187,64 @@ def test_build_generation_dataset_limit_applies_per_dataset_split(tmp_path):
     ]
 
 
+def test_build_generation_dataset_augment_model_skips_rows_missing_prerequisites(tmp_path):
+    processed_path = tmp_path / "processed"
+    log_dir = tmp_path / "logs"
+    _processed_dataset(processed_path)
+
+    samples = [
+        Sample(
+            input="Q1",
+            target="",
+            id="arc_challenge:arc-1",
+            metadata={
+                "generation_payload": {
+                    "status": "success",
+                    "sample_id": "arc_challenge:arc-1",
+                    "dataset_type": "arc_challenge",
+                    "row_index": 0,
+                    "question": "Q1",
+                    "answer": "Gold 1",
+                    "human_from_scratch": ["H1", "H2", "H3"],
+                    "human_from_scratch_options_randomized": ["Gold 1", "H1", "H2", "H3"],
+                    "human_from_scratch_correct_answer_letter": "A",
+                    "model_from_scratch": ["B1", "C1", "D1"],
+                    "model_from_scratch_options_randomized": ["Gold 1", "B1", "C1", "D1"],
+                    "model_from_scratch_correct_answer_letter": "A",
+                }
+            },
+        ),
+        Sample(
+            input="Q2",
+            target="",
+            id="arc_challenge:arc-2",
+            metadata={
+                "generation_payload": {
+                    "status": "error",
+                    "sample_id": "arc_challenge:arc-2",
+                    "dataset_type": "arc_challenge",
+                    "row_index": 1,
+                    "question": "Q2",
+                    "answer": "Gold 2",
+                    "error": "missing labeled output",
+                }
+            },
+        ),
+    ]
+    _write_generation_log(log_dir, samples)
+
+    dataset = build_generation_dataset(
+        processed_path,
+        strategy="augment_model",
+        dataset_types=["arc_challenge"],
+        generation_log_dir=log_dir,
+    )
+
+    assert len(dataset) == 1
+    assert dataset[0].id == "arc_challenge:arc-1"
+    assert dataset[0].metadata["existing_model_from_scratch"] == ["B1", "C1", "D1"]
+
+
 def test_materialized_augmented_cache_only_keeps_rows_present_in_generation_logs(tmp_path):
     processed_path = tmp_path / "processed"
     log_dir = tmp_path / "logs"
