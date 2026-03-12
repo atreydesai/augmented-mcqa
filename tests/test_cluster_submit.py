@@ -316,10 +316,8 @@ def test_submit_generate_cluster_questions_per_job_chunks_and_wires_dependencies
         assert tasks[augment_ref]["submit_dependency_refs"] == [model_ref]
         for task_ref in (model_ref, augment_ref):
             argv = tasks[task_ref]["argv"]
-            assert "--augmented-dataset" in argv
-            cache_target = argv[argv.index("--augmented-dataset") + 1]
-            assert f"/_cluster_slices/arc_challenge/" in cache_target
-            assert f"/{start}-{end}" in cache_target
+            assert "--augmented-dataset" not in argv
+            assert "--skip-materialize-cache" in argv
 
 
 def test_submit_generate_cluster_submit_script_uses_afterany_for_concurrency_caps(tmp_path):

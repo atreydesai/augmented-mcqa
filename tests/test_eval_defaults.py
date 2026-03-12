@@ -82,6 +82,7 @@ def test_supported_main_subcommands_match_the_inspect_first_cli():
         "export",
         "submit-generate-cluster",
         "submit-evaluate-cluster",
+        "materialize-generation-cache",
         "diagnose-failures",
         "diagnose-trace",
         "smoke-generate",

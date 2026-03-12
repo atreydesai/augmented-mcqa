@@ -76,27 +76,6 @@ def _evaluation_log_dir(root: Path, run_name: str, generator_run: str, generator
     return root / safe_name(run_name) / safe_name(generator_run) / safe_name(generator_model) / safe_name(eval_model)
 
 
-def _cluster_augmented_dataset_dir(
-    root: Path,
-    run_name: str,
-    model: str,
-    dataset_type: str,
-    *,
-    strategy: str,
-    question_start: int,
-    question_end: int,
-) -> Path:
-    return (
-        root
-        / safe_name(run_name)
-        / safe_name(model)
-        / "_cluster_slices"
-        / safe_name(dataset_type)
-        / safe_name(strategy)
-        / f"{question_start}-{question_end}"
-    )
-
-
 def _cluster_dataset_types(processed_dataset_path: Path, dataset_types: list[str]) -> list[str]:
     dataset_dict = _load_dataset_dict(processed_dataset_path)
     sizes = {dataset_type: len(dataset_dict[dataset_type]) if dataset_type in dataset_dict else 0 for dataset_type in dataset_types}
@@ -298,18 +277,7 @@ def _build_generation_cluster_tasks(args: argparse.Namespace) -> tuple[list[Clus
                         str(question_start),
                         "--limit",
                         str(question_limit),
-                        "--augmented-dataset",
-                        str(
-                            _cluster_augmented_dataset_dir(
-                                Path(DEFAULT_AUGMENTED_CACHE_ROOT),
-                                args.run_name,
-                                model,
-                                dataset_type,
-                                strategy=strategy,
-                                question_start=question_start,
-                                question_end=question_end,
-                            )
-                        ),
+                        "--skip-materialize-cache",
                     ]
                     argv.extend(_runtime_argv(args))
                     tasks_by_ref[slice_ref] = ClusterTask(
@@ -743,7 +711,7 @@ def _run_generate(args: argparse.Namespace) -> int:
         print("No generation samples selected.")
         return 0
     print(f"Generation logs: {log_dir}")
-    if args.materialize_cache or args.shard_count == 1:
+    if not args.skip_materialize_cache and (args.materialize_cache or args.shard_count == 1):
         cache_dir = (
             Path(args.augmented_dataset)
             if args.augmented_dataset
@@ -1459,6 +1427,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--rebuild-cache",
         action="store_true",
         help="Advanced override: force regeneration of the augmented cache even if it already exists.",
+    )
+    generate.add_argument(
+        "--skip-materialize-cache",
+        action="store_true",
+        help=argparse.SUPPRESS,
     )
     generate.set_defaults(default_dataset_types=["arc_challenge", "mmlu_pro", "gpqa"])
     add_runtime_flags(generate)
