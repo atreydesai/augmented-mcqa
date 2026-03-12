@@ -3,8 +3,8 @@ set -euo pipefail
 
 MANIFEST_PATH="$1"
 TASK_INDEX="$2"
-PROJECT_ROOT="${{3:-$SLURM_SUBMIT_DIR}}"
-PYTHON_BIN="${{4:-python}}"
+PROJECT_ROOT="${3:-$SLURM_SUBMIT_DIR}"
+PYTHON_BIN="${4:-python}"
 
 cd "$PROJECT_ROOT"
 

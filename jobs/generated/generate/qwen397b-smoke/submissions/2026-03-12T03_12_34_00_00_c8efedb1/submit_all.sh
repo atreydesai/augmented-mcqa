@@ -1,12 +1,12 @@
 #!/bin/bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${{BASH_SOURCE[0]}}")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
-PROJECT_ROOT="${{PROJECT_ROOT:-/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa}}"
-PYTHON_BIN="${{PYTHON_BIN:-python}}"
+PROJECT_ROOT="${PROJECT_ROOT:-/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa}"
+PYTHON_BIN="${PYTHON_BIN:-python}"
 
-"$PYTHON_BIN" - <<'PY' "jobs/generated/generate/qwen397b-smoke/submissions/2026-03-12T03_06_34_00_00_b8b2beee/manifest.json" "jobs/generated/generate/qwen397b-smoke/submissions/2026-03-12T03_06_34_00_00_b8b2beee/run_local_task.sbatch" "jobs/generated/generate/qwen397b-smoke/submissions/2026-03-12T03_06_34_00_00_b8b2beee/run_api_task.sbatch" "$PROJECT_ROOT" "$PYTHON_BIN"
+"$PYTHON_BIN" - <<'PY' "jobs/generated/generate/qwen397b-smoke/submissions/2026-03-12T03_12_34_00_00_c8efedb1/manifest.json" "jobs/generated/generate/qwen397b-smoke/submissions/2026-03-12T03_12_34_00_00_c8efedb1/run_local_task.sbatch" "jobs/generated/generate/qwen397b-smoke/submissions/2026-03-12T03_12_34_00_00_c8efedb1/run_api_task.sbatch" "$PROJECT_ROOT" "$PYTHON_BIN"
 import json
 import subprocess
 import sys
@@ -20,10 +20,10 @@ project_root = sys.argv[4]
 python_bin = sys.argv[5]
 
 manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-job_ids = {{}}
-slot_previous = {{}}
-slot_counters = {{}}
-concurrency_caps = dict(manifest.get("concurrency_caps", {{}}))
+job_ids = {}
+slot_previous = {}
+slot_counters = {}
+concurrency_caps = dict(manifest.get("concurrency_caps", {}))
 
 def record_submission(task_index, job_id):
     task_record = manifest["tasks"][task_index]
