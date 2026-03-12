@@ -10,6 +10,7 @@ from inspect_ai.solver import Generate, TaskState, solver
 
 from utils.constants import CHOICE_LABELS, GENERATION_RETRY_LIMIT, PROMPTS_DIR
 from utils.parsing import LabeledParseError, format_choice_lines, parse_labeled_distractors
+from utils.scheduler_state import SCHEDULABLE_GENERATION_STRATEGIES
 
 
 def _load_prompt(name: str) -> str:
@@ -101,8 +102,11 @@ async def _call_and_parse(
 
 
 @solver
-def final5_generation_solver():
+def final5_generation_solver(strategy: str):
     async def solve(state: TaskState, generate: Generate) -> TaskState:
+        if strategy not in SCHEDULABLE_GENERATION_STRATEGIES:
+            raise ValueError(f"Unknown schedulable generation strategy: {strategy}")
+
         metadata = dict(state.metadata or {})
         sample_id = str(metadata["sample_id"])
         question = str(metadata.get("question", "") or state.input_text)
@@ -118,6 +122,7 @@ def final5_generation_solver():
             "question": question,
             "answer": answer,
             "category": metadata.get("category", ""),
+            "generation_strategy": strategy,
         }
 
         try:
@@ -133,92 +138,106 @@ def final5_generation_solver():
                 "output": "",
             }
 
-            prompt_b = GENERATE_QA_PROMPT.format(
-                count=3,
-                labels="B, C, D",
-                question=question,
-                gold_answer=answer,
-                json_example=_format_json_example(["B", "C", "D"]),
-                forbidden_values=_format_forbidden_values([answer]),
-            )
-            model3, raw_b, attempts_b = await _call_and_parse(
-                state=state,
-                generate=generate,
-                prompt=prompt_b,
-                labels=["B", "C", "D"],
-                forbidden=[answer],
-            )
-            result["model_from_scratch"] = model3
-            randomized, correct = _shuffle_options(sample_id, "model_from_scratch", answer, model3)
-            result["model_from_scratch_options_randomized"] = randomized
-            result["model_from_scratch_correct_answer_letter"] = correct
-            traces["model_from_scratch"] = {"prompt": prompt_b, "output": raw_b, "attempts": attempts_b}
+            if strategy == "model_from_scratch":
+                prompt_b = GENERATE_QA_PROMPT.format(
+                    count=3,
+                    labels="B, C, D",
+                    question=question,
+                    gold_answer=answer,
+                    json_example=_format_json_example(["B", "C", "D"]),
+                    forbidden_values=_format_forbidden_values([answer]),
+                )
+                model3, raw_b, attempts_b = await _call_and_parse(
+                    state=state,
+                    generate=generate,
+                    prompt=prompt_b,
+                    labels=["B", "C", "D"],
+                    forbidden=[answer],
+                )
+                result["model_from_scratch"] = model3
+                randomized, correct = _shuffle_options(sample_id, "model_from_scratch", answer, model3)
+                result["model_from_scratch_options_randomized"] = randomized
+                result["model_from_scratch_correct_answer_letter"] = correct
+                traces["model_from_scratch"] = {"prompt": prompt_b, "output": raw_b, "attempts": attempts_b}
+            elif strategy == "augment_human":
+                prompt_c = GENERATE_CONDITIONED_PROMPT.format(
+                    count=6,
+                    labels="E, F, G, H, I, J",
+                    question=question,
+                    gold_answer=answer,
+                    existing_options_block=format_choice_lines([answer, *human3]),
+                    json_example=_format_json_example(["E", "F", "G", "H", "I", "J"]),
+                    forbidden_values=_format_forbidden_values([answer, *human3]),
+                )
+                delta_human, raw_c, attempts_c = await _call_and_parse(
+                    state=state,
+                    generate=generate,
+                    prompt=prompt_c,
+                    labels=["E", "F", "G", "H", "I", "J"],
+                    forbidden=[answer, *human3],
+                )
+                result["augment_human"] = delta_human
+                randomized, correct = _shuffle_options(sample_id, "augment_human", answer, human3 + delta_human)
+                result["augment_human_options_randomized"] = randomized
+                result["augment_human_correct_answer_letter"] = correct
+                traces["augment_human"] = {"prompt": prompt_c, "output": raw_c, "attempts": attempts_c}
+            elif strategy == "augment_model":
+                model3 = [str(item).strip() for item in list(metadata.get("existing_model_from_scratch") or []) if str(item).strip()]
+                if len(model3) < 3:
+                    raise ValueError("augment_model requires existing model_from_scratch distractors")
+                model3 = model3[:3]
+                result["model_from_scratch"] = model3
+                randomized, correct = _shuffle_options(sample_id, "model_from_scratch", answer, model3)
+                result["model_from_scratch_options_randomized"] = randomized
+                result["model_from_scratch_correct_answer_letter"] = correct
+                traces["model_from_scratch"] = {
+                    "prompt": "prerequisite: existing_model_from_scratch from prior generation logs",
+                    "output": "\n".join(model3),
+                }
 
-            prompt_c = GENERATE_CONDITIONED_PROMPT.format(
-                count=6,
-                labels="E, F, G, H, I, J",
-                question=question,
-                gold_answer=answer,
-                existing_options_block=format_choice_lines([answer, *human3]),
-                json_example=_format_json_example(["E", "F", "G", "H", "I", "J"]),
-                forbidden_values=_format_forbidden_values([answer, *human3]),
-            )
-            delta_human, raw_c, attempts_c = await _call_and_parse(
-                state=state,
-                generate=generate,
-                prompt=prompt_c,
-                labels=["E", "F", "G", "H", "I", "J"],
-                forbidden=[answer, *human3],
-            )
-            result["augment_human"] = delta_human
-            randomized, correct = _shuffle_options(sample_id, "augment_human", answer, human3 + delta_human)
-            result["augment_human_options_randomized"] = randomized
-            result["augment_human_correct_answer_letter"] = correct
-            traces["augment_human"] = {"prompt": prompt_c, "output": raw_c, "attempts": attempts_c}
-
-            prompt_d = GENERATE_CONDITIONED_PROMPT.format(
-                count=6,
-                labels="E, F, G, H, I, J",
-                question=question,
-                gold_answer=answer,
-                existing_options_block=format_choice_lines([answer, *model3]),
-                json_example=_format_json_example(["E", "F", "G", "H", "I", "J"]),
-                forbidden_values=_format_forbidden_values([answer, *model3]),
-            )
-            delta_model, raw_d, attempts_d = await _call_and_parse(
-                state=state,
-                generate=generate,
-                prompt=prompt_d,
-                labels=["E", "F", "G", "H", "I", "J"],
-                forbidden=[answer, *model3],
-            )
-            combined_model = model3 + delta_model
-            result["augment_model"] = combined_model
-            randomized, correct = _shuffle_options(sample_id, "augment_model", answer, combined_model)
-            result["augment_model_options_randomized"] = randomized
-            result["augment_model_correct_answer_letter"] = correct
-            traces["augment_model"] = {"prompt": prompt_d, "output": raw_d, "attempts": attempts_d}
-
-            prompt_e = GENERATE_QA_PROMPT.format(
-                count=9,
-                labels="B, C, D, E, F, G, H, I, J",
-                question=question,
-                gold_answer=answer,
-                json_example=_format_json_example(["B", "C", "D", "E", "F", "G", "H", "I", "J"]),
-                forbidden_values=_format_forbidden_values([answer]),
-            )
-            ablation, raw_e, attempts_e = await _call_and_parse(
-                state=state,
-                generate=generate,
-                prompt=prompt_e,
-                labels=["B", "C", "D", "E", "F", "G", "H", "I", "J"],
-                forbidden=[answer],
-            )
-            result["augment_ablation"] = ablation
-            randomized, correct = _shuffle_options(sample_id, "augment_ablation", answer, ablation)
-            result["augment_ablation_options_randomized"] = randomized
-            result["augment_ablation_correct_answer_letter"] = correct
-            traces["augment_ablation"] = {"prompt": prompt_e, "output": raw_e, "attempts": attempts_e}
+                prompt_d = GENERATE_CONDITIONED_PROMPT.format(
+                    count=6,
+                    labels="E, F, G, H, I, J",
+                    question=question,
+                    gold_answer=answer,
+                    existing_options_block=format_choice_lines([answer, *model3]),
+                    json_example=_format_json_example(["E", "F", "G", "H", "I", "J"]),
+                    forbidden_values=_format_forbidden_values([answer, *model3]),
+                )
+                delta_model, raw_d, attempts_d = await _call_and_parse(
+                    state=state,
+                    generate=generate,
+                    prompt=prompt_d,
+                    labels=["E", "F", "G", "H", "I", "J"],
+                    forbidden=[answer, *model3],
+                )
+                combined_model = model3 + delta_model
+                result["augment_model"] = combined_model
+                randomized, correct = _shuffle_options(sample_id, "augment_model", answer, combined_model)
+                result["augment_model_options_randomized"] = randomized
+                result["augment_model_correct_answer_letter"] = correct
+                traces["augment_model"] = {"prompt": prompt_d, "output": raw_d, "attempts": attempts_d}
+            else:
+                prompt_e = GENERATE_QA_PROMPT.format(
+                    count=9,
+                    labels="B, C, D, E, F, G, H, I, J",
+                    question=question,
+                    gold_answer=answer,
+                    json_example=_format_json_example(["B", "C", "D", "E", "F", "G", "H", "I", "J"]),
+                    forbidden_values=_format_forbidden_values([answer]),
+                )
+                ablation, raw_e, attempts_e = await _call_and_parse(
+                    state=state,
+                    generate=generate,
+                    prompt=prompt_e,
+                    labels=["B", "C", "D", "E", "F", "G", "H", "I", "J"],
+                    forbidden=[answer],
+                )
+                result["augment_ablation"] = ablation
+                randomized, correct = _shuffle_options(sample_id, "augment_ablation", answer, ablation)
+                result["augment_ablation_options_randomized"] = randomized
+                result["augment_ablation_correct_answer_letter"] = correct
+                traces["augment_ablation"] = {"prompt": prompt_e, "output": raw_e, "attempts": attempts_e}
 
             result["traces"] = traces
             state.output.completion = "generation-complete"

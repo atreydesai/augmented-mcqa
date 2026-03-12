@@ -10,7 +10,7 @@ prepare-data -> generate -> augmented cache -> evaluate -> analyze/export
 
 - Inspect `.eval` logs are the source of truth.
 - The augmented Hugging Face dataset cache is derived from generation logs.
-- Cluster runs are just generated SLURM arrays that call back into `python main.py ...`.
+- Cluster runs are dependency-aware SLURM bundles that call back into `python main.py ...` for each schedulable slice.
 
 ## Main Modules
 
@@ -47,13 +47,22 @@ The per-dataset processors are:
 
 ### Generation
 
-[`tasks/generation.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/tasks/generation.py) builds one Inspect task over the processed dataset. The solver in [`solvers/final5_generation.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/solvers/final5_generation.py) creates the five Final5 settings:
+[`tasks/generation.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/tasks/generation.py) now builds one Inspect task per requested generation strategy over the selected processed-dataset slice. The solver in [`solvers/final5_generation.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/solvers/final5_generation.py) fills the Final5 settings:
 
 - `human_from_scratch`
 - `model_from_scratch`
 - `augment_human`
 - `augment_model`
 - `augment_ablation`
+
+`human_from_scratch` is implicit. The schedulable strategies are:
+
+- `model_from_scratch`
+- `augment_human`
+- `augment_model`
+- `augment_ablation`
+
+`augment_model` uses `model_from_scratch` from prior logs as its prerequisite.
 
 Generation prompts use XML-style sections and ask for JSON keyed by distractor label. The parser in [`utils/parsing.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/utils/parsing.py) validates that JSON first, and still accepts the older labeled-line format as a backward-compatible fallback during retries.
 
@@ -96,12 +105,25 @@ The supported cluster interface is:
 
 Those commands:
 
-- only support local `vllm/...` models
-- create one SLURM array task per `model × dataset`
-- optionally cap array concurrency with `--gpu-count`
-- keep settings and modes grouped inside a task to avoid repeated cold starts within that job
+- support both local `vllm/...` models and hosted/API models
+- create one schedulable slice per:
+  - generation: `model × dataset × strategy × question_chunk`
+  - evaluation: `model × dataset × setting × mode × question_chunk`
+- write one manifest per submission plus a master `submit_all.sh`
+- submit one `sbatch` job per slice instead of one array element per slice family
+- attach exact `afterok` prerequisites between matching slices, for example `augment_model` after `model_from_scratch`
+- use `afterany` slot throttles when `--gpu-count` is acting as a concurrency cap
+- keep a merged run state in `scheduler_state.json` and optionally render `scheduler_status.html`
+
+Local slices request one GPU. API slices request no GPU.
 
 The SLURM rendering logic lives in [`utils/cluster_submit.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/utils/cluster_submit.py).
+The run-state and dashboard logic lives in [`utils/scheduler_state.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/utils/scheduler_state.py).
+
+Two PI-facing bash helpers wrap the CLI:
+
+- [`jobs/submit_generate_scheduler.sh`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/jobs/submit_generate_scheduler.sh)
+- [`jobs/submit_evaluate_scheduler.sh`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/jobs/submit_evaluate_scheduler.sh)
 
 ## Artifact Layout
 
@@ -110,9 +132,11 @@ The SLURM rendering logic lives in [`utils/cluster_submit.py`](/Users/ndesai-air
 - evaluation logs: `results/inspect/evaluation/<run>/<generator_run>/<generator_model>/<eval_model>/`
 - augmented cache: `datasets/augmented/<run>/<model>/`
 - cluster bundles: `jobs/generated/<stage>/<run>/`
+- submission manifests: `jobs/generated/<stage>/<run>/submissions/<submission_id>/manifest.json`
+- master submit scripts: `jobs/generated/<stage>/<run>/submissions/<submission_id>/submit_all.sh`
+- scheduler state: `jobs/generated/<stage>/<run>/scheduler_state.json`
+- scheduler dashboard: `jobs/generated/<stage>/<run>/scheduler_status.html`
 - cluster logs: `logs/slurm/<stage>/<run>/`
-
-Cluster generation uses dataset-scoped caches under `datasets/augmented/<run>/<model>/<dataset>/` so concurrent jobs do not overwrite each other.
 
 ## Tests
 

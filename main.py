@@ -15,8 +15,8 @@ from utils.cluster_submit import (
     ClusterTask,
     build_bundle_paths,
     render_manifest,
-    render_sbatch,
     render_submit_script,
+    render_wrapper_script,
     submit_bundle,
     write_bundle,
 )
@@ -34,6 +34,20 @@ from utils.constants import (
 )
 from utils.logs import iter_eval_logs
 from utils.modeling import resolve_model_name, safe_name
+from utils.scheduler_state import (
+    EVALUATION_SETTING_DEPENDENCIES,
+    GENERATION_STRATEGY_DEPENDENCIES,
+    SCHEDULABLE_GENERATION_STRATEGIES,
+    build_scheduler_state,
+    chunk_ranges,
+    collect_slice_attempts,
+    evaluation_slice_ref,
+    generation_slice_ref,
+    load_scheduler_manifests,
+    render_scheduler_dashboard,
+    resource_class_for_model,
+    task_slug,
+)
 
 REQUIRED_GENERATION_COLUMNS = [
     ("model_from_scratch", 3),
@@ -61,8 +75,25 @@ def _evaluation_log_dir(root: Path, run_name: str, generator_run: str, generator
     return root / safe_name(run_name) / safe_name(generator_run) / safe_name(generator_model) / safe_name(eval_model)
 
 
-def _cluster_augmented_dataset_dir(root: Path, run_name: str, model: str, dataset_type: str) -> Path:
-    return root / safe_name(run_name) / safe_name(model) / safe_name(dataset_type)
+def _cluster_augmented_dataset_dir(
+    root: Path,
+    run_name: str,
+    model: str,
+    dataset_type: str,
+    *,
+    strategy: str,
+    question_start: int,
+    question_end: int,
+) -> Path:
+    return (
+        root
+        / safe_name(run_name)
+        / safe_name(model)
+        / "_cluster_slices"
+        / safe_name(dataset_type)
+        / safe_name(strategy)
+        / f"{question_start}-{question_end}"
+    )
 
 
 def _cluster_dataset_types(processed_dataset_path: Path, dataset_types: list[str]) -> list[str]:
@@ -72,17 +103,15 @@ def _cluster_dataset_types(processed_dataset_path: Path, dataset_types: list[str
     return sorted(dataset_types, key=lambda dataset_type: (-sizes.get(dataset_type, 0), indexed[dataset_type]))
 
 
-def _cluster_models(raw: str | None, *, default: list[str]) -> list[str]:
-    models = [resolve_model_name(model) for model in _csv_list(raw, default=default)]
+def _dataset_sizes(processed_dataset_path: Path, dataset_types: list[str]) -> dict[str, int]:
+    dataset_dict = _load_dataset_dict(processed_dataset_path)
+    return {dataset_type: len(dataset_dict[dataset_type]) if dataset_type in dataset_dict else 0 for dataset_type in dataset_types}
+
+
+def _cluster_models(raw: str | None, *, default: list[str], backend: str | None = None) -> list[str]:
+    models = [resolve_model_name(model, backend) for model in _csv_list(raw, default=default)]
     if not models:
-        raise ValueError("No local models selected.")
-    invalid = [model for model in models if not str(model).startswith("vllm/")]
-    if invalid:
-        raise ValueError(
-            "Cluster submit commands only support local vllm/... models. "
-            "Use main.py generate/evaluate directly for hosted/API models: "
-            + ", ".join(invalid)
-        )
+        raise ValueError("No models selected.")
     return models
 
 
@@ -95,27 +124,147 @@ def _cluster_resources(args: argparse.Namespace) -> dict[str, object]:
         "memory": args.mem,
         "cpus_per_task": args.cpus_per_task,
         "gpu_type": args.gpu_type,
-        "gpu_count": args.gpu_count,
     }
 
 
-def _build_generation_cluster_tasks(args: argparse.Namespace) -> list[ClusterTask]:
+def _runtime_argv(args: argparse.Namespace) -> list[str]:
+    argv: list[str] = []
+    if getattr(args, "model_base_url", None):
+        argv.extend(["--model-base-url", args.model_base_url])
+    if getattr(args, "max_connections", None) is not None:
+        argv.extend(["--max-connections", str(args.max_connections)])
+    if getattr(args, "max_tokens", None) is not None:
+        argv.extend(["--max-tokens", str(args.max_tokens)])
+    if getattr(args, "temperature", None) is not None:
+        argv.extend(["--temperature", str(args.temperature)])
+    if getattr(args, "reasoning_effort", None):
+        argv.extend(["--reasoning-effort", str(args.reasoning_effort)])
+    if getattr(args, "retry_on_error", None) is not None:
+        argv.extend(["--retry-on-error", str(args.retry_on_error)])
+    stop_seqs = getattr(args, "stop_seqs", None) or []
+    if stop_seqs:
+        argv.append("--stop-seqs")
+        argv.extend(list(stop_seqs))
+    return argv
+
+
+def _strategy_phases(strategies: list[str]) -> list[list[str]]:
+    ordered = [strategy for strategy in ("model_from_scratch", "augment_human", "augment_ablation") if strategy in strategies]
+    phases = [ordered] if ordered else []
+    if "augment_model" in strategies:
+        phases.append(["augment_model"])
+    return phases
+
+
+def _current_stage_state(*, stage: str, run_name: str, output_dir: str | None = None) -> dict[str, object]:
+    paths = build_bundle_paths(stage=stage, run_name=run_name, output_dir=output_dir)
+    manifests = load_scheduler_manifests(paths.run_dir)
+    log_root = Path(DEFAULT_GENERATION_LOG_ROOT if stage == "generate" else DEFAULT_EVALUATION_LOG_ROOT) / safe_name(run_name)
+    kind = "generation" if stage == "generate" else "evaluation"
+    attempts = collect_slice_attempts(log_root, kind=kind) if log_root.exists() else {}
+    return build_scheduler_state(manifests=manifests, attempts_by_slice=attempts)
+
+
+def _write_scheduler_outputs(*, stage: str, run_name: str, output_dir: str | None, render_status: bool) -> tuple[Path, Path]:
+    paths = build_bundle_paths(stage=stage, run_name=run_name, output_dir=output_dir)
+    state = _current_stage_state(stage=stage, run_name=run_name, output_dir=output_dir)
+    paths.state_path.parent.mkdir(parents=True, exist_ok=True)
+    paths.state_path.write_text(json.dumps(state, indent=2), encoding="utf-8")
+    if render_status:
+        paths.dashboard_path.write_text(render_scheduler_dashboard(state), encoding="utf-8")
+    return paths.state_path, paths.dashboard_path
+
+
+def _slice_status_lookup(state: dict[str, object]) -> dict[str, dict[str, object]]:
+    return {str(entry["slice_ref"]): entry for entry in list(state.get("slices", []))}
+
+
+def _evaluation_generation_dependencies(
+    *,
+    setting: str,
+    generator_run_name: str,
+    generator_model: str,
+    dataset_type: str,
+    question_start: int,
+    question_end: int,
+    generation_state: dict[str, dict[str, object]],
+) -> list[str]:
+    if setting == "human_from_scratch":
+        for strategy in SCHEDULABLE_GENERATION_STRATEGIES:
+            candidate_ref = generation_slice_ref(
+                run_name=generator_run_name,
+                model=generator_model,
+                dataset_type=dataset_type,
+                strategy=strategy,
+                question_start=question_start,
+                question_end=question_end,
+            )
+            if str((generation_state.get(candidate_ref) or {}).get("status", "")) == "current":
+                return [candidate_ref]
+        raise ValueError(
+            "Missing current generation prerequisite for "
+            f"human_from_scratch on {dataset_type} {question_start}:{question_end}. "
+            "At least one successful generation slice for the same model, dataset, and chunk is required."
+        )
+
+    return [
+        generation_slice_ref(
+            run_name=generator_run_name,
+            model=generator_model,
+            dataset_type=dataset_type,
+            strategy=dependency,
+            question_start=question_start,
+            question_end=question_end,
+        )
+        for dependency in EVALUATION_SETTING_DEPENDENCIES.get(setting, ())
+    ]
+
+
+def _build_generation_cluster_tasks(args: argparse.Namespace) -> tuple[list[ClusterTask], dict[str, int | None]]:
     processed_dataset = Path(args.processed_dataset)
     dataset_types = _cluster_dataset_types(
         processed_dataset,
         _csv_list(args.dataset_types, default=args.default_dataset_types),
     )
-    tasks: list[ClusterTask] = []
+    dataset_sizes = _dataset_sizes(processed_dataset, dataset_types)
+    models = _cluster_models(args.models, default=list(args.default_models), backend=args.backend)
+    strategies = _csv_list(args.generation_strategies, default=list(SCHEDULABLE_GENERATION_STRATEGIES))
+    invalid = [strategy for strategy in strategies if strategy not in SCHEDULABLE_GENERATION_STRATEGIES]
+    if invalid:
+        raise ValueError("Unsupported generation strategies: " + ", ".join(invalid))
+
+    existing = _slice_status_lookup(_current_stage_state(stage="generate", run_name=args.run_name, output_dir=args.output_dir))
+    tasks_by_ref: dict[str, ClusterTask] = {}
     for dataset_type in dataset_types:
-        for model in _cluster_models(args.models, default=list(args.default_models)):
-            tasks.append(
-                ClusterTask(
-                    stage="generate",
-                    model=model,
-                    model_slug=safe_name(model),
-                    dataset_type=dataset_type,
-                    dataset_slug=safe_name(dataset_type),
-                    argv=[
+        for model in models:
+            resource_class = resource_class_for_model(model)
+            for chunk_index, question_start, question_end in chunk_ranges(dataset_sizes.get(dataset_type, 0), args.questions_per_job):
+                question_limit = question_end - question_start
+                for strategy in strategies:
+                    slice_ref = generation_slice_ref(
+                        run_name=args.run_name,
+                        model=model,
+                        dataset_type=dataset_type,
+                        strategy=strategy,
+                        question_start=question_start,
+                        question_end=question_end,
+                    )
+                    existing_slice = existing.get(slice_ref, {})
+                    if not args.force and str(existing_slice.get("status", "")) in {"current", "pending"}:
+                        continue
+
+                    state_dependency_refs = [
+                        generation_slice_ref(
+                            run_name=args.run_name,
+                            model=model,
+                            dataset_type=dataset_type,
+                            strategy=dependency,
+                            question_start=question_start,
+                            question_end=question_end,
+                        )
+                        for dependency in GENERATION_STRATEGY_DEPENDENCIES.get(strategy, ())
+                    ]
+                    argv = [
                         "generate",
                         "--model",
                         model,
@@ -125,6 +274,12 @@ def _build_generation_cluster_tasks(args: argparse.Namespace) -> list[ClusterTas
                         str(processed_dataset),
                         "--dataset-types",
                         dataset_type,
+                        "--generation-strategies",
+                        strategy,
+                        "--question-start",
+                        str(question_start),
+                        "--limit",
+                        str(question_limit),
                         "--augmented-dataset",
                         str(
                             _cluster_augmented_dataset_dir(
@@ -132,58 +287,168 @@ def _build_generation_cluster_tasks(args: argparse.Namespace) -> list[ClusterTas
                                 args.run_name,
                                 model,
                                 dataset_type,
+                                strategy=strategy,
+                                question_start=question_start,
+                                question_end=question_end,
                             )
                         ),
-                        "--materialize-cache",
-                    ],
-                )
-            )
-    return tasks
+                    ]
+                    argv.extend(_runtime_argv(args))
+                    tasks_by_ref[slice_ref] = ClusterTask(
+                        stage="generate",
+                        run_name=args.run_name,
+                        model=model,
+                        model_slug=safe_name(model),
+                        dataset_type=dataset_type,
+                        dataset_slug=safe_name(dataset_type),
+                        resource_class=resource_class,
+                        slice_ref=slice_ref,
+                        task_slug=task_slug(
+                            stage="generate",
+                            model=model,
+                            dataset_type=dataset_type,
+                            strategy=strategy,
+                            question_start=question_start,
+                            question_end=question_end,
+                        ),
+                        question_start=question_start,
+                        question_end=question_end,
+                        chunk_index=chunk_index,
+                        strategy=strategy,
+                        state_dependency_refs=state_dependency_refs,
+                        submit_dependency_refs=[],
+                        argv=argv,
+                        resources=_cluster_resources(args),
+                        force=bool(args.force),
+                    )
+
+    for task in tasks_by_ref.values():
+        submit_dependency_refs: list[str] = []
+        for dependency_ref in task.state_dependency_refs or []:
+            if dependency_ref in tasks_by_ref:
+                submit_dependency_refs.append(dependency_ref)
+            else:
+                dependency_state = existing.get(dependency_ref)
+                if str((dependency_state or {}).get("status", "")) != "current":
+                    raise ValueError(
+                        f"Missing current prerequisite for {task.slice_ref}: {dependency_ref}. "
+                        "Select the prerequisite slice in this submission or rerun it first."
+                    )
+        task.submit_dependency_refs = submit_dependency_refs
+
+    return list(tasks_by_ref.values()), {"local": args.gpu_count, "api": args.gpu_count}
 
 
-def _build_evaluation_cluster_tasks(args: argparse.Namespace) -> list[ClusterTask]:
+def _build_evaluation_cluster_tasks(args: argparse.Namespace) -> tuple[list[ClusterTask], dict[str, int | None]]:
     processed_dataset = Path(args.processed_dataset)
     dataset_types = _cluster_dataset_types(
         processed_dataset,
         _csv_list(args.dataset_types, default=args.default_dataset_types),
     )
-    generation_model = resolve_model_name(args.generator_model)
+    dataset_sizes = _dataset_sizes(processed_dataset, dataset_types)
+    generation_model = resolve_model_name(args.generator_model, args.generator_backend)
+    models = _cluster_models(args.models, default=list(args.default_models), backend=args.backend)
+    settings = _csv_list(args.settings, default=list(FINAL5_SETTINGS))
+    modes = _csv_list(args.modes, default=list(MODE_CHOICES))
+
+    existing = _slice_status_lookup(_current_stage_state(stage="evaluate", run_name=args.run_name, output_dir=args.output_dir))
+    generation_state = _slice_status_lookup(_current_stage_state(stage="generate", run_name=args.generator_run_name))
     tasks: list[ClusterTask] = []
     for dataset_type in dataset_types:
-        dataset_cache = _cluster_augmented_dataset_dir(
-            Path(DEFAULT_AUGMENTED_CACHE_ROOT),
-            args.generator_run_name,
-            generation_model,
-            dataset_type,
-        )
-        for model in _cluster_models(args.models, default=list(args.default_models)):
-            tasks.append(
-                ClusterTask(
-                    stage="evaluate",
-                    model=model,
-                    model_slug=safe_name(model),
-                    dataset_type=dataset_type,
-                    dataset_slug=safe_name(dataset_type),
-                    argv=[
-                        "evaluate",
-                        "--model",
-                        model,
-                        "--run-name",
-                        args.run_name,
-                        "--generator-run-name",
-                        args.generator_run_name,
-                        "--generator-model",
-                        args.generator_model,
-                        "--processed-dataset",
-                        str(processed_dataset),
-                        "--dataset-types",
-                        dataset_type,
-                        "--augmented-dataset",
-                        str(dataset_cache),
-                    ],
-                )
-            )
-    return tasks
+        for model in models:
+            resource_class = resource_class_for_model(model)
+            for chunk_index, question_start, question_end in chunk_ranges(dataset_sizes.get(dataset_type, 0), args.questions_per_job):
+                question_limit = question_end - question_start
+                for setting in settings:
+                    for mode in modes:
+                        slice_ref = evaluation_slice_ref(
+                            run_name=args.run_name,
+                            model=model,
+                            dataset_type=dataset_type,
+                            setting=setting,
+                            mode=mode,
+                            question_start=question_start,
+                            question_end=question_end,
+                        )
+                        existing_slice = existing.get(slice_ref, {})
+                        if not args.force and str(existing_slice.get("status", "")) in {"current", "pending"}:
+                            continue
+
+                        state_dependency_refs = _evaluation_generation_dependencies(
+                            setting=setting,
+                            generator_run_name=args.generator_run_name,
+                            generator_model=generation_model,
+                            dataset_type=dataset_type,
+                            question_start=question_start,
+                            question_end=question_end,
+                            generation_state=generation_state,
+                        )
+                        for dependency_ref in state_dependency_refs:
+                            dependency_state = generation_state.get(dependency_ref)
+                            if str((dependency_state or {}).get("status", "")) != "current":
+                                raise ValueError(
+                                    f"Missing current generation prerequisite for {slice_ref}: {dependency_ref}. "
+                                    "Rerun or complete the required generation slice before scheduling evaluation."
+                                )
+
+                        argv = [
+                            "evaluate",
+                            "--model",
+                            model,
+                            "--run-name",
+                            args.run_name,
+                            "--generator-run-name",
+                            args.generator_run_name,
+                            "--generator-model",
+                            generation_model,
+                            "--processed-dataset",
+                            str(processed_dataset),
+                            "--dataset-types",
+                            dataset_type,
+                            "--settings",
+                            setting,
+                            "--modes",
+                            mode,
+                            "--question-start",
+                            str(question_start),
+                            "--limit",
+                            str(question_limit),
+                        ]
+                        argv.extend(_runtime_argv(args))
+                        tasks.append(
+                            ClusterTask(
+                                stage="evaluate",
+                                run_name=args.run_name,
+                                model=model,
+                                model_slug=safe_name(model),
+                                dataset_type=dataset_type,
+                                dataset_slug=safe_name(dataset_type),
+                                resource_class=resource_class,
+                                slice_ref=slice_ref,
+                                task_slug=task_slug(
+                                    stage="evaluate",
+                                    model=model,
+                                    dataset_type=dataset_type,
+                                    setting=setting,
+                                    mode=mode,
+                                    question_start=question_start,
+                                    question_end=question_end,
+                                ),
+                                question_start=question_start,
+                                question_end=question_end,
+                                chunk_index=chunk_index,
+                                setting=setting,
+                                mode=mode,
+                                state_dependency_refs=state_dependency_refs,
+                                submit_dependency_refs=[],
+                                argv=argv,
+                                resources=_cluster_resources(args),
+                                force=bool(args.force),
+                                generation_run_name=args.generator_run_name,
+                                generation_model=generation_model,
+                            )
+                        )
+    return tasks, {"local": args.gpu_count, "api": args.gpu_count}
 
 
 def _run_cluster_submit(
@@ -192,39 +457,58 @@ def _run_cluster_submit(
     run_name: str,
     tasks: list[ClusterTask],
     resources: dict[str, object],
+    concurrency_caps: dict[str, int | None],
     output_dir: str | None,
     submit: bool,
     dry_run: bool,
+    render_status: bool,
 ) -> int:
     if not tasks:
         print("No cluster tasks selected.")
         return 1
 
     paths = build_bundle_paths(stage=stage, run_name=run_name, output_dir=output_dir)
-    manifest_text = render_manifest(stage=stage, run_name=run_name, resources=resources, tasks=tasks)
-    sbatch_text = render_sbatch(
-        paths=paths,
+    manifest_text = render_manifest(
         stage=stage,
         run_name=run_name,
         resources=resources,
-        task_count=len(tasks),
-        gpu_count=resources["gpu_count"],
+        tasks=tasks,
+        paths=paths,
+        concurrency_caps=concurrency_caps,
     )
     submit_text = render_submit_script(paths)
+    wrapper_text = render_wrapper_script()
 
     if dry_run:
         print(f"Cluster stage: {stage}")
         print(f"Task count: {len(tasks)}")
-        print(f"Bundle dir: {paths.bundle_dir}")
-        print(f"SBATCH: {paths.sbatch_path}")
+        print(f"Run dir: {paths.run_dir}")
+        print(f"Submission dir: {paths.submission_dir}")
         print(f"Manifest: {paths.manifest_path}")
-        print(f"Submit: sbatch {paths.sbatch_path.name}")
+        print(f"Submit: bash {paths.submit_path.name}")
         return 0
 
-    write_bundle(paths=paths, manifest_text=manifest_text, sbatch_text=sbatch_text, submit_text=submit_text)
+    write_bundle(
+        paths=paths,
+        manifest_text=manifest_text,
+        submit_text=submit_text,
+        local_wrapper_text=wrapper_text,
+        api_wrapper_text=wrapper_text,
+    )
     print(paths.manifest_path)
-    print(paths.sbatch_path)
+    print(paths.local_wrapper_path)
+    print(paths.api_wrapper_path)
     print(paths.submit_path)
+
+    state_path, dashboard_path = _write_scheduler_outputs(
+        stage=stage,
+        run_name=run_name,
+        output_dir=output_dir,
+        render_status=render_status,
+    )
+    print(state_path)
+    if render_status:
+        print(dashboard_path)
 
     if not submit:
         return 0
@@ -234,6 +518,12 @@ def _run_cluster_submit(
     except OSError as exc:
         print(str(exc))
         return 1
+    _write_scheduler_outputs(
+        stage=stage,
+        run_name=run_name,
+        output_dir=output_dir,
+        render_status=render_status,
+    )
     if result.stdout:
         print(result.stdout.strip())
     if result.returncode != 0:
@@ -277,20 +567,64 @@ def _run_generate(args: argparse.Namespace) -> int:
     dataset_types = _csv_list(args.dataset_types, default=args.default_dataset_types)
     raw_model = resolve_model_name(args.model, args.backend)
     log_dir = _generation_log_dir(Path(args.log_root), args.run_name, raw_model)
-    tasks = build_generation_tasks(
-        processed_dataset_path=Path(args.processed_dataset),
-        dataset_types=dataset_types,
-        shard_count=args.shard_count,
-        shard_index=args.shard_index,
-        shard_strategy=args.shard_strategy,
-        limit=args.limit,
-        run_name=args.run_name,
-        generation_model=raw_model,
-    )
-    if not tasks:
+    strategies = _csv_list(args.generation_strategies, default=list(SCHEDULABLE_GENERATION_STRATEGIES))
+    for strategy in strategies:
+        if strategy not in SCHEDULABLE_GENERATION_STRATEGIES:
+            raise ValueError(f"Unsupported generation strategy: {strategy}")
+
+    task_metadata_by_strategy: dict[str, dict[str, object]] = {}
+    if len(dataset_types) == 1:
+        dataset_type = dataset_types[0]
+        question_start = int(getattr(args, "question_start", 0) or 0)
+        question_limit = int(args.limit or 0)
+        question_end = question_start + question_limit if question_limit > 0 else question_start
+        for strategy in strategies:
+            if question_limit <= 0:
+                continue
+            task_metadata_by_strategy[strategy] = {
+                "slice_ref": generation_slice_ref(
+                    run_name=args.run_name,
+                    model=raw_model,
+                    dataset_type=dataset_type,
+                    strategy=strategy,
+                    question_start=question_start,
+                    question_end=question_end,
+                ),
+                "question_end": question_end,
+                "task_slug": task_slug(
+                    stage="generate",
+                    model=raw_model,
+                    dataset_type=dataset_type,
+                    strategy=strategy,
+                    question_start=question_start,
+                    question_end=question_end,
+                ),
+            }
+
+    any_tasks = False
+    for phase in _strategy_phases(strategies):
+        tasks = build_generation_tasks(
+            processed_dataset_path=Path(args.processed_dataset),
+            strategies=phase,
+            dataset_types=dataset_types,
+            question_start=args.question_start,
+            shard_count=args.shard_count,
+            shard_index=args.shard_index,
+            shard_strategy=args.shard_strategy,
+            limit=args.limit,
+            run_name=args.run_name,
+            generation_model=raw_model,
+            generation_log_dir=log_dir,
+            task_metadata_by_strategy=task_metadata_by_strategy,
+        )
+        if not tasks:
+            continue
+        any_tasks = True
+        _inspect_eval(tasks, model=raw_model, log_dir=log_dir, args=args)
+
+    if not any_tasks:
         print("No generation samples selected.")
         return 0
-    _inspect_eval(tasks, model=raw_model, log_dir=log_dir, args=args)
     print(f"Generation logs: {log_dir}")
     if args.materialize_cache or args.shard_count == 1:
         cache_dir = (
@@ -359,6 +693,7 @@ def _run_evaluate(args: argparse.Namespace) -> int:
         dataset_types=dataset_types,
         settings=settings,
         modes=modes,
+        question_start=args.question_start,
         shard_count=args.shard_count,
         shard_index=args.shard_index,
         shard_strategy=args.shard_strategy,
@@ -367,6 +702,32 @@ def _run_evaluate(args: argparse.Namespace) -> int:
         generation_run_name=args.generator_run_name,
         generation_model=resolve_model_name(args.generator_model, args.generator_backend),
         evaluation_model=eval_model,
+        task_metadata_by_setting_mode={
+            (setting, mode): {
+                "slice_ref": evaluation_slice_ref(
+                    run_name=args.run_name,
+                    model=eval_model,
+                    dataset_type=dataset_types[0],
+                    setting=setting,
+                    mode=mode,
+                    question_start=args.question_start,
+                    question_end=args.question_start + int(args.limit or 0),
+                ),
+                "question_end": args.question_start + int(args.limit or 0),
+                "task_slug": task_slug(
+                    stage="evaluate",
+                    model=eval_model,
+                    dataset_type=dataset_types[0],
+                    setting=setting,
+                    mode=mode,
+                    question_start=args.question_start,
+                    question_end=args.question_start + int(args.limit or 0),
+                ),
+            }
+            for setting in settings
+            for mode in modes
+            if len(dataset_types) == 1 and args.limit
+        },
     )
     if not tasks:
         print("No evaluation samples selected.")
@@ -447,7 +808,7 @@ def _run_export(args: argparse.Namespace) -> int:
 
 def _run_submit_generate_cluster(args: argparse.Namespace) -> int:
     try:
-        tasks = _build_generation_cluster_tasks(args)
+        tasks, concurrency_caps = _build_generation_cluster_tasks(args)
     except ValueError as exc:
         print(str(exc))
         return 1
@@ -456,15 +817,17 @@ def _run_submit_generate_cluster(args: argparse.Namespace) -> int:
         run_name=args.run_name,
         tasks=tasks,
         resources=_cluster_resources(args),
+        concurrency_caps=concurrency_caps,
         output_dir=args.output_dir,
         submit=args.submit,
         dry_run=args.dry_run,
+        render_status=args.render_status,
     )
 
 
 def _run_submit_evaluate_cluster(args: argparse.Namespace) -> int:
     try:
-        tasks = _build_evaluation_cluster_tasks(args)
+        tasks, concurrency_caps = _build_evaluation_cluster_tasks(args)
     except ValueError as exc:
         print(str(exc))
         return 1
@@ -473,9 +836,11 @@ def _run_submit_evaluate_cluster(args: argparse.Namespace) -> int:
         run_name=args.run_name,
         tasks=tasks,
         resources=_cluster_resources(args),
+        concurrency_caps=concurrency_caps,
         output_dir=args.output_dir,
         submit=args.submit,
         dry_run=args.dry_run,
+        render_status=args.render_status,
     )
 
 
@@ -799,12 +1164,12 @@ def build_parser() -> argparse.ArgumentParser:
         command.add_argument(
             "--models",
             default=None,
-            help="Comma-separated list of local models to schedule. Defaults to the stage-specific local model set for this command.",
+            help="Comma-separated list of models to schedule. Models can be local vllm/... or hosted/API providers.",
         )
         command.add_argument(
             "--processed-dataset",
             default=str(DEFAULT_PROCESSED_DATASET),
-            help="Unified processed DatasetDict to use when building model×dataset tasks.",
+            help="Unified processed DatasetDict to use when building scheduler slices.",
         )
         command.add_argument(
             "--dataset-types",
@@ -812,15 +1177,21 @@ def build_parser() -> argparse.ArgumentParser:
             help="Comma-separated subset of dataset splits to schedule, such as arc_challenge,gpqa.",
         )
         command.add_argument(
+            "--questions-per-job",
+            type=int,
+            default=None,
+            help="Optional contiguous question-chunk size per scheduled slice. If omitted, one chunk is used per model×dataset unit.",
+        )
+        command.add_argument(
             "--gpu-count",
             type=int,
             default=None,
-            help="Optional SLURM array concurrency cap. If omitted, the array is submitted without a %%N cap.",
+            help="Optional scheduler concurrency cap applied per resource class when submitting per-slice jobs.",
         )
         command.add_argument(
             "--output-dir",
             default=None,
-            help="Advanced override: directory where the generated manifest, sbatch file, and submit helper should be written.",
+            help="Advanced override: directory where generated manifests, wrappers, state files, and helper scripts should be written.",
         )
         command.add_argument(
             "--submit",
@@ -833,48 +1204,58 @@ def build_parser() -> argparse.ArgumentParser:
             "--write-only",
             dest="submit",
             action="store_false",
-            help="Advanced control: write the manifest and sbatch files but do not call sbatch.",
+            help="Advanced control: write manifests and submit helpers but do not call sbatch.",
         )
         command.add_argument(
             "--dry-run",
             action="store_true",
-            help="Advanced control: print the planned cluster bundle details without writing or submitting anything.",
+            help="Advanced control: print the planned scheduler details without writing or submitting anything.",
+        )
+        command.add_argument(
+            "--force",
+            action="store_true",
+            help="Resubmit the selected slices even if they are already current or pending in this run.",
+        )
+        command.add_argument(
+            "--render-status",
+            action="store_true",
+            help="Write a scheduler HTML dashboard for this run after generating the new submission bundle.",
         )
         command.add_argument(
             "--partition",
             default="clip",
-            help="Advanced cluster override: SLURM partition to request for each generated array task.",
+            help="Advanced cluster override: SLURM partition to request for each generated slice job.",
         )
         command.add_argument(
             "--account",
             default="clip",
-            help="Advanced cluster override: SLURM account to charge for each generated array task.",
+            help="Advanced cluster override: SLURM account to charge for each generated slice job.",
         )
         command.add_argument(
             "--qos",
             default="high",
-            help="Advanced cluster override: SLURM quality-of-service value to set on the generated array.",
+            help="Advanced cluster override: SLURM quality-of-service value to set on generated jobs.",
         )
         command.add_argument(
             "--time-limit",
             default="12:00:00",
-            help="Advanced cluster override: wall-clock time limit for each generated array task.",
+            help="Advanced cluster override: wall-clock time limit for each generated job.",
         )
         command.add_argument(
             "--mem",
             default="32G",
-            help="Advanced cluster override: memory request for each generated array task.",
+            help="Advanced cluster override: memory request for each generated job.",
         )
         command.add_argument(
             "--cpus-per-task",
             type=int,
             default=4,
-            help="Advanced cluster override: CPU cores requested per generated array task.",
+            help="Advanced cluster override: CPU cores requested per generated job.",
         )
         command.add_argument(
             "--gpu-type",
             default="rtxa6000",
-            help="Advanced cluster override: GPU type to request in the generated SLURM array.",
+            help="Advanced cluster override: GPU type to request for local-model jobs.",
         )
 
     generate = sub.add_parser(
@@ -894,6 +1275,17 @@ def build_parser() -> argparse.ArgumentParser:
         "--dataset-types",
         default=None,
         help="Optional subset: comma-separated subset of dataset splits to generate for.",
+    )
+    generate.add_argument(
+        "--generation-strategies",
+        default=None,
+        help="Advanced subset override: comma-separated subset of schedulable generation strategies to run.",
+    )
+    generate.add_argument(
+        "--question-start",
+        type=int,
+        default=0,
+        help="Advanced/debug option: zero-based per-dataset starting row for generation.",
     )
     generate.add_argument(
         "--limit",
@@ -952,6 +1344,17 @@ def build_parser() -> argparse.ArgumentParser:
         "--dataset-types",
         default=None,
         help="Optional subset: comma-separated subset of dataset splits to generate for.",
+    )
+    generate_all.add_argument(
+        "--generation-strategies",
+        default=None,
+        help="Advanced subset override: comma-separated subset of schedulable generation strategies to run.",
+    )
+    generate_all.add_argument(
+        "--question-start",
+        type=int,
+        default=0,
+        help="Advanced/debug option: zero-based per-dataset starting row for generation.",
     )
     generate_all.add_argument(
         "--limit",
@@ -1036,6 +1439,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--dataset-types",
         default=None,
         help="Optional subset: comma-separated subset of dataset splits to evaluate.",
+    )
+    evaluate.add_argument(
+        "--question-start",
+        type=int,
+        default=0,
+        help="Advanced/debug option: zero-based per-dataset starting row for evaluation.",
     )
     evaluate.add_argument(
         "--settings",
@@ -1124,6 +1533,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--dataset-types",
         default=None,
         help="Optional subset: comma-separated subset of dataset splits to evaluate.",
+    )
+    evaluate_all.add_argument(
+        "--question-start",
+        type=int,
+        default=0,
+        help="Advanced/debug option: zero-based per-dataset starting row for evaluation.",
     )
     evaluate_all.add_argument(
         "--settings",
@@ -1269,8 +1684,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     submit_generate_cluster = sub.add_parser(
         "submit-generate-cluster",
-        help="Submit local generation jobs as one SLURM array over model×dataset tasks.",
-        description="Generate a SLURM array for local vllm-backed generation, one task per model×dataset pair. Defaults to Qwen3-4B and Olmo3-7B.",
+        help="Submit dependency-aware generation jobs over model×dataset×strategy×chunk slices.",
+        description="Generate per-slice SLURM submissions for local and API-backed generation, with exact dependency wiring where needed.",
         formatter_class=formatter,
     )
     submit_generate_cluster.add_argument(
@@ -1278,15 +1693,21 @@ def build_parser() -> argparse.ArgumentParser:
         required=True,
         help="Logical run name used to organize generated manifests, logs, and output caches.",
     )
+    submit_generate_cluster.add_argument(
+        "--generation-strategies",
+        default=None,
+        help="Comma-separated subset of schedulable generation strategies to submit. human_from_scratch remains implicit.",
+    )
     add_cluster_submit_flags(submit_generate_cluster)
+    add_runtime_flags(submit_generate_cluster)
     submit_generate_cluster.set_defaults(default_models=list(DEFAULT_LOCAL_GENERATION_MODELS))
     submit_generate_cluster.set_defaults(default_dataset_types=["arc_challenge", "mmlu_pro", "gpqa"])
     submit_generate_cluster.set_defaults(handler=_run_submit_generate_cluster)
 
     submit_evaluate_cluster = sub.add_parser(
         "submit-evaluate-cluster",
-        help="Submit local evaluation jobs as one SLURM array over model×dataset tasks.",
-        description="Generate a SLURM array for local vllm-backed evaluation, one task per model×dataset pair. Defaults to Qwen3-4B, Olmo3-7B, and Llama3.1-8B.",
+        help="Submit dependency-aware evaluation jobs over model×dataset×setting×mode×chunk slices.",
+        description="Generate per-slice SLURM submissions for local and API-backed evaluation, keyed to exact generation prerequisites.",
         formatter_class=formatter,
     )
     submit_evaluate_cluster.add_argument(
@@ -1304,7 +1725,23 @@ def build_parser() -> argparse.ArgumentParser:
         required=True,
         help="Generation model whose outputs the cluster jobs should evaluate.",
     )
+    submit_evaluate_cluster.add_argument(
+        "--generator-backend",
+        default=None,
+        help="Situational: backend prefix to apply when resolving --generator-model.",
+    )
+    submit_evaluate_cluster.add_argument(
+        "--settings",
+        default=None,
+        help="Comma-separated subset of Final5 settings to schedule.",
+    )
+    submit_evaluate_cluster.add_argument(
+        "--modes",
+        default=None,
+        help="Comma-separated subset of evaluation modes to schedule.",
+    )
     add_cluster_submit_flags(submit_evaluate_cluster)
+    add_runtime_flags(submit_evaluate_cluster)
     submit_evaluate_cluster.set_defaults(default_models=list(DEFAULT_LOCAL_EVALUATION_MODELS))
     submit_evaluate_cluster.set_defaults(default_dataset_types=["arc_challenge", "mmlu_pro", "gpqa"])
     submit_evaluate_cluster.set_defaults(handler=_run_submit_evaluate_cluster)

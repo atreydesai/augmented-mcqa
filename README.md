@@ -25,12 +25,15 @@ Set the provider keys you actually need in `.env`:
 This is the path the repo is now optimized for:
 
 1. prepare `datasets/processed/unified_processed_v3`
-2. generate distractors with one generator model
-3. evaluate those generated distractors on the local cluster with `vllm/...` evaluation models
+2. generate distractors with either direct runs or the dependency-aware scheduler
+3. evaluate those generated distractors with either direct runs or the dependency-aware scheduler
 4. analyze the evaluation logs
 5. export benchmarker files if needed
 
-API evaluation is not the recommended workflow here. The normal evaluation path is local `vllm/...` only.
+The scheduler supports both:
+
+- local `vllm/...` jobs that request GPUs
+- hosted/API jobs that request no GPU and just fan out `sbatch` workers
 
 ## Step 1: Prepare Data
 
@@ -42,9 +45,23 @@ uv run python main.py prepare-data \
 
 ## Step 2: Generate Distractors
 
-Pick one of the generator commands below.
+Pick one of the direct-run commands below for a simple single-process run, or use `submit-generate-cluster` to slice generation by:
 
-### API generators
+- model
+- dataset
+- generation strategy
+- question chunk
+
+The schedulable generation strategies are:
+
+- `model_from_scratch`
+- `augment_human`
+- `augment_model`
+- `augment_ablation`
+
+`human_from_scratch` remains implicit and is not scheduled as its own job.
+
+### Direct API generators
 
 GPT-5.2:
 
@@ -96,137 +113,104 @@ uv run python main.py generate \
   --materialize-cache
 ```
 
-### Local generators on the cluster
+### Dependency-aware scheduler for generation
 
-Qwen3-4B:
+Local and API models can be mixed in the same scheduler submission. The scheduler will:
 
-```bash
-uv run python main.py submit-generate-cluster \
-  --run-name gen_local_qwen3_4b \
-  --models Qwen/Qwen3-4B-Instruct-2507 \
-  --processed-dataset datasets/processed/unified_processed_v3 \
-  --gpu-count 1
-```
+- create one submission slice per `model × dataset × strategy × question_chunk`
+- submit exact `afterok` dependencies when a slice needs another slice first
+- use `afterany` throttling when `--gpu-count` is set as a concurrency cap
+- skip already-current slices unless `--force` is used
+- mark downstream slices stale when an upstream slice is rerun
+- always refresh `scheduler_state.json`
+- optionally write `scheduler_status.html`
 
-Olmo3-7B:
-
-```bash
-uv run python main.py submit-generate-cluster \
-  --run-name gen_local_olmo3_7b \
-  --models allenai/Olmo-3-7B-Instruct \
-  --processed-dataset datasets/processed/unified_processed_v3 \
-  --gpu-count 1
-```
-
-If you want to launch both local generation models at once:
+Example: local + API generation in one run, chunked by 200 questions, with a status dashboard:
 
 ```bash
 uv run python main.py submit-generate-cluster \
-  --run-name gen_local_all \
-  --models Qwen/Qwen3-4B-Instruct-2507,allenai/Olmo-3-7B-Instruct \
+  --run-name gen_scheduler_all \
+  --models Qwen/Qwen3-4B-Instruct-2507,allenai/Olmo-3-7B-Instruct,gpt-5.2-2025-12-11 \
   --processed-dataset datasets/processed/unified_processed_v3 \
-  --gpu-count 2
+  --generation-strategies model_from_scratch,augment_human,augment_model,augment_ablation \
+  --questions-per-job 200 \
+  --gpu-count 4 \
+  --render-status
 ```
 
-## Step 3: Evaluate On The Local Cluster
+Example: rerun only `augment_model` for GPQA after editing that prompt:
 
-The normal evaluation models are:
+```bash
+uv run python main.py submit-generate-cluster \
+  --run-name gen_scheduler_all \
+  --models gpt-5.2-2025-12-11 \
+  --processed-dataset datasets/processed/unified_processed_v3 \
+  --dataset-types gpqa \
+  --generation-strategies augment_model \
+  --questions-per-job 200 \
+  --force \
+  --render-status
+```
+
+If the required `model_from_scratch` slice for the same model, dataset, and question chunk is not already current, the scheduler will stop and tell you to rerun or include that prerequisite slice.
+
+### PI-friendly scheduler scripts
+
+If you want one bash file with editable variables at the top instead of a long CLI invocation:
+
+- generation helper: [`jobs/submit_generate_scheduler.sh`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/jobs/submit_generate_scheduler.sh)
+- evaluation helper: [`jobs/submit_evaluate_scheduler.sh`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/jobs/submit_evaluate_scheduler.sh)
+
+Each helper:
+
+- writes the scheduler bundle with `--write-only`
+- finds the newest generated `submit_all.sh`
+- runs that master submit script unless `WRITE_ONLY=1`
+
+## Step 3: Evaluate
+
+The default local evaluation models are:
 
 - `Qwen/Qwen3-4B-Instruct-2507`
 - `allenai/Olmo-3-7B-Instruct`
 - `meta-llama/Llama-3.1-8B-Instruct`
 
-The recommended command is always `submit-evaluate-cluster`. That one command schedules all three local evaluation models across the dataset splits.
+The evaluation scheduler slices work by:
 
-If you generated with GPT-5.2:
+- model
+- dataset
+- Final5 setting
+- mode (`full_question` or `choices_only`)
+- question chunk
+
+Each evaluation slice depends on the exact generation slice or slices needed for that same dataset chunk. If those generation prerequisites are missing or stale, the scheduler refuses to submit the evaluation slice.
+
+Example:
 
 ```bash
 uv run python main.py submit-evaluate-cluster \
-  --run-name eval_gpt52 \
-  --generator-run-name gen_gpt52 \
+  --run-name eval_scheduler_all \
+  --generator-run-name gen_scheduler_all \
   --generator-model gpt-5.2-2025-12-11 \
   --processed-dataset datasets/processed/unified_processed_v3 \
   --models Qwen/Qwen3-4B-Instruct-2507,allenai/Olmo-3-7B-Instruct,meta-llama/Llama-3.1-8B-Instruct \
-  --gpu-count 3
+  --settings human_from_scratch,model_from_scratch,augment_human,augment_model,augment_ablation \
+  --modes full_question,choices_only \
+  --questions-per-job 200 \
+  --gpu-count 3 \
+  --render-status
 ```
 
-If you generated with Claude Opus 4.6:
+If you want to rerun only one evaluation slice family after a generation change, narrow it down with `--dataset-types`, `--settings`, `--modes`, and `--models`, then use `--force`.
 
-```bash
-uv run python main.py submit-evaluate-cluster \
-  --run-name eval_claude_opus46 \
-  --generator-run-name gen_claude_opus46 \
-  --generator-model claude-opus-4-6 \
-  --processed-dataset datasets/processed/unified_processed_v3 \
-  --models Qwen/Qwen3-4B-Instruct-2507,allenai/Olmo-3-7B-Instruct,meta-llama/Llama-3.1-8B-Instruct \
-  --gpu-count 3
-```
+Scheduler notes:
 
-If you generated with Gemini 3.1 Pro:
-
-```bash
-uv run python main.py submit-evaluate-cluster \
-  --run-name eval_gemini31pro \
-  --generator-run-name gen_gemini31pro \
-  --generator-model gemini-3.1-pro-preview \
-  --processed-dataset datasets/processed/unified_processed_v3 \
-  --models Qwen/Qwen3-4B-Instruct-2507,allenai/Olmo-3-7B-Instruct,meta-llama/Llama-3.1-8B-Instruct \
-  --gpu-count 3
-```
-
-If you generated with TogetherAI Qwen/Qwen3.5-397B-A17B:
-
-```bash
-uv run python main.py submit-evaluate-cluster \
-  --run-name eval_together_qwen397b \
-  --generator-run-name gen_together_qwen397b \
-  --generator-model Qwen/Qwen3.5-397B-A17B \
-  --processed-dataset datasets/processed/unified_processed_v3 \
-  --models Qwen/Qwen3-4B-Instruct-2507,allenai/Olmo-3-7B-Instruct,meta-llama/Llama-3.1-8B-Instruct \
-  --gpu-count 3
-```
-
-If you generated with TogetherAI Qwen/Qwen3.5-9B:
-
-```bash
-uv run python main.py submit-evaluate-cluster \
-  --run-name eval_together_qwen9b \
-  --generator-run-name gen_together_qwen9b \
-  --generator-model Qwen/Qwen3.5-9B \
-  --processed-dataset datasets/processed/unified_processed_v3 \
-  --models Qwen/Qwen3-4B-Instruct-2507,allenai/Olmo-3-7B-Instruct,meta-llama/Llama-3.1-8B-Instruct \
-  --gpu-count 3
-```
-
-If you generated with local Qwen3-4B:
-
-```bash
-uv run python main.py submit-evaluate-cluster \
-  --run-name eval_local_qwen3_4b \
-  --generator-run-name gen_local_qwen3_4b \
-  --generator-model Qwen/Qwen3-4B-Instruct-2507 \
-  --processed-dataset datasets/processed/unified_processed_v3 \
-  --models Qwen/Qwen3-4B-Instruct-2507,allenai/Olmo-3-7B-Instruct,meta-llama/Llama-3.1-8B-Instruct \
-  --gpu-count 3
-```
-
-If you generated with local Olmo3-7B:
-
-```bash
-uv run python main.py submit-evaluate-cluster \
-  --run-name eval_local_olmo3_7b \
-  --generator-run-name gen_local_olmo3_7b \
-  --generator-model allenai/Olmo-3-7B-Instruct \
-  --processed-dataset datasets/processed/unified_processed_v3 \
-  --models Qwen/Qwen3-4B-Instruct-2507,allenai/Olmo-3-7B-Instruct,meta-llama/Llama-3.1-8B-Instruct \
-  --gpu-count 3
-```
-
-Notes:
-
-- `submit-generate-cluster` defaults to the two local generation models, so with the default three dataset splits it creates `2 × 3 = 6` tasks.
-- `submit-evaluate-cluster` defaults to the three local evaluation models, so with the default three dataset splits it creates `3 × 3 = 9` tasks.
-- `--gpu-count` is a concurrency cap on the SLURM array. If you omit it, the full array is submitted without a `%N` cap.
+- `--questions-per-job` creates contiguous question chunks within each `model × dataset × strategy` or `model × dataset × setting × mode` slice family.
+- `--gpu-count` is now a per-resource-class concurrency cap for the master submit script, not an array width.
+- `--write-only` bundles show up as `planned` until `submit_all.sh` is actually run.
+- manifests and master submit scripts live under `jobs/generated/<stage>/<run>/submissions/<submission_id>/`
+- scheduler state lives at `jobs/generated/<stage>/<run>/scheduler_state.json`
+- optional dashboard lives at `jobs/generated/<stage>/<run>/scheduler_status.html`
 
 ## Step 4: Analyze
 
@@ -271,8 +255,6 @@ uv run python analysis/benchmarker_analysis.py \
 - augmented cache: `datasets/augmented/<run>/<model>/`
 - cluster bundles: `jobs/generated/<stage>/<run>/`
 - cluster logs: `logs/slurm/<stage>/<run>/`
-
-Cluster generation uses dataset-scoped caches under `datasets/augmented/<run>/<model>/<dataset>/` so concurrent jobs do not overwrite each other.
 
 ## More Detail
 

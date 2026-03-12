@@ -10,6 +10,7 @@ from inspect_ai.dataset import MemoryDataset, Sample
 from config import ACTIVE_DATASET_TYPES
 from utils.constants import CHOICE_LABELS, FINAL5_SETTINGS, MODE_CHOICES
 from utils.logs import iter_eval_logs
+from utils.scheduler_state import SCHEDULABLE_GENERATION_STRATEGIES
 from utils.sharding import sample_id_for_row, select_shard
 
 
@@ -53,6 +54,7 @@ def iter_processed_rows(
     processed_dataset_path: Path | str,
     dataset_types: list[str] | None = None,
     *,
+    question_start: int = 0,
     limit: int | None = None,
 ) -> list[dict[str, Any]]:
     dataset_dict = _load_dataset_dict(processed_dataset_path)
@@ -62,8 +64,11 @@ def iter_processed_rows(
         if dataset_type not in dataset_dict:
             continue
         split = dataset_dict[dataset_type]
+        selected_for_dataset = 0
         for row_index, row in enumerate(split):
-            if limit is not None and row_index >= limit:
+            if row_index < question_start:
+                continue
+            if limit is not None and selected_for_dataset >= limit:
                 break
             payload = dict(row)
             payload["dataset_type"] = dataset_type
@@ -71,41 +76,96 @@ def iter_processed_rows(
             payload["sample_id"] = sample_id_for_row(dataset_type, payload, row_index)
             payload["answer"] = _answer_text(payload)
             rows.append(payload)
+            selected_for_dataset += 1
     return rows
 
 
 def build_generation_dataset(
     processed_dataset_path: Path | str,
     *,
+    strategy: str = "model_from_scratch",
     dataset_types: list[str] | None = None,
+    question_start: int = 0,
     limit: int | None = None,
+    generation_log_dir: Path | str | None = None,
     shard_count: int = 1,
     shard_index: int = 0,
     shard_strategy: str = "contiguous",
 ) -> MemoryDataset:
-    rows = iter_processed_rows(processed_dataset_path, dataset_types=dataset_types, limit=limit)
+    if strategy not in SCHEDULABLE_GENERATION_STRATEGIES:
+        raise ValueError(f"Unknown schedulable generation strategy: {strategy}")
+
+    rows = iter_processed_rows(
+        processed_dataset_path,
+        dataset_types=dataset_types,
+        question_start=question_start,
+        limit=limit,
+    )
     rows = select_shard(rows, shard_count=shard_count, shard_index=shard_index, strategy=shard_strategy)
+    prior_payloads = _generation_payloads(generation_log_dir) if generation_log_dir else {}
 
     samples: list[Sample] = []
     for row in rows:
+        metadata = {
+            "sample_id": row["sample_id"],
+            "dataset_type": row["dataset_type"],
+            "row_index": int(row["row_index"]),
+            "question": str(row.get("question", "")),
+            "answer": str(row.get("answer", "")),
+            "choices_human": list(row.get("choices_human") or []),
+            "category": str(row.get("category", "")),
+            "question_id": row.get("question_id"),
+            "generation_strategy": strategy,
+        }
+        if strategy == "augment_model":
+            prior = prior_payloads.get(row["sample_id"], {})
+            existing_model = list(prior.get("model_from_scratch") or [])
+            if len(existing_model) < 3:
+                raise ValueError(
+                    "augment_model requires existing model_from_scratch outputs for every selected sample. "
+                    f"Missing prerequisite for {row['sample_id']}."
+                )
+            metadata["existing_model_from_scratch"] = existing_model[:3]
         samples.append(
             Sample(
                 input=str(row.get("question", "")),
                 target="",
                 id=row["sample_id"],
-                metadata={
-                    "sample_id": row["sample_id"],
-                    "dataset_type": row["dataset_type"],
-                    "row_index": int(row["row_index"]),
-                    "question": str(row.get("question", "")),
-                    "answer": str(row.get("answer", "")),
-                    "choices_human": list(row.get("choices_human") or []),
-                    "category": str(row.get("category", "")),
-                    "question_id": row.get("question_id"),
-                },
+                metadata=metadata,
             )
         )
     return MemoryDataset(samples)
+
+
+def _merge_generation_payload(target: dict[str, Any], payload: dict[str, Any]) -> dict[str, Any]:
+    merged = dict(target)
+    if not merged:
+        merged.update(
+            {
+                "sample_id": payload.get("sample_id"),
+                "dataset_type": payload.get("dataset_type"),
+                "row_index": payload.get("row_index"),
+                "question": payload.get("question"),
+                "answer": payload.get("answer"),
+                "category": payload.get("category", ""),
+            }
+        )
+    merged["status"] = "success"
+
+    if list(payload.get("human_from_scratch") or []):
+        merged["human_from_scratch"] = list(payload.get("human_from_scratch") or [])
+        merged["human_from_scratch_options_randomized"] = list(payload.get("human_from_scratch_options_randomized") or [])
+        merged["human_from_scratch_correct_answer_letter"] = str(payload.get("human_from_scratch_correct_answer_letter", "") or "")
+
+    for key in FINAL5_SETTINGS:
+        generated_values = list(payload.get(key) or [])
+        randomized_values = list(payload.get(f"{key}_options_randomized") or [])
+        correct_letter = str(payload.get(f"{key}_correct_answer_letter", "") or "")
+        if generated_values and randomized_values and correct_letter:
+            merged[key] = generated_values
+            merged[f"{key}_options_randomized"] = randomized_values
+            merged[f"{key}_correct_answer_letter"] = correct_letter
+    return merged
 
 
 def _generation_payloads(log_dir: Path | str) -> dict[str, dict[str, Any]]:
@@ -116,10 +176,10 @@ def _generation_payloads(log_dir: Path | str) -> dict[str, dict[str, Any]]:
                 continue
             score = next(iter(sample.scores.values()))
             metadata = dict(getattr(score, "metadata", {}) or {})
-            if not metadata:
+            if not metadata or metadata.get("status") != "success":
                 continue
             sample_id = str(sample.id)
-            payloads[sample_id] = metadata
+            payloads[sample_id] = _merge_generation_payload(payloads.get(sample_id, {}), metadata)
     return payloads
 
 
@@ -130,6 +190,18 @@ def _empty_generated_row() -> dict[str, Any]:
         payload[f"{setting}_options_randomized"] = []
         payload[f"{setting}_correct_answer_letter"] = ""
     return payload
+
+
+def _empty_augmented_split(source_split: Dataset, *, dataset_type: str) -> Dataset:
+    columns: dict[str, list[Any]] = {name: [] for name in source_split.column_names}
+    columns.setdefault("dataset_type", [])
+    columns.setdefault("row_index", [])
+    columns.setdefault("sample_id", [])
+    columns.setdefault("schema_version", [])
+    columns.setdefault("generation_status", [])
+    for key in _empty_generated_row().keys():
+        columns.setdefault(key, [])
+    return Dataset.from_dict(columns)
 
 
 def materialize_augmented_dataset(
@@ -165,7 +237,10 @@ def materialize_augmented_dataset(
                 payload[f"{key}_options_randomized"] = list(generated_row.get(f"{key}_options_randomized") or [])
                 payload[f"{key}_correct_answer_letter"] = str(generated_row.get(f"{key}_correct_answer_letter", "") or "")
             rows.append(payload)
-        rebuilt[dataset_type] = Dataset.from_list(rows)
+        if rows:
+            rebuilt[dataset_type] = Dataset.from_list(rows)
+        else:
+            rebuilt[dataset_type] = _empty_augmented_split(dataset_dict[dataset_type], dataset_type=dataset_type)
 
     out = Path(output_path)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -198,6 +273,7 @@ def build_evaluation_dataset(
     setting: str,
     mode: str,
     dataset_types: list[str] | None = None,
+    question_start: int = 0,
     limit: int | None = None,
     shard_count: int = 1,
     shard_index: int = 0,
@@ -216,12 +292,14 @@ def build_evaluation_dataset(
         if dataset_type not in dataset_dict:
             continue
         split = dataset_dict[dataset_type]
-        selected_for_dataset = 0
+        question_end = question_start + limit if limit is not None else None
         for row_index, row in enumerate(split):
-            if limit is not None and selected_for_dataset >= limit:
-                break
             payload = dict(row)
             original_row_index = int(payload.get("row_index", row_index))
+            if original_row_index < question_start:
+                continue
+            if question_end is not None and original_row_index >= question_end:
+                break
             sample_id = str(payload.get("sample_id") or sample_id_for_row(dataset_type, payload, original_row_index))
             options = list(payload.get(f"{setting}_options_randomized") or [])
             correct_letter = str(payload.get(f"{setting}_correct_answer_letter", "") or "")
@@ -274,7 +352,6 @@ def build_evaluation_dataset(
                     },
                 )
             )
-            selected_for_dataset += 1
     entries = select_shard(entries, shard_count=shard_count, shard_index=shard_index, strategy=shard_strategy)
     return MemoryDataset(entries)
 

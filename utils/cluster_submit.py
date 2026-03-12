@@ -5,30 +5,24 @@ import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 from utils.modeling import safe_name
+from utils.scheduler_state import iso_now
 
 
-SBATCH_TEMPLATE = """#!/bin/bash
-#SBATCH --job-name={job_name}
-#SBATCH --output={bootstrap_log_dir}/{job_name}__%A_%a.bootstrap.out
-#SBATCH --error={bootstrap_log_dir}/{job_name}__%A_%a.bootstrap.err
-#SBATCH --partition={partition}
-#SBATCH --account={account}
-#SBATCH --qos={qos}
-#SBATCH --time={time_limit}
-#SBATCH --mem={memory}
-#SBATCH --cpus-per-task={cpus_per_task}
-#SBATCH --gres=gpu:{gpu_type}:1
-#SBATCH --array={array_spec}
-
+WRAPPER_TEMPLATE = """#!/bin/bash
 set -euo pipefail
 
-PROJECT_ROOT="${{PROJECT_ROOT:-$SLURM_SUBMIT_DIR}}"
-cd "$PROJECT_ROOT"
-PYTHON_BIN="${{PYTHON_BIN:-python}}"
+MANIFEST_PATH="$1"
+TASK_INDEX="$2"
+PROJECT_ROOT="${{3:-$SLURM_SUBMIT_DIR}}"
+PYTHON_BIN="${{4:-python}}"
+TASK_LOG_DIR="$5"
 
-"$PYTHON_BIN" - <<'PY' "{manifest_path}" "$SLURM_ARRAY_TASK_ID" "$PROJECT_ROOT" "$PYTHON_BIN" "{task_log_dir}"
+cd "$PROJECT_ROOT"
+
+"$PYTHON_BIN" - <<'PY' "$MANIFEST_PATH" "$TASK_INDEX" "$PROJECT_ROOT" "$PYTHON_BIN" "$TASK_LOG_DIR"
 import json
 import os
 import subprocess
@@ -43,16 +37,15 @@ task_log_dir = Path(sys.argv[5])
 
 manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
 task = manifest["tasks"][task_index]
-job_id = os.environ.get("SLURM_ARRAY_JOB_ID") or os.environ.get("SLURM_JOB_ID", "job")
-array_id = os.environ.get("SLURM_ARRAY_TASK_ID", str(task_index))
-stdout_path = task_log_dir / f"{{task['model_slug']}}__{{task['dataset_slug']}}__{{job_id}}_{{array_id}}.out"
-stderr_path = task_log_dir / f"{{task['model_slug']}}__{{task['dataset_slug']}}__{{job_id}}_{{array_id}}.err"
+job_id = os.environ.get("SLURM_JOB_ID", "job")
+stdout_path = task_log_dir / f"{task['task_slug']}__{job_id}.out"
+stderr_path = task_log_dir / f"{task['task_slug']}__{job_id}.err"
 stdout_path.parent.mkdir(parents=True, exist_ok=True)
 
 cmd = [python_bin, "main.py", *task["argv"]]
-print(f"Running: {{' '.join(cmd)}}")
-print(f"Stdout: {{stdout_path}}")
-print(f"Stderr: {{stderr_path}}")
+print(f"Running: {' '.join(cmd)}")
+print(f"Stdout: {stdout_path}")
+print(f"Stderr: {stderr_path}")
 
 with stdout_path.open("a", encoding="utf-8") as out, stderr_path.open("a", encoding="utf-8") as err:
     rc = subprocess.run(cmd, cwd=str(project_root), stdout=out, stderr=err, check=False).returncode
@@ -61,72 +54,248 @@ PY
 """
 
 
-SUBMIT_TEMPLATE = """#!/bin/bash
+MASTER_SUBMIT_TEMPLATE = """#!/bin/bash
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${{BASH_SOURCE[0]}}")" && pwd)"
 cd "$SCRIPT_DIR"
-sbatch "{sbatch_name}"
+PROJECT_ROOT="${{PROJECT_ROOT:-__PROJECT_ROOT__}}"
+PYTHON_BIN="${{PYTHON_BIN:-python}}"
+
+"$PYTHON_BIN" - <<'PY' "__MANIFEST_PATH__" "__LOCAL_WRAPPER__" "__API_WRAPPER__" "$PROJECT_ROOT" "$PYTHON_BIN"
+import json
+import subprocess
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+manifest_path = Path(sys.argv[1])
+local_wrapper = Path(sys.argv[2])
+api_wrapper = Path(sys.argv[3])
+project_root = sys.argv[4]
+python_bin = sys.argv[5]
+
+manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+job_ids = {{}}
+slot_previous = {{}}
+slot_counters = {{}}
+concurrency_caps = dict(manifest.get("concurrency_caps", {{}}))
+
+def record_submission(task_index, job_id):
+    task_record = manifest["tasks"][task_index]
+    task_record["submitted_at"] = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+    task_record["submitted_job_id"] = job_id
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\\n", encoding="utf-8")
+
+for task in manifest["tasks"]:
+    resource_class = task["resource_class"]
+    wrapper = local_wrapper if resource_class == "local" else api_wrapper
+    logical_deps = []
+    throttle_deps = []
+    for dependency_ref in task.get("submit_dependency_refs", []):
+        dependency_job_id = job_ids.get(dependency_ref)
+        if dependency_job_id:
+            logical_deps.append(dependency_job_id)
+
+    cap = concurrency_caps.get(resource_class)
+    if cap:
+        slot_index = slot_counters.get(resource_class, 0) % int(cap)
+        slot_key = (resource_class, slot_index)
+        previous_job_id = slot_previous.get(slot_key)
+        if previous_job_id:
+            throttle_deps.append(previous_job_id)
+        slot_counters[resource_class] = slot_counters.get(resource_class, 0) + 1
+
+    cmd = [
+        "sbatch",
+        "--parsable",
+        "--job-name", task["job_name"],
+        "--output", task["bootstrap_stdout"],
+        "--error", task["bootstrap_stderr"],
+        "--partition", task["resources"]["partition"],
+        "--account", task["resources"]["account"],
+        "--qos", task["resources"]["qos"],
+        "--time", task["resources"]["time_limit"],
+        "--mem", task["resources"]["memory"],
+        "--cpus-per-task", str(task["resources"]["cpus_per_task"]),
+    ]
+    if resource_class == "local":
+        cmd.extend(["--gres", f"gpu:{task['resources']['gpu_type']}:1"])
+    dependency_parts = []
+    if logical_deps:
+        ordered = []
+        seen = set()
+        for dependency_job_id in logical_deps:
+            if dependency_job_id not in seen:
+                seen.add(dependency_job_id)
+                ordered.append(dependency_job_id)
+        dependency_parts.append("afterok:" + ":".join(ordered))
+    if throttle_deps:
+        ordered = []
+        seen = set()
+        for dependency_job_id in throttle_deps:
+            if dependency_job_id not in seen:
+                seen.add(dependency_job_id)
+                ordered.append(dependency_job_id)
+        dependency_parts.append("afterany:" + ":".join(ordered))
+    if dependency_parts:
+        cmd.extend(["--dependency", ",".join(dependency_parts)])
+    cmd.extend(
+        [
+            str(wrapper),
+            str(manifest_path),
+            str(task["task_index"]),
+            project_root,
+            python_bin,
+            task["task_log_dir"],
+        ]
+    )
+
+    print("Submitting:", " ".join(cmd))
+    result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+    if result.stdout:
+        print(result.stdout.strip())
+    if result.returncode != 0:
+        if result.stderr:
+            print(result.stderr.strip(), file=sys.stderr)
+        sys.exit(result.returncode)
+
+    job_id = (result.stdout.strip().split(";", 1)[0] if result.stdout else "").strip()
+    if not job_id:
+        print("Failed to parse sbatch job id", file=sys.stderr)
+        sys.exit(1)
+
+    job_ids[task["slice_ref"]] = job_id
+    record_submission(task["task_index"], job_id)
+    if cap:
+        slot_previous[(resource_class, slot_index)] = job_id
+PY
 """
 
 
-@dataclass(frozen=True)
+@dataclass
 class ClusterTask:
     stage: str
+    run_name: str
     model: str
     model_slug: str
     dataset_type: str
     dataset_slug: str
+    resource_class: str
+    slice_ref: str
+    task_slug: str
+    question_start: int
+    question_end: int
+    chunk_index: int
     argv: list[str]
+    resources: dict[str, Any]
+    strategy: str | None = None
+    setting: str | None = None
+    mode: str | None = None
+    state_dependency_refs: list[str] | None = None
+    submit_dependency_refs: list[str] | None = None
+    force: bool = False
+    generation_run_name: str | None = None
+    generation_model: str | None = None
 
-    def as_dict(self) -> dict[str, Any]:
+    def as_dict(self, *, task_index: int, submission_created_at: str, submission_id: str, task_log_dir: Path, bootstrap_log_dir: Path) -> dict[str, Any]:
+        bootstrap_stdout = bootstrap_log_dir / f"{self.task_slug}__%j.bootstrap.out"
+        bootstrap_stderr = bootstrap_log_dir / f"{self.task_slug}__%j.bootstrap.err"
         return {
+            "task_index": task_index,
             "stage": self.stage,
+            "run_name": self.run_name,
+            "submission_id": submission_id,
+            "submission_created_at": submission_created_at,
             "model": self.model,
             "model_slug": self.model_slug,
             "dataset_type": self.dataset_type,
             "dataset_slug": self.dataset_slug,
+            "resource_class": self.resource_class,
+            "slice_ref": self.slice_ref,
+            "task_slug": self.task_slug,
+            "question_start": self.question_start,
+            "question_end": self.question_end,
+            "chunk_index": self.chunk_index,
+            "strategy": self.strategy,
+            "setting": self.setting,
+            "mode": self.mode,
+            "force": self.force,
+            "generation_run_name": self.generation_run_name,
+            "generation_model": self.generation_model,
+            "state_dependency_refs": list(self.state_dependency_refs or []),
+            "submit_dependency_refs": list(self.submit_dependency_refs or []),
             "argv": list(self.argv),
+            "resources": dict(self.resources),
+            "task_log_dir": str(task_log_dir),
+            "bootstrap_stdout": str(bootstrap_stdout),
+            "bootstrap_stderr": str(bootstrap_stderr),
+            "job_name": f"final5-{self.stage}-{self.task_slug}",
+            "submitted_at": "",
+            "submitted_job_id": "",
         }
 
 
 @dataclass(frozen=True)
 class ClusterBundlePaths:
-    bundle_dir: Path
+    run_dir: Path
+    submission_dir: Path
     manifest_path: Path
-    sbatch_path: Path
     submit_path: Path
+    local_wrapper_path: Path
+    api_wrapper_path: Path
     log_dir: Path
     bootstrap_log_dir: Path
+    state_path: Path
+    dashboard_path: Path
+    submission_id: str
+    submission_created_at: str
 
 
 def build_bundle_paths(*, stage: str, run_name: str, output_dir: str | Path | None) -> ClusterBundlePaths:
     run_slug = safe_name(run_name)
-    if output_dir:
-        bundle_dir = Path(output_dir)
-    else:
-        bundle_dir = Path("jobs/generated") / stage / run_slug
+    run_dir = Path(output_dir) if output_dir else Path("jobs/generated") / stage / run_slug
+    submission_created_at = iso_now()
+    submission_id = safe_name(f"{submission_created_at}_{uuid4().hex[:8]}")
+    submission_dir = run_dir / "submissions" / submission_id
     log_dir = Path("logs/slurm") / stage / run_slug
     bootstrap_log_dir = log_dir / "_bootstrap"
     return ClusterBundlePaths(
-        bundle_dir=bundle_dir,
-        manifest_path=bundle_dir / "manifest.json",
-        sbatch_path=bundle_dir / f"final5-{stage}-{run_slug}.sbatch",
-        submit_path=bundle_dir / "submit_all.sh",
+        run_dir=run_dir,
+        submission_dir=submission_dir,
+        manifest_path=submission_dir / "manifest.json",
+        submit_path=submission_dir / "submit_all.sh",
+        local_wrapper_path=submission_dir / "run_local_task.sbatch",
+        api_wrapper_path=submission_dir / "run_api_task.sbatch",
         log_dir=log_dir,
         bootstrap_log_dir=bootstrap_log_dir,
+        state_path=run_dir / "scheduler_state.json",
+        dashboard_path=run_dir / "scheduler_status.html",
+        submission_id=submission_id,
+        submission_created_at=submission_created_at,
     )
 
 
-def render_array_spec(task_count: int, gpu_count: int | None) -> str:
-    if task_count <= 0:
-        raise ValueError("task_count must be > 0")
-    spec = f"0-{task_count - 1}"
-    if gpu_count is not None:
-        if gpu_count <= 0:
-            raise ValueError("gpu_count must be > 0 when provided")
-        spec = f"{spec}%{gpu_count}"
-    return spec
+def _topological_order(tasks: list[ClusterTask]) -> list[ClusterTask]:
+    tasks_by_ref = {task.slice_ref: task for task in tasks}
+    incoming: dict[str, set[str]] = {}
+    for task in tasks:
+        incoming[task.slice_ref] = {ref for ref in task.submit_dependency_refs or [] if ref in tasks_by_ref}
+
+    ordered: list[ClusterTask] = []
+    ready = sorted([task.slice_ref for task in tasks if not incoming[task.slice_ref]])
+    while ready:
+        slice_ref = ready.pop(0)
+        ordered.append(tasks_by_ref[slice_ref])
+        for candidate in tasks:
+            if slice_ref in incoming[candidate.slice_ref]:
+                incoming[candidate.slice_ref].remove(slice_ref)
+                if not incoming[candidate.slice_ref]:
+                    ready.append(candidate.slice_ref)
+                    ready.sort()
+    if len(ordered) != len(tasks):
+        raise ValueError("Task dependencies contain a cycle.")
+    return ordered
 
 
 def render_manifest(
@@ -135,80 +304,82 @@ def render_manifest(
     run_name: str,
     resources: dict[str, Any],
     tasks: list[ClusterTask],
+    paths: ClusterBundlePaths,
+    concurrency_caps: dict[str, int | None],
 ) -> str:
+    ordered_tasks = _topological_order(tasks)
     payload = {
         "stage": stage,
         "run_name": run_name,
-        "task_count": len(tasks),
+        "submission_id": paths.submission_id,
+        "submission_created_at": paths.submission_created_at,
+        "task_count": len(ordered_tasks),
         "resources": resources,
-        "tasks": [task.as_dict() for task in tasks],
+        "concurrency_caps": concurrency_caps,
+        "tasks": [
+            task.as_dict(
+                task_index=index,
+                submission_created_at=paths.submission_created_at,
+                submission_id=paths.submission_id,
+                task_log_dir=paths.log_dir,
+                bootstrap_log_dir=paths.bootstrap_log_dir,
+            )
+            for index, task in enumerate(ordered_tasks)
+        ],
     }
     return json.dumps(payload, indent=2) + "\n"
 
 
-def render_sbatch(
-    *,
-    paths: ClusterBundlePaths,
-    stage: str,
-    run_name: str,
-    resources: dict[str, Any],
-    task_count: int,
-    gpu_count: int | None,
-) -> str:
-    return SBATCH_TEMPLATE.format(
-        job_name=f"final5-{stage}-{safe_name(run_name)}",
-        bootstrap_log_dir=str(paths.bootstrap_log_dir),
-        partition=resources["partition"],
-        account=resources["account"],
-        qos=resources["qos"],
-        time_limit=resources["time_limit"],
-        memory=resources["memory"],
-        cpus_per_task=resources["cpus_per_task"],
-        gpu_type=resources["gpu_type"],
-        array_spec=render_array_spec(task_count, gpu_count),
-        manifest_path=str(paths.manifest_path),
-        task_log_dir=str(paths.log_dir),
-    )
+def render_wrapper_script() -> str:
+    return WRAPPER_TEMPLATE
 
 
 def render_submit_script(paths: ClusterBundlePaths) -> str:
-    return SUBMIT_TEMPLATE.format(sbatch_name=paths.sbatch_path.name)
+    return (
+        MASTER_SUBMIT_TEMPLATE.replace("__MANIFEST_PATH__", str(paths.manifest_path))
+        .replace("__LOCAL_WRAPPER__", str(paths.local_wrapper_path))
+        .replace("__API_WRAPPER__", str(paths.api_wrapper_path))
+        .replace("__PROJECT_ROOT__", str(Path(__file__).resolve().parent.parent))
+    )
 
 
 def write_bundle(
     *,
     paths: ClusterBundlePaths,
     manifest_text: str,
-    sbatch_text: str,
     submit_text: str,
+    local_wrapper_text: str,
+    api_wrapper_text: str,
 ) -> None:
-    paths.bundle_dir.mkdir(parents=True, exist_ok=True)
+    paths.run_dir.mkdir(parents=True, exist_ok=True)
+    paths.submission_dir.mkdir(parents=True, exist_ok=True)
     paths.log_dir.mkdir(parents=True, exist_ok=True)
     paths.bootstrap_log_dir.mkdir(parents=True, exist_ok=True)
     paths.manifest_path.write_text(manifest_text, encoding="utf-8")
-    paths.sbatch_path.write_text(sbatch_text, encoding="utf-8")
     paths.submit_path.write_text(submit_text, encoding="utf-8")
+    paths.local_wrapper_path.write_text(local_wrapper_text, encoding="utf-8")
+    paths.api_wrapper_path.write_text(api_wrapper_text, encoding="utf-8")
     paths.submit_path.chmod(0o755)
+    paths.local_wrapper_path.chmod(0o755)
+    paths.api_wrapper_path.chmod(0o755)
 
 
 def submit_bundle(paths: ClusterBundlePaths) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        ["sbatch", paths.sbatch_path.name],
-        cwd=str(paths.bundle_dir),
+        ["bash", paths.submit_path.name],
+        cwd=str(paths.submission_dir),
         capture_output=True,
         text=True,
         check=False,
     )
 
-
 __all__ = [
     "ClusterBundlePaths",
     "ClusterTask",
     "build_bundle_paths",
-    "render_array_spec",
     "render_manifest",
-    "render_sbatch",
     "render_submit_script",
+    "render_wrapper_script",
     "submit_bundle",
     "write_bundle",
 ]

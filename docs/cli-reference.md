@@ -45,21 +45,24 @@ These flags apply to `submit-generate-cluster` and `submit-evaluate-cluster`.
 
 | Flag | Meaning |
 |---|---|
-| `--models` | Comma-separated list of local models to schedule. Defaults to the stage-specific local model set for that command. |
-| `--processed-dataset` | Processed unified `DatasetDict` used to build the `model × dataset` task list. |
+| `--models` | Comma-separated list of models to schedule. Models can be local `vllm/...` or hosted/API models. |
+| `--processed-dataset` | Processed unified `DatasetDict` used to build scheduler slices. |
 | `--dataset-types` | Comma-separated subset of dataset splits to schedule. |
-| `--gpu-count` | Optional SLURM array concurrency cap. If omitted, the array is submitted without a `%N` cap. |
-| `--output-dir` | Advanced override: directory where the generated manifest, sbatch file, and submit helper are written. |
-| `--submit` | Advanced control: submit the generated sbatch array after writing the bundle. |
-| `--write-only` | Advanced control: write the bundle but do not call `sbatch`. |
+| `--questions-per-job` | Optional contiguous question-chunk size per scheduled slice. If omitted, each slice family stays in one chunk. |
+| `--gpu-count` | Optional concurrency cap applied per resource class by the master submit script. |
+| `--output-dir` | Advanced override: run directory where manifests, wrappers, state, dashboard, and submit helpers are written. |
+| `--submit` | Advanced control: submit the generated per-slice bundle after writing it. |
+| `--write-only` | Advanced control: write the bundle but do not run the master submit script. |
 | `--dry-run` | Advanced control: print the planned bundle details without writing or submitting anything. |
+| `--force` | Resubmit slices even if they are already current or pending. |
+| `--render-status` | Write the HTML dashboard for the run. `scheduler_state.json` is refreshed whenever a bundle is written. |
 | `--partition` | Advanced cluster override: SLURM partition to request for each task. |
 | `--account` | Advanced cluster override: SLURM account to charge for each task. |
 | `--qos` | Advanced cluster override: SLURM QoS value for each task. |
 | `--time-limit` | Advanced cluster override: wall-clock time limit for each task. |
 | `--mem` | Advanced cluster override: memory request per task. |
 | `--cpus-per-task` | Advanced cluster override: CPU core request per task. |
-| `--gpu-type` | Advanced cluster override: GPU type to request, such as `rtxa6000`. |
+| `--gpu-type` | Advanced cluster override: GPU type to request for local GPU-backed slices, such as `rtxa6000`. |
 
 ## Step 1: Prepare Data
 
@@ -94,14 +97,17 @@ uv run python main.py generate \
   --materialize-cache
 ```
 
-Recommended local-cluster generator command:
+Recommended scheduler generator command:
 
 ```bash
 uv run python main.py submit-generate-cluster \
-  --run-name gen_local_all \
-  --models Qwen/Qwen3-4B-Instruct-2507,allenai/Olmo-3-7B-Instruct \
+  --run-name gen_scheduler_all \
+  --models Qwen/Qwen3-4B-Instruct-2507,allenai/Olmo-3-7B-Instruct,gpt-5.2-2025-12-11 \
   --processed-dataset datasets/processed/unified_processed_v3 \
-  --gpu-count 2
+  --generation-strategies model_from_scratch,augment_human,augment_model,augment_ablation \
+  --questions-per-job 200 \
+  --gpu-count 4 \
+  --render-status
 ```
 
 Default model sets:
@@ -153,30 +159,55 @@ Also supports all flags from `Shared Direct-Run Flags` and `Shared Shard Flags`.
 
 ### `main.py submit-generate-cluster`
 
-Use this when generation should run on local `vllm/...` models across the cluster.
+Use this when generation should be scheduled as dependency-aware SLURM slices.
 
-With the default three dataset splits and the default two local generation models, this command creates `2 × 3 = 6` SLURM array tasks.
+Each slice is one:
+
+- model
+- dataset
+- generation strategy
+- question chunk
+
+Supported schedulable generation strategies:
+
+- `model_from_scratch`
+- `augment_human`
+- `augment_model`
+- `augment_ablation`
+
+`augment_model` depends on the matching `model_from_scratch` slice for the same model, dataset, and question chunk. `human_from_scratch` remains implicit and is not scheduled as its own slice.
+
+`--write-only` bundles remain `planned` in `scheduler_state.json` until `submit_all.sh` is actually run.
 
 | Flag | Meaning |
 |---|---|
 | `--run-name` | Logical run name used to organize the generated bundle, logs, and output caches. |
+| `--generation-strategies` | Comma-separated subset of schedulable generation strategies to submit. |
 
 Also supports all flags from `Shared Cluster-Submit Flags`.
 
+PI-facing wrapper:
+
+- [`jobs/submit_generate_scheduler.sh`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/jobs/submit_generate_scheduler.sh)
+
 ## Step 3: Evaluate
 
-The normal evaluation path is local `vllm/...` evaluation on the cluster. API evaluation is not part of the recommended workflow here.
+The scheduler can now fan out both local and hosted/API evaluation jobs.
 
 Recommended cluster command:
 
 ```bash
 uv run python main.py submit-evaluate-cluster \
-  --run-name eval_gpt52 \
-  --generator-run-name gen_gpt52 \
+  --run-name eval_scheduler_all \
+  --generator-run-name gen_scheduler_all \
   --generator-model gpt-5.2-2025-12-11 \
   --processed-dataset datasets/processed/unified_processed_v3 \
   --models Qwen/Qwen3-4B-Instruct-2507,allenai/Olmo-3-7B-Instruct,meta-llama/Llama-3.1-8B-Instruct \
-  --gpu-count 3
+  --settings human_from_scratch,model_from_scratch,augment_human,augment_model,augment_ablation \
+  --modes full_question,choices_only \
+  --questions-per-job 200 \
+  --gpu-count 3 \
+  --render-status
 ```
 
 The README contains the exact evaluation commands for each recommended generation run.
@@ -239,17 +270,33 @@ Also supports all flags from `Shared Direct-Run Flags` and `Shared Shard Flags`.
 
 ### `main.py submit-evaluate-cluster`
 
-Use this when evaluation should be distributed across local `vllm/...` models on the cluster.
+Use this when evaluation should be scheduled as dependency-aware SLURM slices.
 
-With the default three dataset splits and the default three local evaluation models, this command creates `3 × 3 = 9` SLURM array tasks.
+Each slice is one:
+
+- model
+- dataset
+- Final5 setting
+- evaluation mode
+- question chunk
+
+Each evaluation slice depends on the exact generation slice or slices required by its setting for the same dataset chunk.
+
+`--write-only` bundles remain `planned` in `scheduler_state.json` until `submit_all.sh` is actually run.
 
 | Flag | Meaning |
 |---|---|
 | `--run-name` | Logical run name used to organize the generated bundle and evaluation logs. |
 | `--generator-run-name` | Generation run whose outputs the cluster jobs should evaluate. |
 | `--generator-model` | Generation model whose outputs the cluster jobs should evaluate. |
+| `--settings` | Comma-separated subset of Final5 settings to schedule. |
+| `--modes` | Comma-separated subset of evaluation modes to schedule. |
 
 Also supports all flags from `Shared Cluster-Submit Flags`.
+
+PI-facing wrapper:
+
+- [`jobs/submit_evaluate_scheduler.sh`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/jobs/submit_evaluate_scheduler.sh)
 
 ## Step 4: Analyze
 
