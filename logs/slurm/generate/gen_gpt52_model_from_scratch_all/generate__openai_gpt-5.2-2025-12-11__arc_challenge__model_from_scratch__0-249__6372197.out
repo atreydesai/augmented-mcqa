@@ -1,0 +1,51 @@
+---------------------------------------------------------                                              
+final5_generate_model_from_scratch (250 samples): openai/gpt-5.2-2025-12-11                            
+max_tokens: 2048, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)
+---------------------------------------------------------                                              
+                                                                                                       
+Steps:   4/250   1% | Samples:   1/250 | mean:  n/a | openai:  2/10 | HTTP retries: 0
+Steps:  14/250   5% | Samples:  11/250 | mean: 1.00 | openai:  3/10 | HTTP retries: 0
+Steps:  22/250   8% | Samples:  21/250 | mean: 1.00 | openai:  7/10 | HTTP retries: 0
+Steps:  30/250  12% | Samples:  29/250 | mean: 1.00 | openai:  5/10 | HTTP retries: 0
+Steps:  37/250  14% | Samples:  36/250 | mean: 1.00 | openai:  5/10 | HTTP retries: 0
+Steps:  46/250  18% | Samples:  46/250 | mean: 1.00 | openai:  9/10 | HTTP retries: 0
+Steps:  55/250  22% | Samples:  54/250 | mean: 1.00 | openai:  6/10 | HTTP retries: 0
+Steps:  64/250  25% | Samples:  63/250 | mean: 1.00 | openai:  6/10 | HTTP retries: 0
+Steps:  71/250  28% | Samples:  70/250 | mean: 1.00 | openai:  7/10 | HTTP retries: 0
+Steps:  80/250  32% | Samples:  78/250 | mean: 1.00 | openai:  6/10 | HTTP retries: 0
+Steps:  86/250  34% | Samples:  86/250 | mean: 1.00 | openai:  7/10 | HTTP retries: 0
+Steps:  95/250  38% | Samples:  92/250 | mean: 1.00 | openai:  2/10 | HTTP retries: 0
+Steps: 104/250  41% | Samples: 102/250 | mean: 1.00 | openai:  5/10 | HTTP retries: 0
+Steps: 111/250  44% | Samples: 111/250 | mean: 1.00 | openai:  5/10 | HTTP retries: 0
+Steps: 124/250  49% | Samples: 121/250 | mean: 1.00 | openai:  5/10 | HTTP retries: 0
+Steps: 132/250  52% | Samples: 129/250 | mean: 1.00 | openai:  4/10 | HTTP retries: 0
+Steps: 140/250  56% | Samples: 139/250 | mean: 1.00 | openai:  8/10 | HTTP retries: 0
+Steps: 149/250  59% | Samples: 146/250 | mean: 1.00 | openai:  3/10 | HTTP retries: 0
+Steps: 157/250  62% | Samples: 154/250 | mean: 1.00 | openai:  2/10 | HTTP retries: 0
+Steps: 164/250  65% | Samples: 164/250 | mean: 1.00 | openai:  8/10 | HTTP retries: 0
+Steps: 171/250  68% | Samples: 170/250 | mean: 1.00 | openai:  6/10 | HTTP retries: 0
+Steps: 180/250  72% | Samples: 178/250 | mean: 1.00 | openai:  6/10 | HTTP retries: 0
+Steps: 188/250  75% | Samples: 188/250 | mean: 1.00 | openai:  9/10 | HTTP retries: 0
+Steps: 198/250  79% | Samples: 196/250 | mean: 1.00 | openai:  6/10 | HTTP retries: 0
+Steps: 208/250  83% | Samples: 203/250 | mean: 1.00 | openai:  3/10 | HTTP retries: 0
+Steps: 213/250  85% | Samples: 212/250 | mean: 1.00 | openai:  7/10 | HTTP retries: 0
+Steps: 224/250  89% | Samples: 219/250 | mean: 1.00 | openai:  4/10 | HTTP retries: 0
+Steps: 233/250  93% | Samples: 229/250 | mean: 1.00 | openai:  5/10 | HTTP retries: 0
+Steps: 243/250  97% | Samples: 240/250 | mean: 1.00 | openai:  6/10 | HTTP retries: 0
+Steps: 250/250 100% | Samples: 250/250 | mean: 1.00 | openai:  0/10 | HTTP retries: 0
+
+---------------------------------------------------------                                                                               
+final5_generate_model_from_scratch (250 samples): openai/gpt-5.2-2025-12-11                                                             
+max_tokens: 2048, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)                                 
+                                                                                                                                        
+total time:                                      0:02:54                                                                                
+openai/gpt-5.2-2025-12-11                        82,421 tokens [I: 63,845, O: 18,576, R: 5,284]                                         
+final5_generation                                                                                                                       
+mean               1.000                                                                                                                
+stderr             0.000                                                                                                                
+Log:                                                                                                                                    
+results/inspect/generation/gen_gpt52_model_from_scratch_all/openai_gpt-5.2-2025-12-11/2026-03-12T06-15-37+00-00_final5-generate-model-f…
+---------------------------------------------------------                                                                               
+                                                                                                                                        
+Generation logs: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/generation/gen_gpt52_model_from_scratch_all/openai_gpt-5.2-2025-12-11
+Running: python main.py generate --model openai/gpt-5.2-2025-12-11 --run-name gen_gpt52_model_from_scratch_all --processed-dataset datasets/processed/unified_processed_v3 --dataset-types arc_challenge --generation-strategies model_from_scratch --question-start 0 --limit 250 --augmented-dataset /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/augmented/gen_gpt52_model_from_scratch_all/openai_gpt-5.2-2025-12-11/_cluster_slices/arc_challenge/model_from_scratch/0-250 --max-tokens 2048 --reasoning-effort medium --retry-on-error 2
