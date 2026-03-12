@@ -6,7 +6,7 @@ cd "$SCRIPT_DIR"
 PROJECT_ROOT="${PROJECT_ROOT:-/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa}"
 PYTHON_BIN="${PYTHON_BIN:-python}"
 
-"$PYTHON_BIN" - <<'PY' "jobs/generated/generate/qwen397b-smoke/submissions/2026-03-12T03_12_34_00_00_c8efedb1/manifest.json" "jobs/generated/generate/qwen397b-smoke/submissions/2026-03-12T03_12_34_00_00_c8efedb1/run_local_task.sbatch" "jobs/generated/generate/qwen397b-smoke/submissions/2026-03-12T03_12_34_00_00_c8efedb1/run_api_task.sbatch" "$PROJECT_ROOT" "$PYTHON_BIN"
+"$PYTHON_BIN" - <<'PY' "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/generate/qwen397b-smoke/submissions/2026-03-12T03_19_15_00_00_c8af8b3f/manifest.json" "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/generate/qwen397b-smoke/submissions/2026-03-12T03_19_15_00_00_c8af8b3f/run_local_task.sbatch" "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/generate/qwen397b-smoke/submissions/2026-03-12T03_19_15_00_00_c8af8b3f/run_api_task.sbatch" "$PROJECT_ROOT" "$PYTHON_BIN"
 import json
 import subprocess
 import sys

@@ -1,0 +1,26 @@
+---------------------------------------------------------                       
+final5_generate_model_from_scratch (2 samples): together/Qwen/Qwen3.5-397B-A17B 
+max_tokens: 10000, reasoning_effort: medium, fail_on_error: False,              
+retry_on_error: 2, dataset: (samples)                                           
+---------------------------------------------------------                       
+                                                                                
+Steps:   1/2  50% | Samples:   1/  2 | mean:  n/a | together:  1/10 | HTTP retries: 0
+Steps:   2/2 100% | Samples:   2/  2 | mean: 1.00 | together:  0/10 | HTTP retries: 0
+
+---------------------------------------------------------                       
+final5_generate_model_from_scratch (2 samples): together/Qwen/Qwen3.5-397B-A17B 
+max_tokens: 10000, reasoning_effort: medium, fail_on_error: False,              
+retry_on_error: 2, dataset: (samples)                                           
+                                                                                
+total time:                            0:23:02                                  
+together/Qwen/Qwen3.5-397B-A17B        35,388 tokens [I: 1,682, O: 33,706]      
+final5_generation                                                               
+mean               0.500                                                        
+stderr             0.500                                                        
+Log:                                                                            
+results/inspect/generation/qwen397b-smoke/together_Qwen_Qwen3.5-397B-A17B/2026-…
+---------------------------------------------------------                       
+                                                                                
+Generation logs: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/generation/qwen397b-smoke/together_Qwen_Qwen3.5-397B-A17B
+Augmented dataset cache: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/augmented/qwen397b-smoke/together_Qwen_Qwen3.5-397B-A17B/_cluster_slices/gpqa/model_from_scratch/2-4
+Running: python main.py generate --model together/Qwen/Qwen3.5-397B-A17B --run-name qwen397b-smoke --processed-dataset datasets/processed/unified_processed_v3 --dataset-types gpqa --generation-strategies model_from_scratch --question-start 2 --limit 2 --augmented-dataset /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/augmented/qwen397b-smoke/together_Qwen_Qwen3.5-397B-A17B/_cluster_slices/gpqa/model_from_scratch/2-4 --max-tokens 10000 --reasoning-effort medium --retry-on-error 2
