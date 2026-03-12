@@ -120,6 +120,43 @@ def test_submit_generate_cluster_write_only_can_be_replanned(tmp_path):
     assert len(list(bundle_dir.glob("submissions/*/manifest.json"))) == 2
 
 
+def test_submit_generate_cluster_relative_output_dir_writes_absolute_runtime_paths(tmp_path, monkeypatch):
+    dataset_path = tmp_path / "processed"
+    bundle_dir = tmp_path / "bundle"
+    _processed_dataset(dataset_path, counts={"arc_challenge": 1, "mmlu_pro": 0, "gpqa": 0})
+    monkeypatch.chdir(tmp_path)
+
+    rc = app_main.main(
+        [
+            "submit-generate-cluster",
+            "--run-name",
+            "cluster-gen",
+            "--processed-dataset",
+            str(dataset_path),
+            "--dataset-types",
+            "arc_challenge",
+            "--models",
+            "Qwen/Qwen3-4B-Instruct-2507",
+            "--generation-strategies",
+            "model_from_scratch",
+            "--output-dir",
+            "bundle",
+            "--write-only",
+        ]
+    )
+
+    assert rc == 0
+    manifest_path = _manifest_path(bundle_dir)
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    task = manifest["tasks"][0]
+    assert task["task_stdout"].startswith("/")
+    assert task["task_stderr"].startswith("/")
+
+    submit_text = _submit_path(bundle_dir).read_text(encoding="utf-8")
+    assert str(manifest_path.resolve()) in submit_text
+    assert str((bundle_dir / "submissions" / manifest["submission_id"] / "run_api_task.sbatch").resolve()) in submit_text
+
+
 def test_submit_generate_cluster_mixed_local_and_api_models_split_resource_classes(tmp_path):
     dataset_path = tmp_path / "processed"
     bundle_dir = tmp_path / "bundle"

@@ -239,11 +239,11 @@ class ClusterBundlePaths:
 
 def build_bundle_paths(*, stage: str, run_name: str, output_dir: str | Path | None) -> ClusterBundlePaths:
     run_slug = safe_name(run_name)
-    run_dir = Path(output_dir) if output_dir else Path("jobs/generated") / stage / run_slug
+    run_dir = (Path(output_dir) if output_dir else Path("jobs/generated") / stage / run_slug).resolve()
     submission_created_at = iso_now()
     submission_id = safe_name(f"{submission_created_at}_{uuid4().hex[:8]}")
     submission_dir = run_dir / "submissions" / submission_id
-    log_dir = Path("logs/slurm") / stage / run_slug
+    log_dir = (Path("logs/slurm") / stage / run_slug).resolve()
     return ClusterBundlePaths(
         run_dir=run_dir,
         submission_dir=submission_dir,
