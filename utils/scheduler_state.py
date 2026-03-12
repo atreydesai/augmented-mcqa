@@ -303,7 +303,7 @@ def render_scheduler_dashboard(state: dict[str, Any]) -> str:
     groups: dict[tuple[str, str], dict[str, Any]] = defaultdict(lambda: {"columns": set(), "rows": defaultdict(dict)})
     for entry in slices:
         group_key = (str(entry.get("model", "")), str(entry.get("dataset_type", "")))
-        if entry.get("stage") == "generation":
+        if entry.get("stage") in {"generate", "generation"}:
             column = str(entry.get("strategy", ""))
         else:
             column = f"{entry.get('setting', '')}:{entry.get('mode', '')}"

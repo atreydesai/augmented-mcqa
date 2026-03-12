@@ -215,6 +215,49 @@ def test_render_scheduler_dashboard_contains_statuses():
     assert STATUS_STALE in html
 
 
+def test_render_scheduler_dashboard_uses_generation_strategies_as_columns():
+    state = {
+        "stage": "generate",
+        "run_name": "run1",
+        "submission_count": 1,
+        "slice_count": 2,
+        "generated_at": "2026-03-11T12:00:00+00:00",
+        "slices": [
+            {
+                "slice_ref": "a",
+                "stage": "generate",
+                "model": "together/model-a",
+                "dataset_type": "arc_challenge",
+                "strategy": "model_from_scratch",
+                "question_start": 0,
+                "question_end": 10,
+                "task_slug": "task-a",
+                "status": STATUS_CURRENT,
+                "latest_attempt": {"status": "success"},
+            },
+            {
+                "slice_ref": "b",
+                "stage": "generate",
+                "model": "together/model-a",
+                "dataset_type": "arc_challenge",
+                "strategy": "augment_model",
+                "question_start": 0,
+                "question_end": 10,
+                "task_slug": "task-b",
+                "status": STATUS_PLANNED,
+                "latest_attempt": {},
+            },
+        ],
+    }
+
+    html = render_scheduler_dashboard(state)
+    assert "<th>model_from_scratch</th>" in html
+    assert "<th>augment_model</th>" in html
+    assert "task-a" in html
+    assert "task-b" in html
+    assert "None:None" not in html
+
+
 def test_collect_slice_attempts_treats_completed_evaluation_logs_as_success(tmp_path):
     root = tmp_path / "eval-logs"
     _write_eval_log(root, slice_ref="evaluation|run1|model|arc|setting|mode|0|1", score_value=0.0)
