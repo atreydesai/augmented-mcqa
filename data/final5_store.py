@@ -34,6 +34,39 @@ def _latest_mtime(path: Path, *, suffix: str | None = None) -> float | None:
     return latest
 
 
+def _materialized_cache_mtime(path: Path) -> float | None:
+    dataset_dict_file = path / "dataset_dict.json"
+    if not dataset_dict_file.exists():
+        return None
+
+    latest = dataset_dict_file.stat().st_mtime
+    for candidate in path.rglob("*"):
+        if not candidate.is_file():
+            continue
+        if "_cluster_slices" in candidate.parts:
+            continue
+        candidate_mtime = candidate.stat().st_mtime
+        if candidate_mtime > latest:
+            latest = candidate_mtime
+    return latest
+
+
+def _validate_augmented_output_path(
+    processed_dataset_path: Path | str,
+    output_path: Path | str,
+) -> None:
+    processed_root = Path(processed_dataset_path).resolve(strict=False)
+    output_root = Path(output_path).resolve(strict=False)
+    if (
+        output_root == processed_root
+        or processed_root in output_root.parents
+        or output_root in processed_root.parents
+    ):
+        raise ValueError(
+            f"Augmented output path must not overlap processed dataset path: {output_root}"
+        )
+
+
 def _load_dataset_dict(path: Path | str):
     dataset_path = Path(path)
     dataset_dict_file = dataset_path / "dataset_dict.json"
@@ -228,6 +261,7 @@ def materialize_augmented_dataset(
     *,
     dataset_types: list[str] | None = None,
 ) -> Path:
+    _validate_augmented_output_path(processed_dataset_path, output_path)
     dataset_dict = _load_dataset_dict(processed_dataset_path)
     generated = _generation_payloads(generation_log_dir)
     wanted = dataset_types or list(ACTIVE_DATASET_TYPES)
@@ -273,9 +307,10 @@ def ensure_augmented_dataset(
     dataset_types: list[str] | None = None,
     rebuild: bool = False,
 ) -> Path:
+    _validate_augmented_output_path(processed_dataset_path, output_path)
     out = Path(output_path)
     if out.exists() and not rebuild:
-        cache_mtime = _latest_mtime(out)
+        cache_mtime = _materialized_cache_mtime(out)
         log_mtime = _latest_mtime(Path(generation_log_dir), suffix=".eval")
         if cache_mtime is not None and (log_mtime is None or log_mtime <= cache_mtime):
             return out

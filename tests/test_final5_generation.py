@@ -1,6 +1,7 @@
 from pathlib import Path
 import os
 
+import pytest
 from inspect_ai import Task, eval as inspect_eval
 from inspect_ai.dataset import MemoryDataset, Sample
 from inspect_ai.model import ChatMessageUser, ModelOutput
@@ -408,6 +409,54 @@ def test_ensure_augmented_dataset_refreshes_existing_cache_when_new_shard_logs_a
         "arc_challenge:arc-1",
         "arc_challenge:arc-2",
     ]
+
+
+def test_ensure_augmented_dataset_materializes_when_only_cluster_slices_exist(tmp_path):
+    processed_path = tmp_path / "processed"
+    log_dir = tmp_path / "logs"
+    cache_path = tmp_path / "augmented"
+    _processed_dataset(processed_path)
+
+    shard0 = [
+        Sample(
+            input="Q1",
+            target="",
+            id="arc_challenge:arc-1",
+            metadata={
+                "generation_payload": {
+                    "status": "success",
+                    "human_from_scratch": ["H1", "H2", "H3"],
+                    "human_from_scratch_options_randomized": ["Gold 1", "H1", "H2", "H3"],
+                    "human_from_scratch_correct_answer_letter": "A",
+                }
+            },
+        )
+    ]
+    _write_generation_log(log_dir, shard0)
+
+    staging_path = cache_path / "_cluster_slices" / "arc_challenge" / "model_from_scratch" / "0-1"
+    DatasetDict({"arc_challenge": Dataset.from_list([{"sample_id": "arc_challenge:arc-1"}])}).save_to_disk(str(staging_path))
+
+    ensure_augmented_dataset(processed_path, log_dir, cache_path)
+
+    assert (cache_path / "dataset_dict.json").exists()
+    dataset = _load_dataset_dict(cache_path)
+    assert [row["sample_id"] for row in dataset["arc_challenge"]] == ["arc_challenge:arc-1"]
+
+
+def test_augmented_cache_rejects_paths_overlapping_processed_dataset(tmp_path):
+    processed_path = tmp_path / "processed"
+    _processed_dataset(processed_path)
+
+    with pytest.raises(ValueError, match="must not overlap processed dataset path"):
+        ensure_augmented_dataset(processed_path, tmp_path / "logs", processed_path)
+
+    with pytest.raises(ValueError, match="must not overlap processed dataset path"):
+        materialize_augmented_dataset(
+            processed_path,
+            tmp_path / "logs",
+            processed_path / "nested-output",
+        )
 
 
 def test_build_evaluation_dataset_limit_applies_per_dataset_split(tmp_path):
