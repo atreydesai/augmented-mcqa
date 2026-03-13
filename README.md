@@ -7,10 +7,10 @@ cp .env.example .env
 uv sync
 ```
 
-If you will run local `vllm/...` models:
+If you will run local `vllm/...` models or direct `vllm.LLM(...)` smoke tests, keep NumPy on the 2.2 line. `vllm==0.11.2` currently fails to start against NumPy 2.4.x because `numba` rejects it. The validated one-GPU Nemotron Nano 9B v2 smoke test ran with `numpy==2.2.6`.
 
 ```bash
-uv pip install --no-build-isolation 'vllm==0.11.2' 'transformers<5' 'numpy<2.3'
+uv pip install --no-build-isolation 'vllm==0.11.2'
 ```
 
 To keep that cluster-only local-model stack installed across project updates, use:

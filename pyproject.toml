@@ -3,7 +3,7 @@ name = "augmented-mcqa"
 version = "0.1.0"
 description = "Augmented MCQA generation and evaluation tooling"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.12,<3.14"
 dependencies = [
     "anthropic>=0.80.0",
     "datasets>=4.5.0",
@@ -11,7 +11,7 @@ dependencies = [
     "huggingface-hub>=1.4.1",
     "inspect-ai>=0.3.189",
     "matplotlib>=3.10.8",
-    "numpy>=2.4.2",
+    "numpy>=2.2,<2.3",
     "openai>=2.26.0",
     "pandas>=3.0.0",
     "python-dotenv>=1.2.1",
