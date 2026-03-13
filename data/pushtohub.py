@@ -13,8 +13,8 @@ if str(PROJECT_ROOT) not in sys.path:
 from config import HF_TOKEN
 
 
-DATASET_PATH = "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/augmented/gen_gpt52_model_from_scratch_all/openai_gpt-5.2-2025-12-11"
-REPO_ID = "atreydesai/gen_gpt52_model_from_scratch_all"
+DATASET_PATH = "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/augmented/gen_gpt52_v2/openai_gpt-5.2-2025-12-11"
+REPO_ID = "atreydesai/gen_gpt52_v2"
 
 CANONICAL_FEATURES = Features(
     {
