@@ -2,8 +2,8 @@
   "citation": "",
   "description": "",
   "features": {
-    "id": {
-      "dtype": "string",
+    "question_id": {
+      "dtype": "int64",
       "_type": "Value"
     },
     "question": {
@@ -12,7 +12,7 @@
     },
     "options": {
       "feature": {
-        "dtype": "null",
+        "dtype": "string",
         "_type": "Value"
       },
       "_type": "List"
@@ -22,19 +22,20 @@
       "_type": "Value"
     },
     "answer_index": {
-      "dtype": "null",
+      "dtype": "int64",
       "_type": "Value"
     },
-    "answer_letter": {
+    "cot_content": {
       "dtype": "string",
       "_type": "Value"
     },
-    "choices_answer": {
-      "feature": {
-        "dtype": "string",
-        "_type": "Value"
-      },
-      "_type": "List"
+    "category": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "src": {
+      "dtype": "string",
+      "_type": "Value"
     },
     "choices_human": {
       "feature": {
@@ -43,11 +44,18 @@
       },
       "_type": "List"
     },
-    "category": {
-      "dtype": "string",
+    "choices_answer": {
+      "feature": {
+        "dtype": "string",
+        "_type": "Value"
+      },
+      "_type": "List"
+    },
+    "whitespace_bug_fixed": {
+      "dtype": "bool",
       "_type": "Value"
     },
-    "src": {
+    "answer_letter": {
       "dtype": "string",
       "_type": "Value"
     },
@@ -124,14 +132,14 @@
     },
     "augment_human": {
       "feature": {
-        "dtype": "string",
+        "dtype": "null",
         "_type": "Value"
       },
       "_type": "List"
     },
     "augment_human_options_randomized": {
       "feature": {
-        "dtype": "string",
+        "dtype": "null",
         "_type": "Value"
       },
       "_type": "List"
@@ -142,14 +150,14 @@
     },
     "augment_model": {
       "feature": {
-        "dtype": "string",
+        "dtype": "null",
         "_type": "Value"
       },
       "_type": "List"
     },
     "augment_model_options_randomized": {
       "feature": {
-        "dtype": "string",
+        "dtype": "null",
         "_type": "Value"
       },
       "_type": "List"

@@ -14,7 +14,7 @@ from config import HF_TOKEN
 
 
 DATASET_PATH = "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/augmented/gen_gpt52_v2/openai_gpt-5.2-2025-12-11"
-REPO_ID = "atreydesai/gen_gpt52_v2"
+REPO_ID = "atreydesai/gpt-5.2_v2"
 
 CANONICAL_FEATURES = Features(
     {
