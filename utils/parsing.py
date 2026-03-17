@@ -133,16 +133,42 @@ def extract_answer_letter(text: str, valid_letters: str) -> str:
     return ""
 
 
+def _extract_answer_letter_from_answer_field(text: str, valid_letters: str) -> str:
+    valid = re.escape(valid_letters)
+    pattern = re.compile(
+        rf"""(?ix)
+        (?:"answer"|'answer'|answer)
+        \s*:\s*
+        (?:
+            "([{valid}])"
+            |
+            '([{valid}])'
+            |
+            ([{valid}])
+        )
+        (?=\s*(?:[,}}]|\Z))
+        """
+    )
+    for match in reversed(list(pattern.finditer(strip_code_fences(text)))):
+        for group in match.groups():
+            if group:
+                return group.upper()
+    return ""
+
+
 def extract_answer_letter_from_json(text: str, valid_letters: str) -> str:
-    try:
-        payload = _extract_json_object(text)
-    except LabeledParseError:
+    payload_text = strip_code_fences(text)
+    if not payload_text.lstrip().startswith("{"):
         return ""
+    try:
+        payload = _extract_json_object(payload_text)
+    except LabeledParseError:
+        return _extract_answer_letter_from_answer_field(payload_text, valid_letters)
 
     answer = normalize_text(payload.get("answer", ""))
-    if not answer:
-        return ""
-    candidate = answer.upper()
-    if len(candidate) == 1 and candidate in set(valid_letters):
-        return candidate
+    if answer:
+        candidate = answer.upper()
+        if len(candidate) == 1 and candidate in set(valid_letters):
+            return candidate
+
     return ""

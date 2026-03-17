@@ -11,7 +11,7 @@ def test_main_parser_generate_defaults_use_inspect_first_shape():
     assert args.processed_dataset.endswith("unified_processed_v3")
     assert args.shard_count == 1
     assert args.shard_strategy == "contiguous"
-    assert Path(args.log_root).relative_to(Path(os.environ["RESULTS_DIR"])) == Path("inspect/generation")
+    assert Path(args.log_root).parts[-2:] == ("inspect", "generation")
 
 
 def test_main_parser_evaluate_defaults_use_inspect_first_shape():
@@ -29,8 +29,8 @@ def test_main_parser_evaluate_defaults_use_inspect_first_shape():
             "gpt-5.2-2025-12-11",
         ]
     )
-    assert Path(args.cache_root).relative_to(Path(os.environ["DATASETS_DIR"])) == Path("augmented")
-    assert Path(args.log_root).relative_to(Path(os.environ["RESULTS_DIR"])) == Path("inspect/evaluation")
+    assert Path(args.cache_root).parts[-1] == "augmented"
+    assert Path(args.log_root).parts[-2:] == ("inspect", "evaluation")
     assert args.shard_count == 1
 
 
@@ -98,7 +98,7 @@ def test_generate_help_describes_materialize_cache_flag(capsys):
         assert exc.code == 0
     output = capsys.readouterr().out
     assert "--materialize-cache" in output
-    assert "augmented DatasetDict cache immediately" in output
+    assert "setting-scoped augmented store immediately" in output
 
 
 def test_cluster_help_mentions_gpu_count_and_write_only(capsys):

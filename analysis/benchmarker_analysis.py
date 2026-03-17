@@ -29,33 +29,20 @@ import pandas as pd
 import scipy.stats as stats
 import seaborn as sns
 
-from data.final5_store import _load_dataset_dict
+from data.final5_store import iter_augmented_rows
 from utils.constants import (
+    AUGMENTED_STORE_MANIFEST,
     CHOICE_LABELS,
     DEFAULT_AUGMENTED_CACHE_ROOT,
     DEFAULT_EVALUATION_LOG_ROOT,
     FINAL5_SETTINGS,
+    SETTING_SPECS,
 )
 from utils.logs import iter_eval_logs
 from utils.modeling import resolve_model_name, safe_name
-from utils.sharding import sample_id_for_row
 
 
 CONFIG_ORDER = list(FINAL5_SETTINGS)
-CONFIG_LABELS = {
-    "human_from_scratch": "Human\n(4-choice)",
-    "model_from_scratch": "Model\n(4-choice)",
-    "augment_human": "Aug-Human\n(10-choice)",
-    "augment_model": "Aug-Model\n(10-choice)",
-    "augment_ablation": "Aug-Ablation\n(10-choice)",
-}
-CONFIG_SHORT = {
-    "human_from_scratch": "Hum-4",
-    "model_from_scratch": "Mdl-4",
-    "augment_human": "AugH-10",
-    "augment_model": "AugM-10",
-    "augment_ablation": "AugA-10",
-}
 DATASET_ORDER = ["arc_challenge", "gpqa", "mmlu_pro"]
 DATASET_LABELS = {"arc_challenge": "ARC-Challenge", "gpqa": "GPQA", "mmlu_pro": "MMLU-Pro"}
 RULES_ORDER = [
@@ -91,13 +78,48 @@ DATASET_PALETTE = {
     "gpqa": "#388E3C",
     "mmlu_pro": "#D32F2F",
 }
-K_MAP = {
-    "human_from_scratch": 4,
-    "model_from_scratch": 4,
-    "augment_human": 10,
-    "augment_model": 10,
-    "augment_ablation": 10,
+CONFIG_LABEL_PREFIXES = {
+    "human_from_scratch": "Human",
+    "model_from_scratch": "Model",
+    "augment_human": "Aug-Human",
+    "augment_model": "Aug-Model",
+    "augment_ablation": "Aug-Ablation",
 }
+CONFIG_SHORT_PREFIXES = {
+    "human_from_scratch": "Hum",
+    "model_from_scratch": "Mdl",
+    "augment_human": "AugH",
+    "augment_model": "AugM",
+    "augment_ablation": "AugA",
+}
+K_MAP = {setting: int(SETTING_SPECS[setting]["num_choices"]) for setting in CONFIG_ORDER}
+CONFIG_LABELS = {
+    setting: f"{CONFIG_LABEL_PREFIXES[setting]}\n({K_MAP[setting]}-choice)" for setting in CONFIG_ORDER
+}
+CONFIG_SHORT = {
+    setting: f"{CONFIG_SHORT_PREFIXES[setting]}-{K_MAP[setting]}" for setting in CONFIG_ORDER
+}
+CHOICE_GROUP_MARKERS = ("o", "s", "^", "D", "P", "X", "v", "<", ">")
+
+
+def _choice_count_label(choice_count: int) -> str:
+    return f"{int(choice_count)}-choice"
+
+
+def _setting_choice_group(setting: str, *, include_family: bool = False) -> str:
+    choice_label = _choice_count_label(K_MAP[str(setting)])
+    if not include_family:
+        return choice_label
+    family = "from_scratch" if "from_scratch" in str(setting) else "augment_*"
+    return f"{choice_label}\n({family})"
+
+
+def _choice_group_markers(choice_counts: Iterable[int]) -> dict[int, str]:
+    unique_counts = sorted({int(count) for count in choice_counts})
+    return {
+        count: CHOICE_GROUP_MARKERS[index % len(CHOICE_GROUP_MARKERS)]
+        for index, count in enumerate(unique_counts)
+    }
 
 
 def _csv_list(raw: str | None) -> list[str]:
@@ -249,20 +271,36 @@ def _resolve_augmented_dataset_path(
     generator_model: str | None,
     generator_run_name: str | None,
 ) -> Path:
-    if augmented_dataset:
-        return Path(augmented_dataset)
+    def normalize(path: Path | str) -> Path:
+        candidate = Path(path)
+        if candidate.name in {AUGMENTED_STORE_MANIFEST, "dataset_dict.json"}:
+            return candidate.parent
+        return candidate
 
-    root = Path(cache_root)
-    if (root / "dataset_dict.json").exists():
+    def is_cache_root(path: Path | str) -> bool:
+        candidate = normalize(path)
+        return (candidate / AUGMENTED_STORE_MANIFEST).exists() or (candidate / "dataset_dict.json").exists()
+
+    if augmented_dataset:
+        return normalize(augmented_dataset)
+
+    root = normalize(cache_root)
+    if is_cache_root(root):
         return root
 
     if generator_model and generator_run_name:
         resolved_model = resolve_model_name(generator_model)
         candidate = root / safe_name(generator_run_name) / safe_name(resolved_model)
-        if (candidate / "dataset_dict.json").exists():
+        if is_cache_root(candidate):
             return candidate
 
-    candidates = sorted(path.parent for path in root.glob("**/dataset_dict.json"))
+    candidates = sorted(
+        {
+            path.parent
+            for pattern in (f"**/{AUGMENTED_STORE_MANIFEST}", "**/dataset_dict.json")
+            for path in root.glob(pattern)
+        }
+    )
     if not candidates:
         raise FileNotFoundError(
             f"No augmented dataset cache found under {root}. "
@@ -368,32 +406,26 @@ def summarize_accuracy(eval_samples: pd.DataFrame) -> pd.DataFrame:
 
 
 def load_augmented_rows(path: Path) -> pd.DataFrame:
-    dataset_dict = _load_dataset_dict(path)
     rows: list[dict[str, object]] = []
-    for dataset in DATASET_ORDER:
-        if dataset not in dataset_dict:
+    for row in iter_augmented_rows(path, dataset_types=DATASET_ORDER, settings=CONFIG_ORDER):
+        payload = dict(row)
+        dataset = str(payload.get("dataset_type", "") or "")
+        setting = str(payload.get("setting", "") or "")
+        options = list(payload.get("options_randomized") or [])
+        gold_letter = str(payload.get("correct_answer_letter", "") or "")
+        if dataset not in DATASET_ORDER or setting not in CONFIG_ORDER or not options or not gold_letter:
             continue
-        split = dataset_dict[dataset]
-        for row_index, row in enumerate(split):
-            payload = dict(row)
-            sample_id = sample_id_for_row(dataset, payload, row_index)
-            question = str(payload.get("question", ""))
-            for setting in CONFIG_ORDER:
-                options = list(payload.get(f"{setting}_options_randomized") or [])
-                gold_letter = str(payload.get(f"{setting}_correct_answer_letter", "") or "")
-                if not options or not gold_letter:
-                    continue
-                rows.append(
-                    {
-                        "dataset": dataset,
-                        "config": setting,
-                        "sample_id": sample_id,
-                        "question_idx": row_index,
-                        "question": question,
-                        "gold_answer_letter": gold_letter,
-                        "options_randomized": options,
-                    }
-                )
+        rows.append(
+            {
+                "dataset": dataset,
+                "config": setting,
+                "sample_id": str(payload.get("sample_id", "") or ""),
+                "question_idx": int(payload.get("row_index", -1)),
+                "question": str(payload.get("question", "") or ""),
+                "gold_answer_letter": gold_letter,
+                "options_randomized": options,
+            }
+        )
     df = pd.DataFrame(rows)
     if df.empty:
         raise ValueError(f"No augmented rows found at {path}")
@@ -588,7 +620,7 @@ def run_analysis(args: argparse.Namespace) -> int:
 
     choice_group_df = flaw_df.copy()
     choice_group_df["choice_group"] = choice_group_df["config"].map(
-        lambda config: "4-choice\n(from_scratch)" if "from_scratch" in str(config) else "10-choice\n(augment_*)"
+        lambda config: _setting_choice_group(str(config), include_family=True)
     )
     grouped_4v10 = (
         choice_group_df.groupby(["dataset", "choice_group"], observed=True)
@@ -601,15 +633,17 @@ def run_analysis(args: argparse.Namespace) -> int:
         .reset_index()
     )
     fig2c, axes2c = plt.subplots(1, 2, figsize=(11, 5))
-    groups = ["4-choice\n(from_scratch)", "10-choice\n(augment_*)"]
+    groups = list(dict.fromkeys(choice_group_df["choice_group"]))
     x = np.arange(len(DATASET_ORDER))
-    width = 0.3
-    colors = ["#2196F3", "#F44336"]
+    colors = ["#2196F3", "#F44336", "#4CAF50", "#9C27B0", "#FF9800"]
     for ax, metric, ci_col, ylabel in [
         (axes2c[0], "mean_flaw", "ci_flaw", "Mean fraction of rules passed"),
         (axes2c[1], "mean_p2", "ci_p2", "P(>=2 writing flaws)"),
     ]:
-        for offset, (group, color) in enumerate(zip(groups, colors)):
+        offsets = np.linspace(-(len(groups) - 1) / 2, (len(groups) - 1) / 2, len(groups)) if groups else np.array([0.0])
+        bar_width = min(0.55 / max(len(groups), 1), 0.3)
+        for index, (offset, group) in enumerate(zip(offsets, groups)):
+            color = colors[index % len(colors)]
             vals: list[float] = []
             errs: list[float] = []
             for dataset in DATASET_ORDER:
@@ -617,9 +651,9 @@ def run_analysis(args: argparse.Namespace) -> int:
                 vals.append(float(row[metric].iloc[0]) if not row.empty else 0.0)
                 errs.append(float(row[ci_col].iloc[0]) if not row.empty else 0.0)
             ax.bar(
-                x + (offset - 0.5) * width,
+                x + offset * bar_width,
                 vals,
-                width=width * 0.9,
+                width=bar_width * 0.9,
                 label=group.replace("\n", " "),
                 color=color,
                 alpha=0.85,
@@ -631,8 +665,8 @@ def run_analysis(args: argparse.Namespace) -> int:
         ax.set_ylabel(ylabel)
         ax.legend(fontsize=8)
     axes2c[1].yaxis.set_major_formatter(mticker.PercentFormatter(xmax=1.0))
-    axes2c[0].set_title("Fig 2c (left): Quality - 4-choice vs 10-choice")
-    axes2c[1].set_title("Fig 2c (right): P(>=2 flaws) - 4-choice vs 10-choice")
+    axes2c[0].set_title("Fig 2c (left): Quality by choice count")
+    axes2c[1].set_title("Fig 2c (right): P(>=2 flaws) by choice count")
     _save(fig2c, output_dir, "fig2c_4choice_vs_10choice.png")
 
     print("\n" + "=" * 70)
@@ -794,22 +828,21 @@ def run_analysis(args: argparse.Namespace) -> int:
         on=["dataset", "config"],
         how="inner",
     )
-    cross["choice_group"] = cross["config"].map(
-        lambda config: "4-choice" if "from_scratch" in str(config) else "10-choice"
-    )
+    cross["choice_count"] = cross["config"].map(lambda config: K_MAP[str(config)])
+    cross["choice_group"] = cross["choice_count"].map(_choice_count_label)
     r_val, p_val = _safe_pearsonr(cross["mean_validity"], cross["mean_accuracy"])
     r_p2, p_p2 = _safe_pearsonr(cross["mean_p2"], cross["mean_accuracy"])
     print(f"  Pearson r(validity, accuracy): r={r_val:.3f}, p={p_val:.4f}")
     print(f"  Pearson r(p>=2 flaws, accuracy): r={r_p2:.3f}, p={p_p2:.4f}")
 
     fig5a, ax5a = plt.subplots(figsize=(8, 6))
-    markers = {"4-choice": "o", "10-choice": "s"}
+    markers = _choice_group_markers(cross["choice_count"])
     for _, row in cross.iterrows():
         ax5a.scatter(
             row["mean_validity"],
             row["mean_accuracy"],
             color=DATASET_PALETTE.get(str(row["dataset"]), "#666666"),
-            marker=markers[str(row["choice_group"])],
+            marker=markers[int(row["choice_count"])],
             s=100,
             zorder=3,
         )
@@ -820,8 +853,8 @@ def run_analysis(args: argparse.Namespace) -> int:
         ax5a.plot(x_fit, fit[0] * x_fit + fit[1], "k--", linewidth=1, label=f"r={r_val:.2f}, p={p_val:.3f}")
     for dataset in DATASET_ORDER:
         ax5a.scatter([], [], color=DATASET_PALETTE[dataset], label=DATASET_LABELS[dataset], s=80)
-    for choice_group, marker in markers.items():
-        ax5a.scatter([], [], color="gray", marker=marker, label=choice_group, s=80)
+    for choice_count, marker in markers.items():
+        ax5a.scatter([], [], color="gray", marker=marker, label=_choice_count_label(choice_count), s=80)
     ax5a.legend(fontsize=8, loc="best")
     ax5a.set_xlabel("Mean writing quality (fraction of rules passed)")
     ax5a.set_ylabel("Mean accuracy (full_question)")
@@ -865,7 +898,7 @@ def run_analysis(args: argparse.Namespace) -> int:
             row["mean_p2"],
             row["mean_accuracy"],
             color=DATASET_PALETTE.get(str(row["dataset"]), "#666666"),
-            marker=markers[str(row["choice_group"])],
+            marker=markers[int(row["choice_count"])],
             s=100,
             zorder=3,
         )
@@ -876,8 +909,8 @@ def run_analysis(args: argparse.Namespace) -> int:
         ax5c.plot(x_fit, fit[0] * x_fit + fit[1], "k--", linewidth=1, label=f"r={r_p2:.2f}, p={p_p2:.3f}")
     for dataset in DATASET_ORDER:
         ax5c.scatter([], [], color=DATASET_PALETTE[dataset], label=DATASET_LABELS[dataset], s=80)
-    for choice_group, marker in markers.items():
-        ax5c.scatter([], [], color="gray", marker=marker, label=choice_group, s=80)
+    for choice_count, marker in markers.items():
+        ax5c.scatter([], [], color="gray", marker=marker, label=_choice_count_label(choice_count), s=80)
     ax5c.legend(fontsize=8)
     ax5c.set_xlabel("P(>=2 writing flaws)")
     ax5c.set_ylabel("Mean accuracy (full_question)")
@@ -889,36 +922,41 @@ def run_analysis(args: argparse.Namespace) -> int:
     print("\n" + "=" * 70)
     print("SECTION 6: WITHIN-GROUP CORRELATION")
     print("=" * 70)
-    cross_4 = cross[cross["choice_group"] == "4-choice"]
-    cross_10 = cross[cross["choice_group"] == "10-choice"]
-    r4, p4 = _safe_pearsonr(cross_4["mean_validity"], cross_4["mean_accuracy"])
-    r10, p10 = _safe_pearsonr(cross_10["mean_validity"], cross_10["mean_accuracy"])
-    print(f"  4-choice: r={r4:.3f}, p={p4:.4f}")
-    print(f"  10-choice: r={r10:.3f}, p={p10:.4f}")
+    within_group_stats: list[tuple[int, pd.DataFrame, float, float]] = []
+    for choice_count in sorted(cross["choice_count"].dropna().astype(int).unique()):
+        subset = cross[cross["choice_count"] == choice_count]
+        r_value, p_value = _safe_pearsonr(subset["mean_validity"], subset["mean_accuracy"])
+        within_group_stats.append((choice_count, subset, r_value, p_value))
+        print(f"  {_choice_count_label(choice_count)}: r={r_value:.3f}, p={p_value:.4f}")
     fig6a, ax6a = plt.subplots(figsize=(8, 6))
     for _, row in cross.iterrows():
         ax6a.scatter(
             row["mean_validity"],
             row["mean_accuracy"],
             color=DATASET_PALETTE.get(str(row["dataset"]), "#666666"),
-            marker=markers[str(row["choice_group"])],
+            marker=markers[int(row["choice_count"])],
             s=110,
             zorder=3,
         )
         ax6a.annotate(CONFIG_SHORT[str(row["config"])], (row["mean_validity"], row["mean_accuracy"]), textcoords="offset points", xytext=(5, 3), fontsize=7)
-    for choice_group, subset, style, r_value, p_value in [
-        ("4-choice", cross_4, "--", r4, p4),
-        ("10-choice", cross_10, ":", r10, p10),
-    ]:
+    line_styles = ("--", ":", "-.", "-")
+    for index, (choice_count, subset, r_value, p_value) in enumerate(within_group_stats):
         fit = _safe_regression(subset["mean_validity"], subset["mean_accuracy"])
         if fit is None:
             continue
         x_fit = np.linspace(float(subset["mean_validity"].min()), float(subset["mean_validity"].max()), 100)
-        ax6a.plot(x_fit, fit[0] * x_fit + fit[1], style, linewidth=1.5, label=f"{choice_group}: r={r_value:.2f}, p={p_value:.3f}")
+        style = line_styles[index % len(line_styles)]
+        ax6a.plot(
+            x_fit,
+            fit[0] * x_fit + fit[1],
+            style,
+            linewidth=1.5,
+            label=f"{_choice_count_label(choice_count)}: r={r_value:.2f}, p={p_value:.3f}",
+        )
     for dataset in DATASET_ORDER:
         ax6a.scatter([], [], color=DATASET_PALETTE[dataset], label=DATASET_LABELS[dataset], s=80)
-    for choice_group, marker in markers.items():
-        ax6a.scatter([], [], color="gray", marker=marker, label=choice_group, s=80)
+    for choice_count, marker in markers.items():
+        ax6a.scatter([], [], color="gray", marker=marker, label=_choice_count_label(choice_count), s=80)
     ax6a.legend(fontsize=7, loc="best")
     ax6a.set_xlabel("Mean writing quality")
     ax6a.set_ylabel("Mean accuracy (full_question)")

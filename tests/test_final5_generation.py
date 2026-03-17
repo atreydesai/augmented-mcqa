@@ -1,3 +1,5 @@
+import asyncio
+import json
 from pathlib import Path
 import os
 
@@ -11,9 +13,9 @@ from inspect_ai.solver import solver as inspect_solver
 
 from datasets import Dataset, DatasetDict
 
-from data.final5_store import _load_dataset_dict, build_evaluation_dataset, build_generation_dataset, materialize_augmented_dataset
+from data.final5_store import _load_setting_dataset, build_evaluation_dataset, build_generation_dataset, materialize_augmented_dataset
 from data.final5_store import ensure_augmented_dataset
-from solvers.final5_generation import _fresh_state
+from solvers.final5_generation import _fresh_state, final5_generation_solver
 from utils.parsing import LabeledParseError, parse_distractors
 
 
@@ -100,6 +102,66 @@ def _write_generation_log(root: Path, samples: list[Sample]):
         log_dir=str(root),
         display="none",
     )
+
+
+def _setting_sample_ids(path: Path, dataset_type: str, setting: str = "human_from_scratch") -> list[str]:
+    return [row["sample_id"] for row in _load_setting_dataset(path, dataset_type, setting)]
+
+
+def test_build_generation_dataset_accepts_dataset_manifest_json(tmp_path):
+    source_path = tmp_path / "custom.jsonl"
+    source_path.write_text(
+        "\n".join(
+            [
+                json.dumps(
+                    {
+                        "qid": "custom-1",
+                        "prompt": "Custom question 1",
+                        "gold": "Custom gold 1",
+                        "human": ["d1", "d2", "d3"],
+                        "group": "bio",
+                    }
+                ),
+                json.dumps(
+                    {
+                        "qid": "custom-2",
+                        "prompt": "Custom question 2",
+                        "gold": "Custom gold 2",
+                        "human": ["e1", "e2", "e3"],
+                        "group": "chem",
+                    }
+                ),
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    manifest_path = tmp_path / "datasets_manifest.json"
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "augmented_mcqa_dataset_manifest_v1",
+                "datasets": {
+                    "custom_benchmark": {
+                        "path": str(source_path),
+                        "format": "jsonl",
+                        "question_key": "prompt",
+                        "answer_key": "gold",
+                        "choices_human_key": "human",
+                        "category_key": "group",
+                        "question_id_key": "qid",
+                    }
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    dataset = build_generation_dataset(manifest_path, dataset_types=["custom_benchmark"], limit=1)
+
+    assert len(dataset) == 1
+    assert dataset[0].id == "custom_benchmark:custom-1"
+    assert dataset[0].metadata["category"] == "bio"
 
 
 def test_generate_qa_prompt_uses_single_distractors_list_contract():
@@ -211,6 +273,39 @@ def test_parse_distractors_rejects_non_string_items():
         raise AssertionError("Expected parser failure")
 
 
+def test_generation_solver_preserves_failed_parse_attempts_in_traces():
+    state = TaskState(
+        model="together/Qwen/Qwen3.5-397B-A17B",
+        sample_id="arc_challenge:arc-1",
+        epoch=1,
+        input="Q1",
+        messages=[ChatMessageUser(content="Q1")],
+        output=ModelOutput(model="together/Qwen/Qwen3.5-397B-A17B"),
+        metadata={
+            "sample_id": "arc_challenge:arc-1",
+            "dataset_type": "arc_challenge",
+            "row_index": 0,
+            "question": "Q1",
+            "answer": "Gold 1",
+            "choices_human": ["H1", "H2", "H3"],
+            "category": "science",
+        },
+        store={},
+    )
+
+    async def fake_generate(current_state: TaskState) -> TaskState:
+        current_state.output.completion = "not valid json"
+        return current_state
+
+    solved = asyncio.run(final5_generation_solver("model_from_scratch")(state, fake_generate))
+
+    generation = solved.metadata["generation"]
+    assert generation["status"] == "error"
+    assert "Response does not contain a valid JSON object" in generation["error"]
+    assert generation["traces"]["model_from_scratch"]["output"] == "not valid json"
+    assert generation["traces"]["model_from_scratch"]["attempts"][-1]["output"] == "not valid json"
+
+
 def test_build_generation_dataset_flattens_processed_rows_with_stable_ids(tmp_path):
     path = tmp_path / "processed"
     _processed_dataset(path)
@@ -293,7 +388,7 @@ def test_build_generation_dataset_augment_model_skips_rows_missing_prerequisites
     assert dataset[0].metadata["existing_model_from_scratch"] == ["B1", "C1", "D1"]
 
 
-def test_materialized_augmented_cache_only_keeps_rows_present_in_generation_logs(tmp_path):
+def test_materialized_augmented_cache_preserves_rows_without_successful_generations(tmp_path):
     processed_path = tmp_path / "processed"
     log_dir = tmp_path / "logs"
     cache_path = tmp_path / "augmented"
@@ -344,13 +439,20 @@ def test_materialized_augmented_cache_only_keeps_rows_present_in_generation_logs
     _write_generation_log(log_dir, samples)
 
     materialize_augmented_dataset(processed_path, log_dir, cache_path)
-    dataset = _load_dataset_dict(cache_path)
+    assert _setting_sample_ids(cache_path, "arc_challenge") == ["arc_challenge:arc-1", "arc_challenge:arc-2"]
+    assert _setting_sample_ids(cache_path, "mmlu_pro") == ["mmlu_pro:101", "mmlu_pro:102"]
+    assert _setting_sample_ids(cache_path, "gpqa") == ["gpqa:gpqa-1", "gpqa:gpqa-2"]
 
-    assert len(dataset["arc_challenge"]) == 1
-    assert len(dataset["mmlu_pro"]) == 1
-    assert len(dataset["gpqa"]) == 0
-    assert dataset["arc_challenge"][0]["sample_id"] == "arc_challenge:arc-1"
-    assert dataset["mmlu_pro"][0]["sample_id"] == "mmlu_pro:101"
+    gpqa_row = dict(_load_setting_dataset(cache_path, "gpqa", "human_from_scratch")[0])
+    assert gpqa_row["sample_id"] == "gpqa:gpqa-1"
+    assert gpqa_row["status"] == "error"
+    assert gpqa_row["options_randomized"] == []
+    assert gpqa_row["correct_answer_letter"] == ""
+
+    gpqa_missing_row = dict(_load_setting_dataset(cache_path, "gpqa", "human_from_scratch")[1])
+    assert gpqa_missing_row["sample_id"] == "gpqa:gpqa-2"
+    assert gpqa_missing_row["status"] == "missing"
+    assert gpqa_missing_row["options_randomized"] == []
 
 
 def test_ensure_augmented_dataset_refreshes_existing_cache_when_new_shard_logs_arrive(tmp_path):
@@ -379,8 +481,7 @@ def test_ensure_augmented_dataset_refreshes_existing_cache_when_new_shard_logs_a
     os.utime(first_log, (1000, 1000))
 
     ensure_augmented_dataset(processed_path, log_dir, cache_path)
-    dataset = _load_dataset_dict(cache_path)
-    assert [row["sample_id"] for row in dataset["arc_challenge"]] == ["arc_challenge:arc-1"]
+    assert _setting_sample_ids(cache_path, "arc_challenge") == ["arc_challenge:arc-1"]
 
     cache_mtime = max(path.stat().st_mtime for path in cache_path.rglob("*") if path.is_file())
 
@@ -404,8 +505,7 @@ def test_ensure_augmented_dataset_refreshes_existing_cache_when_new_shard_logs_a
     os.utime(second_log, (cache_mtime + 10, cache_mtime + 10))
 
     ensure_augmented_dataset(processed_path, log_dir, cache_path)
-    refreshed = _load_dataset_dict(cache_path)
-    assert [row["sample_id"] for row in refreshed["arc_challenge"]] == [
+    assert _setting_sample_ids(cache_path, "arc_challenge") == [
         "arc_challenge:arc-1",
         "arc_challenge:arc-2",
     ]
@@ -439,9 +539,8 @@ def test_ensure_augmented_dataset_materializes_when_only_cluster_slices_exist(tm
 
     ensure_augmented_dataset(processed_path, log_dir, cache_path)
 
-    assert (cache_path / "dataset_dict.json").exists()
-    dataset = _load_dataset_dict(cache_path)
-    assert [row["sample_id"] for row in dataset["arc_challenge"]] == ["arc_challenge:arc-1"]
+    assert (cache_path / "augmented_manifest.json").exists()
+    assert _setting_sample_ids(cache_path, "arc_challenge") == ["arc_challenge:arc-1"]
 
 
 def test_augmented_cache_rejects_paths_overlapping_processed_dataset(tmp_path):

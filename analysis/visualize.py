@@ -10,15 +10,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+from utils.constants import SETTING_SPECS
 from utils.logs import iter_eval_logs, read_log
 
 
 SETTING_OPTION_COUNTS: dict[str, int] = {
-    "human_from_scratch": 4,
-    "model_from_scratch": 4,
-    "augment_human": 10,
-    "augment_model": 10,
-    "augment_ablation": 10,
+    setting: int(spec["num_choices"]) for setting, spec in SETTING_SPECS.items()
 }
 
 SETTING_RANDOM_BASELINES: dict[str, float] = {

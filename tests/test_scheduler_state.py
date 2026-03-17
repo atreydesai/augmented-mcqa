@@ -1,5 +1,7 @@
+import os
 from types import SimpleNamespace
 from pathlib import Path
+from unittest.mock import patch
 
 from inspect_ai import Task, eval
 from inspect_ai.dataset import MemoryDataset, Sample
@@ -35,18 +37,28 @@ def _score_with(value: float):
     return score
 
 
-def _write_eval_log(root: Path, *, slice_ref: str, score_value: float):
-    eval(
-        Task(
-            name="final5_eval_test",
-            dataset=MemoryDataset([Sample(input="Q", choices=["A", "B"], target="A", id="arc:0")]),
-            solver=_solver(),
-            scorer=_score_with(score_value),
-            metadata={"kind": "evaluation", "slice_ref": slice_ref},
-        ),
-        log_dir=str(root),
-        display="none",
-    )
+def _write_eval_log(root: Path, *, slice_ref: str, score_value: float, kind: str = "evaluation"):
+    root.mkdir(parents=True, exist_ok=True)
+    xdg_data_home = root / "xdg"
+    xdg_data_home.mkdir(parents=True, exist_ok=True)
+    with patch.dict(
+        os.environ,
+        {
+            "INSPECT_TRACE_FILE": str(root / "trace.log"),
+            "XDG_DATA_HOME": str(xdg_data_home),
+        },
+    ):
+        eval(
+            Task(
+                name="final5_eval_test",
+                dataset=MemoryDataset([Sample(input="Q", choices=["A", "B"], target="A", id="arc:0")]),
+                solver=_solver(),
+                scorer=_score_with(score_value),
+                metadata={"kind": kind, "slice_ref": slice_ref},
+            ),
+            log_dir=str(root),
+            display="none",
+        )
 
 
 def test_build_scheduler_state_marks_pending_failed_current_and_stale():
@@ -266,19 +278,62 @@ def test_collect_slice_attempts_treats_completed_evaluation_logs_as_success(tmp_
     assert attempts["evaluation|run1|model|arc|setting|mode|0|1"][-1]["status"] == "success"
 
 
-def test_collect_slice_attempts_treats_errored_logs_as_failed(monkeypatch):
-    fake_log = SimpleNamespace(
-        eval=SimpleNamespace(metadata={"slice_ref": "generation|run1|model|arc|setting|0|1"}),
-        status="error",
-        stats=SimpleNamespace(completed_at="2026-03-11T12:00:00+00:00"),
-        samples=[SimpleNamespace(scores={"final5_generation": SimpleNamespace(value=1.0)})],
+def test_collect_slice_attempts_treats_completed_generation_logs_as_success(tmp_path):
+    root = tmp_path / "gen-logs"
+    _write_eval_log(
+        root,
+        slice_ref="generation|run1|model|arc|setting|0|1",
+        score_value=1.0,
+        kind="generation",
     )
 
+    attempts = collect_slice_attempts(root, kind="generation")
+    assert attempts["generation|run1|model|arc|setting|0|1"][-1]["status"] == "success"
+
+
+def test_collect_slice_attempts_skips_incomplete_archives(tmp_path):
+    root = tmp_path / "partial-logs"
+    root.mkdir()
+    (root / "partial.eval").write_bytes(b"not-a-complete-archive")
+
+    attempts = collect_slice_attempts(root, kind="evaluation")
+    assert attempts == {}
+
+
+def test_collect_slice_attempts_treats_errored_logs_as_failed(monkeypatch):
+    fake_summary = {
+        "metadata": {"slice_ref": "generation|run1|model|arc|setting|0|1"},
+        "status": "error",
+        "completed_at": "2026-03-11T12:00:00+00:00",
+        "score_values": [1.0],
+        "sample_statuses": ["success"],
+        "summary_count": 1,
+    }
+
     monkeypatch.setattr(
-        "utils.scheduler_state.iter_eval_logs",
-        lambda _path, *, kind=None: iter([(Path("/tmp/fake.eval"), fake_log)]),
+        "utils.scheduler_state.iter_log_summaries",
+        lambda _path, *, kind=None: iter([(Path("/tmp/fake.eval"), fake_summary)]),
     )
 
     attempts = collect_slice_attempts("/tmp/unused", kind="generation")
     assert attempts["generation|run1|model|arc|setting|0|1"][-1]["status"] == "failed"
     assert attempts["generation|run1|model|arc|setting|0|1"][-1]["completed_at"] == "2026-03-11T12:00:00+00:00"
+
+
+def test_collect_slice_attempts_treats_generation_sample_errors_as_failed(monkeypatch):
+    fake_summary = {
+        "metadata": {"slice_ref": "generation|run1|model|arc|setting|0|1"},
+        "status": "success",
+        "completed_at": "2026-03-11T12:00:00+00:00",
+        "score_values": [1.0],
+        "sample_statuses": ["error"],
+        "summary_count": 1,
+    }
+
+    monkeypatch.setattr(
+        "utils.scheduler_state.iter_log_summaries",
+        lambda _path, *, kind=None: iter([(Path("/tmp/fake.eval"), fake_summary)]),
+    )
+
+    attempts = collect_slice_attempts("/tmp/unused", kind="generation")
+    assert attempts["generation|run1|model|arc|setting|0|1"][-1]["status"] == "failed"

@@ -8,21 +8,18 @@ from pathlib import Path
 from typing import Any
 
 from utils.constants import FINAL5_SETTINGS, MODE_CHOICES
-from utils.logs import iter_eval_logs
+from utils.logs import iter_log_summaries
 from utils.modeling import safe_name
+from utils.recipes import get_setting_recipe, schedulable_generation_strategies
 
-SCHEDULABLE_GENERATION_STRATEGIES = (
-    "model_from_scratch",
-    "augment_human",
-    "augment_model",
-    "augment_ablation",
-)
+SCHEDULABLE_GENERATION_STRATEGIES = schedulable_generation_strategies()
 
 GENERATION_STRATEGY_DEPENDENCIES: dict[str, tuple[str, ...]] = {
-    "model_from_scratch": (),
-    "augment_human": (),
-    "augment_model": ("model_from_scratch",),
-    "augment_ablation": (),
+    strategy: (
+        (recipe.prerequisite_setting,) if recipe.prerequisite_setting else ()
+    )
+    for strategy in SCHEDULABLE_GENERATION_STRATEGIES
+    for recipe in [get_setting_recipe(strategy)]
 }
 
 EVALUATION_SETTING_DEPENDENCIES: dict[str, tuple[str, ...]] = {
@@ -54,7 +51,7 @@ def parse_iso(value: str | None) -> datetime | None:
 
 
 def resource_class_for_model(model: str) -> str:
-    return "local" if str(model).startswith("vllm/") else "api"
+    return "local" if str(model).startswith(("vllm/", "hf/")) else "api"
 
 
 def chunk_ranges(total_questions: int, questions_per_job: int | None) -> list[tuple[int, int, int]]:
@@ -163,28 +160,29 @@ def _log_completed_at(log: Any) -> str:
 
 def collect_slice_attempts(log_dir: Path | str, *, kind: str) -> dict[str, list[dict[str, Any]]]:
     attempts: dict[str, list[dict[str, Any]]] = defaultdict(list)
-    for log_path, log in iter_eval_logs(log_dir, kind=kind):
-        eval_metadata = dict(getattr(log.eval, "metadata", {}) or {})
+    for log_path, log_summary in iter_log_summaries(log_dir, kind=kind):
+        eval_metadata = dict(log_summary.get("metadata", {}) or {})
         slice_ref = str(eval_metadata.get("slice_ref", "") or "")
         if not slice_ref:
             continue
-        log_status = str(getattr(log, "status", "") or "")
-        scores = []
-        for sample in getattr(log, "samples", []):
-            if not getattr(sample, "scores", None):
-                continue
-            score = next(iter(sample.scores.values()))
-            value = getattr(score, "value", None)
-            if value is not None:
-                scores.append(float(value))
+        log_status = str(log_summary.get("status", "") or "")
+        scores = [
+            float(value)
+            for value in list(log_summary.get("score_values", []) or [])
+        ]
+        sample_statuses = [
+            str(value or "")
+            for value in list(log_summary.get("sample_statuses", []) or [])
+        ]
+        has_sample_errors = any(status and status != "success" for status in sample_statuses)
         if log_status and log_status != "success":
             status = "failed"
         elif kind == "generation":
-            status = "success" if scores and all(value >= 1.0 for value in scores) else "failed"
+            status = "success" if scores and all(value >= 1.0 for value in scores) and not has_sample_errors else "failed"
         else:
-            total_samples = len(getattr(log, "samples", []) or [])
+            total_samples = int(log_summary.get("summary_count", 0) or 0)
             status = "success" if total_samples > 0 and len(scores) == total_samples else "failed"
-        completed_at = _log_completed_at(log)
+        completed_at = str(log_summary.get("completed_at", "") or "")
         attempts[slice_ref].append(
             {
                 "slice_ref": slice_ref,

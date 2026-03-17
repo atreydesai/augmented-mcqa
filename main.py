@@ -2,15 +2,18 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+from contextlib import contextmanager
 from pathlib import Path
 
-from inspect_ai import eval as inspect_eval
-
-from analysis.analyzer import analyze_experiment, format_signature_table
-from analysis.visualize import plot_final5_pairwise, write_final5_summary_table
-from data import export_benchmarker_items, prepare_data
-from data.final5_store import _load_dataset_dict, build_evaluation_dataset, build_generation_dataset, ensure_augmented_dataset
-from tasks import build_evaluation_tasks, build_generation_tasks
+from data.final5_store import (
+    _load_augmented_manifest,
+    _load_dataset_dict,
+    _load_setting_dataset,
+    build_evaluation_dataset,
+    build_generation_dataset,
+    ensure_augmented_dataset,
+)
 from utils.cluster_submit import (
     ClusterTask,
     build_bundle_paths,
@@ -32,9 +35,10 @@ from utils.constants import (
     DEFAULT_PROCESSED_DATASET,
     FINAL5_SETTINGS,
     MODE_CHOICES,
+    SETTING_SPECS,
 )
 from utils.logs import iter_eval_logs
-from utils.modeling import resolve_model_name, safe_name
+from utils.modeling import reasoning_effort_for_model, resolve_model_name, safe_name, vllm_server_args
 from utils.scheduler_state import (
     EVALUATION_SETTING_DEPENDENCIES,
     GENERATION_STRATEGY_DEPENDENCIES,
@@ -50,12 +54,15 @@ from utils.scheduler_state import (
     task_slug,
 )
 
-REQUIRED_GENERATION_COLUMNS = [
-    ("model_from_scratch", 3),
-    ("augment_human", 6),
-    ("augment_model", 9),
-    ("augment_ablation", 9),
+REQUIRED_GENERATION_SETTINGS = [
+    ("model_from_scratch", int(SETTING_SPECS["model_from_scratch"]["num_model"])),
+    ("augment_human", int(SETTING_SPECS["augment_human"]["num_model"])),
+    ("augment_model", int(SETTING_SPECS["augment_model"]["num_model"])),
+    ("augment_ablation", int(SETTING_SPECS["augment_ablation"]["num_model"])),
 ]
+
+
+prepare_data = None
 
 
 def _csv_list(raw: str | None, *, default: list[str]) -> list[str]:
@@ -76,20 +83,18 @@ def _evaluation_log_dir(root: Path, run_name: str, generator_run: str, generator
     return root / safe_name(run_name) / safe_name(generator_run) / safe_name(generator_model) / safe_name(eval_model)
 
 
-def _cluster_dataset_types(processed_dataset_path: Path, dataset_types: list[str]) -> list[str]:
-    dataset_dict = _load_dataset_dict(processed_dataset_path)
+def _cluster_dataset_types(dataset_dict, dataset_types: list[str]) -> list[str]:
     sizes = {dataset_type: len(dataset_dict[dataset_type]) if dataset_type in dataset_dict else 0 for dataset_type in dataset_types}
     indexed = {dataset_type: index for index, dataset_type in enumerate(dataset_types)}
     return sorted(dataset_types, key=lambda dataset_type: (-sizes.get(dataset_type, 0), indexed[dataset_type]))
 
 
 def _dataset_sizes(
-    processed_dataset_path: Path,
+    dataset_dict,
     dataset_types: list[str],
     *,
     limit: int | None = None,
 ) -> dict[str, int]:
-    dataset_dict = _load_dataset_dict(processed_dataset_path)
     sizes: dict[str, int] = {}
     for dataset_type in dataset_types:
         size = len(dataset_dict[dataset_type]) if dataset_type in dataset_dict else 0
@@ -219,11 +224,12 @@ def _evaluation_generation_dependencies(
 
 def _build_generation_cluster_tasks(args: argparse.Namespace) -> tuple[list[ClusterTask], dict[str, int | None]]:
     processed_dataset = Path(args.processed_dataset)
+    dataset_dict = _load_dataset_dict(processed_dataset)
     dataset_types = _cluster_dataset_types(
-        processed_dataset,
+        dataset_dict,
         _csv_list(args.dataset_types, default=args.default_dataset_types),
     )
-    dataset_sizes = _dataset_sizes(processed_dataset, dataset_types, limit=args.limit)
+    dataset_sizes = _dataset_sizes(dataset_dict, dataset_types, limit=args.limit)
     models = _cluster_models(args.models, default=list(args.default_models), backend=args.backend)
     strategies = _csv_list(args.generation_strategies, default=list(SCHEDULABLE_GENERATION_STRATEGIES))
     invalid = [strategy for strategy in strategies if strategy not in SCHEDULABLE_GENERATION_STRATEGIES]
@@ -359,11 +365,12 @@ def _build_generation_cluster_tasks(args: argparse.Namespace) -> tuple[list[Clus
 
 def _build_evaluation_cluster_tasks(args: argparse.Namespace) -> tuple[list[ClusterTask], dict[str, int | None]]:
     processed_dataset = Path(args.processed_dataset)
+    dataset_dict = _load_dataset_dict(processed_dataset)
     dataset_types = _cluster_dataset_types(
-        processed_dataset,
+        dataset_dict,
         _csv_list(args.dataset_types, default=args.default_dataset_types),
     )
-    dataset_sizes = _dataset_sizes(processed_dataset, dataset_types, limit=args.limit)
+    dataset_sizes = _dataset_sizes(dataset_dict, dataset_types, limit=args.limit)
     generation_model = resolve_model_name(args.generator_model, args.generator_backend)
     models = _cluster_models(args.models, default=list(args.default_models), backend=args.backend)
     settings = _csv_list(args.settings, default=list(FINAL5_SETTINGS))
@@ -618,27 +625,107 @@ def _run_cluster_submit(
     return 0
 
 
+@contextmanager
+def _temporary_env(updates: dict[str, str]):
+    if not updates:
+        yield
+        return
+    previous = {key: os.environ.get(key) for key in updates}
+    try:
+        for key, value in updates.items():
+            os.environ[key] = value
+        yield
+    finally:
+        for key, value in previous.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
+
+
 def _inspect_eval(tasks, *, model: str, log_dir: Path, args: argparse.Namespace):
+    from inspect_ai import eval as inspect_eval
+
     log_dir.mkdir(parents=True, exist_ok=True)
-    return inspect_eval(
-        tasks,
-        model=model,
-        model_base_url=args.model_base_url,
-        log_dir=str(log_dir),
-        display="plain",
-        fail_on_error=False,
-        retry_on_error=args.retry_on_error,
-        max_connections=args.max_connections,
-        max_tokens=args.max_tokens,
-        temperature=args.temperature,
-        reasoning_effort=args.reasoning_effort,
-        stop_seqs=args.stop_seqs,
-    )
+    env_updates: dict[str, str] = {}
+    if not args.model_base_url and "VLLM_DEFAULT_SERVER_ARGS" not in os.environ:
+        server_args = vllm_server_args(model)
+        if server_args:
+            env_updates["VLLM_DEFAULT_SERVER_ARGS"] = json.dumps(server_args)
+    with _temporary_env(env_updates):
+        return inspect_eval(
+            tasks,
+            model=model,
+            model_base_url=args.model_base_url,
+            log_dir=str(log_dir),
+            display="plain",
+            fail_on_error=False,
+            retry_on_error=args.retry_on_error,
+            max_connections=args.max_connections,
+            max_tokens=args.max_tokens,
+            temperature=args.temperature,
+            reasoning_effort=reasoning_effort_for_model(model, args.reasoning_effort),
+            stop_seqs=args.stop_seqs,
+        )
+
+
+def _score_value(score) -> float | None:
+    value = getattr(score, "value", None)
+    if value is None:
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _generation_logs_succeeded(logs) -> bool:
+    if not logs:
+        return False
+    for log in logs:
+        log_status = str(getattr(log, "status", "") or "")
+        if log_status and log_status != "success":
+            return False
+        samples = list(getattr(log, "samples", []) or [])
+        if not samples:
+            return False
+        for sample in samples:
+            scores = getattr(sample, "scores", None)
+            if not scores:
+                return False
+            score = next(iter(scores.values()))
+            metadata = dict(getattr(score, "metadata", {}) or {})
+            if metadata.get("status") != "success":
+                return False
+            value = _score_value(score)
+            if value is None or value < 1.0:
+                return False
+    return True
+
+
+def _evaluation_logs_completed(logs) -> bool:
+    if not logs:
+        return False
+    for log in logs:
+        log_status = str(getattr(log, "status", "") or "")
+        if log_status and log_status != "success":
+            return False
+        samples = list(getattr(log, "samples", []) or [])
+        if not samples:
+            return False
+        for sample in samples:
+            if not getattr(sample, "scores", None):
+                return False
+    return True
 
 
 def _prepare_data(args: argparse.Namespace) -> int:
+    prepare_fn = prepare_data
+    if prepare_fn is None:
+        from data import prepare_data as prepare_fn
+
     download_all = bool(args.all or args.step == "all")
-    return prepare_data(
+    return prepare_fn(
         step=args.step,
         dataset=args.dataset,
         download_all=download_all,
@@ -649,6 +736,8 @@ def _prepare_data(args: argparse.Namespace) -> int:
 
 
 def _run_generate(args: argparse.Namespace) -> int:
+    from tasks import build_generation_tasks
+
     dataset_types = _csv_list(args.dataset_types, default=args.default_dataset_types)
     raw_model = resolve_model_name(args.model, args.backend)
     log_dir = _generation_log_dir(Path(args.log_root), args.run_name, raw_model)
@@ -705,9 +794,14 @@ def _run_generate(args: argparse.Namespace) -> int:
         if not tasks:
             continue
         any_tasks = True
-        _inspect_eval(tasks, model=raw_model, log_dir=log_dir, args=args)
+        eval_logs = _inspect_eval(tasks, model=raw_model, log_dir=log_dir, args=args)
+        if not _generation_logs_succeeded(eval_logs):
+            return 1
 
     if not any_tasks:
+        if any(GENERATION_STRATEGY_DEPENDENCIES.get(strategy) for strategy in strategies):
+            print("No generation samples selected. Missing successful prerequisite generation outputs.")
+            return 1
         print("No generation samples selected.")
         return 0
     print(f"Generation logs: {log_dir}")
@@ -761,6 +855,8 @@ def _resolve_generation_artifacts(args: argparse.Namespace) -> tuple[Path, Path]
 
 
 def _run_evaluate(args: argparse.Namespace) -> int:
+    from tasks import build_evaluation_tasks
+
     dataset_types = _csv_list(args.dataset_types, default=args.default_dataset_types)
     settings = _csv_list(args.settings, default=list(FINAL5_SETTINGS))
     modes = _csv_list(args.modes, default=list(MODE_CHOICES))
@@ -817,7 +913,9 @@ def _run_evaluate(args: argparse.Namespace) -> int:
     if not tasks:
         print("No evaluation samples selected.")
         return 0
-    _inspect_eval(tasks, model=eval_model, log_dir=log_dir, args=args)
+    eval_logs = _inspect_eval(tasks, model=eval_model, log_dir=log_dir, args=args)
+    if not _evaluation_logs_completed(eval_logs):
+        return 1
     print(f"Evaluation logs: {log_dir}")
     return 0
 
@@ -833,6 +931,8 @@ def _run_evaluate_all(args: argparse.Namespace) -> int:
 
 
 def _run_analyze(args: argparse.Namespace) -> int:
+    from analysis.visualize import plot_final5_pairwise, write_final5_summary_table
+
     if args.table_output:
         df = write_final5_summary_table(args.results_root, args.table_output)
         print(f"Wrote {len(df)} summary rows to {args.table_output}")
@@ -850,6 +950,8 @@ def _run_analyze(args: argparse.Namespace) -> int:
 
 
 def _run_signature_table(args: argparse.Namespace) -> int:
+    from analysis.analyzer import analyze_experiment, format_signature_table
+
     base_dir = Path(args.dir)
     if not base_dir.exists():
         print(f"Error: Directory not found: {base_dir}")
@@ -882,6 +984,8 @@ def _run_signature_table(args: argparse.Namespace) -> int:
 
 
 def _run_export(args: argparse.Namespace) -> int:
+    from data import export_benchmarker_items
+
     if args.input:
         dataset_path = Path(args.input)
     else:
@@ -949,23 +1053,50 @@ def _run_submit_evaluate_cluster(args: argparse.Namespace) -> int:
 
 
 def _run_diagnose_failures(args: argparse.Namespace) -> int:
-    ds = _load_dataset_dict(Path(args.dataset_path))
+    root = Path(args.dataset_path)
+    manifest = _load_augmented_manifest(root)
+    dataset_types = list(manifest.get("dataset_types") or [])
     total_failed = 0
-    for split in ds.keys():
-        failed = []
-        for i, row in enumerate(ds[split]):
-            missing = [key for key, count in REQUIRED_GENERATION_COLUMNS if len(row.get(key) or []) < count]
+    for dataset_type in dataset_types:
+        per_setting_rows = {
+            setting: {
+                str(payload.get("sample_id", "") or ""): dict(payload)
+                for payload in _load_setting_dataset(root, dataset_type, setting)
+                if str(payload.get("sample_id", "") or "")
+            }
+            for setting, _expected_count in REQUIRED_GENERATION_SETTINGS
+        }
+        sample_ids = sorted({sample_id for rows in per_setting_rows.values() for sample_id in rows})
+        failed: list[dict[str, object]] = []
+        for sample_id in sample_ids:
+            row_payload = next(
+                (rows[sample_id] for rows in per_setting_rows.values() if sample_id in rows),
+                {},
+            )
+            missing: list[str] = []
+            for setting, expected_count in REQUIRED_GENERATION_SETTINGS:
+                setting_payload = per_setting_rows[setting].get(sample_id)
+                if setting_payload is None:
+                    missing.append(setting)
+                    continue
+                distractor_count = int(
+                    setting_payload.get("num_model")
+                    or len(setting_payload.get("model_distractors") or [])
+                )
+                if distractor_count < expected_count:
+                    missing.append(setting)
             if missing:
                 failed.append(
                     {
-                        "idx": i,
-                        "id": row.get("id"),
-                        "question_id": row.get("question_id"),
+                        "sample_id": sample_id,
+                        "row_index": row_payload.get("row_index"),
+                        "id": row_payload.get("id"),
+                        "question_id": row_payload.get("question_id"),
                         "missing": missing,
-                        "question": str(row.get("question", ""))[:140],
+                        "question": str(row_payload.get("question", ""))[:140],
                     }
                 )
-        print(f"\n{split}: failed_rows={len(failed)}")
+        print(f"\n{dataset_type}: failed_rows={len(failed)}")
         for row in failed:
             print(json.dumps(row, ensure_ascii=True))
         total_failed += len(failed)
@@ -1379,7 +1510,7 @@ def build_parser() -> argparse.ArgumentParser:
     generate.add_argument(
         "--processed-dataset",
         default=str(DEFAULT_PROCESSED_DATASET),
-        help="Processed unified DatasetDict to read input questions from.",
+        help="Processed dataset source to read input questions from. Accepts the unified DatasetDict or a dataset manifest JSON.",
     )
     generate.add_argument(
         "--dataset-types",
@@ -1416,12 +1547,12 @@ def build_parser() -> argparse.ArgumentParser:
     generate.add_argument(
         "--augmented-dataset",
         default=None,
-        help="Advanced override: exact output path for the augmented cache produced from generation logs.",
+        help="Advanced override: exact output path for the setting-scoped augmented store produced from generation logs.",
     )
     generate.add_argument(
         "--materialize-cache",
         action="store_true",
-        help="Rebuild the augmented DatasetDict cache immediately after generation completes.",
+        help="Rebuild the setting-scoped augmented store immediately after generation completes.",
     )
     generate.add_argument(
         "--rebuild-cache",
@@ -1453,7 +1584,7 @@ def build_parser() -> argparse.ArgumentParser:
     generate_all.add_argument(
         "--processed-dataset",
         default=str(DEFAULT_PROCESSED_DATASET),
-        help="Processed unified DatasetDict to read input questions from.",
+        help="Processed dataset source to read input questions from. Accepts the unified DatasetDict or a dataset manifest JSON.",
     )
     generate_all.add_argument(
         "--dataset-types",
@@ -1490,7 +1621,7 @@ def build_parser() -> argparse.ArgumentParser:
     generate_all.add_argument(
         "--materialize-cache",
         action="store_true",
-        help="Rebuild each augmented DatasetDict cache immediately after generation completes.",
+        help="Rebuild each setting-scoped augmented store immediately after generation completes.",
     )
     generate_all.add_argument(
         "--rebuild-cache",
@@ -1538,12 +1669,12 @@ def build_parser() -> argparse.ArgumentParser:
     evaluate.add_argument(
         "--processed-dataset",
         default=str(DEFAULT_PROCESSED_DATASET),
-        help="Processed unified DatasetDict used if the augmented cache must be rebuilt from generation logs.",
+        help="Processed dataset source used if the augmented store must be rebuilt from generation logs.",
     )
     evaluate.add_argument(
         "--augmented-dataset",
         default=None,
-        help="Advanced override: exact augmented DatasetDict path to evaluate instead of deriving one from generation artifacts.",
+        help="Advanced override: exact setting-scoped augmented store path to evaluate instead of deriving one from generation artifacts.",
     )
     evaluate.add_argument(
         "--cache-root",
@@ -1632,12 +1763,12 @@ def build_parser() -> argparse.ArgumentParser:
     evaluate_all.add_argument(
         "--processed-dataset",
         default=str(DEFAULT_PROCESSED_DATASET),
-        help="Processed unified DatasetDict used if the augmented cache must be rebuilt from generation logs.",
+        help="Processed dataset source used if the augmented store must be rebuilt from generation logs.",
     )
     evaluate_all.add_argument(
         "--augmented-dataset",
         default=None,
-        help="Advanced override: exact augmented DatasetDict path to evaluate instead of deriving one from generation artifacts.",
+        help="Advanced override: exact setting-scoped augmented store path to evaluate instead of deriving one from generation artifacts.",
     )
     evaluate_all.add_argument(
         "--cache-root",
@@ -1730,14 +1861,14 @@ def build_parser() -> argparse.ArgumentParser:
 
     export = sub.add_parser(
         "export",
-        help="Export an augmented DatasetDict to benchmarker JSONL files.",
-        description="Export a derived augmented dataset cache into benchmarker-compatible JSONL files.",
+        help="Export a setting-scoped augmented store to benchmarker JSONL files.",
+        description="Export a derived setting-scoped augmented store into benchmarker-compatible JSONL files.",
         formatter_class=formatter,
     )
     export.add_argument(
         "--input",
         default=None,
-        help="Advanced override: exact augmented DatasetDict path to export. If omitted, generation artifacts are resolved automatically.",
+        help="Advanced override: exact setting-scoped augmented store path to export. If omitted, generation artifacts are resolved automatically.",
     )
     export.add_argument(
         "--output-root",
@@ -1772,12 +1903,12 @@ def build_parser() -> argparse.ArgumentParser:
     export.add_argument(
         "--processed-dataset",
         default=str(DEFAULT_PROCESSED_DATASET),
-        help="Processed unified DatasetDict used if the augmented cache must be rebuilt from generation logs.",
+        help="Processed dataset source used if the augmented store must be rebuilt from generation logs.",
     )
     export.add_argument(
         "--augmented-dataset",
         default=None,
-        help="Advanced override: exact augmented DatasetDict path to use instead of deriving one from generation artifacts.",
+        help="Advanced override: exact setting-scoped augmented store path to use instead of deriving one from generation artifacts.",
     )
     export.add_argument(
         "--cache-root",
@@ -1800,18 +1931,18 @@ def build_parser() -> argparse.ArgumentParser:
     materialize_generation_cache = sub.add_parser(
         "materialize-generation-cache",
         help="Rebuild or refresh an augmented cache from generation logs.",
-        description="Materialize the merged augmented DatasetDict for one generation run/model directly from Inspect generation logs.",
+        description="Materialize the setting-scoped augmented store for one generation run/model directly from Inspect generation logs.",
         formatter_class=formatter,
     )
     materialize_generation_cache.add_argument(
         "--run-name",
         required=True,
-        help="Generation run name whose Inspect logs should be merged.",
+        help="Generation run name whose Inspect logs should be materialized.",
     )
     materialize_generation_cache.add_argument(
         "--model",
         required=True,
-        help="Generation model whose Inspect logs should be merged.",
+        help="Generation model whose Inspect logs should be materialized.",
     )
     materialize_generation_cache.add_argument(
         "--backend",
@@ -1826,7 +1957,7 @@ def build_parser() -> argparse.ArgumentParser:
     materialize_generation_cache.add_argument(
         "--processed-dataset",
         default=str(DEFAULT_PROCESSED_DATASET),
-        help="Processed unified DatasetDict used to rebuild the augmented cache from logs.",
+        help="Processed dataset source used to rebuild the augmented store from logs.",
     )
     materialize_generation_cache.add_argument(
         "--cache-root",
@@ -1917,14 +2048,14 @@ def build_parser() -> argparse.ArgumentParser:
 
     diagnose_failures = sub.add_parser(
         "diagnose-failures",
-        help="Report rows in an augmented cache that are missing required generated columns.",
-        description="Inspect an augmented DatasetDict and print rows with missing Final5 generation outputs.",
+        help="Report rows in an augmented cache that are missing required setting outputs.",
+        description="Inspect a setting-scoped augmented store and print rows with missing Final5 setting records or distractor counts.",
         formatter_class=formatter,
     )
     diagnose_failures.add_argument(
         "--dataset-path",
         required=True,
-        help="Augmented DatasetDict path to inspect for missing generation outputs.",
+        help="Setting-scoped augmented store path to inspect for missing generation outputs.",
     )
     diagnose_failures.set_defaults(handler=_run_diagnose_failures)
 

@@ -5,7 +5,8 @@ from inspect_ai.dataset import MemoryDataset, Sample
 from inspect_ai.scorer import Score, scorer
 from inspect_ai.solver import solver
 
-from analysis.visualize import collect_final5_results
+from analysis.visualize import SETTING_RANDOM_BASELINES, collect_final5_results
+from utils.constants import SETTING_SPECS
 
 
 @solver
@@ -62,3 +63,7 @@ def test_collect_final5_results_reads_inspect_eval_logs(tmp_path):
     assert set(df["setting"]) == {"human_from_scratch", "model_from_scratch"}
     assert set(df["dataset"]) == {"arc_challenge", "gpqa"}
     assert all(df["accuracy"] == 1.0)
+    assert SETTING_RANDOM_BASELINES["human_from_scratch"] == 1.0 / SETTING_SPECS["human_from_scratch"]["num_choices"]
+    baseline_map = {row["setting"]: row["random_baseline"] for _, row in df.iterrows()}
+    assert baseline_map["human_from_scratch"] == 1.0 / SETTING_SPECS["human_from_scratch"]["num_choices"]
+    assert baseline_map["model_from_scratch"] == 1.0 / SETTING_SPECS["model_from_scratch"]["num_choices"]

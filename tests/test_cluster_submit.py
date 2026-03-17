@@ -1,4 +1,5 @@
 import json
+import sys
 from subprocess import CompletedProcess
 
 from datasets import Dataset, DatasetDict
@@ -227,6 +228,9 @@ def test_submit_generate_cluster_relative_output_dir_writes_absolute_runtime_pat
     submit_text = _submit_path(bundle_dir).read_text(encoding="utf-8")
     assert str(manifest_path.resolve()) in submit_text
     assert str((bundle_dir / "submissions" / manifest["submission_id"] / "run_api_task.sbatch").resolve()) in submit_text
+    assert sys.executable in submit_text
+    wrapper_text = (bundle_dir / "submissions" / manifest["submission_id"] / "run_local_task.sbatch").read_text(encoding="utf-8")
+    assert 'export PATH="$PYTHON_DIR:$PATH"' in wrapper_text
 
 
 def test_submit_generate_cluster_mixed_local_and_api_models_split_resource_classes(tmp_path):

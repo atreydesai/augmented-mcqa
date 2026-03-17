@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import subprocess
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -18,8 +19,10 @@ MANIFEST_PATH="$1"
 TASK_INDEX="$2"
 PROJECT_ROOT="${3:-$SLURM_SUBMIT_DIR}"
 PYTHON_BIN="${4:-python}"
+PYTHON_DIR="$(dirname "$PYTHON_BIN")"
 
 cd "$PROJECT_ROOT"
+export PATH="$PYTHON_DIR:$PATH"
 
 "$PYTHON_BIN" - <<'PY' "$MANIFEST_PATH" "$TASK_INDEX" "$PROJECT_ROOT" "$PYTHON_BIN"
 import json
@@ -48,8 +51,10 @@ MANIFEST_PATH="$1"
 FINALIZER_INDEX="$2"
 PROJECT_ROOT="${3:-$SLURM_SUBMIT_DIR}"
 PYTHON_BIN="${4:-python}"
+PYTHON_DIR="$(dirname "$PYTHON_BIN")"
 
 cd "$PROJECT_ROOT"
+export PATH="$PYTHON_DIR:$PATH"
 
 "$PYTHON_BIN" - <<'PY' "$MANIFEST_PATH" "$FINALIZER_INDEX" "$PROJECT_ROOT" "$PYTHON_BIN"
 import json
@@ -77,7 +82,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 PROJECT_ROOT="${PROJECT_ROOT:-__PROJECT_ROOT__}"
-PYTHON_BIN="${PYTHON_BIN:-python}"
+PYTHON_BIN="${PYTHON_BIN:-__PYTHON_BIN__}"
 
 "$PYTHON_BIN" - <<'PY' "__MANIFEST_PATH__" "__LOCAL_WRAPPER__" "__API_WRAPPER__" "__FINALIZER_WRAPPER__" "$PROJECT_ROOT" "$PYTHON_BIN"
 import json
@@ -445,6 +450,7 @@ def render_submit_script(paths: ClusterBundlePaths) -> str:
         .replace("__API_WRAPPER__", str(paths.api_wrapper_path))
         .replace("__FINALIZER_WRAPPER__", str(paths.finalizer_wrapper_path))
         .replace("__PROJECT_ROOT__", str(Path(__file__).resolve().parent.parent))
+        .replace("__PYTHON_BIN__", sys.executable)
     )
 
 

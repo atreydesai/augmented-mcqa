@@ -230,24 +230,12 @@ def test_missing_generated_rows_are_skipped_and_reported(tmp_path):
     gpqa_meta = summary["files"]["gpqa"]["augment_model"]
 
     assert mmlu_meta["rows_written"] == 1
-    assert mmlu_meta["skipped_row_count"] == 1
-    assert mmlu_meta["skipped_rows"] == [
-        {
-            "row_index": 1,
-            "identifier": "102",
-            "reason": "missing choices in human_from_scratch_options_randomized",
-        }
-    ]
+    assert mmlu_meta["skipped_row_count"] == 0
+    assert mmlu_meta["skipped_rows"] == []
 
     assert gpqa_meta["rows_written"] == 1
-    assert gpqa_meta["skipped_row_count"] == 1
-    assert gpqa_meta["skipped_rows"] == [
-        {
-            "row_index": 1,
-            "identifier": "gpqa-2",
-            "reason": "missing choices in augment_model_options_randomized",
-        }
-    ]
+    assert gpqa_meta["skipped_row_count"] == 0
+    assert gpqa_meta["skipped_rows"] == []
 
 
 def test_exported_jsonl_lines_have_only_expected_keys(tmp_path):

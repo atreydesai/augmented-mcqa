@@ -3,23 +3,12 @@ from __future__ import annotations
 from pathlib import Path
 
 from config import ACTIVE_DATASET_TYPES, DATASETS_DIR, PROCESSED_DATASETS_DIR, RESULTS_DIR
+from utils.recipes import load_setting_recipes, setting_specs
 
 CHOICE_LABELS = "ABCDEFGHIJ"
-FINAL5_SETTINGS = (
-    "human_from_scratch",
-    "model_from_scratch",
-    "augment_human",
-    "augment_model",
-    "augment_ablation",
-)
+FINAL5_SETTINGS = tuple(recipe.name for recipe in load_setting_recipes())
 MODE_CHOICES = ("full_question", "choices_only")
-SETTING_SPECS: dict[str, dict[str, int]] = {
-    "human_from_scratch": {"num_human": 3, "num_model": 0, "num_choices": 4},
-    "model_from_scratch": {"num_human": 0, "num_model": 3, "num_choices": 4},
-    "augment_human": {"num_human": 3, "num_model": 6, "num_choices": 10},
-    "augment_model": {"num_human": 0, "num_model": 9, "num_choices": 10},
-    "augment_ablation": {"num_human": 0, "num_model": 9, "num_choices": 10},
-}
+SETTING_SPECS: dict[str, dict[str, int]] = setting_specs()
 DATASET_ORDER = tuple(ACTIVE_DATASET_TYPES)
 DEFAULT_GENERATION_MODELS = (
     "gpt-5.2-2025-12-11",
@@ -45,3 +34,5 @@ DEFAULT_EVALUATION_LOG_ROOT = DEFAULT_INSPECT_RESULTS_DIR / "evaluation"
 DEFAULT_AUGMENTED_CACHE_ROOT = DATASETS_DIR / "augmented"
 PROMPTS_DIR = Path(__file__).resolve().parent.parent / "prompts"
 GENERATION_RETRY_LIMIT = 3
+AUGMENTED_STORE_MANIFEST = "augmented_manifest.json"
+AUGMENTED_STORE_SCHEMA_VERSION = "augmented_mcqa_setting_records_v2"

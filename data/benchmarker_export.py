@@ -1,4 +1,4 @@
-"""Export Final5 augmented datasets into benchmarker JSONL files."""
+"""Export setting-scoped augmented datasets into benchmarker JSONL files."""
 
 from __future__ import annotations
 
@@ -7,46 +7,16 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from datasets import DatasetDict, load_from_disk
-
-from config import CHOICE_LABELS
+from data.final5_store import _load_setting_dataset, migrate_augmented_dataset_in_place
+from utils.constants import AUGMENTED_STORE_MANIFEST, CHOICE_LABELS, FINAL5_SETTINGS
 
 
 @dataclass(frozen=True)
 class VariantSpec:
     name: str
-    options_key: str | None = None
-    answer_key: str | None = None
 
 
-VARIANT_SPECS = (
-    VariantSpec(name="original"),
-    VariantSpec(
-        name="human_from_scratch",
-        options_key="human_from_scratch_options_randomized",
-        answer_key="human_from_scratch_correct_answer_letter",
-    ),
-    VariantSpec(
-        name="model_from_scratch",
-        options_key="model_from_scratch_options_randomized",
-        answer_key="model_from_scratch_correct_answer_letter",
-    ),
-    VariantSpec(
-        name="augment_human",
-        options_key="augment_human_options_randomized",
-        answer_key="augment_human_correct_answer_letter",
-    ),
-    VariantSpec(
-        name="augment_model",
-        options_key="augment_model_options_randomized",
-        answer_key="augment_model_correct_answer_letter",
-    ),
-    VariantSpec(
-        name="augment_ablation",
-        options_key="augment_ablation_options_randomized",
-        answer_key="augment_ablation_correct_answer_letter",
-    ),
-)
+VARIANT_SPECS = (VariantSpec(name="original"),) + tuple(VariantSpec(name=name) for name in FINAL5_SETTINGS)
 
 
 class ExportValidationError(ValueError):
@@ -82,9 +52,7 @@ def _answer_letter_from_index(index: Any, choice_count: int) -> str:
         raise ExportValidationError(f"invalid answer_index: {index!r}") from exc
 
     if idx < 0 or idx >= choice_count or idx >= len(CHOICE_LABELS):
-        raise ExportValidationError(
-            f"answer_index out of range for {choice_count} choices: {idx}"
-        )
+        raise ExportValidationError(f"answer_index out of range for {choice_count} choices: {idx}")
     return CHOICE_LABELS[idx]
 
 
@@ -99,7 +67,7 @@ def _answer_index_from_letter(letter: Any, choice_count: int) -> int | None:
 
 
 def _row_identifier(row: dict[str, Any], row_index: int) -> str:
-    for key in ("id", "question_id"):
+    for key in ("sample_id", "id", "question_id"):
         value = row.get(key)
         if value not in (None, ""):
             return str(value)
@@ -137,27 +105,18 @@ def _build_original_row(split_name: str, row: dict[str, Any]) -> dict[str, Any]:
     raise ExportValidationError(f"unsupported split: {split_name}")
 
 
-def _build_generated_row(
-    row: dict[str, Any],
-    *,
-    options_key: str,
-    answer_key: str,
-) -> tuple[dict[str, Any] | None, str | None]:
+def _build_generated_row(row: dict[str, Any]) -> tuple[dict[str, Any] | None, str | None]:
     question = _question_text(row)
-    choices = _coerce_choices(row.get(options_key))
+    choices = _coerce_choices(row.get("options_randomized"))
     if choices is None:
-        return None, f"missing choices in {options_key}"
+        return None, "missing choices in options_randomized"
 
-    answer_letter = row.get(answer_key)
+    answer_letter = row.get("correct_answer_letter")
     answer_index = _answer_index_from_letter(answer_letter, len(choices))
     if answer_index is None:
-        return None, f"invalid answer letter in {answer_key}"
+        return None, "invalid answer letter in correct_answer_letter"
 
-    return {
-        "question": question,
-        "choices": choices,
-        "answer": CHOICE_LABELS[answer_index],
-    }, None
+    return {"question": question, "choices": choices, "answer": CHOICE_LABELS[answer_index]}, None
 
 
 def _export_variant(
@@ -173,22 +132,16 @@ def _export_variant(
         for row_index, row in enumerate(split_rows):
             if spec.name == "original":
                 try:
-                    exported = _build_original_row(split_name, row)
+                    exported = _build_original_row(split_name, dict(row))
                 except ExportValidationError as exc:
                     raise ExportValidationError(
                         f"{split_name}/{spec.name} row {row_index} "
-                        f"({_row_identifier(row, row_index)}): {exc}"
+                        f"({_row_identifier(dict(row), row_index)}): {exc}"
                     ) from exc
             else:
-                assert spec.options_key is not None
-                assert spec.answer_key is not None
-                exported, reason = _build_generated_row(
-                    row,
-                    options_key=spec.options_key,
-                    answer_key=spec.answer_key,
-                )
+                exported, reason = _build_generated_row(dict(row))
                 if exported is None:
-                    skipped.append(_skip_metadata(row, row_index, reason or "invalid row"))
+                    skipped.append(_skip_metadata(dict(row), row_index, reason or "invalid row"))
                     continue
 
             handle.write(json.dumps(exported, ensure_ascii=False))
@@ -203,42 +156,53 @@ def _export_variant(
     }
 
 
+def _load_manifest(path: Path) -> dict[str, Any]:
+    manifest_path = path / AUGMENTED_STORE_MANIFEST
+    if not manifest_path.exists():
+        raise FileNotFoundError(f"Missing augmented manifest at {manifest_path}")
+    return json.loads(manifest_path.read_text(encoding="utf-8"))
+
+
+def _first_available_split_rows(input_path: Path, split_name: str):
+    for setting in FINAL5_SETTINGS:
+        rows = _load_setting_dataset(input_path, split_name, setting)
+        if len(rows) > 0:
+            return rows
+    return _load_setting_dataset(input_path, split_name, "human_from_scratch")
+
+
 def export_benchmarker_items(input_path: Path | str, output_root: Path | str) -> Path:
-    """Export a Final5 DatasetDict into benchmarker JSONL files."""
+    """Export a setting-scoped augmented dataset into benchmarker JSONL files."""
     input_path = Path(input_path)
     output_root = Path(output_root)
 
-    dataset = load_from_disk(str(input_path))
-    if not isinstance(dataset, DatasetDict):
-        raise TypeError(f"Expected DatasetDict at {input_path}")
+    if (input_path / "dataset_dict.json").exists() and not (input_path / AUGMENTED_STORE_MANIFEST).exists():
+        migrate_augmented_dataset_in_place(input_path)
 
+    manifest = _load_manifest(input_path)
     output_dir = output_root / input_path.name
     output_dir.mkdir(parents=True, exist_ok=True)
 
     summary: dict[str, Any] = {
         "source_dataset_path": str(input_path.resolve()),
         "output_directory": str(output_dir.resolve()),
-        "splits": list(dataset.keys()),
         "files": {},
     }
 
-    for split_name, split_rows in dataset.items():
+    for split_name in manifest.get("dataset_types", []):
         split_dir = output_dir / split_name
         split_dir.mkdir(parents=True, exist_ok=True)
-        split_summary: dict[str, Any] = {}
-
+        summary["files"][split_name] = {}
+        original_rows = _first_available_split_rows(input_path, split_name)
         for spec in VARIANT_SPECS:
-            file_path = split_dir / f"{spec.name}.jsonl"
-            split_summary[spec.name] = _export_variant(split_name, split_rows, spec, file_path)
-
-        summary["files"][split_name] = split_summary
+            rows = original_rows if spec.name == "original" else _load_setting_dataset(input_path, split_name, spec.name)
+            summary["files"][split_name][spec.name] = _export_variant(
+                split_name,
+                rows,
+                spec,
+                split_dir / f"{spec.name}.jsonl",
+            )
 
     summary_path = output_dir / "export_summary.json"
-    with summary_path.open("w", encoding="utf-8") as handle:
-        json.dump(summary, handle, indent=2)
-        handle.write("\n")
-
+    summary_path.write_text(json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8")
     return summary_path
-
-
-__all__ = ["export_benchmarker_items", "ExportValidationError", "VARIANT_SPECS"]

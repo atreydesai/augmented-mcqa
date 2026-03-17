@@ -1,53 +1,78 @@
 # Architecture
 
-This repo has one canonical entrypoint: [`main.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/main.py).
+This repo has one CLI entrypoint:
+
+- `main.py`
 
 ## Runtime Shape
 
 ```text
-prepare-data -> generate -> augmented cache -> evaluate -> analyze/export
+prepare-data -> generate -> setting-scoped augmented store -> evaluate -> analyze/export
 ```
 
+Rules:
+
 - Inspect `.eval` logs are the source of truth.
-- The augmented Hugging Face dataset cache is derived from generation logs.
-- Cluster runs are dependency-aware SLURM bundles that call back into `python main.py ...` for each schedulable slice.
+- The augmented store is derived from generation logs.
+- Evaluation and export read the setting-scoped store.
+- Cluster jobs are just dependency-aware wrappers around `python main.py ...`.
 
-## Main Modules
+## Main Pieces
 
-- [`main.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/main.py)
-  Orchestrates the CLI, launches Inspect, materializes caches, and generates/submits SLURM bundles.
-- [`data/`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/data)
-  Raw-data download, dataset processing, augmented-cache materialization, and benchmarker export.
-- [`tasks/`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/tasks)
-  Builds Inspect `Task` objects for generation and evaluation.
-- [`solvers/`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/solvers)
-  Prompt construction, model calls, and response parsing.
-- [`scorers/`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/scorers)
-  Converts solver outputs into Inspect scores and metadata.
-- [`analysis/`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/analysis)
-  Reads Inspect logs and produces plots, summary tables, and the standalone benchmarker analysis.
-- [`utils/`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/utils)
-  Shared constants, model aliasing, parsing, sharding, log helpers, and cluster bundle rendering.
+- `main.py`
+  CLI orchestration, Inspect launch, cache materialization, and cluster submission.
+- `data/`
+  Processed dataset loading, setting-scoped store materialization, export, and migration.
+- `tasks/`
+  Inspect task builders for generation and evaluation.
+- `solvers/`
+  Prompt rendering, model calls, and parser wiring.
+- `scorers/`
+  Inspect score metadata for generation and evaluation.
+- `analysis/`
+  Plotting and benchmarker analysis.
+- `utils/`
+  Model resolution, recipe loading, sharding, log helpers, and scheduler logic.
 
-## Data Flow
+## Data Model
 
-### Processed dataset
+### Processed dataset input
 
-[`data/pipeline.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/data/pipeline.py) builds a unified `DatasetDict` with splits:
+`--processed-dataset` can be:
+
+- the unified processed `DatasetDict`
+- a dataset manifest JSON
+
+The standard processed dataset has splits:
 
 - `arc_challenge`
 - `mmlu_pro`
 - `gpqa`
 
-The per-dataset processors are:
+### Model registry
 
-- [`data/arc_processor.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/data/arc_processor.py)
-- [`data/mmlu_pro_processor.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/data/mmlu_pro_processor.py)
-- [`data/gpqa_processor.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/data/gpqa_processor.py)
+`config/model_registry.json` is the source of truth for model names.
 
-### Generation
+Examples:
 
-[`tasks/generation.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/tasks/generation.py) now builds one Inspect task per requested generation strategy over the selected processed-dataset slice. The solver in [`solvers/final5_generation.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/solvers/final5_generation.py) fills the Final5 settings:
+- `gpt-5.2-2025-12-11` -> `openai/gpt-5.2-2025-12-11`
+- `Qwen/Qwen3-4B-Instruct-2507` -> `vllm/Qwen/Qwen3-4B-Instruct-2507`
+
+Unregistered models are rejected.
+
+### Recipe config
+
+`config/generation_recipes.json` defines:
+
+- setting names
+- schedulable strategies
+- prompt template files
+- prompt mode
+- prerequisite settings
+- distractor counts
+- final choice counts
+
+Public settings stay:
 
 - `human_from_scratch`
 - `model_from_scratch`
@@ -55,84 +80,136 @@ The per-dataset processors are:
 - `augment_model`
 - `augment_ablation`
 
-`human_from_scratch` is implicit. The schedulable strategies are:
+Schedulable generation strategies are:
 
 - `model_from_scratch`
 - `augment_human`
 - `augment_model`
 - `augment_ablation`
 
-`augment_model` uses `model_from_scratch` from prior logs as its prerequisite.
+`augment_model` depends on `model_from_scratch`.
 
-Generation prompts use XML-style sections and ask for JSON keyed by distractor label. The parser in [`utils/parsing.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/utils/parsing.py) validates that JSON first, and still accepts the older labeled-line format as a backward-compatible fallback during retries.
+## Store Layout
 
-### Augmented cache
+The augmented store lives at:
 
-[`data/final5_store.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/data/final5_store.py) reads generation `.eval` logs and rebuilds an augmented `DatasetDict` containing:
+```text
+datasets/augmented/<run>/<model>/
+```
 
-- generated distractor columns
-- randomized options per setting
-- correct-answer letters per setting
+It contains:
 
-### Evaluation
+- `augmented_manifest.json`
+- one saved dataset per `dataset/setting`
 
-[`tasks/evaluation.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/tasks/evaluation.py) builds one Inspect task per `setting × mode`. The evaluation solver in [`solvers/final5_evaluation.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/solvers/final5_evaluation.py) prompts for a single answer letter in:
+Example:
 
-- `full_question`
-- `choices_only`
+```text
+datasets/augmented/gen_gpt52/openai_gpt-5.2-2025-12-11/
+  augmented_manifest.json
+  gpqa/
+    human_from_scratch/
+    model_from_scratch/
+    augment_human/
+    augment_model/
+    augment_ablation/
+```
 
-The evaluation prompts also use XML-style sections and require a small JSON object with an `"answer"` key in both modes. The evaluation scorer in [`scorers/evaluation.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/scorers/evaluation.py) records correctness plus metadata needed by analysis.
+Each stored row contains:
 
-## Model Resolution
+- stable row identity
+- original question/answer/category fields
+- human and model distractor lists
+- randomized options
+- correct answer letter
+- counts and traces metadata
 
-[`utils/modeling.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/utils/modeling.py) maps short aliases to Inspect model ids.
+The repo no longer relies on one wide row with fixed columns for every setting.
 
-Examples:
+## Generation Flow
 
-- `gpt-5.2-2025-12-11` -> `openai/gpt-5.2-2025-12-11`
-- `claude-opus-4-6` -> `anthropic/claude-opus-4-6`
-- `Qwen/Qwen3.5-397B-A17B` -> `together/Qwen/Qwen3.5-397B-A17B`
-- `Qwen/Qwen3-4B-Instruct-2507` -> `vllm/Qwen/Qwen3-4B-Instruct-2507`
+1. `tasks/generation.py` builds one Inspect task per requested strategy.
+2. `solvers/final5_generation.py` loads the recipe for that strategy.
+3. The solver renders the configured prompt and parses distractors.
+4. Generation logs are written to `results/inspect/generation/<run>/<model>/`.
+5. `data/final5_store.py` materializes the setting-scoped store from those logs.
 
-You can also pass provider-qualified model ids directly.
+`human_from_scratch` is still implicit for scheduling, but it is stored as a first-class setting in the augmented store.
 
-## Cluster Submit Flow
+## Evaluation Flow
 
-The supported cluster interface is:
+1. `tasks/evaluation.py` builds one Inspect task per `setting x mode`.
+2. `data/final5_store.py` loads the saved dataset for that setting.
+3. `solvers/final5_evaluation.py` prompts the evaluator in:
+   - `full_question`
+   - `choices_only`
+4. `scorers/evaluation.py` records correctness and option-source metadata.
+
+Evaluation no longer reads wide `*_options_randomized` columns from one merged dataset root.
+
+## Export Flow
+
+`data/benchmarker_export.py` exports:
+
+- `original`
+- `human_from_scratch`
+- `model_from_scratch`
+- `augment_human`
+- `augment_model`
+- `augment_ablation`
+
+It reads each setting dataset directly from the store.
+
+## Cluster Flow
+
+Supported cluster commands:
 
 - `main.py submit-generate-cluster`
 - `main.py submit-evaluate-cluster`
 
-Those commands:
+Generation slice shape:
 
-- support both local `vllm/...` models and hosted/API models
-- create one schedulable slice per:
-  - generation: `model × dataset × strategy × question_chunk`
-  - evaluation: `model × dataset × setting × mode × question_chunk`
-- write one manifest per submission plus a master `submit_all.sh`
-- submit one `sbatch` job per slice instead of one array element per slice family
-- attach exact `afterok` prerequisites between matching slices, for example `augment_model` after `model_from_scratch`
-- use `afterany` slot throttles when `--gpu-count` is acting as a concurrency cap
-- keep a merged run state in `scheduler_state.json` and optionally render `scheduler_status.html`
+- model
+- dataset
+- strategy
+- question chunk
 
-Local slices request one GPU. API slices request no GPU.
+Evaluation slice shape:
 
-The SLURM rendering logic lives in [`utils/cluster_submit.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/utils/cluster_submit.py).
-The run-state and dashboard logic lives in [`utils/scheduler_state.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/utils/scheduler_state.py).
+- model
+- dataset
+- setting
+- mode
+- question chunk
+
+Scheduler logic:
+
+- exact prerequisite wiring between matching slices
+- `augment_model` waits on `model_from_scratch`
+- stale/current/failed tracking in `scheduler_state.json`
+- optional HTML dashboard
+
+Local `vllm/...` slices request GPUs. Hosted/API slices do not.
 
 ## Artifact Layout
 
 - processed dataset: `datasets/processed/unified_processed_v3`
 - generation logs: `results/inspect/generation/<run>/<model>/`
 - evaluation logs: `results/inspect/evaluation/<run>/<generator_run>/<generator_model>/<eval_model>/`
-- augmented cache: `datasets/augmented/<run>/<model>/`
+- augmented store root: `datasets/augmented/<run>/<model>/`
+- per-setting datasets: `datasets/augmented/<run>/<model>/<dataset>/<setting>/`
+- benchmarker export root: `datasets/benchmarker_items/<store-name>/`
 - cluster bundles: `jobs/generated/<stage>/<run>/`
-- submission manifests: `jobs/generated/<stage>/<run>/submissions/<submission_id>/manifest.json`
-- master submit scripts: `jobs/generated/<stage>/<run>/submissions/<submission_id>/submit_all.sh`
 - scheduler state: `jobs/generated/<stage>/<run>/scheduler_state.json`
 - scheduler dashboard: `jobs/generated/<stage>/<run>/scheduler_status.html`
-- cluster logs: `logs/slurm/<stage>/<run>/`
+- SLURM logs: `logs/slurm/<stage>/<run>/`
 
 ## Tests
 
-The test suite lives under [`tests/`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/tests). Pytest output is redirected into `test-artifacts/pytest/` by [`tests/conftest.py`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/tests/conftest.py) so normal runtime directories stay clean.
+Run:
+
+```bash
+uv run pytest -q
+```
+
+Pytest redirects artifacts into `test-artifacts/pytest/` so normal runtime directories stay clean.

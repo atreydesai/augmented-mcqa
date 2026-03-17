@@ -7,6 +7,7 @@ set -euo pipefail
 ENV_FILE=".env"
 DRY_RUN=0
 TARGET_DIR=""
+MODELS_CSV=""
 
 MODELS=(
   "Qwen/Qwen3-4B-Instruct-2507"
@@ -23,6 +24,7 @@ Usage:
 Options:
   --env-file <path>     Path to env file (default: .env)
   --target-dir <path>   Override target cache root
+  --models <csv>        Comma-separated subset of model ids to stage
   --dry-run             Print download commands without executing
   --help                Show this help
 
@@ -44,6 +46,10 @@ while [[ $# -gt 0 ]]; do
       TARGET_DIR="$2"
       shift 2
       ;;
+    --models)
+      MODELS_CSV="$2"
+      shift 2
+      ;;
     --dry-run)
       DRY_RUN=1
       shift
@@ -59,6 +65,10 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+if [[ -n "$MODELS_CSV" ]]; then
+  IFS=',' read -r -a MODELS <<<"$MODELS_CSV"
+fi
 
 if [[ -f "$ENV_FILE" ]]; then
   set -a

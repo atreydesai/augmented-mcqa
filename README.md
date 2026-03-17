@@ -1,49 +1,51 @@
 # Augmented MCQA
-![diagram](diagram-flowchart.png)
-## Setup
+
+LLM generation and evaluation tooling for multiple-choice distractor experiments.
+
+Use `uv` for everything:
 
 ```bash
-cp .env.example .env
-uv sync
+uv run python main.py --help
 ```
 
-If you will run local `vllm/...` models or direct `vllm.LLM(...)` smoke tests, keep NumPy on the 2.2 line. `vllm==0.11.2` currently fails to start against NumPy 2.4.x because `numba` rejects it. The validated one-GPU Nemotron Nano 9B v2 smoke test ran with `numpy==2.2.6`.
+## What This Repo Does
 
-```bash
-uv pip install --no-build-isolation 'vllm==0.11.2'
+The normal flow is:
+
+```text
+prepare-data -> generate -> materialize augmented store -> evaluate -> analyze/export
 ```
 
-To keep that cluster-only local-model stack installed across project updates, use:
+Important rules:
 
-```bash
-uv sync --extra dev --inexact
-```
+- Inspect `.eval` logs are the source of truth.
+- Generated datasets are stored under `datasets/augmented/<run>/<model>/`.
+- That store is setting-scoped, not one wide merged table.
+- Models must exist in `config/model_registry.json`.
+- Setting definitions, prompt templates, and distractor counts live in `config/generation_recipes.json`.
+- `--processed-dataset` accepts either:
+  - the unified processed dataset directory
+  - a dataset manifest JSON for a custom dataset
 
-`--inexact` tells `uv` not to remove extra packages that are present in the environment but not declared in this repo's locked dependencies.
+## Repo Layout
 
-Set the provider keys you actually need in `.env`:
+- processed dataset: `datasets/processed/unified_processed_v3`
+- generation logs: `results/inspect/generation/<run>/<model>/`
+- evaluation logs: `results/inspect/evaluation/<run>/<generator_run>/<generator_model>/<eval_model>/`
+- augmented store root: `datasets/augmented/<run>/<model>/`
+- per-setting records: `datasets/augmented/<run>/<model>/<dataset>/<setting>/`
+- benchmarker exports: `datasets/benchmarker_items/<store-name>/`
+- model registry: `config/model_registry.json`
+- recipe config: `config/generation_recipes.json`
+- prompts: `prompts/`
 
-- `OPENAI_API_KEY` for GPT-5.2
-- `ANTHROPIC_API_KEY` for Claude Opus
-- `GOOGLE_API_KEY` for Gemini
-- `TOGETHER_API_KEY` for Together-hosted Qwen 3.5 models
+Cluster note:
 
-## The Normal Pipeline
+- `--gpu-count` on `submit-generate-cluster` and `submit-evaluate-cluster` is a per-resource-class concurrency cap for scheduler submission. It is not a "GPUs per job" flag.
 
-This is the path the repo is now optimized for:
+## Quick Start
 
-1. prepare `datasets/processed/unified_processed_v3`
-2. generate distractors with either direct runs or the dependency-aware scheduler
-3. evaluate those generated distractors with either direct runs or the dependency-aware scheduler
-4. analyze the evaluation logs
-5. export benchmarker files if needed
-
-The scheduler supports both:
-
-- local `vllm/...` jobs that request GPUs
-- hosted/API jobs that request no GPU and just fan out `sbatch` workers
-
-## Step 1: Prepare Data
+### 1. Build the processed benchmark dataset
 
 ```bash
 uv run python main.py prepare-data \
@@ -51,159 +53,177 @@ uv run python main.py prepare-data \
   --output-path datasets/processed/unified_processed_v3
 ```
 
-## Step 2: Generate Distractors
-
-Pick one of the direct-run commands below for a simple single-process run, or use `submit-generate-cluster` to slice generation by:
-
-- model
-- dataset
-- generation strategy
-- question chunk
-
-The schedulable generation strategies are:
-
-- `model_from_scratch`
-- `augment_human`
-- `augment_model`
-- `augment_ablation`
-
-`human_from_scratch` remains implicit and is not scheduled as its own job.
-
-### Direct API generators
-
-GPT-5.2, all datasets, all questions:
+### 2. Run generation for one model
 
 ```bash
 uv run python main.py generate \
   --model gpt-5.2-2025-12-11 \
   --run-name gen_gpt52 \
   --processed-dataset datasets/processed/unified_processed_v3 \
-  --dataset-types arc_challenge,mmlu_pro,gpqa
+  --dataset-types arc_challenge,mmlu_pro,gpqa \
+  --materialize-cache
 ```
 
-Claude Opus 4.6:
+### 3. Evaluate one model against that generation run
+
+```bash
+uv run python main.py evaluate \
+  --model Qwen/Qwen3-4B-Instruct-2507 \
+  --run-name eval_qwen4b_on_gpt52 \
+  --generator-run-name gen_gpt52 \
+  --generator-model gpt-5.2-2025-12-11 \
+  --processed-dataset datasets/processed/unified_processed_v3
+```
+
+### 4. Export benchmarker JSONL files
+
+```bash
+uv run python main.py export \
+  --generator-run-name gen_gpt52 \
+  --generator-model gpt-5.2-2025-12-11 \
+  --processed-dataset datasets/processed/unified_processed_v3
+```
+
+### 5. Make plots and summary tables
+
+```bash
+uv run python main.py analyze \
+  --results-root results/inspect/evaluation \
+  --output-dir results/final5_plots
+```
+
+## Commands You Will Actually Use
+
+### Prepare data
+
+Build everything:
+
+```bash
+uv run python main.py prepare-data \
+  --step all \
+  --output-path datasets/processed/unified_processed_v3
+```
+
+Build a smaller processed dataset for debugging:
+
+```bash
+uv run python main.py prepare-data \
+  --step all \
+  --limit 20 \
+  --output-path datasets/processed/unified_processed_debug20
+```
+
+### Direct generation
+
+Generate only `model_from_scratch` for GPQA:
+
+```bash
+uv run python main.py generate \
+  --model gpt-5.2-2025-12-11 \
+  --run-name gen_gpqa_model_only \
+  --processed-dataset datasets/processed/unified_processed_v3 \
+  --dataset-types gpqa \
+  --generation-strategies model_from_scratch \
+  --materialize-cache
+```
+
+Generate only the first 10 rows per dataset:
 
 ```bash
 uv run python main.py generate \
   --model claude-opus-4-6 \
-  --run-name gen_claude_opus46 \
+  --run-name gen_claude_small \
   --processed-dataset datasets/processed/unified_processed_v3 \
+  --limit 10 \
   --materialize-cache
 ```
 
-Gemini 3.1 Pro:
+Rerun only `augment_model` after changing its prompt or recipe:
 
 ```bash
 uv run python main.py generate \
-  --model gemini-3.1-pro-preview \
-  --run-name gen_gemini31pro \
+  --model gpt-5.2-2025-12-11 \
+  --run-name gen_gpt52 \
   --processed-dataset datasets/processed/unified_processed_v3 \
+  --dataset-types gpqa \
+  --generation-strategies augment_model \
+  --rebuild-cache \
   --materialize-cache
 ```
 
-TogetherAI Qwen/Qwen3.5-397B-A17B:
+Rebuild the setting-scoped augmented store from existing logs:
 
 ```bash
-uv run python main.py generate \
-  --model Qwen/Qwen3.5-397B-A17B \
-  --run-name gen_together_qwen397b \
-  --processed-dataset datasets/processed/unified_processed_v3 \
-  --materialize-cache
+uv run python main.py materialize-generation-cache \
+  --run-name gen_gpt52 \
+  --model gpt-5.2-2025-12-11 \
+  --processed-dataset datasets/processed/unified_processed_v3
 ```
 
-TogetherAI Qwen/Qwen3.5-9B:
+### Cluster generation
 
-```bash
-uv run python main.py generate \
-  --model Qwen/Qwen3.5-9B \
-  --run-name gen_together_qwen9b \
-  --processed-dataset datasets/processed/unified_processed_v3 \
-  --materialize-cache
-```
-
-### Dependency-aware scheduler for generation
-
-Local and API models can be mixed in the same scheduler submission. The scheduler will:
-
-- create one submission slice per `model × dataset × strategy × question_chunk`
-- submit exact `afterok` dependencies when a slice needs another slice first
-- use `afterany` throttling when `--gpu-count` is set as a concurrency cap
-- skip already-current slices unless `--force` is used
-- mark downstream slices stale when an upstream slice is rerun
-- always refresh `scheduler_state.json`
-- optionally write `scheduler_status.html`
-
-Example: local + API generation in one run, chunked by 200 questions, with a status dashboard:
+Write a preview submission bundle without calling `sbatch`:
 
 ```bash
 uv run python main.py submit-generate-cluster \
-  --run-name gen_scheduler_all \
-  --models Qwen/Qwen3-4B-Instruct-2507,allenai/Olmo-3-7B-Instruct,gpt-5.2-2025-12-11 \
+  --run-name gen_preview \
   --processed-dataset datasets/processed/unified_processed_v3 \
+  --models Qwen/Qwen3-4B-Instruct-2507 \
+  --dataset-types arc_challenge,gpqa \
+  --generation-strategies model_from_scratch,augment_model \
+  --questions-per-job 100 \
+  --write-only \
+  --render-status
+```
+
+Mix local and API models in one submission:
+
+```bash
+uv run python main.py submit-generate-cluster \
+  --run-name gen_mixed \
+  --processed-dataset datasets/processed/unified_processed_v3 \
+  --models Qwen/Qwen3-4B-Instruct-2507,allenai/Olmo-3-7B-Instruct,gpt-5.2-2025-12-11 \
   --generation-strategies model_from_scratch,augment_human,augment_model,augment_ablation \
   --questions-per-job 200 \
   --gpu-count 4 \
   --render-status
 ```
 
-Example: write a status dashboard and submission bundle without calling `sbatch` yet:
+### Direct evaluation
+
+Evaluate only `choices_only` mode:
 
 ```bash
-uv run python main.py submit-generate-cluster \
-  --run-name gen_scheduler_preview \
+uv run python main.py evaluate \
+  --model Qwen/Qwen3-4B-Instruct-2507 \
+  --run-name eval_choices_only \
+  --generator-run-name gen_gpt52 \
+  --generator-model gpt-5.2-2025-12-11 \
   --processed-dataset datasets/processed/unified_processed_v3 \
-  --dataset-types arc_challenge,mmlu_pro,gpqa \
-  --models Qwen/Qwen3.5-397B-A17B \
-  --generation-strategies model_from_scratch \
-  --limit 7 \
-  --questions-per-job 2 \
-  --max-tokens 10000 \
-  --cpus-per-task 2 \
-  --write-only \
-  --render-status
+  --modes choices_only
 ```
 
-Example: rerun only `augment_model` for GPQA after editing that prompt:
+Evaluate only `augment_model` on GPQA:
 
 ```bash
-uv run python main.py submit-generate-cluster \
-  --run-name gen_scheduler_all \
-  --models gpt-5.2-2025-12-11 \
+uv run python main.py evaluate \
+  --model meta-llama/Llama-3.1-8B-Instruct \
+  --run-name eval_gpqa_aug_model \
+  --generator-run-name gen_gpt52 \
+  --generator-model gpt-5.2-2025-12-11 \
   --processed-dataset datasets/processed/unified_processed_v3 \
   --dataset-types gpqa \
-  --generation-strategies augment_model \
-  --questions-per-job 200 \
-  --force \
-  --render-status
+  --settings augment_model
 ```
 
-If the required `model_from_scratch` slice for the same model, dataset, and question chunk is not already current, the scheduler will stop and tell you to rerun or include that prerequisite slice.
+### Cluster evaluation
 
-## Step 3: Evaluate
-
-The default local evaluation models are:
-
-- `Qwen/Qwen3-4B-Instruct-2507`
-- `allenai/Olmo-3-7B-Instruct`
-- `meta-llama/Llama-3.1-8B-Instruct`
-
-The evaluation scheduler slices work by:
-
-- model
-- dataset
-- Final5 setting
-- mode (`full_question` or `choices_only`)
-- question chunk
-
-Each evaluation slice depends on the exact generation slice or slices needed for that same dataset chunk. If those generation prerequisites are missing or stale, the scheduler refuses to submit the evaluation slice.
-If a generation chunk contains a mix of successful and failed rows, downstream `augment_model` and evaluation work now skips the bad rows and continues on the rows that materialized correctly.
-
-Example:
+Schedule all five settings across two modes:
 
 ```bash
 uv run python main.py submit-evaluate-cluster \
-  --run-name eval_scheduler_all \
-  --generator-run-name gen_scheduler_all \
+  --run-name eval_all \
+  --generator-run-name gen_gpt52 \
   --generator-model gpt-5.2-2025-12-11 \
   --processed-dataset datasets/processed/unified_processed_v3 \
   --models Qwen/Qwen3-4B-Instruct-2507,allenai/Olmo-3-7B-Instruct,meta-llama/Llama-3.1-8B-Instruct \
@@ -214,41 +234,34 @@ uv run python main.py submit-evaluate-cluster \
   --render-status
 ```
 
-If you want to rerun only one evaluation slice family after a generation change, narrow it down with `--dataset-types`, `--settings`, `--modes`, and `--models`, then use `--force`.
-
-Scheduler notes:
-
-- `--questions-per-job` creates contiguous question chunks within each `model × dataset × strategy` or `model × dataset × setting × mode` slice family.
-- `--gpu-count` is now a per-resource-class concurrency cap for the master submit script, not an array width.
-- `--write-only` bundles show up as `planned` until `submit_all.sh` is actually run.
-- manifests and master submit scripts live under `jobs/generated/<stage>/<run>/submissions/<submission_id>/`
-- scheduler state lives at `jobs/generated/<stage>/<run>/scheduler_state.json`
-- optional dashboard lives at `jobs/generated/<stage>/<run>/scheduler_status.html`
-
-## Step 4: Analyze
+Rerun one evaluation family after generation changed:
 
 ```bash
-uv run python main.py analyze \
-  --results-root results/inspect/evaluation \
-  --output-dir results/final5_plots
+uv run python main.py submit-evaluate-cluster \
+  --run-name eval_all \
+  --generator-run-name gen_gpt52 \
+  --generator-model gpt-5.2-2025-12-11 \
+  --processed-dataset datasets/processed/unified_processed_v3 \
+  --dataset-types gpqa \
+  --settings augment_model \
+  --modes full_question \
+  --models Qwen/Qwen3-4B-Instruct-2507 \
+  --questions-per-job 200 \
+  --force \
+  --render-status
 ```
 
-## Step 5: Export Benchmarker Items
+### Export and analysis
 
-Example for the GPT-5.2 generation run:
+Export from an explicit augmented store path:
 
 ```bash
 uv run python main.py export \
-  --generator-run-name gen_gpt52 \
-  --generator-model gpt-5.2-2025-12-11 \
-  --processed-dataset datasets/processed/unified_processed_v3
+  --input datasets/augmented/gen_gpt52/openai_gpt-5.2-2025-12-11 \
+  --output-root datasets/benchmarker_items
 ```
 
-If you used a different generator, keep the same command shape and change `--generator-run-name` and `--generator-model` to match Step 2.
-
-## Optional: Standalone Benchmarker Writing-Flaw Analysis
-
-Example for the GPT-5.2 generation run:
+Run standalone benchmarker writing-flaw analysis:
 
 ```bash
 uv run python analysis/benchmarker_analysis.py \
@@ -260,16 +273,113 @@ uv run python analysis/benchmarker_analysis.py \
   --output-dir analysis/figures/benchmarker
 ```
 
-## Canonical Artifacts
+## Custom Datasets
 
-- processed dataset: `datasets/processed/unified_processed_v3`
-- generation logs: `results/inspect/generation/<run>/<model>/`
-- evaluation logs: `results/inspect/evaluation/<run>/<generator_run>/<generator_model>/<eval_model>/`
-- augmented cache: `datasets/augmented/<run>/<model>/`
-- cluster bundles: `jobs/generated/<stage>/<run>/`
-- cluster logs: `logs/slurm/<stage>/<run>/`
+If you want to use your own dataset, point `--processed-dataset` at a dataset manifest JSON instead of a Hugging Face `DatasetDict`.
+
+Example:
+
+```json
+{
+  "schema_version": "augmented_mcqa_dataset_manifest_v1",
+  "datasets": {
+    "custom_benchmark": {
+      "path": "datasets/custom/questions.jsonl",
+      "format": "jsonl",
+      "question_key": "question",
+      "answer_key": "answer",
+      "choices_human_key": "choices_human",
+      "category_key": "category",
+      "question_id_key": "question_id"
+    }
+  }
+}
+```
+
+Then run generation against it:
+
+```bash
+uv run python main.py generate \
+  --model gpt-5.2-2025-12-11 \
+  --run-name gen_custom \
+  --processed-dataset datasets/custom/dataset_manifest.json \
+  --dataset-types custom_benchmark \
+  --materialize-cache
+```
+
+## Custom Models
+
+All generation and evaluation models must be registered in `config/model_registry.json`.
+
+Example entry:
+
+```json
+{
+  "name": "my-local-model",
+  "resolved": "vllm/my-org/my-local-model"
+}
+```
+
+Then use:
+
+```bash
+uv run python main.py generate \
+  --model my-local-model \
+  --run-name gen_my_local \
+  --processed-dataset datasets/processed/unified_processed_v3
+```
+
+## Custom Prompts and Choice Counts
+
+Edit `config/generation_recipes.json`.
+
+That file controls:
+
+- setting name
+- prompt template file
+- prompt mode
+- prerequisite setting
+- number of human distractors
+- number of model distractors
+- total number of choices
+- how many new distractors generation should produce
+
+Typical uses:
+
+- change `augment_model` prompt template
+- increase `augment_ablation` from 9 distractors to another value
+- run a smaller `model_from_scratch` ablation
+
+After changing recipes, rerun generation for the affected setting and rebuild the augmented store:
+
+```bash
+uv run python main.py generate \
+  --model gpt-5.2-2025-12-11 \
+  --run-name gen_gpt52 \
+  --processed-dataset datasets/processed/unified_processed_v3 \
+  --generation-strategies augment_model \
+  --rebuild-cache \
+  --materialize-cache
+```
+
+## Schedulable Generation Strategies
+
+- `model_from_scratch`
+- `augment_human`
+- `augment_model`
+- `augment_ablation`
+
+`human_from_scratch` is stored and evaluated like the others, but it is not scheduled as its own generation slice.
+
+## Evaluation Settings
+
+- `human_from_scratch`
+- `model_from_scratch`
+- `augment_human`
+- `augment_model`
+- `augment_ablation`
 
 ## More Detail
 
-- [`docs/cli-reference.md`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/docs/cli-reference.md)
-- [`docs/architecture.md`](/Users/ndesai-air/Documents/GitHub/augmented-mcqa/docs/architecture.md)
+- [CLI reference](docs/cli-reference.md)
+- [Architecture](docs/architecture.md)

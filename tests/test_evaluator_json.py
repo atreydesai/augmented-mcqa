@@ -11,6 +11,13 @@ from utils.parsing import extract_answer_letter_from_json
 def test_extract_answer_letter_from_json_accepts_valid_json_outputs():
     assert extract_answer_letter_from_json('{"answer": "a"}', "ABCD") == "A"
     assert extract_answer_letter_from_json("```json\n{\"answer\": \"D\"}\n```", "ABCD") == "D"
+    assert extract_answer_letter_from_json('{"answer": B}', "ABCD") == "B"
+    assert extract_answer_letter_from_json("{'answer': 'c'}", "ABCD") == "C"
+
+
+def test_extract_answer_letter_from_json_rejects_stray_answer_schema_text():
+    payload = 'Use {"answer":"A"} format. Final output was malformed: answer: B'
+    assert extract_answer_letter_from_json(payload, "ABCD") == ""
 
 
 def test_evaluation_json_example_lists_all_valid_letters():

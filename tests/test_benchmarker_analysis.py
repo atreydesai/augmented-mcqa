@@ -1,13 +1,21 @@
 import json
+from pathlib import Path
 
-from datasets import Dataset, DatasetDict
+from datasets import Dataset
 from inspect_ai import Task, eval
 from inspect_ai.dataset import MemoryDataset, Sample
 from inspect_ai.scorer import Score, scorer
 from inspect_ai.solver import solver
 
 from analysis import benchmarker_analysis
-from utils.constants import CHOICE_LABELS, FINAL5_SETTINGS, MODE_CHOICES, SETTING_SPECS
+from utils.constants import (
+    AUGMENTED_STORE_MANIFEST,
+    AUGMENTED_STORE_SCHEMA_VERSION,
+    CHOICE_LABELS,
+    FINAL5_SETTINGS,
+    MODE_CHOICES,
+    SETTING_SPECS,
+)
 from utils.modeling import resolve_model_name, safe_name
 from utils.sharding import sample_id_for_row
 
@@ -51,18 +59,76 @@ def _wrong_letter(gold_letter: str, choice_count: int, step: int = 1) -> str:
     return CHOICE_LABELS[(gold_index + step) % choice_count]
 
 
-def _build_augmented_cache(path):
-    splits: dict[str, Dataset] = {}
-    for dataset_index, (dataset_type, base_row) in enumerate(DATASET_ROWS.items()):
-        row = dict(base_row)
-        for setting_index, setting in enumerate(FINAL5_SETTINGS):
-            choice_count = SETTING_SPECS[setting]["num_choices"]
-            row[f"{setting}_options_randomized"] = _choices(f"{dataset_type}_{setting}", choice_count)
-            row[f"{setting}_correct_answer_letter"] = CHOICE_LABELS[(dataset_index + setting_index) % choice_count]
-        splits[dataset_type] = Dataset.from_list([row])
+def _setting_record(
+    dataset_type: str,
+    base_row: dict[str, object],
+    *,
+    setting: str,
+    dataset_index: int,
+    setting_index: int,
+) -> dict[str, object]:
+    choice_count = SETTING_SPECS[setting]["num_choices"]
+    sample_id = sample_id_for_row(dataset_type, base_row, 0)
+    human_count = SETTING_SPECS[setting]["num_human"]
+    model_count = SETTING_SPECS[setting]["num_model"]
+    human_distractors = _choices(f"{dataset_type}_{setting}_human", human_count)
+    model_distractors = _choices(f"{dataset_type}_{setting}_model", model_count)
+    distractors = [*human_distractors, *model_distractors]
+    gold_index = (dataset_index + setting_index) % choice_count
+    options_randomized = list(distractors)
+    options_randomized.insert(gold_index, str(base_row["answer"]))
+    return {
+        "id": base_row.get("id"),
+        "question_id": base_row.get("question_id"),
+        "dataset_type": dataset_type,
+        "row_index": 0,
+        "sample_id": sample_id,
+        "question": str(base_row["question"]),
+        "answer": str(base_row["answer"]),
+        "category": f"{dataset_type}_category",
+        "options": [],
+        "answer_index": None,
+        "choices_human": [],
+        "setting": setting,
+        "generation_strategy": setting,
+        "status": "success",
+        "num_human": human_count,
+        "num_model": model_count,
+        "num_choices": choice_count,
+        "human_distractors": human_distractors,
+        "model_distractors": model_distractors,
+        "distractors": distractors,
+        "options_randomized": options_randomized,
+        "correct_answer_letter": CHOICE_LABELS[gold_index],
+        "traces": {},
+    }
 
-    dataset = DatasetDict(splits)
-    dataset.save_to_disk(str(path))
+
+def _build_augmented_cache(path: Path):
+    path.mkdir(parents=True, exist_ok=True)
+    (path / AUGMENTED_STORE_MANIFEST).write_text(
+        json.dumps(
+            {
+                "schema_version": AUGMENTED_STORE_SCHEMA_VERSION,
+                "storage_kind": "setting_records",
+                "dataset_types": list(DATASET_ROWS),
+                "settings": list(FINAL5_SETTINGS),
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    for dataset_index, (dataset_type, base_row) in enumerate(DATASET_ROWS.items()):
+        (path / dataset_type).mkdir(parents=True, exist_ok=True)
+        for setting_index, setting in enumerate(FINAL5_SETTINGS):
+            record = _setting_record(
+                dataset_type,
+                base_row,
+                setting=setting,
+                dataset_index=dataset_index,
+                setting_index=setting_index,
+            )
+            Dataset.from_list([record]).save_to_disk(str(path / dataset_type / setting))
     return path
 
 
