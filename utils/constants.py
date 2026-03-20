@@ -25,6 +25,7 @@ DEFAULT_EVALUATION_MODELS = (
     "Qwen/Qwen3-4B-Instruct-2507",
     "allenai/Olmo-3-7B-Instruct",
     "meta-llama/Llama-3.1-8B-Instruct",
+    "nvidia/NVIDIA-Nemotron-Nano-9B-v2"
 )
 DEFAULT_LOCAL_EVALUATION_MODELS = DEFAULT_EVALUATION_MODELS
 DEFAULT_PROCESSED_DATASET = PROCESSED_DATASETS_DIR / "unified_processed_v3"

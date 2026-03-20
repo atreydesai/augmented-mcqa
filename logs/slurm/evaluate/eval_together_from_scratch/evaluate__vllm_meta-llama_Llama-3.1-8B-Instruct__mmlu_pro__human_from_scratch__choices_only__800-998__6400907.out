@@ -1,0 +1,41 @@
+---------------------------------------------------------                                              
+final5_eval_human_from_scratch_choices_only (199 samples): vllm/meta-llama/Llama-3.1-8B-Instruct       
+max_tokens: 2048, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)
+---------------------------------------------------------                                              
+                                                                                                       
+Steps:  10/199   5% | Samples:   1/199 | mean:  n/a | vllm:  0/10 | HTTP retries: 0
+Steps:  22/199  11% | Samples:  15/199 | mean: 0.36 | vllm:  1/10 | HTTP retries: 0
+Steps:  27/199  13% | Samples:  27/199 | mean: 0.31 | vllm:  8/10 | HTTP retries: 1
+Steps:  38/199  19% | Samples:  34/199 | mean: 0.36 | vllm:  3/10 | HTTP retries: 1
+Steps:  48/199  24% | Samples:  46/199 | mean: 0.31 | vllm:  5/10 | HTTP retries: 1
+Steps:  60/199  30% | Samples:  58/199 | mean: 0.30 | vllm:  4/10 | HTTP retries: 1
+Steps:  70/199  35% | Samples:  69/199 | mean: 0.28 | vllm:  7/10 | HTTP retries: 1
+Steps:  82/199  41% | Samples:  81/199 | mean: 0.30 | vllm:  8/10 | HTTP retries: 1
+Steps:  96/199  48% | Samples:  91/199 | mean: 0.28 | vllm:  2/10 | HTTP retries: 1
+Steps: 106/199  53% | Samples: 105/199 | mean: 0.26 | vllm:  6/10 | HTTP retries: 1
+Steps: 118/199  59% | Samples: 115/199 | mean: 0.25 | vllm:  4/10 | HTTP retries: 1
+Steps: 128/199  64% | Samples: 127/199 | mean: 0.26 | vllm:  5/10 | HTTP retries: 1
+Steps: 139/199  69% | Samples: 137/199 | mean: 0.29 | vllm:  5/10 | HTTP retries: 1
+Steps: 149/199  74% | Samples: 146/199 | mean: 0.29 | vllm:  4/10 | HTTP retries: 1
+Steps: 158/199  79% | Samples: 155/199 | mean: 0.29 | vllm:  4/10 | HTTP retries: 1
+Steps: 167/199  83% | Samples: 164/199 | mean: 0.30 | vllm:  5/10 | HTTP retries: 1
+Steps: 175/199  87% | Samples: 173/199 | mean: 0.30 | vllm:  6/10 | HTTP retries: 1
+Steps: 182/199  91% | Samples: 181/199 | mean: 0.30 | vllm:  5/10 | HTTP retries: 1
+Steps: 192/199  96% | Samples: 189/199 | mean: 0.31 | vllm:  3/10 | HTTP retries: 1
+Steps: 199/199 100% | Samples: 199/199 | mean: 0.30 | vllm:  0/10 | HTTP retries: 1
+
+---------------------------------------------------------                                                                                                   
+final5_eval_human_from_scratch_choices_only (199 samples): vllm/meta-llama/Llama-3.1-8B-Instruct                                                            
+max_tokens: 2048, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)                                                     
+                                                                                                                                                            
+total time:                                                                     0:02:24                                                                     
+vllm/meta-llama/Llama-3.1-8B-Instruct                                           35,526 tokens [I: 33,536, O: 1,990]                                         
+final5_eval                                                                                                                                                 
+mean         0.302                                                                                                                                          
+stderr       0.033                                                                                                                                          
+Log:                                                                                                                                                        
+results/inspect/evaluation/eval_together_from_scratch/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_meta-llama_Llama-3.1-8B-Instruct/2…
+---------------------------------------------------------                                                                                                   
+                                                                                                                                                            
+Evaluation logs: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/eval_together_from_scratch/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_meta-llama_Llama-3.1-8B-Instruct
+Running: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/python main.py evaluate --model vllm/meta-llama/Llama-3.1-8B-Instruct --run-name eval_together_from_scratch --generator-run-name together_from_scratch_testing --generator-model together/Qwen/Qwen3.5-397B-A17B --processed-dataset datasets/processed/unified_processed_v3 --dataset-types mmlu_pro --settings human_from_scratch --modes choices_only --question-start 800 --limit 199 --augmented-dataset /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/augmented/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B --max-tokens 2048 --reasoning-effort medium --retry-on-error 2

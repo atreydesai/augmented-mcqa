@@ -1,0 +1,157 @@
+--- Logging error ---
+Traceback (most recent call last):
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/logging/__init__.py", line 1164, in emit
+    self.flush()
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/logging/__init__.py", line 1144, in flush
+    self.stream.flush()
+OSError: [Errno 116] Stale file handle
+Call stack:
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/threading.py", line 1030, in _bootstrap
+    self._bootstrap_inner()
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/threading.py", line 1073, in _bootstrap_inner
+    self.run()
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/threading.py", line 1010, in run
+    self._target(*self._args, **self._kwargs)
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/inspect_ai/_util/local_server.py", line 125, in log_error
+    logger.info(line.strip())
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/logging/__init__.py", line 1539, in info
+    self._log(INFO, msg, args, **kwargs)
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/logging/__init__.py", line 1684, in _log
+    self.handle(record)
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/logging/__init__.py", line 1700, in handle
+    self.callHandlers(record)
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/logging/__init__.py", line 1762, in callHandlers
+    hdlr.handle(record)
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/logging/__init__.py", line 1028, in handle
+    self.emit(record)
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/inspect_ai/_util/logger.py", line 103, in emit
+    self.trace_logger.emit(record)
+Message: '\x1b[1;36m(APIServer pid=1191614)\x1b[0;0m [2026-03-18 21:54:27] INFO launcher.py:110: Shutting down FastAPI HTTP server.'
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/logging/__init__.py", line 1164, in emit
+    self.flush()
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/logging/__init__.py", line 1144, in flush
+    self.stream.flush()
+OSError: [Errno 116] Stale file handle
+Call stack:
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/threading.py", line 1030, in _bootstrap
+    self._bootstrap_inner()
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/threading.py", line 1073, in _bootstrap_inner
+    self.run()
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/threading.py", line 1010, in run
+    self._target(*self._args, **self._kwargs)
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/inspect_ai/_util/local_server.py", line 125, in log_error
+    logger.info(line.strip())
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/logging/__init__.py", line 1539, in info
+    self._log(INFO, msg, args, **kwargs)
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/logging/__init__.py", line 1684, in _log
+    self.handle(record)
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/logging/__init__.py", line 1700, in handle
+    self.callHandlers(record)
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/logging/__init__.py", line 1762, in callHandlers
+    hdlr.handle(record)
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/logging/__init__.py", line 1028, in handle
+    self.emit(record)
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/inspect_ai/_util/logger.py", line 103, in emit
+    self.trace_logger.emit(record)
+Message: '[rank0]:[W318 21:54:27.382782736 ProcessGroupNCCL.cpp:1524] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())'
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/logging/__init__.py", line 1164, in emit
+    self.flush()
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/logging/__init__.py", line 1144, in flush
+    self.stream.flush()
+OSError: [Errno 116] Stale file handle
+Call stack:
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/threading.py", line 1030, in _bootstrap
+    self._bootstrap_inner()
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/threading.py", line 1073, in _bootstrap_inner
+    self.run()
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/threading.py", line 1010, in run
+    self._target(*self._args, **self._kwargs)
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/inspect_ai/_util/local_server.py", line 125, in log_error
+    logger.info(line.strip())
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/logging/__init__.py", line 1539, in info
+    self._log(INFO, msg, args, **kwargs)
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/logging/__init__.py", line 1684, in _log
+    self.handle(record)
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/logging/__init__.py", line 1700, in handle
+    self.callHandlers(record)
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/logging/__init__.py", line 1762, in callHandlers
+    hdlr.handle(record)
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/logging/__init__.py", line 1028, in handle
+    self.emit(record)
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/inspect_ai/_util/logger.py", line 103, in emit
+    self.trace_logger.emit(record)
+Message: '\x1b[1;36m(APIServer pid=1191614)\x1b[0;0m INFO:     Shutting down'
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/logging/__init__.py", line 1164, in emit
+    self.flush()
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/logging/__init__.py", line 1144, in flush
+    self.stream.flush()
+OSError: [Errno 116] Stale file handle
+Call stack:
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/threading.py", line 1030, in _bootstrap
+    self._bootstrap_inner()
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/threading.py", line 1073, in _bootstrap_inner
+    self.run()
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/threading.py", line 1010, in run
+    self._target(*self._args, **self._kwargs)
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/inspect_ai/_util/local_server.py", line 125, in log_error
+    logger.info(line.strip())
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/logging/__init__.py", line 1539, in info
+    self._log(INFO, msg, args, **kwargs)
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/logging/__init__.py", line 1684, in _log
+    self.handle(record)
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/logging/__init__.py", line 1700, in handle
+    self.callHandlers(record)
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/logging/__init__.py", line 1762, in callHandlers
+    hdlr.handle(record)
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/logging/__init__.py", line 1028, in handle
+    self.emit(record)
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/inspect_ai/_util/logger.py", line 103, in emit
+    self.trace_logger.emit(record)
+Message: '\x1b[1;36m(APIServer pid=1191614)\x1b[0;0m INFO:     Waiting for application shutdown.'
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/logging/__init__.py", line 1164, in emit
+    self.flush()
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/logging/__init__.py", line 1144, in flush
+    self.stream.flush()
+OSError: [Errno 116] Stale file handle
+Call stack:
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/threading.py", line 1030, in _bootstrap
+    self._bootstrap_inner()
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/threading.py", line 1073, in _bootstrap_inner
+    self.run()
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/threading.py", line 1010, in run
+    self._target(*self._args, **self._kwargs)
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/inspect_ai/_util/local_server.py", line 125, in log_error
+    logger.info(line.strip())
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/logging/__init__.py", line 1539, in info
+    self._log(INFO, msg, args, **kwargs)
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/logging/__init__.py", line 1684, in _log
+    self.handle(record)
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/logging/__init__.py", line 1700, in handle
+    self.callHandlers(record)
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/logging/__init__.py", line 1762, in callHandlers
+    hdlr.handle(record)
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/logging/__init__.py", line 1028, in handle
+    self.emit(record)
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/inspect_ai/_util/logger.py", line 103, in emit
+    self.trace_logger.emit(record)
+Message: '\x1b[1;36m(APIServer pid=1191614)\x1b[0;0m INFO:     Application shutdown complete.'
+Arguments: ()
+Exception ignored in atexit callback: <function compress_trace_log.<locals>.compress at 0x7f94cf4f5a80>
+Traceback (most recent call last):
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/inspect_ai/_util/trace.py", line 299, in compress
+    log_handler.close()
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/logging/__init__.py", line 1247, in close
+    stream.close()
+OSError: [Errno 116] Stale file handle

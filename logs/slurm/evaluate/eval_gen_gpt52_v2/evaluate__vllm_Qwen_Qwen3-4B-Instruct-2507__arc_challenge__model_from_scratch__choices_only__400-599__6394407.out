@@ -1,0 +1,43 @@
+---------------------------------------------------------                                              
+final5_eval_model_from_scratch_choices_only (200 samples): vllm/Qwen/Qwen3-4B-Instruct-2507            
+max_tokens: 2048, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)
+---------------------------------------------------------                                              
+                                                                                                       
+Steps:  10/200   5% | Samples:   1/200 | mean:  n/a | vllm:  0/10 | HTTP retries: 0
+Steps:  19/200   9% | Samples:  15/200 | mean: 0.62 | vllm:  4/10 | HTTP retries: 0
+Steps:  30/200  15% | Samples:  28/200 | mean: 0.54 | vllm:  5/10 | HTTP retries: 1
+Steps:  42/200  21% | Samples:  40/200 | mean: 0.51 | vllm:  4/10 | HTTP retries: 1
+Steps:  54/200  27% | Samples:  52/200 | mean: 0.53 | vllm:  5/10 | HTTP retries: 1
+Steps:  64/200  32% | Samples:  61/200 | mean: 0.52 | vllm:  4/10 | HTTP retries: 1
+Steps:  73/200  36% | Samples:  70/200 | mean: 0.51 | vllm:  3/10 | HTTP retries: 1
+Steps:  84/200  42% | Samples:  80/200 | mean: 0.51 | vllm:  4/10 | HTTP retries: 1
+Steps:  92/200  46% | Samples:  90/200 | mean: 0.48 | vllm:  4/10 | HTTP retries: 1
+Steps: 101/200  50% | Samples:  98/200 | mean: 0.47 | vllm:  5/10 | HTTP retries: 1
+Steps: 108/200  54% | Samples: 105/200 | mean: 0.49 | vllm:  4/10 | HTTP retries: 1
+Steps: 113/200  56% | Samples: 111/200 | mean: 0.50 | vllm:  5/10 | HTTP retries: 1
+Steps: 121/200  60% | Samples: 118/200 | mean: 0.48 | vllm:  5/10 | HTTP retries: 1
+Steps: 129/200  64% | Samples: 125/200 | mean: 0.47 | vllm:  3/10 | HTTP retries: 2
+Steps: 135/200  67% | Samples: 134/200 | mean: 0.48 | vllm:  6/10 | HTTP retries: 2
+Steps: 144/200  72% | Samples: 142/200 | mean: 0.48 | vllm:  6/10 | HTTP retries: 2
+Steps: 153/200  76% | Samples: 150/200 | mean: 0.46 | vllm:  4/10 | HTTP retries: 2
+Steps: 164/200  82% | Samples: 160/200 | mean: 0.45 | vllm:  5/10 | HTTP retries: 2
+Steps: 172/200  86% | Samples: 170/200 | mean: 0.45 | vllm:  4/10 | HTTP retries: 2
+Steps: 183/200  91% | Samples: 180/200 | mean: 0.44 | vllm:  4/10 | HTTP retries: 2
+Steps: 193/200  96% | Samples: 191/200 | mean: 0.42 | vllm:  5/10 | HTTP retries: 2
+Steps: 200/200 100% | Samples: 200/200 | mean: 0.43 | vllm:  0/10 | HTTP retries: 2
+
+---------------------------------------------------------                                                                                                       
+final5_eval_model_from_scratch_choices_only (200 samples): vllm/Qwen/Qwen3-4B-Instruct-2507                                                                     
+max_tokens: 2048, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)                                                         
+                                                                                                                                                                
+total time:                                                                  0:02:28                                                                            
+vllm/Qwen/Qwen3-4B-Instruct-2507                                             31,551 tokens [I: 29,547, O: 2,004]                                                
+final5_eval                                                                                                                                                     
+mean         0.425                                                                                                                                              
+stderr       0.035                                                                                                                                              
+Log:                                                                                                                                                            
+results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_Qwen_Qwen3-4B-Instruct-2507/2026-03-17T23-58-47+00-00_final5-eval-mode…
+---------------------------------------------------------                                                                                                       
+                                                                                                                                                                
+Evaluation logs: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_Qwen_Qwen3-4B-Instruct-2507
+Running: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/python main.py evaluate --model vllm/Qwen/Qwen3-4B-Instruct-2507 --run-name eval_gen_gpt52_v2 --generator-run-name gen_gpt52_v2 --generator-model openai/gpt-5.2-2025-12-11 --processed-dataset datasets/processed/unified_processed_v3 --dataset-types arc_challenge --settings model_from_scratch --modes choices_only --question-start 400 --limit 200 --augmented-dataset /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/augmented/gen_gpt52_v2/openai_gpt-5.2-2025-12-11 --max-tokens 2048 --reasoning-effort medium --retry-on-error 2

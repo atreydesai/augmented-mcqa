@@ -1,0 +1,36 @@
+---------------------------------------------------------                                              
+final5_eval_augment_human_choices_only (200 samples): vllm/meta-llama/Llama-3.1-8B-Instruct            
+max_tokens: 2048, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)
+---------------------------------------------------------                                              
+                                                                                                       
+Steps:  10/200   5% | Samples:   1/200 | mean:  n/a | vllm:  0/10 | HTTP retries: 0
+Steps:  22/200  11% | Samples:  18/200 | mean: 0.07 | vllm:  3/10 | HTTP retries: 0
+Steps:  35/200  17% | Samples:  33/200 | mean: 0.16 | vllm:  4/10 | HTTP retries: 0
+Steps:  48/200  24% | Samples:  46/200 | mean: 0.18 | vllm:  4/10 | HTTP retries: 0
+Steps:  62/200  31% | Samples:  59/200 | mean: 0.16 | vllm:  5/10 | HTTP retries: 0
+Steps:  74/200  37% | Samples:  73/200 | mean: 0.14 | vllm:  5/10 | HTTP retries: 0
+Steps:  87/200  43% | Samples:  85/200 | mean: 0.12 | vllm:  5/10 | HTTP retries: 0
+Steps: 101/200  50% | Samples:  99/200 | mean: 0.11 | vllm:  4/10 | HTTP retries: 0
+Steps: 113/200  56% | Samples: 111/200 | mean: 0.10 | vllm:  5/10 | HTTP retries: 1
+Steps: 126/200  63% | Samples: 123/200 | mean: 0.11 | vllm:  3/10 | HTTP retries: 1
+Steps: 140/200  70% | Samples: 140/200 | mean: 0.12 | vllm:  4/10 | HTTP retries: 1
+Steps: 156/200  78% | Samples: 154/200 | mean: 0.12 | vllm:  6/10 | HTTP retries: 1
+Steps: 170/200  85% | Samples: 168/200 | mean: 0.11 | vllm:  5/10 | HTTP retries: 1
+Steps: 184/200  92% | Samples: 182/200 | mean: 0.11 | vllm:  6/10 | HTTP retries: 1
+Steps: 200/200 100% | Samples: 200/200 | mean: 0.10 | vllm:  0/10 | HTTP retries: 1
+
+---------------------------------------------------------                                                                                                       
+final5_eval_augment_human_choices_only (200 samples): vllm/meta-llama/Llama-3.1-8B-Instruct                                                                     
+max_tokens: 2048, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)                                                         
+                                                                                                                                                                
+total time:                                                                       0:01:56                                                                       
+vllm/meta-llama/Llama-3.1-8B-Instruct                                             84,274 tokens [I: 82,274, O: 2,000]                                           
+final5_eval                                                                                                                                                     
+mean         0.100                                                                                                                                              
+stderr       0.021                                                                                                                                              
+Log:                                                                                                                                                            
+results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-00-54+00-00_final5-eval…
+---------------------------------------------------------                                                                                                       
+                                                                                                                                                                
+Evaluation logs: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct
+Running: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/python main.py evaluate --model vllm/meta-llama/Llama-3.1-8B-Instruct --run-name eval_gen_gpt52_v2 --generator-run-name gen_gpt52_v2 --generator-model openai/gpt-5.2-2025-12-11 --processed-dataset datasets/processed/unified_processed_v3 --dataset-types mmlu_pro --settings augment_human --modes choices_only --question-start 400 --limit 200 --augmented-dataset /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/augmented/gen_gpt52_v2/openai_gpt-5.2-2025-12-11 --max-tokens 2048 --reasoning-effort medium --retry-on-error 2

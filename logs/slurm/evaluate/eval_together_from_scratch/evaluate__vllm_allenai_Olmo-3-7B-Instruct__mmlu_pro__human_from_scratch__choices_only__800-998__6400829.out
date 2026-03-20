@@ -1,0 +1,46 @@
+---------------------------------------------------------                                              
+final5_eval_human_from_scratch_choices_only (199 samples): vllm/allenai/Olmo-3-7B-Instruct             
+max_tokens: 2048, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)
+---------------------------------------------------------                                              
+                                                                                                       
+Steps:  10/199   5% | Samples:   1/199 | mean:  n/a | vllm:  0/10 | HTTP retries: 0
+Steps:  12/199   6% | Samples:  12/199 | mean: 0.40 | vllm:  5/10 | HTTP retries: 0
+Steps:  22/199  11% | Samples:  21/199 | mean: 0.35 | vllm:  7/10 | HTTP retries: 0
+Steps:  35/199  17% | Samples:  28/199 | mean: 0.30 | vllm:  1/10 | HTTP retries: 0
+Steps:  41/199  20% | Samples:  40/199 | mean: 0.32 | vllm:  8/10 | HTTP retries: 0
+Steps:  51/199  25% | Samples:  47/199 | mean: 0.33 | vllm:  5/10 | HTTP retries: 0
+Steps:  59/199  29% | Samples:  55/199 | mean: 0.31 | vllm:  3/10 | HTTP retries: 1
+Steps:  65/199  32% | Samples:  65/199 | mean: 0.30 | vllm:  7/10 | HTTP retries: 2
+Steps:  75/199  37% | Samples:  72/199 | mean: 0.29 | vllm:  2/10 | HTTP retries: 2
+Steps:  84/199  42% | Samples:  81/199 | mean: 0.25 | vllm:  4/10 | HTTP retries: 2
+Steps:  93/199  46% | Samples:  91/199 | mean: 0.26 | vllm:  5/10 | HTTP retries: 2
+Steps: 102/199  51% | Samples: 100/199 | mean: 0.26 | vllm:  5/10 | HTTP retries: 2
+Steps: 110/199  55% | Samples: 108/199 | mean: 0.25 | vllm:  5/10 | HTTP retries: 2
+Steps: 114/199  57% | Samples: 112/199 | mean: 0.25 | vllm:  4/10 | HTTP retries: 2
+Steps: 122/199  61% | Samples: 120/199 | mean: 0.25 | vllm:  5/10 | HTTP retries: 2
+Steps: 130/199  65% | Samples: 129/199 | mean: 0.25 | vllm:  6/10 | HTTP retries: 2
+Steps: 137/199  68% | Samples: 137/199 | mean: 0.26 | vllm:  7/10 | HTTP retries: 4
+Steps: 146/199  73% | Samples: 145/199 | mean: 0.27 | vllm:  6/10 | HTTP retries: 4
+Steps: 156/199  78% | Samples: 153/199 | mean: 0.26 | vllm:  4/10 | HTTP retries: 4
+Steps: 162/199  81% | Samples: 161/199 | mean: 0.26 | vllm:  5/10 | HTTP retries: 4
+Steps: 170/199  85% | Samples: 168/199 | mean: 0.26 | vllm:  6/10 | HTTP retries: 4
+Steps: 177/199  88% | Samples: 175/199 | mean: 0.25 | vllm:  5/10 | HTTP retries: 4
+Steps: 187/199  93% | Samples: 182/199 | mean: 0.24 | vllm:  3/10 | HTTP retries: 4
+Steps: 193/199  96% | Samples: 192/199 | mean: 0.24 | vllm:  4/10 | HTTP retries: 4
+Steps: 199/199 100% | Samples: 199/199 | mean: 0.25 | vllm:  0/10 | HTTP retries: 4
+
+---------------------------------------------------------                                                                                                   
+final5_eval_human_from_scratch_choices_only (199 samples): vllm/allenai/Olmo-3-7B-Instruct                                                                  
+max_tokens: 2048, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)                                                     
+                                                                                                                                                            
+total time:                                                               0:02:56                                                                           
+vllm/allenai/Olmo-3-7B-Instruct                                           35,515 tokens [I: 33,736, O: 1,779]                                               
+final5_eval                                                                                                                                                 
+mean         0.246                                                                                                                                          
+stderr       0.031                                                                                                                                          
+Log:                                                                                                                                                        
+results/inspect/evaluation/eval_together_from_scratch/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_allenai_Olmo-3-7B-Instruct/2026-03…
+---------------------------------------------------------                                                                                                   
+                                                                                                                                                            
+Evaluation logs: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/eval_together_from_scratch/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_allenai_Olmo-3-7B-Instruct
+Running: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/python main.py evaluate --model vllm/allenai/Olmo-3-7B-Instruct --run-name eval_together_from_scratch --generator-run-name together_from_scratch_testing --generator-model together/Qwen/Qwen3.5-397B-A17B --processed-dataset datasets/processed/unified_processed_v3 --dataset-types mmlu_pro --settings human_from_scratch --modes choices_only --question-start 800 --limit 199 --augmented-dataset /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/augmented/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B --max-tokens 2048 --reasoning-effort medium --retry-on-error 2

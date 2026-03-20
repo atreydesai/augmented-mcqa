@@ -1,0 +1,42 @@
+---------------------------------------------------------                                              
+final5_eval_human_from_scratch_full_question (200 samples): vllm/Qwen/Qwen3-4B-Instruct-2507           
+max_tokens: 2048, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)
+---------------------------------------------------------                                              
+                                                                                                       
+Steps:  10/200   5% | Samples:   1/200 | mean:  n/a | vllm:  0/10 | HTTP retries: 0
+Steps:  15/200   7% | Samples:  13/200 | mean: 0.83 | vllm:  6/10 | HTTP retries: 0
+Steps:  24/200  12% | Samples:  20/200 | mean: 0.78 | vllm:  3/10 | HTTP retries: 0
+Steps:  31/200  15% | Samples:  30/200 | mean: 0.72 | vllm:  6/10 | HTTP retries: 0
+Steps:  42/200  21% | Samples:  38/200 | mean: 0.73 | vllm:  5/10 | HTTP retries: 0
+Steps:  49/200  24% | Samples:  47/200 | mean: 0.76 | vllm:  4/10 | HTTP retries: 0
+Steps:  57/200  28% | Samples:  55/200 | mean: 0.75 | vllm:  5/10 | HTTP retries: 0
+Steps:  66/200  33% | Samples:  64/200 | mean: 0.76 | vllm:  4/10 | HTTP retries: 0
+Steps:  75/200  37% | Samples:  72/200 | mean: 0.74 | vllm:  5/10 | HTTP retries: 0
+Steps:  87/200  43% | Samples:  83/200 | mean: 0.74 | vllm:  3/10 | HTTP retries: 0
+Steps:  99/200  49% | Samples:  96/200 | mean: 0.75 | vllm:  4/10 | HTTP retries: 1
+Steps: 107/200  53% | Samples: 106/200 | mean: 0.73 | vllm:  4/10 | HTTP retries: 1
+Steps: 122/200  61% | Samples: 119/200 | mean: 0.71 | vllm:  4/10 | HTTP retries: 1
+Steps: 134/200  67% | Samples: 131/200 | mean: 0.70 | vllm:  5/10 | HTTP retries: 1
+Steps: 142/200  71% | Samples: 140/200 | mean: 0.69 | vllm:  5/10 | HTTP retries: 1
+Steps: 153/200  76% | Samples: 151/200 | mean: 0.68 | vllm:  5/10 | HTTP retries: 1
+Steps: 163/200  81% | Samples: 162/200 | mean: 0.66 | vllm:  5/10 | HTTP retries: 1
+Steps: 176/200  88% | Samples: 174/200 | mean: 0.64 | vllm:  4/10 | HTTP retries: 1
+Steps: 185/200  92% | Samples: 184/200 | mean: 0.62 | vllm:  6/10 | HTTP retries: 2
+Steps: 195/200  97% | Samples: 194/200 | mean: 0.62 | vllm:  3/10 | HTTP retries: 2
+Steps: 200/200 100% | Samples: 200/200 | mean: 0.62 | vllm:  0/10 | HTTP retries: 2
+
+---------------------------------------------------------                                                                                                   
+final5_eval_human_from_scratch_full_question (200 samples): vllm/Qwen/Qwen3-4B-Instruct-2507                                                                
+max_tokens: 2048, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)                                                     
+                                                                                                                                                            
+total time:                                                                0:02:21                                                                          
+vllm/Qwen/Qwen3-4B-Instruct-2507                                           43,773 tokens [I: 41,161, O: 2,612]                                              
+final5_eval                                                                                                                                                 
+mean         0.615                                                                                                                                          
+stderr       0.034                                                                                                                                          
+Log:                                                                                                                                                        
+results/inspect/evaluation/eval_together_from_scratch/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_Qwen_Qwen3-4B-Instruct-2507/2026-0…
+---------------------------------------------------------                                                                                                   
+                                                                                                                                                            
+Evaluation logs: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/eval_together_from_scratch/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_Qwen_Qwen3-4B-Instruct-2507
+Running: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/python main.py evaluate --model vllm/Qwen/Qwen3-4B-Instruct-2507 --run-name eval_together_from_scratch --generator-run-name together_from_scratch_testing --generator-model together/Qwen/Qwen3.5-397B-A17B --processed-dataset datasets/processed/unified_processed_v3 --dataset-types mmlu_pro --settings human_from_scratch --modes full_question --question-start 0 --limit 200 --augmented-dataset /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/augmented/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B --max-tokens 2048 --reasoning-effort medium --retry-on-error 2

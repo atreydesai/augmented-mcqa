@@ -1,0 +1,41 @@
+---------------------------------------------------------                                              
+final5_eval_model_from_scratch_choices_only (200 samples): vllm/meta-llama/Llama-3.1-8B-Instruct       
+max_tokens: 2048, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)
+---------------------------------------------------------                                              
+                                                                                                       
+Steps:  10/200   5% | Samples:   1/200 | mean:  n/a | vllm:  0/10 | HTTP retries: 0
+Steps:  23/200  11% | Samples:  15/200 | mean: 0.67 | vllm:  1/10 | HTTP retries: 0
+Steps:  30/200  15% | Samples:  28/200 | mean: 0.54 | vllm:  6/10 | HTTP retries: 0
+Steps:  44/200  22% | Samples:  42/200 | mean: 0.51 | vllm:  5/10 | HTTP retries: 0
+Steps:  57/200  28% | Samples:  55/200 | mean: 0.47 | vllm:  4/10 | HTTP retries: 0
+Steps:  69/200  34% | Samples:  67/200 | mean: 0.42 | vllm:  4/10 | HTTP retries: 0
+Steps:  83/200  41% | Samples:  81/200 | mean: 0.38 | vllm:  4/10 | HTTP retries: 0
+Steps:  96/200  48% | Samples:  94/200 | mean: 0.39 | vllm:  5/10 | HTTP retries: 0
+Steps: 107/200  53% | Samples: 105/200 | mean: 0.38 | vllm:  5/10 | HTTP retries: 0
+Steps: 119/200  59% | Samples: 116/200 | mean: 0.39 | vllm:  4/10 | HTTP retries: 0
+Steps: 129/200  64% | Samples: 125/200 | mean: 0.38 | vllm:  4/10 | HTTP retries: 0
+Steps: 137/200  68% | Samples: 135/200 | mean: 0.37 | vllm:  4/10 | HTTP retries: 0
+Steps: 147/200  73% | Samples: 144/200 | mean: 0.38 | vllm:  5/10 | HTTP retries: 0
+Steps: 155/200  77% | Samples: 152/200 | mean: 0.39 | vllm:  5/10 | HTTP retries: 0
+Steps: 161/200  80% | Samples: 160/200 | mean: 0.37 | vllm:  6/10 | HTTP retries: 0
+Steps: 172/200  86% | Samples: 166/200 | mean: 0.38 | vllm:  2/10 | HTTP retries: 0
+Steps: 177/200  88% | Samples: 176/200 | mean: 0.37 | vllm:  7/10 | HTTP retries: 0
+Steps: 187/200  93% | Samples: 183/200 | mean: 0.36 | vllm:  3/10 | HTTP retries: 0
+Steps: 192/200  96% | Samples: 191/200 | mean: 0.38 | vllm:  6/10 | HTTP retries: 0
+Steps: 200/200 100% | Samples: 200/200 | mean: 0.38 | vllm:  0/10 | HTTP retries: 0
+
+---------------------------------------------------------                                                                                                      
+final5_eval_model_from_scratch_choices_only (200 samples): vllm/meta-llama/Llama-3.1-8B-Instruct                                                               
+max_tokens: 2048, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)                                                        
+                                                                                                                                                               
+total time:                                                                       0:02:20                                                                      
+vllm/meta-llama/Llama-3.1-8B-Instruct                                             35,239 tokens [I: 33,239, O: 2,000]                                          
+final5_eval                                                                                                                                                    
+mean         0.380                                                                                                                                             
+stderr       0.034                                                                                                                                             
+Log:                                                                                                                                                           
+results/inspect/evaluation/eval_gemini_from_scratch/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18…
+---------------------------------------------------------                                                                                                      
+                                                                                                                                                               
+Evaluation logs: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/eval_gemini_from_scratch/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_meta-llama_Llama-3.1-8B-Instruct
+Running: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/python main.py evaluate --model vllm/meta-llama/Llama-3.1-8B-Instruct --run-name eval_gemini_from_scratch --generator-run-name gemini_from_scratch_testing --generator-model google/gemini-3.1-pro-preview --processed-dataset datasets/processed/unified_processed_v3 --dataset-types arc_challenge --settings model_from_scratch --modes choices_only --question-start 200 --limit 200 --augmented-dataset /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/augmented/gemini_from_scratch_testing/google_gemini-3.1-pro-preview --max-tokens 2048 --reasoning-effort medium --retry-on-error 2

@@ -1,0 +1,40 @@
+---------------------------------------------------------                                              
+final5_eval_human_from_scratch_full_question (200 samples): vllm/allenai/Olmo-3-7B-Instruct            
+max_tokens: 2048, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)
+---------------------------------------------------------                                              
+                                                                                                       
+Steps:  10/200   5% | Samples:   1/200 | mean:  n/a | vllm:  0/10 | HTTP retries: 0
+Steps:  18/200   9% | Samples:  15/200 | mean: 0.38 | vllm:  5/10 | HTTP retries: 0
+Steps:  28/200  14% | Samples:  26/200 | mean: 0.26 | vllm:  4/10 | HTTP retries: 0
+Steps:  37/200  18% | Samples:  35/200 | mean: 0.32 | vllm:  6/10 | HTTP retries: 0
+Steps:  48/200  24% | Samples:  46/200 | mean: 0.31 | vllm:  5/10 | HTTP retries: 0
+Steps:  59/200  29% | Samples:  56/200 | mean: 0.35 | vllm:  5/10 | HTTP retries: 0
+Steps:  66/200  33% | Samples:  64/200 | mean: 0.33 | vllm:  6/10 | HTTP retries: 0
+Steps:  76/200  38% | Samples:  75/200 | mean: 0.32 | vllm:  5/10 | HTTP retries: 0
+Steps:  85/200  42% | Samples:  82/200 | mean: 0.34 | vllm:  4/10 | HTTP retries: 0
+Steps:  95/200  47% | Samples:  93/200 | mean: 0.33 | vllm:  4/10 | HTTP retries: 0
+Steps: 109/200  54% | Samples: 106/200 | mean: 0.32 | vllm:  4/10 | HTTP retries: 0
+Steps: 120/200  60% | Samples: 119/200 | mean: 0.32 | vllm:  5/10 | HTTP retries: 0
+Steps: 132/200  66% | Samples: 131/200 | mean: 0.30 | vllm:  5/10 | HTTP retries: 0
+Steps: 146/200  73% | Samples: 143/200 | mean: 0.28 | vllm:  4/10 | HTTP retries: 0
+Steps: 158/200  79% | Samples: 155/200 | mean: 0.29 | vllm:  4/10 | HTTP retries: 0
+Steps: 168/200  84% | Samples: 166/200 | mean: 0.28 | vllm:  5/10 | HTTP retries: 0
+Steps: 179/200  89% | Samples: 177/200 | mean: 0.29 | vllm:  5/10 | HTTP retries: 0
+Steps: 189/200  94% | Samples: 187/200 | mean: 0.29 | vllm:  6/10 | HTTP retries: 0
+Steps: 200/200 100% | Samples: 200/200 | mean: 0.30 | vllm:  0/10 | HTTP retries: 0
+
+---------------------------------------------------------                                                                                                      
+final5_eval_human_from_scratch_full_question (200 samples): vllm/allenai/Olmo-3-7B-Instruct                                                                    
+max_tokens: 2048, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)                                                        
+                                                                                                                                                               
+total time:                                                                0:02:15                                                                             
+vllm/allenai/Olmo-3-7B-Instruct                                            62,470 tokens [I: 60,496, O: 1,974]                                                 
+final5_eval                                                                                                                                                    
+mean         0.300                                                                                                                                             
+stderr       0.032                                                                                                                                             
+Log:                                                                                                                                                           
+results/inspect/evaluation/eval_gemini_from_scratch/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_allenai_Olmo-3-7B-Instruct/2026-03-18T20-35…
+---------------------------------------------------------                                                                                                      
+                                                                                                                                                               
+Evaluation logs: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/eval_gemini_from_scratch/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_allenai_Olmo-3-7B-Instruct
+Running: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/python main.py evaluate --model vllm/allenai/Olmo-3-7B-Instruct --run-name eval_gemini_from_scratch --generator-run-name gemini_from_scratch_testing --generator-model google/gemini-3.1-pro-preview --processed-dataset datasets/processed/unified_processed_v3 --dataset-types gpqa --settings human_from_scratch --modes full_question --question-start 0 --limit 200 --augmented-dataset /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/augmented/gemini_from_scratch_testing/google_gemini-3.1-pro-preview --max-tokens 2048 --reasoning-effort medium --retry-on-error 2

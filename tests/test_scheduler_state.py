@@ -183,6 +183,41 @@ def test_build_scheduler_state_marks_pending_failed_current_and_stale():
     assert by_ref["planned"]["status"] == STATUS_PLANNED
 
 
+def test_build_scheduler_state_does_not_mark_dead_submitted_jobs_pending():
+    manifests = [
+        {
+            "stage": "evaluate",
+            "run_name": "run1",
+            "submission_id": "sub-a",
+            "submission_created_at": "2026-03-11T10:00:00+00:00",
+            "_path": "/tmp/sub-a/manifest.json",
+            "tasks": [
+                {
+                    "slice_ref": "dead-job",
+                    "stage": "evaluate",
+                    "model": "vllm/model-a",
+                    "dataset_type": "mmlu_pro",
+                    "setting": "augment_ablation",
+                    "mode": "full_question",
+                    "task_slug": "dead-job-task",
+                    "question_start": 0,
+                    "question_end": 10,
+                    "state_dependency_refs": [],
+                    "submit_dependency_refs": [],
+                    "submitted_at": "2026-03-11T10:00:00+00:00",
+                    "submitted_job_id": "12345",
+                    "force": False,
+                },
+            ],
+        },
+    ]
+
+    state = build_scheduler_state(manifests=manifests, attempts_by_slice={}, live_job_ids=set())
+    by_ref = {entry["slice_ref"]: entry for entry in state["slices"]}
+
+    assert by_ref["dead-job"]["status"] == STATUS_PLANNED
+
+
 def test_render_scheduler_dashboard_contains_statuses():
     state = {
         "stage": "evaluate",

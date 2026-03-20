@@ -1,0 +1,36 @@
+---------------------------------------------------------                                              
+final5_eval_augment_ablation_choices_only (200 samples): vllm/meta-llama/Llama-3.1-8B-Instruct         
+max_tokens: 2048, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)
+---------------------------------------------------------                                              
+                                                                                                       
+Steps:  10/200   5% | Samples:   1/200 | mean:  n/a | vllm:  0/10 | HTTP retries: 0
+Steps:  21/200  10% | Samples:  19/200 | mean: 0.43 | vllm:  4/10 | HTTP retries: 0
+Steps:  35/200  17% | Samples:  33/200 | mean: 0.44 | vllm:  5/10 | HTTP retries: 0
+Steps:  50/200  25% | Samples:  46/200 | mean: 0.43 | vllm:  4/10 | HTTP retries: 0
+Steps:  65/200  32% | Samples:  61/200 | mean: 0.34 | vllm:  3/10 | HTTP retries: 0
+Steps:  77/200  38% | Samples:  76/200 | mean: 0.31 | vllm:  6/10 | HTTP retries: 0
+Steps:  92/200  46% | Samples:  90/200 | mean: 0.31 | vllm:  6/10 | HTTP retries: 0
+Steps: 107/200  53% | Samples: 102/200 | mean: 0.33 | vllm:  3/10 | HTTP retries: 0
+Steps: 119/200  59% | Samples: 118/200 | mean: 0.32 | vllm:  5/10 | HTTP retries: 0
+Steps: 135/200  67% | Samples: 134/200 | mean: 0.31 | vllm:  5/10 | HTTP retries: 0
+Steps: 150/200  75% | Samples: 147/200 | mean: 0.32 | vllm:  4/10 | HTTP retries: 0
+Steps: 163/200  81% | Samples: 159/200 | mean: 0.31 | vllm:  3/10 | HTTP retries: 0
+Steps: 174/200  87% | Samples: 171/200 | mean: 0.30 | vllm:  4/10 | HTTP retries: 0
+Steps: 186/200  93% | Samples: 183/200 | mean: 0.29 | vllm:  5/10 | HTTP retries: 0
+Steps: 200/200 100% | Samples: 200/200 | mean: 0.28 | vllm:  0/10 | HTTP retries: 0
+
+---------------------------------------------------------                                                                                                   
+final5_eval_augment_ablation_choices_only (200 samples): vllm/meta-llama/Llama-3.1-8B-Instruct                                                              
+max_tokens: 2048, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)                                                     
+                                                                                                                                                            
+total time:                                                                     0:02:27                                                                     
+vllm/meta-llama/Llama-3.1-8B-Instruct                                           54,608 tokens [I: 52,608, O: 2,000]                                         
+final5_eval                                                                                                                                                 
+mean         0.290                                                                                                                                          
+stderr       0.032                                                                                                                                          
+Log:                                                                                                                                                        
+results/inspect/evaluation/eval_together_from_scratch/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_meta-llama_Llama-3.1-8B-Instruct/2…
+---------------------------------------------------------                                                                                                   
+                                                                                                                                                            
+Evaluation logs: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/eval_together_from_scratch/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_meta-llama_Llama-3.1-8B-Instruct
+Running: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/python main.py evaluate --model vllm/meta-llama/Llama-3.1-8B-Instruct --run-name eval_together_from_scratch --generator-run-name together_from_scratch_testing --generator-model together/Qwen/Qwen3.5-397B-A17B --processed-dataset datasets/processed/unified_processed_v3 --dataset-types arc_challenge --settings augment_ablation --modes choices_only --question-start 200 --limit 200 --augmented-dataset /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/augmented/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B --max-tokens 2048 --reasoning-effort medium --retry-on-error 2

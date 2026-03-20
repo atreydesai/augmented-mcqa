@@ -66,6 +66,7 @@ def test_main_parser_submit_evaluate_cluster_defaults_use_local_cluster_shape():
     assert args.qos == "high"
     assert args.gpu_type == "rtxa6000"
     assert args.submit is True
+    assert args.augmented_dataset is None
 
 
 def test_supported_main_subcommands_match_the_inspect_first_cli():

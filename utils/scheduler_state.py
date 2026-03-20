@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -210,10 +211,29 @@ def _latest_record(records: list[dict[str, Any]], key: str) -> dict[str, Any] | 
     return latest
 
 
+def _live_slurm_job_ids(job_ids: list[str]) -> set[str]:
+    normalized = [job_id.strip() for job_id in job_ids if str(job_id or "").strip()]
+    if not normalized:
+        return set()
+    try:
+        result = subprocess.run(
+            ["squeue", "-h", "-o", "%i", "-j", ",".join(normalized)],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except OSError:
+        return set()
+    if result.returncode != 0:
+        return set()
+    return {line.strip() for line in result.stdout.splitlines() if line.strip()}
+
+
 def build_scheduler_state(
     *,
     manifests: list[dict[str, Any]],
     attempts_by_slice: dict[str, list[dict[str, Any]]],
+    live_job_ids: set[str] | None = None,
 ) -> dict[str, Any]:
     planned: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for manifest in manifests:
@@ -223,6 +243,14 @@ def build_scheduler_state(
             enriched["submission_created_at"] = manifest.get("submission_created_at")
             enriched["submission_path"] = manifest.get("_path")
             planned[str(task["slice_ref"])].append(enriched)
+
+    if live_job_ids is None:
+        submitted_job_ids = [
+            str(task.get("submitted_job_id", "") or "")
+            for tasks in planned.values()
+            for task in tasks
+        ]
+        live_job_ids = _live_slurm_job_ids(submitted_job_ids)
 
     slices: list[dict[str, Any]] = []
     all_slice_refs = sorted(set(planned.keys()) | set(attempts_by_slice.keys()))
@@ -237,7 +265,13 @@ def build_scheduler_state(
         latest_submitted_at = parse_iso(str(latest_plan.get("submitted_at", "") or ""))
         latest_attempt_at = parse_iso(str((latest_attempt or {}).get("completed_at", "") or ""))
         latest_success_at = parse_iso(str((latest_success or {}).get("completed_at", "") or ""))
-        pending = latest_submitted_at is not None and (latest_attempt_at is None or latest_submitted_at > latest_attempt_at)
+        latest_submitted_job_id = str(latest_plan.get("submitted_job_id", "") or "")
+        submitted_job_live = bool(latest_submitted_job_id and latest_submitted_job_id in live_job_ids)
+        pending = (
+            latest_submitted_at is not None
+            and (latest_attempt_at is None or latest_submitted_at > latest_attempt_at)
+            and submitted_job_live
+        )
 
         if pending:
             status = STATUS_PENDING

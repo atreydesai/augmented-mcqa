@@ -15,6 +15,11 @@ from utils.scheduler_state import iso_now
 WRAPPER_TEMPLATE = """#!/bin/bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TMPDIR_ROOT="${SLURM_TMPDIR:-/tmp}"
+export TMPDIR="$(mktemp -d "$TMPDIR_ROOT/task.XXXXXX")"
+trap 'rm -rf "$TMPDIR"' EXIT
+
 MANIFEST_PATH="$1"
 TASK_INDEX="$2"
 PROJECT_ROOT="${3:-$SLURM_SUBMIT_DIR}"
@@ -46,6 +51,11 @@ PY
 
 FINALIZER_WRAPPER_TEMPLATE = """#!/bin/bash
 set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TMPDIR_ROOT="${SLURM_TMPDIR:-/tmp}"
+export TMPDIR="$(mktemp -d "$TMPDIR_ROOT/finalizer.XXXXXX")"
+trap 'rm -rf "$TMPDIR"' EXIT
 
 MANIFEST_PATH="$1"
 FINALIZER_INDEX="$2"
@@ -81,6 +91,10 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
+TMPDIR_ROOT="${SLURM_TMPDIR:-/tmp}"
+export TMPDIR="$(mktemp -d "$TMPDIR_ROOT/submit.XXXXXX")"
+trap 'rm -rf "$TMPDIR"' EXIT
+
 PROJECT_ROOT="${PROJECT_ROOT:-__PROJECT_ROOT__}"
 PYTHON_BIN="${PYTHON_BIN:-__PYTHON_BIN__}"
 

@@ -375,9 +375,14 @@ def _build_evaluation_cluster_tasks(args: argparse.Namespace) -> tuple[list[Clus
     models = _cluster_models(args.models, default=list(args.default_models), backend=args.backend)
     settings = _csv_list(args.settings, default=list(FINAL5_SETTINGS))
     modes = _csv_list(args.modes, default=list(MODE_CHOICES))
+    explicit_augmented_dataset = Path(args.augmented_dataset) if getattr(args, "augmented_dataset", None) else None
 
     existing = _slice_status_lookup(_current_stage_state(stage="evaluate", run_name=args.run_name, output_dir=args.output_dir))
-    generation_state = _slice_status_lookup(_current_stage_state(stage="generate", run_name=args.generator_run_name))
+    generation_state = (
+        {}
+        if explicit_augmented_dataset is not None
+        else _slice_status_lookup(_current_stage_state(stage="generate", run_name=args.generator_run_name))
+    )
     evaluation_counts: dict[tuple[str, str, str, int, int], int] = {}
     augmented_cache_dir: Path | None = None
 
@@ -393,14 +398,17 @@ def _build_evaluation_cluster_tasks(args: argparse.Namespace) -> tuple[list[Clus
         key = (dataset_type, setting, mode, question_start, question_end)
         if key not in evaluation_counts:
             if augmented_cache_dir is None:
-                generation_log_dir = _generation_log_dir(Path(DEFAULT_GENERATION_LOG_ROOT), args.generator_run_name, generation_model)
-                augmented_cache_dir = _augmented_cache_dir(Path(DEFAULT_AUGMENTED_CACHE_ROOT), args.generator_run_name, generation_model)
-                ensure_augmented_dataset(
-                    processed_dataset_path=processed_dataset,
-                    generation_log_dir=generation_log_dir,
-                    output_path=augmented_cache_dir,
-                    rebuild=True,
-                )
+                if explicit_augmented_dataset is not None:
+                    augmented_cache_dir = explicit_augmented_dataset
+                else:
+                    generation_log_dir = _generation_log_dir(Path(DEFAULT_GENERATION_LOG_ROOT), args.generator_run_name, generation_model)
+                    augmented_cache_dir = _augmented_cache_dir(Path(DEFAULT_AUGMENTED_CACHE_ROOT), args.generator_run_name, generation_model)
+                    ensure_augmented_dataset(
+                        processed_dataset_path=processed_dataset,
+                        generation_log_dir=generation_log_dir,
+                        output_path=augmented_cache_dir,
+                        rebuild=True,
+                    )
             dataset = build_evaluation_dataset(
                 augmented_cache_dir,
                 setting=setting,
@@ -436,38 +444,49 @@ def _build_evaluation_cluster_tasks(args: argparse.Namespace) -> tuple[list[Clus
                         if not args.force and str(existing_slice.get("status", "")) in {"current", "pending"}:
                             continue
 
-                        state_dependency_refs = _evaluation_generation_dependencies(
-                            setting=setting,
-                            generator_run_name=args.generator_run_name,
-                            generator_model=generation_model,
-                            dataset_type=dataset_type,
-                            question_start=question_start,
-                            question_end=question_end,
-                            generation_state=generation_state,
-                        )
-                        for dependency_ref in state_dependency_refs:
-                            dependency_state = generation_state.get(dependency_ref)
-                            dependency_status = str((dependency_state or {}).get("status", ""))
-                            if dependency_status == "current":
+                        if explicit_augmented_dataset is not None:
+                            if runnable_evaluation_sample_count(
+                                dataset_type=dataset_type,
+                                setting=setting,
+                                mode=mode,
+                                question_start=question_start,
+                                question_end=question_end,
+                            ) <= 0:
                                 continue
-                            if dependency_status == "failed":
-                                if runnable_evaluation_sample_count(
-                                    dataset_type=dataset_type,
-                                    setting=setting,
-                                    mode=mode,
-                                    question_start=question_start,
-                                    question_end=question_end,
-                                ) > 0:
+                            state_dependency_refs: list[str] = []
+                        else:
+                            state_dependency_refs = _evaluation_generation_dependencies(
+                                setting=setting,
+                                generator_run_name=args.generator_run_name,
+                                generator_model=generation_model,
+                                dataset_type=dataset_type,
+                                question_start=question_start,
+                                question_end=question_end,
+                                generation_state=generation_state,
+                            )
+                            for dependency_ref in state_dependency_refs:
+                                dependency_state = generation_state.get(dependency_ref)
+                                dependency_status = str((dependency_state or {}).get("status", ""))
+                                if dependency_status == "current":
                                     continue
-                                state_dependency_refs = []
-                                break
-                            if dependency_status != "current":
-                                raise ValueError(
-                                    f"Missing current generation prerequisite for {slice_ref}: {dependency_ref}. "
-                                    "Rerun or complete the required generation slice before scheduling evaluation."
-                                )
-                        if not state_dependency_refs:
-                            continue
+                                if dependency_status == "failed":
+                                    if runnable_evaluation_sample_count(
+                                        dataset_type=dataset_type,
+                                        setting=setting,
+                                        mode=mode,
+                                        question_start=question_start,
+                                        question_end=question_end,
+                                    ) > 0:
+                                        continue
+                                    state_dependency_refs = []
+                                    break
+                                if dependency_status != "current":
+                                    raise ValueError(
+                                        f"Missing current generation prerequisite for {slice_ref}: {dependency_ref}. "
+                                        "Rerun or complete the required generation slice before scheduling evaluation."
+                                    )
+                            if not state_dependency_refs:
+                                continue
 
                         argv = [
                             "evaluate",
@@ -492,6 +511,8 @@ def _build_evaluation_cluster_tasks(args: argparse.Namespace) -> tuple[list[Clus
                             "--limit",
                             str(question_limit),
                         ]
+                        if explicit_augmented_dataset is not None:
+                            argv.extend(["--augmented-dataset", str(explicit_augmented_dataset)])
                         argv.extend(_runtime_argv(args))
                         tasks.append(
                             ClusterTask(
@@ -2039,6 +2060,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--modes",
         default=None,
         help="Comma-separated subset of evaluation modes to schedule.",
+    )
+    submit_evaluate_cluster.add_argument(
+        "--augmented-dataset",
+        default=None,
+        help="Advanced override: exact setting-scoped augmented store path to schedule directly instead of deriving one from generation logs.",
     )
     add_cluster_submit_flags(submit_evaluate_cluster)
     add_runtime_flags(submit_evaluate_cluster)

@@ -1,0 +1,39 @@
+---------------------------------------------------------                                              
+final5_eval_human_from_scratch_full_question (200 samples): vllm/nvidia/NVIDIA-Nemotron-Nano-9B-v2     
+max_tokens: 2048, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)
+---------------------------------------------------------                                              
+                                                                                                       
+Steps:  10/200   5% | Samples:   1/200 | mean:  n/a | vllm:  0/10 | HTTP retries: 0
+Steps:  16/200   8% | Samples:  15/200 | mean: 0.77 | vllm:  7/10 | HTTP retries: 0
+Steps:  27/200  13% | Samples:  25/200 | mean: 0.80 | vllm:  4/10 | HTTP retries: 0
+Steps:  38/200  19% | Samples:  35/200 | mean: 0.88 | vllm:  5/10 | HTTP retries: 1
+Steps:  49/200  24% | Samples:  46/200 | mean: 0.89 | vllm:  5/10 | HTTP retries: 1
+Steps:  59/200  29% | Samples:  56/200 | mean: 0.89 | vllm:  4/10 | HTTP retries: 1
+Steps:  70/200  35% | Samples:  69/200 | mean: 0.90 | vllm:  4/10 | HTTP retries: 1
+Steps:  85/200  42% | Samples:  82/200 | mean: 0.90 | vllm:  4/10 | HTTP retries: 1
+Steps:  97/200  48% | Samples:  95/200 | mean: 0.90 | vllm:  6/10 | HTTP retries: 1
+Steps: 107/200  53% | Samples: 104/200 | mean: 0.91 | vllm:  5/10 | HTTP retries: 1
+Steps: 118/200  59% | Samples: 116/200 | mean: 0.90 | vllm:  5/10 | HTTP retries: 1
+Steps: 130/200  65% | Samples: 128/200 | mean: 0.89 | vllm:  4/10 | HTTP retries: 1
+Steps: 142/200  71% | Samples: 141/200 | mean: 0.88 | vllm:  5/10 | HTTP retries: 1
+Steps: 156/200  78% | Samples: 152/200 | mean: 0.87 | vllm:  3/10 | HTTP retries: 2
+Steps: 168/200  84% | Samples: 165/200 | mean: 0.86 | vllm:  4/10 | HTTP retries: 2
+Steps: 179/200  89% | Samples: 177/200 | mean: 0.86 | vllm:  5/10 | HTTP retries: 2
+Steps: 192/200  96% | Samples: 189/200 | mean: 0.87 | vllm:  4/10 | HTTP retries: 2
+Steps: 200/200 100% | Samples: 200/200 | mean: 0.86 | vllm:  0/10 | HTTP retries: 2
+
+---------------------------------------------------------                                                                                                   
+final5_eval_human_from_scratch_full_question (200 samples): vllm/nvidia/NVIDIA-Nemotron-Nano-9B-v2                                                          
+max_tokens: 2048, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)                                                     
+                                                                                                                                                            
+total time:                                                                       0:02:18                                                                   
+vllm/nvidia/NVIDIA-Nemotron-Nano-9B-v2                                            32,132 tokens [I: 29,956, O: 2,176]                                       
+final5_eval                                                                                                                                                 
+mean         0.865                                                                                                                                          
+stderr       0.024                                                                                                                                          
+Log:                                                                                                                                                        
+results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-03-19T01-11-41+00-00_final5…
+---------------------------------------------------------                                                                                                   
+                                                                                                                                                            
+Evaluation logs: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2
+Running: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/python main.py evaluate --model vllm/nvidia/NVIDIA-Nemotron-Nano-9B-v2 --run-name eval_gen_gpt52_v2 --generator-run-name gen_gpt52_v2 --generator-model openai/gpt-5.2-2025-12-11 --processed-dataset datasets/processed/unified_processed_v3 --dataset-types arc_challenge --settings human_from_scratch --modes full_question --question-start 600 --limit 200 --augmented-dataset /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/augmented/gen_gpt52_v2/openai_gpt-5.2-2025-12-11 --max-tokens 2048 --reasoning-effort medium --retry-on-error 2

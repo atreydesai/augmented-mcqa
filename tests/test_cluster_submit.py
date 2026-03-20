@@ -84,11 +84,19 @@ def test_submit_generate_cluster_write_only_writes_strategy_slice_manifest(tmp_p
     submit_text = _submit_path(bundle_dir).read_text(encoding="utf-8")
     assert 'task["task_stdout"]' in submit_text
     assert 'task["bootstrap_stdout"]' not in submit_text
+    assert 'TMPDIR_ROOT="${SLURM_TMPDIR:-/tmp}"' in submit_text
+    assert 'trap \'rm -rf "$TMPDIR"\' EXIT' in submit_text
     assert "${{" not in submit_text
     assert "{{}}" not in submit_text
     local_wrapper_text = next(bundle_dir.glob("submissions/*/run_local_task.sbatch")).read_text(encoding="utf-8")
     api_wrapper_text = next(bundle_dir.glob("submissions/*/run_api_task.sbatch")).read_text(encoding="utf-8")
     finalizer_wrapper_text = next(bundle_dir.glob("submissions/*/run_finalize_task.sbatch")).read_text(encoding="utf-8")
+    assert 'TMPDIR_ROOT="${SLURM_TMPDIR:-/tmp}"' in local_wrapper_text
+    assert 'trap \'rm -rf "$TMPDIR"\' EXIT' in local_wrapper_text
+    assert 'TMPDIR_ROOT="${SLURM_TMPDIR:-/tmp}"' in api_wrapper_text
+    assert 'trap \'rm -rf "$TMPDIR"\' EXIT' in api_wrapper_text
+    assert 'TMPDIR_ROOT="${SLURM_TMPDIR:-/tmp}"' in finalizer_wrapper_text
+    assert 'trap \'rm -rf "$TMPDIR"\' EXIT' in finalizer_wrapper_text
     assert "${{" not in local_wrapper_text
     assert "${{" not in api_wrapper_text
     assert "${{" not in finalizer_wrapper_text
@@ -882,6 +890,75 @@ def test_submit_evaluate_cluster_skips_failed_generation_chunk_when_no_rows_rema
     assert list(bundle_dir.glob("submissions/*/manifest.json")) == []
     assert (bundle_dir / "scheduler_state.json").exists()
     assert (bundle_dir / "scheduler_status.html").exists()
+
+
+def test_submit_evaluate_cluster_accepts_explicit_augmented_dataset_without_generation_state(tmp_path, monkeypatch):
+    dataset_path = tmp_path / "processed"
+    bundle_dir = tmp_path / "bundle"
+    augmented_path = tmp_path / "augmented"
+    _processed_dataset(dataset_path, counts={"arc_challenge": 2, "mmlu_pro": 0, "gpqa": 0})
+    eval_ref = evaluation_slice_ref(
+        run_name="cluster-eval",
+        model=resolve_model_name("Qwen/Qwen3-4B-Instruct-2507", None),
+        dataset_type="arc_challenge",
+        setting="model_from_scratch",
+        mode="full_question",
+        question_start=0,
+        question_end=2,
+    )
+
+    def fake_state(*, stage, run_name, output_dir=None):
+        return {"slices": []}
+
+    def fail_ensure(**kwargs):
+        raise AssertionError("explicit augmented datasets should not be rematerialized from generation logs")
+
+    monkeypatch.setattr(app_main, "_current_stage_state", fake_state)
+    monkeypatch.setattr(app_main, "ensure_augmented_dataset", fail_ensure)
+    monkeypatch.setattr(
+        app_main,
+        "build_evaluation_dataset",
+        lambda *args, **kwargs: MemoryDataset(
+            [Sample(input="Q1", choices=["A", "B"], target="A", id="arc_challenge:arc-1")]
+        ),
+    )
+
+    rc = app_main.main(
+        [
+            "submit-evaluate-cluster",
+            "--run-name",
+            "cluster-eval",
+            "--generator-run-name",
+            "gen-run",
+            "--generator-model",
+            "gpt-5.2-2025-12-11",
+            "--processed-dataset",
+            str(dataset_path),
+            "--augmented-dataset",
+            str(augmented_path),
+            "--dataset-types",
+            "arc_challenge",
+            "--models",
+            "Qwen/Qwen3-4B-Instruct-2507",
+            "--settings",
+            "model_from_scratch",
+            "--modes",
+            "full_question",
+            "--questions-per-job",
+            "2",
+            "--output-dir",
+            str(bundle_dir),
+            "--write-only",
+        ]
+    )
+
+    assert rc == 0
+    manifest = _read_manifest(bundle_dir)
+    assert manifest["task_count"] == 1
+    assert manifest["tasks"][0]["slice_ref"] == eval_ref
+    assert manifest["tasks"][0]["state_dependency_refs"] == []
+    assert "--augmented-dataset" in manifest["tasks"][0]["argv"]
+    assert str(augmented_path) in manifest["tasks"][0]["argv"]
 
 
 def test_submit_generate_cluster_submit_calls_master_script_once(tmp_path, monkeypatch):

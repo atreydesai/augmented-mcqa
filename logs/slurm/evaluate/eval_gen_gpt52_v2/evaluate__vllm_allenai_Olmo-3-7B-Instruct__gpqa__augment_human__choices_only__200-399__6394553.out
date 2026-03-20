@@ -1,0 +1,47 @@
+---------------------------------------------------------                                              
+final5_eval_augment_human_choices_only (200 samples): vllm/allenai/Olmo-3-7B-Instruct                  
+max_tokens: 2048, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)
+---------------------------------------------------------                                              
+                                                                                                       
+Steps:  10/200   5% | Samples:   1/200 | mean:  n/a | vllm:  0/10 | HTTP retries: 0
+Steps:  15/200   7% | Samples:  13/200 | mean: 0.17 | vllm:  6/10 | HTTP retries: 0
+Steps:  25/200  12% | Samples:  20/200 | mean: 0.22 | vllm:  4/10 | HTTP retries: 0
+Steps:  28/200  14% | Samples:  26/200 | mean: 0.20 | vllm:  6/10 | HTTP retries: 0
+Steps:  37/200  18% | Samples:  33/200 | mean: 0.23 | vllm:  3/10 | HTTP retries: 0
+Steps:  45/200  22% | Samples:  43/200 | mean: 0.24 | vllm:  5/10 | HTTP retries: 0
+Steps:  54/200  27% | Samples:  52/200 | mean: 0.26 | vllm:  7/10 | HTTP retries: 0
+Steps:  62/200  31% | Samples:  59/200 | mean: 0.28 | vllm:  3/10 | HTTP retries: 0
+Steps:  68/200  34% | Samples:  67/200 | mean: 0.25 | vllm:  5/10 | HTTP retries: 0
+Steps:  78/200  39% | Samples:  75/200 | mean: 0.25 | vllm:  4/10 | HTTP retries: 0
+Steps:  84/200  42% | Samples:  82/200 | mean: 0.23 | vllm:  4/10 | HTTP retries: 0
+Steps:  92/200  46% | Samples:  89/200 | mean: 0.22 | vllm:  4/10 | HTTP retries: 0
+Steps: 100/200  50% | Samples:  97/200 | mean: 0.21 | vllm:  4/10 | HTTP retries: 0
+Steps: 108/200  54% | Samples: 106/200 | mean: 0.21 | vllm:  5/10 | HTTP retries: 0
+Steps: 116/200  57% | Samples: 115/200 | mean: 0.20 | vllm:  4/10 | HTTP retries: 0
+Steps: 125/200  62% | Samples: 123/200 | mean: 0.19 | vllm:  5/10 | HTTP retries: 0
+Steps: 133/200  66% | Samples: 131/200 | mean: 0.18 | vllm:  6/10 | HTTP retries: 0
+Steps: 140/200  70% | Samples: 138/200 | mean: 0.18 | vllm:  4/10 | HTTP retries: 0
+Steps: 148/200  74% | Samples: 146/200 | mean: 0.18 | vllm:  6/10 | HTTP retries: 0
+Steps: 155/200  77% | Samples: 153/200 | mean: 0.19 | vllm:  5/10 | HTTP retries: 0
+Steps: 163/200  81% | Samples: 160/200 | mean: 0.18 | vllm:  5/10 | HTTP retries: 0
+Steps: 170/200  85% | Samples: 168/200 | mean: 0.18 | vllm:  5/10 | HTTP retries: 0
+Steps: 178/200  89% | Samples: 176/200 | mean: 0.18 | vllm:  6/10 | HTTP retries: 0
+Steps: 186/200  93% | Samples: 183/200 | mean: 0.19 | vllm:  5/10 | HTTP retries: 0
+Steps: 193/200  96% | Samples: 191/200 | mean: 0.18 | vllm:  6/10 | HTTP retries: 0
+Steps: 200/200 100% | Samples: 200/200 | mean: 0.18 | vllm:  0/10 | HTTP retries: 0
+
+---------------------------------------------------------                                                                                                       
+final5_eval_augment_human_choices_only (200 samples): vllm/allenai/Olmo-3-7B-Instruct                                                                           
+max_tokens: 2048, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)                                                         
+                                                                                                                                                                
+total time:                                                                0:03:10                                                                              
+vllm/allenai/Olmo-3-7B-Instruct                                            79,762 tokens [I: 77,813, O: 1,949]                                                  
+final5_eval                                                                                                                                                     
+mean         0.175                                                                                                                                              
+stderr       0.027                                                                                                                                              
+Log:                                                                                                                                                            
+results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_allenai_Olmo-3-7B-Instruct/2026-03-18T02-05-14+00-00_final5-eval-augme…
+---------------------------------------------------------                                                                                                       
+                                                                                                                                                                
+Evaluation logs: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_allenai_Olmo-3-7B-Instruct
+Running: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/python main.py evaluate --model vllm/allenai/Olmo-3-7B-Instruct --run-name eval_gen_gpt52_v2 --generator-run-name gen_gpt52_v2 --generator-model openai/gpt-5.2-2025-12-11 --processed-dataset datasets/processed/unified_processed_v3 --dataset-types gpqa --settings augment_human --modes choices_only --question-start 200 --limit 200 --augmented-dataset /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/augmented/gen_gpt52_v2/openai_gpt-5.2-2025-12-11 --max-tokens 2048 --reasoning-effort medium --retry-on-error 2

@@ -1,0 +1,38 @@
+---------------------------------------------------------                                              
+final5_eval_augment_ablation_choices_only (200 samples): vllm/allenai/Olmo-3-7B-Instruct               
+max_tokens: 2048, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)
+---------------------------------------------------------                                              
+                                                                                                       
+Steps:  10/200   5% | Samples:   1/200 | mean:  n/a | vllm:  0/10 | HTTP retries: 0
+Steps:  18/200   9% | Samples:  14/200 | mean: 0.46 | vllm:  3/10 | HTTP retries: 0
+Steps:  28/200  14% | Samples:  26/200 | mean: 0.48 | vllm:  4/10 | HTTP retries: 0
+Steps:  41/200  20% | Samples:  39/200 | mean: 0.41 | vllm:  4/10 | HTTP retries: 0
+Steps:  54/200  27% | Samples:  53/200 | mean: 0.37 | vllm:  6/10 | HTTP retries: 0
+Steps:  67/200  33% | Samples:  64/200 | mean: 0.32 | vllm:  4/10 | HTTP retries: 0
+Steps:  80/200  40% | Samples:  78/200 | mean: 0.30 | vllm:  5/10 | HTTP retries: 1
+Steps:  93/200  46% | Samples:  92/200 | mean: 0.27 | vllm:  5/10 | HTTP retries: 1
+Steps: 108/200  54% | Samples: 106/200 | mean: 0.23 | vllm:  5/10 | HTTP retries: 1
+Steps: 123/200  61% | Samples: 120/200 | mean: 0.24 | vllm:  4/10 | HTTP retries: 1
+Steps: 137/200  68% | Samples: 134/200 | mean: 0.24 | vllm:  3/10 | HTTP retries: 1
+Steps: 149/200  74% | Samples: 148/200 | mean: 0.24 | vllm:  4/10 | HTTP retries: 1
+Steps: 163/200  81% | Samples: 162/200 | mean: 0.24 | vllm:  4/10 | HTTP retries: 1
+Steps: 174/200  87% | Samples: 171/200 | mean: 0.25 | vllm:  5/10 | HTTP retries: 1
+Steps: 182/200  91% | Samples: 181/200 | mean: 0.26 | vllm:  5/10 | HTTP retries: 1
+Steps: 193/200  96% | Samples: 190/200 | mean: 0.26 | vllm:  5/10 | HTTP retries: 2
+Steps: 200/200 100% | Samples: 200/200 | mean: 0.28 | vllm:  0/10 | HTTP retries: 2
+
+---------------------------------------------------------                                                                                                   
+final5_eval_augment_ablation_choices_only (200 samples): vllm/allenai/Olmo-3-7B-Instruct                                                                    
+max_tokens: 2048, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)                                                     
+                                                                                                                                                            
+total time:                                                               0:02:27                                                                           
+vllm/allenai/Olmo-3-7B-Instruct                                           54,671 tokens [I: 52,808, O: 1,863]                                               
+final5_eval                                                                                                                                                 
+mean         0.280                                                                                                                                          
+stderr       0.032                                                                                                                                          
+Log:                                                                                                                                                        
+results/inspect/evaluation/eval_together_from_scratch/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_allenai_Olmo-3-7B-Instruct/2026-03…
+---------------------------------------------------------                                                                                                   
+                                                                                                                                                            
+Evaluation logs: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/eval_together_from_scratch/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_allenai_Olmo-3-7B-Instruct
+Running: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/python main.py evaluate --model vllm/allenai/Olmo-3-7B-Instruct --run-name eval_together_from_scratch --generator-run-name together_from_scratch_testing --generator-model together/Qwen/Qwen3.5-397B-A17B --processed-dataset datasets/processed/unified_processed_v3 --dataset-types arc_challenge --settings augment_ablation --modes choices_only --question-start 200 --limit 200 --augmented-dataset /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/augmented/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B --max-tokens 2048 --reasoning-effort medium --retry-on-error 2

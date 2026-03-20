@@ -1,0 +1,38 @@
+---------------------------------------------------------                                              
+final5_eval_augment_ablation_full_question (199 samples): vllm/Qwen/Qwen3-4B-Instruct-2507             
+max_tokens: 2048, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)
+---------------------------------------------------------                                              
+                                                                                                       
+Steps:  10/199   5% | Samples:   1/199 | mean:  n/a | vllm:  0/10 | HTTP retries: 0
+Steps:  22/199  11% | Samples:  15/199 | mean: 0.38 | vllm:  2/10 | HTTP retries: 1
+Steps:  29/199  14% | Samples:  27/199 | mean: 0.27 | vllm:  5/10 | HTTP retries: 1
+Steps:  41/199  20% | Samples:  40/199 | mean: 0.35 | vllm:  5/10 | HTTP retries: 1
+Steps:  55/199  27% | Samples:  53/199 | mean: 0.35 | vllm:  4/10 | HTTP retries: 1
+Steps:  68/199  34% | Samples:  65/199 | mean: 0.35 | vllm:  2/10 | HTTP retries: 1
+Steps:  82/199  41% | Samples:  79/199 | mean: 0.37 | vllm:  5/10 | HTTP retries: 1
+Steps:  95/199  47% | Samples:  93/199 | mean: 0.34 | vllm:  5/10 | HTTP retries: 1
+Steps: 107/199  53% | Samples: 106/199 | mean: 0.36 | vllm:  5/10 | HTTP retries: 1
+Steps: 121/199  60% | Samples: 119/199 | mean: 0.37 | vllm:  5/10 | HTTP retries: 1
+Steps: 133/199  66% | Samples: 131/199 | mean: 0.36 | vllm:  4/10 | HTTP retries: 1
+Steps: 146/199  73% | Samples: 143/199 | mean: 0.35 | vllm:  3/10 | HTTP retries: 1
+Steps: 157/199  78% | Samples: 155/199 | mean: 0.35 | vllm:  4/10 | HTTP retries: 1
+Steps: 168/199  84% | Samples: 166/199 | mean: 0.35 | vllm:  5/10 | HTTP retries: 1
+Steps: 179/199  89% | Samples: 177/199 | mean: 0.34 | vllm:  5/10 | HTTP retries: 1
+Steps: 191/199  95% | Samples: 189/199 | mean: 0.33 | vllm:  5/10 | HTTP retries: 1
+Steps: 199/199 100% | Samples: 199/199 | mean: 0.32 | vllm:  0/10 | HTTP retries: 1
+
+---------------------------------------------------------                                                                                                   
+final5_eval_augment_ablation_full_question (199 samples): vllm/Qwen/Qwen3-4B-Instruct-2507                                                                  
+max_tokens: 2048, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)                                                     
+                                                                                                                                                            
+total time:                                                                0:02:05                                                                          
+vllm/Qwen/Qwen3-4B-Instruct-2507                                           90,460 tokens [I: 88,178, O: 2,282]                                              
+final5_eval                                                                                                                                                 
+mean         0.322                                                                                                                                          
+stderr       0.033                                                                                                                                          
+Log:                                                                                                                                                        
+results/inspect/evaluation/eval_together_from_scratch/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_Qwen_Qwen3-4B-Instruct-2507/2026-0…
+---------------------------------------------------------                                                                                                   
+                                                                                                                                                            
+Evaluation logs: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/eval_together_from_scratch/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_Qwen_Qwen3-4B-Instruct-2507
+Running: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/python main.py evaluate --model vllm/Qwen/Qwen3-4B-Instruct-2507 --run-name eval_together_from_scratch --generator-run-name together_from_scratch_testing --generator-model together/Qwen/Qwen3.5-397B-A17B --processed-dataset datasets/processed/unified_processed_v3 --dataset-types gpqa --settings augment_ablation --modes full_question --question-start 200 --limit 200 --augmented-dataset /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/augmented/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B --max-tokens 2048 --reasoning-effort medium --retry-on-error 2
