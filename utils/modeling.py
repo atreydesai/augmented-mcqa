@@ -9,6 +9,10 @@ NEMOTRON_MODEL_IDS = (
     "nvidia/NVIDIA-Nemotron-Nano-9B-v2",
     "vllm/nvidia/NVIDIA-Nemotron-Nano-9B-v2",
 )
+MINISTRAL_MODEL_IDS = (
+    "mistralai/Ministral-3-14B-Instruct-2512",
+    "vllm/mistralai/Ministral-3-14B-Instruct-2512",
+)
 TRUST_REMOTE_CODE_MODEL_IDS = (
     "allenai/Olmo-3-7B-Instruct",
     "vllm/allenai/Olmo-3-7B-Instruct",
@@ -82,6 +86,14 @@ def vllm_server_args(model: str) -> dict[str, object]:
     args = dict(VLLM_STARTUP_SERVER_ARGS)
     if resolved in TRUST_REMOTE_CODE_MODEL_IDS:
         args["trust_remote_code"] = True
+    if resolved in NEMOTRON_MODEL_IDS:
+        args["mamba_ssm_cache_dtype"] = "float32"
+    if resolved in MINISTRAL_MODEL_IDS:
+        args.update(
+            tokenizer_mode="mistral",
+            config_format="mistral",
+            load_format="mistral",
+        )
     return args
 
 

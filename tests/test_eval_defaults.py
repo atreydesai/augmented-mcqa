@@ -1,8 +1,10 @@
 import os
 from pathlib import Path
+from types import SimpleNamespace
 
 import main as app_main
-from utils.modeling import resolve_model_name
+from utils.constants import DEFAULT_LOCAL_EVALUATION_MODELS
+from utils.modeling import resolve_model_name, vllm_server_args
 
 
 def test_main_parser_generate_defaults_use_inspect_first_shape():
@@ -144,4 +146,47 @@ def test_model_alias_resolution_covers_api_and_local_defaults():
     assert resolve_model_name("gpt-5.2-2025-12-11") == "openai/gpt-5.2-2025-12-11"
     assert resolve_model_name("Qwen/Qwen3.5-397B-A17B") == "together/Qwen/Qwen3.5-397B-A17B"
     assert resolve_model_name("Qwen/Qwen3-4B-Instruct-2507") == "vllm/Qwen/Qwen3-4B-Instruct-2507"
+    assert (
+        resolve_model_name("mistralai/Ministral-3-14B-Instruct-2512")
+        == "vllm/mistralai/Ministral-3-14B-Instruct-2512"
+    )
     assert resolve_model_name("custom-model", "openai") == "openai/custom-model"
+
+
+def test_all_default_local_evaluation_models_resolve_and_provide_vllm_runtime_config():
+    resolved = [resolve_model_name(model) for model in DEFAULT_LOCAL_EVALUATION_MODELS]
+
+    assert resolved
+    assert all(model.startswith("vllm/") for model in resolved)
+    assert all(isinstance(vllm_server_args(model), dict) for model in resolved)
+
+
+def test_inspect_eval_uses_current_venv_bin_on_path(monkeypatch, tmp_path):
+    captured = {}
+    fake_python = tmp_path / "venv" / "bin" / "python"
+    fake_python.parent.mkdir(parents=True, exist_ok=True)
+    fake_python.write_text("", encoding="utf-8")
+
+    def fake_eval(tasks, **kwargs):  # noqa: ANN001
+        captured["path"] = os.environ["PATH"]
+        captured["server_args"] = os.environ.get("VLLM_DEFAULT_SERVER_ARGS", "")
+        return []
+
+    monkeypatch.setattr("inspect_ai.eval", fake_eval)
+    monkeypatch.setattr(app_main.sys, "executable", str(fake_python))
+
+    args = SimpleNamespace(
+        model_base_url=None,
+        retry_on_error=0,
+        max_connections=1,
+        max_tokens=32,
+        temperature=None,
+        reasoning_effort=None,
+        stop_seqs=None,
+    )
+
+    app_main._inspect_eval([], model="Qwen/Qwen3-4B-Instruct-2507", log_dir=tmp_path / "logs", args=args)
+
+    current_bin = str(fake_python.parent)
+    assert captured["path"].split(os.pathsep)[0] == current_bin
+    assert captured["server_args"]

@@ -13,10 +13,14 @@ from utils.constants import (
     AUGMENTED_STORE_MANIFEST,
     AUGMENTED_STORE_SCHEMA_VERSION,
     CHOICE_LABELS,
+    DEFAULT_AUGMENTED_CACHE_ROOT,
+    EVALUATED_STORE_MANIFEST,
+    EVALUATED_STORE_SCHEMA_VERSION,
     FINAL5_SETTINGS,
     MODE_CHOICES,
 )
-from utils.logs import iter_eval_logs
+from utils.logs import iter_eval_logs, iter_log_payloads
+from utils.modeling import safe_name
 from utils.recipes import get_setting_recipe
 from utils.scheduler_state import SCHEDULABLE_GENERATION_STRATEGIES
 from utils.sharding import sample_id_for_row, select_shard
@@ -48,6 +52,17 @@ AUGMENTED_RECORD_COLUMNS = (
 )
 
 DATASET_MANIFEST_SCHEMA_VERSION = "augmented_mcqa_dataset_manifest_v1"
+EVALUATED_RECORD_COLUMNS = AUGMENTED_RECORD_COLUMNS + (
+    "evaluation_status",
+    "evaluation_is_correct",
+    "evaluation_score",
+    "evaluation_prediction",
+    "evaluation_prediction_type",
+    "evaluation_raw_output",
+    "evaluation_prompt",
+    "evaluation_question_idx",
+    "evaluation_log_path",
+)
 
 
 def _latest_mtime(path: Path, *, suffix: str | None = None) -> float | None:
@@ -405,6 +420,7 @@ def _record_from_generation_payload(
     *,
     setting: str,
 ) -> dict[str, Any] | None:
+    status = str(payload.get("status", "") or "")
     human = [str(item).strip() for item in list(payload.get("human_from_scratch") or []) if str(item).strip()]
     if setting == "human_from_scratch":
         human_distractors = human
@@ -421,10 +437,19 @@ def _record_from_generation_payload(
     else:
         human_distractors = []
         model_distractors = [str(item).strip() for item in list(payload.get("augment_ablation") or []) if str(item).strip()]
+    if status and status != "success":
+        return _empty_setting_record(
+            base,
+            setting=setting,
+            status=status,
+            human_distractors=human_distractors,
+            model_distractors=model_distractors,
+            traces=dict((payload.get("traces") or {}).get(setting, {}) or {}),
+        )
     record = _record_from_setting_values(
         base,
         setting=setting,
-        status=str(payload.get("status", "") or ""),
+        status=status,
         human_distractors=human_distractors,
         model_distractors=model_distractors,
         options_randomized=list(payload.get(f"{setting}_options_randomized") or []),
@@ -554,7 +579,9 @@ def _merge_generation_payload(target: dict[str, Any], payload: dict[str, Any]) -
                 "category": payload.get("category", ""),
             }
         )
-    merged["status"] = "success"
+    payload_status = str(payload.get("status", "") or "")
+    if payload_status:
+        merged["status"] = payload_status
     merged.setdefault("traces", {})
     for setting in FINAL5_SETTINGS:
         generated_values = list(payload.get(setting) or [])
@@ -579,7 +606,7 @@ def _generation_payloads(log_dir: Path | str) -> dict[str, dict[str, Any]]:
                 continue
             score = next(iter(sample.scores.values()))
             metadata = dict(getattr(score, "metadata", {}) or {})
-            if not metadata or metadata.get("status") != "success":
+            if not metadata:
                 continue
             sample_id = str(sample.id)
             payloads[sample_id] = _merge_generation_payload(payloads.get(sample_id, {}), metadata)
@@ -621,6 +648,7 @@ def materialize_augmented_dataset(
     output_path: Path | str,
     *,
     dataset_types: list[str] | None = None,
+    include_missing_rows: bool = True,
 ) -> Path:
     _validate_augmented_output_path(processed_dataset_path, output_path)
     generated = _generation_payloads(generation_log_dir)
@@ -633,6 +661,8 @@ def materialize_augmented_dataset(
     for row in rows:
         sample_id = row["sample_id"]
         generated_row = generated.get(sample_id)
+        if generated_row is None and not include_missing_rows:
+            continue
         base = _base_record(row)
         dataset_type = row["dataset_type"]
         for setting in FINAL5_SETTINGS:
@@ -695,7 +725,381 @@ def ensure_augmented_dataset(
         generation_log_dir=generation_log_dir,
         output_path=out,
         dataset_types=dataset_types,
+        include_missing_rows=False,
     )
+
+
+def _evaluated_manifest_path(root: Path) -> Path:
+    return root / EVALUATED_STORE_MANIFEST
+
+
+def _evaluated_store_path(root: Path, dataset_type: str, setting: str, mode: str) -> Path:
+    return root / dataset_type / setting / mode
+
+
+def _empty_evaluated_dataset() -> Dataset:
+    return Dataset.from_dict({column: [] for column in EVALUATED_RECORD_COLUMNS})
+
+
+def _write_evaluated_manifest(
+    root: Path,
+    *,
+    dataset_types: list[str],
+    settings: list[str],
+    modes: list[str],
+    generation_run_name: str,
+    generation_model: str,
+    evaluation_model: str,
+    source_results_root: str,
+) -> None:
+    payload = {
+        "schema_version": EVALUATED_STORE_SCHEMA_VERSION,
+        "storage_kind": "evaluated_setting_mode_records",
+        "dataset_types": dataset_types,
+        "settings": settings,
+        "modes": modes,
+        "generation_run_name": generation_run_name,
+        "generation_model": generation_model,
+        "evaluation_model": evaluation_model,
+        "source_results_root": source_results_root,
+    }
+    _evaluated_manifest_path(root).write_text(json.dumps(payload, indent=2), encoding="utf-8")
+
+
+def _write_evaluated_store(
+    output_path: Path,
+    *,
+    dataset_types: list[str],
+    settings: list[str],
+    modes: list[str],
+    records: dict[str, dict[str, dict[str, list[dict[str, Any]]]]],
+    generation_run_name: str,
+    generation_model: str,
+    evaluation_model: str,
+    source_results_root: str,
+) -> Path:
+    tmp_path = output_path.with_name(f".{output_path.name}.tmp")
+    backup_path = output_path.with_name(f".{output_path.name}.bak")
+    if tmp_path.exists():
+        shutil.rmtree(tmp_path)
+    if backup_path.exists():
+        shutil.rmtree(backup_path)
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    _write_evaluated_manifest(
+        tmp_path,
+        dataset_types=dataset_types,
+        settings=settings,
+        modes=modes,
+        generation_run_name=generation_run_name,
+        generation_model=generation_model,
+        evaluation_model=evaluation_model,
+        source_results_root=source_results_root,
+    )
+    for dataset_type in dataset_types:
+        for setting in settings:
+            for mode in modes:
+                mode_rows = records.get(dataset_type, {}).get(setting, {}).get(mode, [])
+                dataset = Dataset.from_list(mode_rows) if mode_rows else _empty_evaluated_dataset()
+                path = _evaluated_store_path(tmp_path, dataset_type, setting, mode)
+                path.parent.mkdir(parents=True, exist_ok=True)
+                dataset.save_to_disk(str(path))
+    if output_path.exists():
+        output_path.rename(backup_path)
+    tmp_path.rename(output_path)
+    if backup_path.exists():
+        shutil.rmtree(backup_path, ignore_errors=True)
+    return output_path
+
+
+def _evaluation_score_value(score: Any) -> float | None:
+    value = score.get("value") if isinstance(score, dict) else getattr(score, "value", None)
+    if value is None:
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _evaluated_root_mtime(path: Path) -> float | None:
+    if not path.exists():
+        return None
+    latest = _latest_mtime(path)
+    if latest is None:
+        return None
+    return latest
+
+
+def _existing_evaluated_outputs(root: Path) -> list[Path]:
+    return sorted(path.parent for path in root.rglob(EVALUATED_STORE_MANIFEST))
+
+
+def _augmented_record_lookup(
+    root: Path,
+    dataset_type: str,
+    setting: str,
+    cache: dict[tuple[str, str, str], dict[str, dict[str, Any]]],
+) -> dict[str, dict[str, Any]]:
+    key = (str(root), str(dataset_type), str(setting))
+    if key not in cache:
+        rows: dict[str, dict[str, Any]] = {}
+        for row in _load_setting_dataset(root, dataset_type, setting):
+            payload = dict(row)
+            sample_id = str(payload.get("sample_id", "") or "")
+            if sample_id:
+                rows[sample_id] = payload
+        cache[key] = rows
+    return cache[key]
+
+
+def _fallback_augmented_record(
+    *,
+    sample: Any,
+    sample_meta: dict[str, Any],
+    score_meta: dict[str, Any],
+    setting: str,
+) -> dict[str, Any]:
+    sample_id = str(sample_meta.get("sample_id") or getattr(sample, "id", "") or "")
+    raw_question_idx = score_meta.get("question_idx", sample_meta.get("row_index", -1))
+    question_idx = -1 if raw_question_idx is None else int(raw_question_idx)
+    answer_index = score_meta.get("gold_index", sample_meta.get("gold_index"))
+    choices = list(getattr(sample, "choices", []) or [])
+    if answer_index is not None:
+        try:
+            answer_index_int = int(answer_index)
+        except (TypeError, ValueError):
+            answer_index_int = None
+    else:
+        answer_index_int = None
+    answer_text = str(sample_meta.get("gold_answer", "") or "")
+    if not answer_text and answer_index_int is not None and 0 <= answer_index_int < len(choices):
+        answer_text = str(choices[answer_index_int])
+    human = [
+        str(item)
+        for item in list(
+            score_meta.get("selected_human_distractors")
+            or sample_meta.get("selected_human_distractors")
+            or []
+        )
+    ]
+    model = [
+        str(item)
+        for item in list(
+            score_meta.get("selected_model_distractors")
+            or sample_meta.get("selected_model_distractors")
+            or []
+        )
+    ]
+    base = _base_record(
+        {
+            "id": sample_id,
+            "question_id": sample_id,
+            "dataset_type": str(score_meta.get("dataset_type") or sample_meta.get("dataset_type") or ""),
+            "row_index": question_idx,
+            "sample_id": sample_id,
+            "question": str(sample_meta.get("question") or getattr(sample, "input", "") or ""),
+            "answer": answer_text,
+            "category": str(score_meta.get("category") or sample_meta.get("category") or ""),
+            "options": choices,
+            "answer_index": answer_index_int,
+            "choices_human": list(sample_meta.get("choices_human") or human),
+        }
+    )
+    record = _record_from_setting_values(
+        base,
+        setting=setting,
+        status="evaluated",
+        human_distractors=human,
+        model_distractors=model,
+        options_randomized=choices,
+        correct_answer_letter=str(score_meta.get("gold_answer_letter") or getattr(sample, "target", "") or ""),
+        traces={},
+    )
+    if record is not None:
+        return record
+    return _empty_setting_record(base, setting=setting, status="evaluated", human_distractors=human, model_distractors=model)
+
+
+def _empty_evaluation_payload(*, row_index: int) -> dict[str, Any]:
+    return {
+        "evaluation_status": "missing",
+        "evaluation_is_correct": None,
+        "evaluation_score": None,
+        "evaluation_prediction": "",
+        "evaluation_prediction_type": "",
+        "evaluation_raw_output": "",
+        "evaluation_prompt": "",
+        "evaluation_question_idx": int(row_index),
+        "evaluation_log_path": "",
+    }
+
+
+def materialize_evaluated_datasets(
+    evaluation_log_root: Path | str,
+    output_root: Path | str = DEFAULT_AUGMENTED_CACHE_ROOT.parent / "evaluated",
+    *,
+    augmented_root: Path | str = DEFAULT_AUGMENTED_CACHE_ROOT,
+) -> list[Path]:
+    output_root_path = Path(output_root)
+    eval_root = Path(evaluation_log_root)
+    augmented_root_path = Path(augmented_root)
+
+    cache_mtime = _evaluated_root_mtime(output_root_path)
+    eval_mtime = _latest_mtime(eval_root, suffix=".eval")
+    augmented_mtime = _latest_mtime(augmented_root_path)
+    if (
+        cache_mtime is not None
+        and (eval_mtime is None or eval_mtime <= cache_mtime)
+        and (augmented_mtime is None or augmented_mtime <= cache_mtime)
+    ):
+        return _existing_evaluated_outputs(output_root_path)
+
+    observed_by_group: dict[tuple[str, str, str], dict[tuple[str, str, str, str], dict[str, Any]]] = {}
+    group_meta: dict[tuple[str, str, str], dict[str, Any]] = {}
+    augmented_cache: dict[tuple[str, str, str], dict[str, dict[str, Any]]] = {}
+    source_root = str(eval_root)
+
+    for log_path, log in iter_log_payloads(eval_root, kind="evaluation"):
+        log_meta = dict(log.get("metadata", {}) or {})
+        generation_run_name = str(log_meta.get("generation_run_name", "") or "")
+        generation_model = str(log_meta.get("generation_model", "") or "")
+        evaluation_model = str(log_meta.get("evaluation_model", "") or "")
+        setting = str(log_meta.get("setting", "") or "")
+        mode = str(log_meta.get("mode", "") or "")
+        group_key = (generation_run_name, generation_model, evaluation_model)
+        augmented_path = (
+            augmented_root_path
+            / safe_name(generation_run_name or "unknown_generation_run")
+            / safe_name(generation_model or "unknown_generation_model")
+        )
+        group_meta.setdefault(
+            group_key,
+            {
+                "generation_run_name": generation_run_name,
+                "generation_model": generation_model,
+                "evaluation_model": evaluation_model,
+                "dataset_types": set(),
+                "settings": set(),
+                "modes": set(),
+                "augmented_path": augmented_path,
+            },
+        )
+        group_meta[group_key]["settings"].add(setting)
+        group_meta[group_key]["modes"].add(mode)
+        group_observed = observed_by_group.setdefault(group_key, {})
+
+        for sample in list(log.get("summaries", []) or []):
+            scores = dict(sample.get("scores", {}) or {})
+            if not scores:
+                continue
+            score = next(iter(scores.values()))
+            score_meta = dict(score.get("metadata", {}) or {})
+            sample_meta = dict(sample.get("metadata", {}) or {})
+            dataset_type = str(score_meta.get("dataset_type") or sample_meta.get("dataset_type") or "")
+            if not dataset_type:
+                continue
+            sample_id = str(score_meta.get("sample_id") or sample_meta.get("sample_id") or sample.get("id", "") or "")
+            group_meta[group_key]["dataset_types"].add(dataset_type)
+            score_value = _evaluation_score_value(score)
+            evaluation_meta = sample_meta.get("evaluation", {}) or {}
+            if not isinstance(evaluation_meta, dict):
+                evaluation_meta = {}
+            group_observed[(dataset_type, setting, mode, sample_id)] = {
+                "evaluation_is_correct": bool(score_value) if score_value is not None else False,
+                "evaluation_score": score_value,
+                "evaluation_prediction": str(score_meta.get("prediction") or evaluation_meta.get("prediction") or ""),
+                "evaluation_prediction_type": str(score_meta.get("prediction_type", "") or ""),
+                "evaluation_raw_output": str(score_meta.get("raw_output") or evaluation_meta.get("raw_output") or ""),
+                "evaluation_prompt": str(score_meta.get("prompt") or evaluation_meta.get("prompt") or ""),
+                "evaluation_status": str(score_meta.get("status") or log.get("status", "") or "success"),
+                "evaluation_question_idx": (
+                    -1
+                    if score_meta.get("question_idx", sample_meta.get("row_index", -1)) is None
+                    else int(score_meta.get("question_idx", sample_meta.get("row_index", -1)))
+                ),
+                "evaluation_log_path": str(log_path),
+            }
+
+    outputs: list[Path] = []
+    for group_key, meta in group_meta.items():
+        generation_run_name, generation_model, evaluation_model = group_key
+        augmented_path = Path(meta["augmented_path"])
+        dataset_types = sorted(meta["dataset_types"])
+        if augmented_path.exists():
+            manifest = _load_augmented_manifest(augmented_path)
+            manifest_datasets = list(manifest.get("dataset_types") or [])
+            if manifest_datasets:
+                dataset_types = [dataset for dataset in manifest_datasets if dataset in set(dataset_types)]
+        settings = sorted(meta["settings"], key=lambda value: list(FINAL5_SETTINGS).index(value) if value in FINAL5_SETTINGS else len(FINAL5_SETTINGS))
+        modes = sorted(meta["modes"], key=lambda value: list(MODE_CHOICES).index(value) if value in MODE_CHOICES else len(MODE_CHOICES))
+        group_records: dict[str, dict[str, dict[str, list[dict[str, Any]]]]] = {
+            dataset_type: {setting: {mode: [] for mode in modes} for setting in settings}
+            for dataset_type in dataset_types
+        }
+        group_observed = observed_by_group.get(group_key, {})
+
+        for dataset_type in dataset_types:
+            for setting in settings:
+                augmented_rows = _augmented_record_lookup(augmented_path, dataset_type, setting, augmented_cache)
+                seen_sample_ids = set()
+                for sample_id, augmented_row in augmented_rows.items():
+                    seen_sample_ids.add(sample_id)
+                    base_record = {column: augmented_row.get(column) for column in AUGMENTED_RECORD_COLUMNS}
+                    raw_row_index = augmented_row.get("row_index", -1)
+                    row_index = -1 if raw_row_index is None else int(raw_row_index)
+                    for mode in modes:
+                        evaluation_payload = group_observed.get((dataset_type, setting, mode, sample_id))
+                        group_records[dataset_type][setting][mode].append(
+                            {
+                                **base_record,
+                                **(
+                                    dict(evaluation_payload)
+                                    if evaluation_payload is not None
+                                    else _empty_evaluation_payload(row_index=row_index)
+                                ),
+                            }
+                        )
+
+                for mode in modes:
+                    observed_only = [
+                        (sample_id, payload)
+                        for (payload_dataset, payload_setting, payload_mode, sample_id), payload in group_observed.items()
+                        if payload_dataset == dataset_type
+                        and payload_setting == setting
+                        and payload_mode == mode
+                        and sample_id not in seen_sample_ids
+                    ]
+                    for sample_id, payload in observed_only:
+                        fallback = _fallback_augmented_record(
+                            sample=type("SampleProxy", (), {"id": sample_id, "input": "", "choices": []})(),
+                            sample_meta={"sample_id": sample_id, "dataset_type": dataset_type},
+                            score_meta={"dataset_type": dataset_type, "question_idx": payload["evaluation_question_idx"]},
+                            setting=setting,
+                        )
+                        group_records[dataset_type][setting][mode].append({**fallback, **payload})
+
+        output_path = (
+            output_root_path
+            / safe_name(generation_run_name or "unknown_generation_run")
+            / safe_name(generation_model or "unknown_generation_model")
+            / safe_name(evaluation_model or "unknown_evaluation_model")
+        )
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        outputs.append(
+            _write_evaluated_store(
+                output_path,
+                dataset_types=dataset_types,
+                settings=settings,
+                modes=modes,
+                records=group_records,
+                generation_run_name=generation_run_name,
+                generation_model=generation_model,
+                evaluation_model=evaluation_model,
+                source_results_root=source_root,
+            )
+        )
+
+    return outputs
 
 
 def build_evaluation_dataset(

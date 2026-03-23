@@ -266,7 +266,7 @@ def build_scheduler_state(
         latest_attempt_at = parse_iso(str((latest_attempt or {}).get("completed_at", "") or ""))
         latest_success_at = parse_iso(str((latest_success or {}).get("completed_at", "") or ""))
         latest_submitted_job_id = str(latest_plan.get("submitted_job_id", "") or "")
-        submitted_job_live = bool(latest_submitted_job_id and latest_submitted_job_id in live_job_ids)
+        submitted_job_live = not latest_submitted_job_id or latest_submitted_job_id in live_job_ids
         pending = (
             latest_submitted_at is not None
             and (latest_attempt_at is None or latest_submitted_at > latest_attempt_at)

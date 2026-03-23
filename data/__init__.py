@@ -39,6 +39,7 @@ _SYMBOL_TO_MODULE = {
     "build_evaluation_dataset": "final5_store",
     "ensure_augmented_dataset": "final5_store",
     "materialize_augmented_dataset": "final5_store",
+    "materialize_evaluated_datasets": "final5_store",
 }
 
 __all__ = list(_SYMBOL_TO_MODULE.keys())

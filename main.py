@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import sys
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -13,6 +14,7 @@ from data.final5_store import (
     build_evaluation_dataset,
     build_generation_dataset,
     ensure_augmented_dataset,
+    materialize_evaluated_datasets,
 )
 from utils.cluster_submit import (
     ClusterTask,
@@ -26,6 +28,7 @@ from utils.cluster_submit import (
 )
 from utils.constants import (
     DEFAULT_AUGMENTED_CACHE_ROOT,
+    DEFAULT_EVALUATED_DATASET_ROOT,
     DEFAULT_EVALUATION_LOG_ROOT,
     DEFAULT_EVALUATION_MODELS,
     DEFAULT_GENERATION_LOG_ROOT,
@@ -669,6 +672,10 @@ def _inspect_eval(tasks, *, model: str, log_dir: Path, args: argparse.Namespace)
 
     log_dir.mkdir(parents=True, exist_ok=True)
     env_updates: dict[str, str] = {}
+    current_bin = str(Path(sys.executable).parent)
+    path_entries = os.environ.get("PATH", "").split(os.pathsep) if os.environ.get("PATH") else []
+    if current_bin and current_bin not in path_entries:
+        env_updates["PATH"] = current_bin if not path_entries else f"{current_bin}{os.pathsep}{os.environ['PATH']}"
     if not args.model_base_url and "VLLM_DEFAULT_SERVER_ARGS" not in os.environ:
         server_args = vllm_server_args(model)
         if server_args:
@@ -952,18 +959,38 @@ def _run_evaluate_all(args: argparse.Namespace) -> int:
 
 
 def _run_analyze(args: argparse.Namespace) -> int:
-    from analysis.visualize import plot_final5_pairwise, write_final5_summary_table
+    from analysis.visualize import (
+        load_final5_analysis_frames,
+        plot_final5_pairwise,
+        write_final5_summary_table,
+    )
 
+    analysis_root = Path(args.evaluated_output_root)
+    if not args.skip_evaluated_dataset:
+        evaluated_outputs = materialize_evaluated_datasets(
+            evaluation_log_root=Path(args.results_root),
+            output_root=Path(args.evaluated_output_root),
+            augmented_root=Path(DEFAULT_AUGMENTED_CACHE_ROOT),
+        )
+        for output in evaluated_outputs:
+            print(output)
+    elif not analysis_root.exists():
+        print(f"Missing evaluated dataset root: {analysis_root}")
+        return 1
+
+    row_df, summary_df = load_final5_analysis_frames(analysis_root)
     if args.table_output:
-        df = write_final5_summary_table(args.results_root, args.table_output)
+        df = write_final5_summary_table(analysis_root, args.table_output, summary_df=summary_df)
         print(f"Wrote {len(df)} summary rows to {args.table_output}")
     outputs = plot_final5_pairwise(
-        results_root=Path(args.results_root),
+        results_root=analysis_root,
         output_dir=Path(args.output_dir),
         include_tables=not args.skip_tables,
+        row_df=row_df,
+        summary_df=summary_df,
     )
     if not outputs:
-        print("No evaluation logs found.")
+        print("No evaluated rows found.")
         return 1
     for output in outputs:
         print(output)
@@ -1840,14 +1867,14 @@ def build_parser() -> argparse.ArgumentParser:
 
     analyze = sub.add_parser(
         "analyze",
-        help="Aggregate evaluation logs into Final5 plots and summary tables.",
-        description="Read Inspect evaluation logs and produce Final5 CSV summaries and comparison plots.",
+        help="Materialize evaluated datasets, then build Final5 plots and summary tables.",
+        description="Read Inspect evaluation logs once to build datasets/evaluated, then analyze those combined datasets.",
         formatter_class=formatter,
     )
     analyze.add_argument(
         "--results-root",
         default=str(DEFAULT_EVALUATION_LOG_ROOT),
-        help="Usually leave alone: directory containing Inspect evaluation logs to analyze.",
+        help="Usually leave alone: directory containing Inspect evaluation logs used to build datasets/evaluated.",
     )
     analyze.add_argument(
         "--output-dir",
@@ -1863,6 +1890,16 @@ def build_parser() -> argparse.ArgumentParser:
         "--skip-tables",
         action="store_true",
         help="Advanced output option: write plots only and skip the pairwise comparison CSV tables.",
+    )
+    analyze.add_argument(
+        "--evaluated-output-root",
+        default=str(DEFAULT_EVALUATED_DATASET_ROOT),
+        help="Materialize combined evaluated datasets under this root before generating plots.",
+    )
+    analyze.add_argument(
+        "--skip-evaluated-dataset",
+        action="store_true",
+        help="Skip writing the combined datasets/evaluated materialization step and only generate analysis outputs.",
     )
     analyze.set_defaults(handler=_run_analyze)
 

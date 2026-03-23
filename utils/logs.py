@@ -81,6 +81,25 @@ def _normalize_log_summary_from_archive(path: Path) -> dict[str, Any] | None:
     }
 
 
+def _read_log_payload_from_archive(path: Path) -> dict[str, Any] | None:
+    try:
+        with zipfile.ZipFile(path) as archive:
+            header = json.loads(archive.read("header.json"))
+            summaries = json.loads(archive.read("summaries.json"))
+    except (OSError, zipfile.BadZipFile, KeyError, json.JSONDecodeError):
+        return None
+
+    eval_payload = header.get("eval", {}) if isinstance(header, dict) else {}
+    metadata = dict(eval_payload.get("metadata", {}) or {})
+    stats = header.get("stats", {}) if isinstance(header, dict) else {}
+    return {
+        "status": str(header.get("status", "") or ""),
+        "metadata": metadata,
+        "completed_at": str(stats.get("completed_at", "") or ""),
+        "summaries": summaries if isinstance(summaries, list) else [],
+    }
+
+
 def _normalize_log_summary_from_object(log: Any) -> dict[str, Any]:
     metadata = dict(getattr(log.eval, "metadata", {}) or {})
     score_values: list[float] = []
@@ -116,6 +135,58 @@ def read_log_summary(path: Path | str) -> dict[str, Any] | None:
         return _normalize_log_summary_from_object(read_log(log_path))
     except Exception:
         return None
+
+
+def _read_log_payload_from_object(log: Any) -> dict[str, Any]:
+    metadata = dict(getattr(log.eval, "metadata", {}) or {})
+    stats = getattr(log, "stats", None)
+    samples: list[dict[str, Any]] = []
+    for sample in list(getattr(log, "samples", []) or []):
+        sample_payload: dict[str, Any] = {
+            "id": getattr(sample, "id", ""),
+            "input": getattr(sample, "input", ""),
+            "choices": list(getattr(sample, "choices", []) or []),
+            "target": getattr(sample, "target", ""),
+            "metadata": dict(getattr(sample, "metadata", {}) or {}),
+            "scores": {},
+        }
+        scores = getattr(sample, "scores", None) or {}
+        for name, score in dict(scores).items():
+            sample_payload["scores"][str(name)] = {
+                "value": getattr(score, "value", None),
+                "answer": getattr(score, "answer", None),
+                "explanation": getattr(score, "explanation", None),
+                "metadata": dict(getattr(score, "metadata", {}) or {}),
+            }
+        samples.append(sample_payload)
+    return {
+        "status": str(getattr(log, "status", "") or ""),
+        "metadata": metadata,
+        "completed_at": str(getattr(stats, "completed_at", "") or ""),
+        "summaries": samples,
+    }
+
+
+def read_log_payload(path: Path | str) -> dict[str, Any] | None:
+    log_path = Path(path)
+    payload = _read_log_payload_from_archive(log_path)
+    if payload is not None:
+        return payload
+    try:
+        return _read_log_payload_from_object(read_log(log_path))
+    except Exception:
+        return None
+
+
+def iter_log_payloads(path: Path | str, *, kind: str | None = None) -> Iterator[tuple[Path, dict[str, Any]]]:
+    for log_path in find_eval_logs(path):
+        payload = read_log_payload(log_path)
+        if payload is None:
+            continue
+        metadata = dict(payload.get("metadata", {}) or {})
+        if kind is not None and metadata.get("kind") != kind:
+            continue
+        yield log_path, payload
 
 
 def iter_log_summaries(path: Path | str, *, kind: str | None = None) -> Iterator[tuple[Path, dict[str, Any]]]:
