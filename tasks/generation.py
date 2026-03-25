@@ -21,6 +21,7 @@ def build_generation_tasks(
     run_name,
     generation_model,
     generation_log_dir=None,
+    augmented_dataset_path=None,
     task_metadata_by_strategy=None,
 ) -> list[Task]:
     tasks: list[Task] = []
@@ -33,6 +34,7 @@ def build_generation_tasks(
             question_start=question_start,
             limit=limit,
             generation_log_dir=generation_log_dir,
+            augmented_dataset_path=augmented_dataset_path,
             shard_count=shard_count,
             shard_index=shard_index,
             shard_strategy=shard_strategy,

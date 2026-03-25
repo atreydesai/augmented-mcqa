@@ -514,6 +514,7 @@ def build_generation_dataset(
     question_start: int = 0,
     limit: int | None = None,
     generation_log_dir: Path | str | None = None,
+    augmented_dataset_path: Path | str | None = None,
     shard_count: int = 1,
     shard_index: int = 0,
     shard_strategy: str = "contiguous",
@@ -530,6 +531,28 @@ def build_generation_dataset(
     rows = select_shard(rows, shard_count=shard_count, shard_index=shard_index, strategy=shard_strategy)
     prior_payloads = _generation_payloads(generation_log_dir) if generation_log_dir else {}
     recipe = get_setting_recipe(strategy)
+    cached_prerequisites: dict[str, list[str]] = {}
+    if recipe.prerequisite_setting and augmented_dataset_path:
+        try:
+            wanted_dataset_types = list(dataset_types or [])
+            if not wanted_dataset_types:
+                manifest = _load_augmented_manifest(augmented_dataset_path)
+                wanted_dataset_types = list(manifest.get("dataset_types") or [])
+            for dataset_type in wanted_dataset_types:
+                for row in _load_setting_dataset(augmented_dataset_path, dataset_type, recipe.prerequisite_setting):
+                    payload = dict(row)
+                    sample_id = str(payload.get("sample_id", "") or "")
+                    if not sample_id:
+                        continue
+                    distractors = [
+                        str(item).strip()
+                        for item in list(payload.get("model_distractors") or [])
+                        if str(item).strip()
+                    ]
+                    if distractors:
+                        cached_prerequisites[sample_id] = distractors
+        except FileNotFoundError:
+            cached_prerequisites = {}
 
     samples: list[Sample] = []
     for row in rows:
@@ -549,6 +572,8 @@ def build_generation_dataset(
         if recipe.prerequisite_setting:
             prior = prior_payloads.get(row["sample_id"], {})
             existing = list(prior.get(recipe.prerequisite_setting) or [])
+            if not existing:
+                existing = list(cached_prerequisites.get(row["sample_id"], []) or [])
             if len(existing) < get_setting_recipe(recipe.prerequisite_setting).num_model:
                 continue
             metadata["existing_prerequisite_distractors"] = existing

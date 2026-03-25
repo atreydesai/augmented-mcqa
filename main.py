@@ -227,6 +227,7 @@ def _evaluation_generation_dependencies(
 
 def _build_generation_cluster_tasks(args: argparse.Namespace) -> tuple[list[ClusterTask], dict[str, int | None]]:
     processed_dataset = Path(args.processed_dataset)
+    augmented_cache_root = Path(DEFAULT_AUGMENTED_CACHE_ROOT)
     dataset_dict = _load_dataset_dict(processed_dataset)
     dataset_types = _cluster_dataset_types(
         dataset_dict,
@@ -329,6 +330,7 @@ def _build_generation_cluster_tasks(args: argparse.Namespace) -> tuple[list[Clus
                 question_start=task.question_start,
                 limit=task.question_end - task.question_start,
                 generation_log_dir=_generation_log_dir(Path(DEFAULT_GENERATION_LOG_ROOT), args.run_name, task.model),
+                augmented_dataset_path=_augmented_cache_dir(augmented_cache_root, args.run_name, task.model),
                 shard_count=1,
                 shard_index=0,
                 shard_strategy="contiguous",
@@ -348,7 +350,7 @@ def _build_generation_cluster_tasks(args: argparse.Namespace) -> tuple[list[Clus
                 dependency_status = str((dependency_state or {}).get("status", ""))
                 if dependency_status == "current":
                     continue
-                if dependency_status == "failed" and task.strategy == "augment_model":
+                if task.strategy == "augment_model":
                     if runnable_generation_sample_count(task) > 0:
                         continue
                     skip_task = True
@@ -769,6 +771,11 @@ def _run_generate(args: argparse.Namespace) -> int:
     dataset_types = _csv_list(args.dataset_types, default=args.default_dataset_types)
     raw_model = resolve_model_name(args.model, args.backend)
     log_dir = _generation_log_dir(Path(args.log_root), args.run_name, raw_model)
+    cache_dir = (
+        Path(args.augmented_dataset)
+        if args.augmented_dataset
+        else _augmented_cache_dir(Path(args.cache_root), args.run_name, raw_model)
+    )
     strategies = _csv_list(args.generation_strategies, default=list(SCHEDULABLE_GENERATION_STRATEGIES))
     for strategy in strategies:
         if strategy not in SCHEDULABLE_GENERATION_STRATEGIES:
@@ -817,6 +824,7 @@ def _run_generate(args: argparse.Namespace) -> int:
             run_name=args.run_name,
             generation_model=raw_model,
             generation_log_dir=log_dir,
+            augmented_dataset_path=cache_dir,
             task_metadata_by_strategy=task_metadata_by_strategy,
         )
         if not tasks:
@@ -834,11 +842,6 @@ def _run_generate(args: argparse.Namespace) -> int:
         return 0
     print(f"Generation logs: {log_dir}")
     if not args.skip_materialize_cache and (args.materialize_cache or args.shard_count == 1):
-        cache_dir = (
-            Path(args.augmented_dataset)
-            if args.augmented_dataset
-            else _augmented_cache_dir(Path(args.cache_root), args.run_name, raw_model)
-        )
         ensure_augmented_dataset(
             processed_dataset_path=Path(args.processed_dataset),
             generation_log_dir=log_dir,

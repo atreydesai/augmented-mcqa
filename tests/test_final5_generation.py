@@ -388,6 +388,71 @@ def test_build_generation_dataset_augment_model_skips_rows_missing_prerequisites
     assert dataset[0].metadata["existing_model_from_scratch"] == ["B1", "C1", "D1"]
 
 
+def test_build_generation_dataset_augment_model_uses_materialized_cache_prerequisites(tmp_path):
+    processed_path = tmp_path / "processed"
+    cache_path = tmp_path / "augmented"
+    _processed_dataset(processed_path)
+
+    cache_path.mkdir(parents=True, exist_ok=True)
+    (cache_path / "augmented_manifest.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "augmented_store_v2",
+                "storage_kind": "setting_records",
+                "dataset_types": ["arc_challenge"],
+                "settings": [
+                    "human_from_scratch",
+                    "model_from_scratch",
+                    "augment_human",
+                    "augment_model",
+                    "augment_ablation",
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    Dataset.from_list(
+        [
+            {
+                "id": "arc-1",
+                "question_id": None,
+                "dataset_type": "arc_challenge",
+                "row_index": 0,
+                "sample_id": "arc_challenge:arc-1",
+                "question": "Q1",
+                "answer": "Gold 1",
+                "category": "science",
+                "options": ["Gold 1", "B1", "C1", "D1"],
+                "answer_index": 0,
+                "choices_human": ["H1", "H2", "H3"],
+                "setting": "model_from_scratch",
+                "generation_strategy": "model_from_scratch",
+                "status": "success",
+                "num_human": 0,
+                "num_model": 3,
+                "num_choices": 4,
+                "human_distractors": [],
+                "model_distractors": ["B1", "C1", "D1"],
+                "distractors": ["B1", "C1", "D1"],
+                "options_randomized": ["Gold 1", "B1", "C1", "D1"],
+                "correct_answer_letter": "A",
+                "traces": {},
+            }
+        ]
+    ).save_to_disk(str(cache_path / "arc_challenge" / "model_from_scratch"))
+
+    dataset = build_generation_dataset(
+        processed_path,
+        strategy="augment_model",
+        dataset_types=["arc_challenge"],
+        augmented_dataset_path=cache_path,
+    )
+
+    assert len(dataset) == 1
+    assert dataset[0].id == "arc_challenge:arc-1"
+    assert dataset[0].metadata["existing_model_from_scratch"] == ["B1", "C1", "D1"]
+
+
 def test_materialized_augmented_cache_preserves_rows_without_successful_generations(tmp_path):
     processed_path = tmp_path / "processed"
     log_dir = tmp_path / "logs"

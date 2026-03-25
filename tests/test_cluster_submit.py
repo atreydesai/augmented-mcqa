@@ -1,6 +1,7 @@
 import json
 import sys
 from subprocess import CompletedProcess
+from pathlib import Path
 
 from datasets import Dataset, DatasetDict
 from inspect_ai.dataset import MemoryDataset, Sample
@@ -42,6 +43,58 @@ def _submit_path(bundle_dir):
 
 def _read_manifest(bundle_dir):
     return json.loads(_manifest_path(bundle_dir).read_text(encoding="utf-8"))
+
+
+def _write_augmented_model_from_scratch_cache(root: Path, *, run_name: str, model: str, dataset_type: str, row_indexes: list[int]):
+    cache_dir = root / run_name / resolve_model_name(model, None).replace("/", "_")
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    (cache_dir / "augmented_manifest.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "augmented_store_v2",
+                "storage_kind": "setting_records",
+                "dataset_types": [dataset_type],
+                "settings": [
+                    "human_from_scratch",
+                    "model_from_scratch",
+                    "augment_human",
+                    "augment_model",
+                    "augment_ablation",
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    rows = []
+    for index in row_indexes:
+        rows.append(
+            {
+                "id": f"{dataset_type}-{index}",
+                "question_id": None,
+                "dataset_type": dataset_type,
+                "row_index": index,
+                "sample_id": f"{dataset_type}:{dataset_type}-{index}",
+                "question": f"{dataset_type} {index}",
+                "answer": "A",
+                "category": "",
+                "options": ["A", "B1", "B2", "B3"],
+                "answer_index": 0,
+                "choices_human": [],
+                "setting": "model_from_scratch",
+                "generation_strategy": "model_from_scratch",
+                "status": "success",
+                "num_human": 0,
+                "num_model": 3,
+                "num_choices": 4,
+                "human_distractors": [],
+                "model_distractors": ["B1", "B2", "B3"],
+                "distractors": ["B1", "B2", "B3"],
+                "options_randomized": ["A", "B1", "B2", "B3"],
+                "correct_answer_letter": "A",
+                "traces": {},
+            }
+        )
+    Dataset.from_list(rows).save_to_disk(str(cache_dir / dataset_type / "model_from_scratch"))
 
 
 def test_submit_generate_cluster_write_only_writes_strategy_slice_manifest(tmp_path):
@@ -762,6 +815,50 @@ def test_submit_generate_cluster_allows_augment_model_after_failed_prerequisite_
     assert task["slice_ref"] == augment_ref
     assert task["state_dependency_refs"] == [model_ref]
     assert task["submit_dependency_refs"] == []
+
+
+def test_submit_generate_cluster_allows_augment_model_from_materialized_cache_without_generation_state(tmp_path, monkeypatch):
+    dataset_path = tmp_path / "processed"
+    bundle_dir = tmp_path / "bundle"
+    augmented_root = tmp_path / "augmented"
+    _processed_dataset(dataset_path, counts={"arc_challenge": 2, "mmlu_pro": 0, "gpqa": 0})
+    _write_augmented_model_from_scratch_cache(
+        augmented_root,
+        run_name="cluster-gen",
+        model="Qwen/Qwen3-4B-Instruct-2507",
+        dataset_type="arc_challenge",
+        row_indexes=[0, 1],
+    )
+
+    monkeypatch.setattr(app_main, "_current_stage_state", lambda **kwargs: {"slices": []})
+    monkeypatch.setattr(app_main, "DEFAULT_AUGMENTED_CACHE_ROOT", augmented_root)
+
+    rc = app_main.main(
+        [
+            "submit-generate-cluster",
+            "--run-name",
+            "cluster-gen",
+            "--processed-dataset",
+            str(dataset_path),
+            "--dataset-types",
+            "arc_challenge",
+            "--models",
+            "Qwen/Qwen3-4B-Instruct-2507",
+            "--generation-strategies",
+            "augment_model",
+            "--questions-per-job",
+            "2",
+            "--output-dir",
+            str(bundle_dir),
+            "--write-only",
+        ]
+    )
+
+    assert rc == 0
+    manifest = _read_manifest(bundle_dir)
+    assert manifest["task_count"] == 1
+    task = manifest["tasks"][0]
+    assert task["strategy"] == "augment_model"
 
 
 def test_submit_evaluate_cluster_allows_failed_generation_prerequisite_when_rows_remain(tmp_path, monkeypatch):

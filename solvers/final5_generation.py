@@ -160,7 +160,7 @@ def final5_generation_solver(strategy: str):
                     result[f"{prior_setting}_options_randomized"] = randomized
                     result[f"{prior_setting}_correct_answer_letter"] = correct
                     traces[prior_setting] = {
-                        "prompt": "prerequisite: existing model_from_scratch distractors from prior generation logs",
+                        "prompt": "prerequisite: existing model_from_scratch distractors from prior generation outputs",
                         "output": "\n".join(prior_distractors),
                     }
                 else:

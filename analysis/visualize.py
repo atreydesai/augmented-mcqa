@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from datasets import load_from_disk
+from matplotlib.patches import Rectangle
 
 from utils.constants import DEFAULT_EVALUATION_MODELS, EVALUATED_STORE_MANIFEST, SETTING_SPECS
 
@@ -713,6 +714,12 @@ def _plot_distribution(
                 key=lambda value: (_display_eval_model(value), value),
             )
             label_order: list[str] = []
+            reference_labels: set[str] = set()
+            if reference_column is not None:
+                for setting in ordered_settings:
+                    label = f"{reference_label_prefix} / {SETTING_SHORT_LABELS.get(str(setting), str(setting))}"
+                    label_order.append(label)
+                    reference_labels.add(label)
             for setting in ordered_settings:
                 for eval_model in ordered_models:
                     match = dataset_df[
@@ -738,7 +745,6 @@ def _plot_distribution(
                     if setting_reference.empty:
                         continue
                     label = f"{reference_label_prefix} / {SETTING_SHORT_LABELS.get(str(setting), str(setting))}"
-                    label_order.append(label)
                     counts = setting_reference.groupby(reference_column).size()
                     for category, value in counts.items():
                         pivot.loc[label, str(category)] = float(value)
@@ -752,10 +758,13 @@ def _plot_distribution(
 
             bottom = np.zeros(len(pivot.index), dtype=float)
             color_map = plt.get_cmap("tab10")
+            x_positions = np.arange(len(pivot.index))
+            is_reference = np.array([label in reference_labels for label in pivot.index], dtype=bool)
             for idx, category in enumerate(pivot.columns):
                 values = pivot[category].to_numpy(dtype=float)
+                bar_bottom = bottom.copy()
                 bars = ax.bar(
-                    np.arange(len(pivot.index)),
+                    x_positions,
                     values,
                     bottom=bottom,
                     color=color_map(idx % 10),
@@ -765,9 +774,45 @@ def _plot_distribution(
                 if str(category) not in legend_labels:
                     legend_handles.append(bars[0])
                     legend_labels.append(str(category))
+                if reference_column is not None:
+                    for bar_idx, bar in enumerate(bars):
+                        if is_reference[bar_idx]:
+                            bar.set_hatch("//")
+                            bar.set_edgecolor("#333333")
+                            bar.set_linewidth(0.7)
+                if reference_column is not None and column == "evaluation_prediction":
+                    for bar_idx, value in enumerate(values):
+                        if value <= 0.0:
+                            continue
+                        ax.text(
+                            x_positions[bar_idx],
+                            bar_bottom[bar_idx] + (value / 2.0),
+                            f"{100.0 * value:.0f}%",
+                            ha="center",
+                            va="center",
+                            fontsize=5.5,
+                            color="#111111",
+                        )
+
+            if reference_column is not None:
+                for bar_idx, label in enumerate(pivot.index):
+                    if label not in reference_labels:
+                        continue
+                    ax.add_patch(
+                        Rectangle(
+                            (x_positions[bar_idx] - 0.4, 0.0),
+                            0.8,
+                            1.0,
+                            fill=False,
+                            edgecolor="#333333",
+                            linewidth=1.0,
+                            linestyle=":",
+                            zorder=5,
+                        )
+                    )
 
             ax.set_title(str(dataset))
-            ax.set_xticks(np.arange(len(pivot.index)))
+            ax.set_xticks(x_positions)
             ax.set_xticklabels(list(pivot.index), rotation=28, ha="right", fontsize=8)
             ax.set_ylim(0.0, 1.0)
             ax.set_ylabel("Rate")
