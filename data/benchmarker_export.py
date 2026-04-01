@@ -3,20 +3,14 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from data.final5_store import _load_setting_dataset, migrate_augmented_dataset_in_place
-from utils.constants import AUGMENTED_STORE_MANIFEST, CHOICE_LABELS, FINAL5_SETTINGS
+from data.store import _load_setting_dataset, _normalize_augmented_root
+from utils.constants import AUGMENTED_STORE_MANIFEST, CHOICE_LABELS, SETTING_NAMES
 
 
-@dataclass(frozen=True)
-class VariantSpec:
-    name: str
-
-
-VARIANT_SPECS = (VariantSpec(name="original"),) + tuple(VariantSpec(name=name) for name in FINAL5_SETTINGS)
+VARIANT_NAMES = ("original", *SETTING_NAMES)
 
 
 class ExportValidationError(ValueError):
@@ -56,14 +50,16 @@ def _answer_letter_from_index(index: Any, choice_count: int) -> str:
     return CHOICE_LABELS[idx]
 
 
-def _answer_index_from_letter(letter: Any, choice_count: int) -> int | None:
-    if not isinstance(letter, str) or not letter:
+def _normalize_answer_letter(letter: Any, choice_count: int) -> str | None:
+    if not isinstance(letter, str):
         return None
 
-    idx = CHOICE_LABELS.find(letter.upper())
-    if idx < 0 or idx >= choice_count:
+    normalized = letter.strip().upper()
+    if len(normalized) != 1:
         return None
-    return idx
+    if normalized not in CHOICE_LABELS[:choice_count]:
+        return None
+    return normalized
 
 
 def _row_identifier(row: dict[str, Any], row_index: int) -> str:
@@ -111,37 +107,37 @@ def _build_generated_row(row: dict[str, Any]) -> tuple[dict[str, Any] | None, st
     if choices is None:
         return None, "missing choices in options_randomized"
 
-    answer_letter = row.get("correct_answer_letter")
-    answer_index = _answer_index_from_letter(answer_letter, len(choices))
-    if answer_index is None:
+    answer_letter = _normalize_answer_letter(row.get("correct_answer_letter"), len(choices))
+    if answer_letter is None:
         return None, "invalid answer letter in correct_answer_letter"
 
-    return {"question": question, "choices": choices, "answer": CHOICE_LABELS[answer_index]}, None
+    return {"question": question, "choices": choices, "answer": answer_letter}, None
 
 
 def _export_variant(
     split_name: str,
     split_rows: Any,
-    spec: VariantSpec,
+    variant_name: str,
     output_path: Path,
 ) -> dict[str, Any]:
     written = 0
     skipped: list[dict[str, Any]] = []
 
     with output_path.open("w", encoding="utf-8") as handle:
-        for row_index, row in enumerate(split_rows):
-            if spec.name == "original":
+        for row_index, raw_row in enumerate(split_rows):
+            row = dict(raw_row)
+            if variant_name == "original":
                 try:
-                    exported = _build_original_row(split_name, dict(row))
+                    exported = _build_original_row(split_name, row)
                 except ExportValidationError as exc:
                     raise ExportValidationError(
-                        f"{split_name}/{spec.name} row {row_index} "
-                        f"({_row_identifier(dict(row), row_index)}): {exc}"
+                        f"{split_name}/{variant_name} row {row_index} "
+                        f"({_row_identifier(row, row_index)}): {exc}"
                     ) from exc
             else:
-                exported, reason = _build_generated_row(dict(row))
+                exported, reason = _build_generated_row(row)
                 if exported is None:
-                    skipped.append(_skip_metadata(dict(row), row_index, reason or "invalid row"))
+                    skipped.append(_skip_metadata(row, row_index, reason or "invalid row"))
                     continue
 
             handle.write(json.dumps(exported, ensure_ascii=False))
@@ -157,6 +153,7 @@ def _export_variant(
 
 
 def _load_manifest(path: Path) -> dict[str, Any]:
+    path = _normalize_augmented_root(path)
     manifest_path = path / AUGMENTED_STORE_MANIFEST
     if not manifest_path.exists():
         raise FileNotFoundError(f"Missing augmented manifest at {manifest_path}")
@@ -164,7 +161,7 @@ def _load_manifest(path: Path) -> dict[str, Any]:
 
 
 def _first_available_split_rows(input_path: Path, split_name: str):
-    for setting in FINAL5_SETTINGS:
+    for setting in SETTING_NAMES:
         rows = _load_setting_dataset(input_path, split_name, setting)
         if len(rows) > 0:
             return rows
@@ -173,11 +170,8 @@ def _first_available_split_rows(input_path: Path, split_name: str):
 
 def export_benchmarker_items(input_path: Path | str, output_root: Path | str) -> Path:
     """Export a setting-scoped augmented dataset into benchmarker JSONL files."""
-    input_path = Path(input_path)
+    input_path = _normalize_augmented_root(Path(input_path))
     output_root = Path(output_root)
-
-    if (input_path / "dataset_dict.json").exists() and not (input_path / AUGMENTED_STORE_MANIFEST).exists():
-        migrate_augmented_dataset_in_place(input_path)
 
     manifest = _load_manifest(input_path)
     output_dir = output_root / input_path.name
@@ -194,13 +188,13 @@ def export_benchmarker_items(input_path: Path | str, output_root: Path | str) ->
         split_dir.mkdir(parents=True, exist_ok=True)
         summary["files"][split_name] = {}
         original_rows = _first_available_split_rows(input_path, split_name)
-        for spec in VARIANT_SPECS:
-            rows = original_rows if spec.name == "original" else _load_setting_dataset(input_path, split_name, spec.name)
-            summary["files"][split_name][spec.name] = _export_variant(
+        for variant_name in VARIANT_NAMES:
+            rows = original_rows if variant_name == "original" else _load_setting_dataset(input_path, split_name, variant_name)
+            summary["files"][split_name][variant_name] = _export_variant(
                 split_name,
                 rows,
-                spec,
-                split_dir / f"{spec.name}.jsonl",
+                variant_name,
+                split_dir / f"{variant_name}.jsonl",
             )
 
     summary_path = output_dir / "export_summary.json"

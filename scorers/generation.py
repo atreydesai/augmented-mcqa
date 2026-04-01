@@ -3,8 +3,8 @@ from __future__ import annotations
 from inspect_ai.scorer import Score, mean, scorer, stderr
 
 
-@scorer(name="final5_generation", metrics=[mean(), stderr()])
-def final5_generation_scorer():
+@scorer(name="augmented_mcqa_generation", metrics=[mean(), stderr()])
+def generation_scorer():
     async def score(state, target):  # noqa: ANN001
         payload = dict(state.metadata.get("generation", {}) or {})
         success = payload.get("status") == "success"

@@ -1,4 +1,4 @@
-"""Benchmarker writing-flaw analysis for Inspect-native Final5 runs.
+"""Benchmarker writing-flaw analysis for Inspect-native Augmented MCQA runs.
 
 Example:
   uv run python analysis/benchmarker_analysis.py \
@@ -29,20 +29,20 @@ import pandas as pd
 import scipy.stats as stats
 import seaborn as sns
 
-from data.final5_store import iter_augmented_rows
+from data.store import _augmented_manifest_path, _normalize_augmented_root, iter_augmented_rows
 from utils.constants import (
     AUGMENTED_STORE_MANIFEST,
     CHOICE_LABELS,
     DEFAULT_AUGMENTED_CACHE_ROOT,
     DEFAULT_EVALUATION_LOG_ROOT,
-    FINAL5_SETTINGS,
+    SETTING_NAMES,
     SETTING_SPECS,
 )
 from utils.logs import iter_eval_logs
 from utils.modeling import resolve_model_name, safe_name
 
 
-CONFIG_ORDER = list(FINAL5_SETTINGS)
+CONFIG_ORDER = list(SETTING_NAMES)
 DATASET_ORDER = ["arc_challenge", "gpqa", "mmlu_pro"]
 DATASET_LABELS = {"arc_challenge": "ARC-Challenge", "gpqa": "GPQA", "mmlu_pro": "MMLU-Pro"}
 RULES_ORDER = [
@@ -271,33 +271,23 @@ def _resolve_augmented_dataset_path(
     generator_model: str | None,
     generator_run_name: str | None,
 ) -> Path:
-    def normalize(path: Path | str) -> Path:
-        candidate = Path(path)
-        if candidate.name in {AUGMENTED_STORE_MANIFEST, "dataset_dict.json"}:
-            return candidate.parent
-        return candidate
-
-    def is_cache_root(path: Path | str) -> bool:
-        candidate = normalize(path)
-        return (candidate / AUGMENTED_STORE_MANIFEST).exists() or (candidate / "dataset_dict.json").exists()
-
     if augmented_dataset:
-        return normalize(augmented_dataset)
+        return _normalize_augmented_root(augmented_dataset)
 
-    root = normalize(cache_root)
-    if is_cache_root(root):
+    root = _normalize_augmented_root(cache_root)
+    if _augmented_manifest_path(root).exists():
         return root
 
     if generator_model and generator_run_name:
         resolved_model = resolve_model_name(generator_model)
         candidate = root / safe_name(generator_run_name) / safe_name(resolved_model)
-        if is_cache_root(candidate):
+        if _augmented_manifest_path(_normalize_augmented_root(candidate)).exists():
             return candidate
 
     candidates = sorted(
         {
             path.parent
-            for pattern in (f"**/{AUGMENTED_STORE_MANIFEST}", "**/dataset_dict.json")
+            for pattern in (f"**/{AUGMENTED_STORE_MANIFEST}",)
             for path in root.glob(pattern)
         }
     )
@@ -338,9 +328,14 @@ def load_evaluation_samples(
             continue
 
         for sample in getattr(log, "samples", []):
-            if not sample.scores:
+            scores = dict(getattr(sample, "scores", None) or {})
+            if not scores:
                 continue
-            score = next(iter(sample.scores.values()))
+            score = scores.get("augmented_mcqa_eval")
+            if score is None and len(scores) == 1:
+                score = next(iter(scores.values()))
+            if score is None:
+                continue
             score_meta = dict(getattr(score, "metadata", {}) or {})
             dataset = str(score_meta.get("dataset_type", ""))
             setting = str(score_meta.get("setting") or log_meta.get("setting", ""))
@@ -431,6 +426,11 @@ def load_augmented_rows(path: Path) -> pd.DataFrame:
         raise ValueError(f"No augmented rows found at {path}")
     df["config"] = pd.Categorical(df["config"], categories=CONFIG_ORDER, ordered=True)
     return df
+
+
+def _config_fail_rate(data: pd.DataFrame, config: str) -> float:
+    row = data[data["config"] == config]
+    return float(row["fail_rate"].iloc[0]) if not row.empty else 0.0
 
 
 def build_per_question_dataframe(
@@ -712,9 +712,9 @@ def run_analysis(args: argparse.Namespace) -> int:
     for dataset in DATASET_ORDER:
         for rule in RULES_ORDER:
             sub = rule_fail[(rule_fail["dataset"] == dataset) & (rule_fail["rule"] == rule)]
-            hum = float(sub[sub["config"] == "human_from_scratch"]["fail_rate"].iloc[0]) if not sub[sub["config"] == "human_from_scratch"].empty else 0.0
-            mdl = float(sub[sub["config"] == "model_from_scratch"]["fail_rate"].iloc[0]) if not sub[sub["config"] == "model_from_scratch"].empty else 0.0
-            aug = float(sub[sub["config"] == "augment_human"]["fail_rate"].iloc[0]) if not sub[sub["config"] == "augment_human"].empty else 0.0
+            hum = _config_fail_rate(sub, "human_from_scratch")
+            mdl = _config_fail_rate(sub, "model_from_scratch")
+            aug = _config_fail_rate(sub, "augment_human")
             sensitivity_rows.append({"dataset": dataset, "rule": rule, "delta": mdl - hum})
             augmentation_rows.append({"dataset": dataset, "rule": rule, "delta": aug - hum})
     sensitivity_df = pd.DataFrame(sensitivity_rows)
@@ -1217,7 +1217,7 @@ def run_analysis(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Benchmarker writing-flaw analysis for Inspect-native Final5 runs")
+    parser = argparse.ArgumentParser(description="Benchmarker writing-flaw analysis for Inspect-native Augmented MCQA runs")
     parser.add_argument("--writing-flaw-jsonl", required=True)
     parser.add_argument("--results-root", default=str(DEFAULT_EVALUATION_LOG_ROOT))
     parser.add_argument("--augmented-dataset", default=None)

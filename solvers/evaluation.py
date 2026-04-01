@@ -48,7 +48,7 @@ def _evaluation_messages(*, model: str, prompt: str) -> tuple[list[object], list
 
 
 @solver
-def final5_evaluation_solver(mode: str):
+def evaluation_solver(mode: str):
     async def solve(state: TaskState, generate: Generate) -> TaskState:
         question = str(state.metadata.get("question", "") or state.input_text)
         choices = [getattr(choice, "value", choice) for choice in state.choices]

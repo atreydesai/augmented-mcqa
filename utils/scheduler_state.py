@@ -3,12 +3,10 @@ from __future__ import annotations
 import json
 import subprocess
 from collections import defaultdict
-from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from utils.constants import FINAL5_SETTINGS, MODE_CHOICES
 from utils.logs import iter_log_summaries
 from utils.modeling import safe_name
 from utils.recipes import get_setting_recipe, schedulable_generation_strategies
@@ -55,20 +53,19 @@ def resource_class_for_model(model: str) -> str:
     return "local" if str(model).startswith(("vllm/", "hf/")) else "api"
 
 
+def _joined_safe_parts(separator: str, *parts: object) -> str:
+    return separator.join(str(part) if isinstance(part, int) else safe_name(str(part)) for part in parts)
+
+
 def chunk_ranges(total_questions: int, questions_per_job: int | None) -> list[tuple[int, int, int]]:
     if total_questions <= 0:
         return []
     if questions_per_job is None or questions_per_job <= 0 or questions_per_job >= total_questions:
         return [(0, 0, total_questions)]
-    ranges: list[tuple[int, int, int]] = []
-    start = 0
-    chunk_index = 0
-    while start < total_questions:
-        end = min(total_questions, start + questions_per_job)
-        ranges.append((chunk_index, start, end))
-        start = end
-        chunk_index += 1
-    return ranges
+    return [
+        (chunk_index, start, min(total_questions, start + questions_per_job))
+        for chunk_index, start in enumerate(range(0, total_questions, questions_per_job))
+    ]
 
 
 def generation_slice_ref(
@@ -80,17 +77,7 @@ def generation_slice_ref(
     question_start: int,
     question_end: int,
 ) -> str:
-    return "|".join(
-        [
-            "generation",
-            safe_name(run_name),
-            safe_name(model),
-            safe_name(dataset_type),
-            safe_name(strategy),
-            str(question_start),
-            str(question_end),
-        ]
-    )
+    return _joined_safe_parts("|", "generation", run_name, model, dataset_type, strategy, question_start, question_end)
 
 
 def evaluation_slice_ref(
@@ -103,18 +90,7 @@ def evaluation_slice_ref(
     question_start: int,
     question_end: int,
 ) -> str:
-    return "|".join(
-        [
-            "evaluation",
-            safe_name(run_name),
-            safe_name(model),
-            safe_name(dataset_type),
-            safe_name(setting),
-            safe_name(mode),
-            str(question_start),
-            str(question_end),
-        ]
-    )
+    return _joined_safe_parts("|", "evaluation", run_name, model, dataset_type, setting, mode, question_start, question_end)
 
 
 def task_slug(
@@ -128,15 +104,48 @@ def task_slug(
     setting: str | None = None,
     mode: str | None = None,
 ) -> str:
-    parts = [stage, safe_name(model), safe_name(dataset_type)]
+    parts = [stage, model, dataset_type]
     if strategy:
-        parts.append(safe_name(strategy))
+        parts.append(strategy)
     if setting:
-        parts.append(safe_name(setting))
+        parts.append(setting)
     if mode:
-        parts.append(safe_name(mode))
-    parts.append(f"{question_start}-{max(question_start, question_end - 1)}")
-    return "__".join(parts)
+        parts.append(mode)
+    return _joined_safe_parts(
+        "__",
+        *parts,
+        f"{question_start}-{max(question_start, question_end - 1)}",
+    )
+
+
+def _attempt_status_from_summary(log_summary: dict[str, Any], *, kind: str) -> tuple[str, int]:
+    log_status = str(log_summary.get("status", "") or "")
+    scores = [float(value) for value in list(log_summary.get("score_values", []) or [])]
+    sample_statuses = [str(value or "") for value in list(log_summary.get("sample_statuses", []) or [])]
+    has_sample_errors = any(status and status != "success" for status in sample_statuses)
+    if log_status and log_status != "success":
+        return "failed", len(scores)
+    if kind == "generation":
+        status = "success" if scores and all(value >= 1.0 for value in scores) and not has_sample_errors else "failed"
+        return status, len(scores)
+    total_samples = int(log_summary.get("summary_count", 0) or 0)
+    status = "success" if total_samples > 0 and len(scores) == total_samples else "failed"
+    return status, len(scores)
+
+
+def _attempt_record(log_path: Path | str, log_summary: dict[str, Any], *, kind: str) -> dict[str, Any] | None:
+    eval_metadata = dict(log_summary.get("metadata", {}) or {})
+    slice_ref = str(eval_metadata.get("slice_ref", "") or "")
+    if not slice_ref:
+        return None
+    status, sample_count = _attempt_status_from_summary(log_summary, kind=kind)
+    return {
+        "slice_ref": slice_ref,
+        "status": status,
+        "completed_at": str(log_summary.get("completed_at", "") or ""),
+        "log_path": str(log_path),
+        "sample_count": sample_count,
+    }
 
 
 def load_scheduler_manifests(run_dir: Path | str) -> list[dict[str, Any]]:
@@ -151,48 +160,13 @@ def load_scheduler_manifests(run_dir: Path | str) -> list[dict[str, Any]]:
     return manifests
 
 
-def _log_completed_at(log: Any) -> str:
-    completed_at = str(getattr(log, "completed_at", "") or "")
-    if completed_at:
-        return completed_at
-    stats = getattr(log, "stats", None)
-    return str(getattr(stats, "completed_at", "") or "")
-
-
 def collect_slice_attempts(log_dir: Path | str, *, kind: str) -> dict[str, list[dict[str, Any]]]:
     attempts: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for log_path, log_summary in iter_log_summaries(log_dir, kind=kind):
-        eval_metadata = dict(log_summary.get("metadata", {}) or {})
-        slice_ref = str(eval_metadata.get("slice_ref", "") or "")
-        if not slice_ref:
+        record = _attempt_record(log_path, log_summary, kind=kind)
+        if record is None:
             continue
-        log_status = str(log_summary.get("status", "") or "")
-        scores = [
-            float(value)
-            for value in list(log_summary.get("score_values", []) or [])
-        ]
-        sample_statuses = [
-            str(value or "")
-            for value in list(log_summary.get("sample_statuses", []) or [])
-        ]
-        has_sample_errors = any(status and status != "success" for status in sample_statuses)
-        if log_status and log_status != "success":
-            status = "failed"
-        elif kind == "generation":
-            status = "success" if scores and all(value >= 1.0 for value in scores) and not has_sample_errors else "failed"
-        else:
-            total_samples = int(log_summary.get("summary_count", 0) or 0)
-            status = "success" if total_samples > 0 and len(scores) == total_samples else "failed"
-        completed_at = str(log_summary.get("completed_at", "") or "")
-        attempts[slice_ref].append(
-            {
-                "slice_ref": slice_ref,
-                "status": status,
-                "completed_at": completed_at,
-                "log_path": str(log_path),
-                "sample_count": len(scores),
-            }
-        )
+        attempts[str(record["slice_ref"])].append(record)
     for records in attempts.values():
         records.sort(key=lambda record: record.get("completed_at") or "")
     return dict(attempts)
@@ -229,29 +203,15 @@ def _live_slurm_job_ids(job_ids: list[str]) -> set[str]:
     return {line.strip() for line in result.stdout.splitlines() if line.strip()}
 
 
-def build_scheduler_state(
+def _scheduler_state_from_planned(
     *,
-    manifests: list[dict[str, Any]],
+    stage: str,
+    run_name: str,
+    submission_count: int,
+    planned: dict[str, list[dict[str, Any]]],
     attempts_by_slice: dict[str, list[dict[str, Any]]],
-    live_job_ids: set[str] | None = None,
+    live_job_ids: set[str],
 ) -> dict[str, Any]:
-    planned: dict[str, list[dict[str, Any]]] = defaultdict(list)
-    for manifest in manifests:
-        for task in manifest.get("tasks", []):
-            enriched = dict(task)
-            enriched["submission_id"] = manifest.get("submission_id")
-            enriched["submission_created_at"] = manifest.get("submission_created_at")
-            enriched["submission_path"] = manifest.get("_path")
-            planned[str(task["slice_ref"])].append(enriched)
-
-    if live_job_ids is None:
-        submitted_job_ids = [
-            str(task.get("submitted_job_id", "") or "")
-            for tasks in planned.values()
-            for task in tasks
-        ]
-        live_job_ids = _live_slurm_job_ids(submitted_job_ids)
-
     slices: list[dict[str, Any]] = []
     all_slice_refs = sorted(set(planned.keys()) | set(attempts_by_slice.keys()))
     for slice_ref in all_slice_refs:
@@ -279,8 +239,6 @@ def build_scheduler_state(
             status = STATUS_FAILED
         elif latest_success is not None:
             status = STATUS_CURRENT
-        elif plans:
-            status = STATUS_PLANNED
         else:
             status = STATUS_PLANNED
 
@@ -329,101 +287,74 @@ def build_scheduler_state(
                 break
 
     return {
-        "stage": manifests[-1].get("stage") if manifests else "",
-        "run_name": manifests[-1].get("run_name") if manifests else "",
+        "stage": stage,
+        "run_name": run_name,
         "generated_at": iso_now(),
-        "submission_count": len(manifests),
+        "submission_count": submission_count,
         "slice_count": len(slices),
         "slices": slices,
     }
 
 
-def render_scheduler_dashboard(state: dict[str, Any]) -> str:
-    slices = list(state.get("slices", []))
-    groups: dict[tuple[str, str], dict[str, Any]] = defaultdict(lambda: {"columns": set(), "rows": defaultdict(dict)})
-    for entry in slices:
-        group_key = (str(entry.get("model", "")), str(entry.get("dataset_type", "")))
-        if entry.get("stage") in {"generate", "generation"}:
-            column = str(entry.get("strategy", ""))
-        else:
-            column = f"{entry.get('setting', '')}:{entry.get('mode', '')}"
-        chunk_end = int(entry.get("question_end", 0)) - 1
-        row_label = f"{int(entry.get('question_start', 0))}-{max(int(entry.get('question_start', 0)), chunk_end)}"
-        groups[group_key]["columns"].add(column)
-        groups[group_key]["rows"][row_label][column] = entry
+def build_scheduler_state(
+    *,
+    manifests: list[dict[str, Any]],
+    attempts_by_slice: dict[str, list[dict[str, Any]]],
+    live_job_ids: set[str] | None = None,
+) -> dict[str, Any]:
+    planned: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for manifest in manifests:
+        for task in manifest.get("tasks", []):
+            enriched = dict(task)
+            enriched["submission_id"] = manifest.get("submission_id")
+            enriched["submission_created_at"] = manifest.get("submission_created_at")
+            enriched["submission_path"] = manifest.get("_path")
+            planned[str(task["slice_ref"])].append(enriched)
 
-    legend = {
-        STATUS_PLANNED: "#6e7781",
-        STATUS_PENDING: "#d73a49",
-        STATUS_CURRENT: "#2ea043",
-        STATUS_STALE: "#8250df",
-        STATUS_FAILED: "#fb8500",
-    }
-    html = [
-        "<!doctype html>",
-        "<html><head><meta charset='utf-8'>",
-        f"<title>Scheduler Status: {state.get('stage')} {state.get('run_name')}</title>",
-        "<style>",
-        "body{font-family:Menlo,Monaco,monospace;margin:24px;background:#f7f7f8;color:#111;}",
-        "h1,h2{margin:0 0 12px 0;}",
-        ".meta{margin-bottom:20px;color:#555;}",
-        ".legend{display:flex;gap:12px;margin:12px 0 24px 0;flex-wrap:wrap;}",
-        ".legend span{display:inline-flex;align-items:center;gap:8px;}",
-        ".swatch{width:14px;height:14px;border-radius:3px;display:inline-block;}",
-        ".group{margin:0 0 28px 0;padding:16px;border:1px solid #ddd;border-radius:10px;background:#fff;}",
-        "table{border-collapse:collapse;width:100%;}",
-        "th,td{border:1px solid #ddd;padding:8px;text-align:left;vertical-align:top;}",
-        "th{background:#fafafa;}",
-        ".cell{color:#fff;font-weight:700;border-radius:6px;padding:6px 8px;display:block;}",
-        ".small{font-size:12px;font-weight:400;opacity:.9;}",
-        "</style></head><body>",
-        f"<h1>{state.get('stage')} scheduler status</h1>",
-        f"<div class='meta'>run={state.get('run_name')} | submissions={state.get('submission_count')} | slices={state.get('slice_count')} | generated_at={state.get('generated_at')}</div>",
-        "<div class='legend'>",
-    ]
-    for status, color in legend.items():
-        html.append(f"<span><i class='swatch' style='background:{color}'></i>{status}</span>")
-    html.append("</div>")
+    if live_job_ids is None:
+        submitted_job_ids = [
+            str(task.get("submitted_job_id", "") or "")
+            for tasks in planned.values()
+            for task in tasks
+        ]
+        live_job_ids = _live_slurm_job_ids(submitted_job_ids)
 
-    for (model, dataset_type), payload in sorted(groups.items()):
-        columns = sorted(payload["columns"])
-        rows = payload["rows"]
-        html.append(f"<div class='group'><h2>{model} | {dataset_type}</h2><table>")
-        html.append("<tr><th>Questions</th>" + "".join(f"<th>{column}</th>" for column in columns) + "</tr>")
-        for row_label in sorted(rows.keys(), key=lambda value: int(value.split("-", 1)[0])):
-            html.append(f"<tr><th>{row_label}</th>")
-            row = rows[row_label]
-            for column in columns:
-                entry = row.get(column)
-                if entry is None:
-                    html.append("<td></td>")
-                    continue
-                color = legend[str(entry.get("status"))]
-                latest_attempt = entry.get("latest_attempt") or {}
-                html.append(
-                    "<td>"
-                    f"<span class='cell' style='background:{color}'>{entry.get('status')}"
-                    f"<span class='small'><br>{entry.get('task_slug')}</span>"
-                    f"<span class='small'><br>latest={latest_attempt.get('status', 'none')}</span>"
-                    "</span></td>"
-                )
-            html.append("</tr>")
-        html.append("</table></div>")
-
-    html.append("</body></html>")
-    return "\n".join(html)
+    return _scheduler_state_from_planned(
+        stage=str(manifests[-1].get("stage") or "") if manifests else "",
+        run_name=str(manifests[-1].get("run_name") or "") if manifests else "",
+        submission_count=len(manifests),
+        planned=planned,
+        attempts_by_slice=attempts_by_slice,
+        live_job_ids=live_job_ids,
+    )
 
 
-@dataclass(frozen=True)
-class RenderedStatePaths:
-    state_path: Path
-    dashboard_path: Path
+def build_scheduler_state_from_tasks(
+    *,
+    stage: str,
+    run_name: str,
+    planned_tasks: list[dict[str, Any]],
+    attempts_by_slice: dict[str, list[dict[str, Any]]],
+) -> dict[str, Any]:
+    planned: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for task in planned_tasks:
+        slice_ref = str(task.get("slice_ref", "") or "")
+        if not slice_ref:
+            continue
+        planned[slice_ref].append(dict(task))
+    return _scheduler_state_from_planned(
+        stage=stage,
+        run_name=run_name,
+        submission_count=0,
+        planned=planned,
+        attempts_by_slice=attempts_by_slice,
+        live_job_ids=set(),
+    )
 
 
 __all__ = [
     "EVALUATION_SETTING_DEPENDENCIES",
     "GENERATION_STRATEGY_DEPENDENCIES",
-    "RenderedStatePaths",
     "SCHEDULABLE_GENERATION_STRATEGIES",
     "STATUS_CURRENT",
     "STATUS_FAILED",
@@ -431,13 +362,13 @@ __all__ = [
     "STATUS_PLANNED",
     "STATUS_STALE",
     "build_scheduler_state",
+    "build_scheduler_state_from_tasks",
     "chunk_ranges",
     "collect_slice_attempts",
     "evaluation_slice_ref",
     "generation_slice_ref",
     "iso_now",
     "load_scheduler_manifests",
-    "render_scheduler_dashboard",
     "resource_class_for_model",
     "task_slug",
 ]

@@ -6,7 +6,7 @@ from pathlib import Path
 from datasets import Dataset, DatasetDict
 from inspect_ai.dataset import MemoryDataset, Sample
 
-import main as app_main
+import cli.app as app_main
 from utils.constants import DEFAULT_LOCAL_EVALUATION_MODELS, DEFAULT_LOCAL_GENERATION_MODELS
 from utils.modeling import resolve_model_name
 from utils.scheduler_state import evaluation_slice_ref, generation_slice_ref
@@ -112,7 +112,6 @@ def test_submit_generate_cluster_write_only_writes_strategy_slice_manifest(tmp_p
             "--output-dir",
             str(bundle_dir),
             "--write-only",
-            "--render-status",
         ]
     )
 
@@ -154,7 +153,6 @@ def test_submit_generate_cluster_write_only_writes_strategy_slice_manifest(tmp_p
     assert "${{" not in api_wrapper_text
     assert "${{" not in finalizer_wrapper_text
     assert (bundle_dir / "scheduler_state.json").exists()
-    assert (bundle_dir / "scheduler_status.html").exists()
     assert next(bundle_dir.glob("submissions/*/run_local_task.sbatch")).exists()
     assert next(bundle_dir.glob("submissions/*/run_api_task.sbatch")).exists()
     assert next(bundle_dir.glob("submissions/*/run_finalize_task.sbatch")).exists()
@@ -187,7 +185,7 @@ def test_submit_generate_cluster_write_only_can_be_replanned(tmp_path):
     assert len(list(bundle_dir.glob("submissions/*/manifest.json"))) == 2
 
 
-def test_submit_generate_cluster_noop_write_only_can_refresh_status_outputs(tmp_path, monkeypatch):
+def test_submit_generate_cluster_noop_write_only_can_refresh_scheduler_state(tmp_path, monkeypatch):
     dataset_path = tmp_path / "processed"
     bundle_dir = tmp_path / "bundle"
     _processed_dataset(dataset_path, counts={"arc_challenge": 1, "mmlu_pro": 0, "gpqa": 0})
@@ -208,7 +206,6 @@ def test_submit_generate_cluster_noop_write_only_can_refresh_status_outputs(tmp_
         "--output-dir",
         str(bundle_dir),
         "--write-only",
-        "--render-status",
     ]
     assert app_main.main(initial) == 0
 
@@ -246,12 +243,10 @@ def test_submit_generate_cluster_noop_write_only_can_refresh_status_outputs(tmp_
         "--output-dir",
         str(bundle_dir),
         "--write-only",
-        "--render-status",
     ]
     assert app_main.main(refresh) == 0
     assert len(list(bundle_dir.glob("submissions/*/manifest.json"))) == 1
     assert (bundle_dir / "scheduler_state.json").exists()
-    assert (bundle_dir / "scheduler_status.html").exists()
 
 
 def test_submit_generate_cluster_relative_output_dir_writes_absolute_runtime_paths(tmp_path, monkeypatch):
@@ -382,7 +377,7 @@ def test_submit_generate_cluster_questions_per_job_chunks_and_wires_dependencies
         for task_ref in (model_ref, augment_ref):
             argv = tasks[task_ref]["argv"]
             assert "--augmented-dataset" not in argv
-            assert "--skip-materialize-cache" in argv
+            assert "--skip-materialize-cache" not in argv
 
 
 def test_submit_generate_cluster_submit_script_uses_afterany_for_concurrency_caps(tmp_path):
@@ -979,14 +974,12 @@ def test_submit_evaluate_cluster_skips_failed_generation_chunk_when_no_rows_rema
             "--output-dir",
             str(bundle_dir),
             "--write-only",
-            "--render-status",
         ]
     )
 
     assert rc == 0
     assert list(bundle_dir.glob("submissions/*/manifest.json")) == []
     assert (bundle_dir / "scheduler_state.json").exists()
-    assert (bundle_dir / "scheduler_status.html").exists()
 
 
 def test_submit_evaluate_cluster_accepts_explicit_augmented_dataset_without_generation_state(tmp_path, monkeypatch):

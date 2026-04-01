@@ -3,8 +3,8 @@ from pathlib import Path
 
 from datasets import Dataset
 
-from analysis.visualize import SETTING_RANDOM_BASELINES, collect_final5_results, plot_final5_pairwise
-from data.final5_store import EVALUATED_RECORD_COLUMNS
+from analysis.visualize import SETTING_RANDOM_BASELINES, collect_results_summary, plot_pairwise_accuracy
+from data.store import EVALUATED_RECORD_COLUMNS
 from utils.constants import EVALUATED_STORE_MANIFEST, SETTING_SPECS
 from utils.modeling import safe_name
 
@@ -95,7 +95,7 @@ def _write_evaluated_group(
         Dataset.from_list(rows).save_to_disk(str(path))
 
 
-def test_collect_final5_results_reads_materialized_evaluated_datasets(tmp_path):
+def test_collect_results_summary_reads_materialized_evaluated_datasets(tmp_path):
     root = tmp_path / "evaluated"
     _write_evaluated_group(
         root,
@@ -138,7 +138,7 @@ def test_collect_final5_results_reads_materialized_evaluated_datasets(tmp_path):
         },
     )
 
-    df = collect_final5_results(root)
+    df = collect_results_summary(root)
     assert set(df["setting"]) == {"human_from_scratch", "model_from_scratch"}
     assert set(df["dataset"]) == {"arc_challenge", "gpqa"}
     assert set(df["status"]) == {"complete", "missing"}
@@ -155,7 +155,7 @@ def test_collect_final5_results_reads_materialized_evaluated_datasets(tmp_path):
     assert SETTING_RANDOM_BASELINES["human_from_scratch"] == 1.0 / SETTING_SPECS["human_from_scratch"]["num_choices"]
 
 
-def test_collect_final5_results_marks_partial_and_missing_rows(tmp_path):
+def test_collect_results_summary_marks_partial_and_missing_rows(tmp_path):
     root = tmp_path / "evaluated"
     _write_evaluated_group(
         root,
@@ -212,7 +212,7 @@ def test_collect_final5_results_marks_partial_and_missing_rows(tmp_path):
         },
     )
 
-    df = collect_final5_results(root)
+    df = collect_results_summary(root)
     rows = df[
         (df["setting"] == "human_from_scratch")
         & (df["mode"] == "full_question")
@@ -237,7 +237,7 @@ def test_collect_final5_results_marks_partial_and_missing_rows(tmp_path):
     assert int(missing_row["expected_total"]) == 2
 
 
-def test_plot_final5_pairwise_writes_pairwise_distribution_and_failure_outputs(tmp_path):
+def test_plot_pairwise_accuracy_writes_pairwise_distribution_and_failure_outputs(tmp_path):
     root = tmp_path / "evaluated"
     common_rows = {
         ("arc_challenge", "human_from_scratch", "full_question"): [
@@ -286,13 +286,13 @@ def test_plot_final5_pairwise_writes_pairwise_distribution_and_failure_outputs(t
     _write_evaluated_group(root, eval_model=EVAL_MODEL_A, rows_by_split=common_rows)
 
     output_dir = tmp_path / "plots"
-    outputs = plot_final5_pairwise(root, output_dir, include_tables=True)
+    outputs = plot_pairwise_accuracy(root, output_dir, include_tables=True)
     output_names = {path.name for path in outputs}
 
     assert any(name.startswith("pairwise_") and name.endswith(".png") for name in output_names)
-    assert "final5_results_summary.csv" in output_names
-    assert "final5_missing_or_partial.csv" in output_names
-    assert "final5_failed_questions.csv" in output_names
-    assert "final5_missing_questions.csv" in output_names
+    assert "augmented_mcqa_results_summary.csv" in output_names
+    assert "augmented_mcqa_missing_or_partial.csv" in output_names
+    assert "augmented_mcqa_failed_questions.csv" in output_names
+    assert "augmented_mcqa_missing_questions.csv" in output_names
     assert any(name.startswith("prediction_type_distribution_") and name.endswith(".png") for name in output_names)
     assert any(name.startswith("prediction_distribution_") and name.endswith(".png") for name in output_names)

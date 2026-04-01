@@ -4,7 +4,8 @@ from pathlib import Path
 from inspect_ai.model import ChatMessageUser, ModelOutput
 from inspect_ai.solver import TaskState
 
-from solvers.final5_evaluation import _evaluation_messages, _format_json_example, final5_evaluation_solver
+from scorers.evaluation import _prediction_type
+from solvers.evaluation import _evaluation_messages, _format_json_example, evaluation_solver
 from utils.parsing import extract_answer_letter_from_json
 
 
@@ -18,6 +19,11 @@ def test_extract_answer_letter_from_json_accepts_valid_json_outputs():
 def test_extract_answer_letter_from_json_rejects_stray_answer_schema_text():
     payload = 'Use {"answer":"A"} format. Final output was malformed: answer: B'
     assert extract_answer_letter_from_json(payload, "ABCD") == ""
+
+
+def test_prediction_type_treats_multi_character_predictions_as_invalid():
+    assert _prediction_type("AB", 0, [], []) == "?"
+    assert _prediction_type("A.", 0, [], []) == "?"
 
 
 def test_evaluation_json_example_lists_all_valid_letters():
@@ -86,7 +92,7 @@ def test_nemotron_evaluation_solver_injects_no_think_system_message():
         current_state.output.completion = '{"answer": "A"}'
         return current_state
 
-    solved = asyncio.run(final5_evaluation_solver("full_question")(state, fake_generate))
+    solved = asyncio.run(evaluation_solver("full_question")(state, fake_generate))
 
     assert solved.metadata["evaluation"]["prediction"] == "A"
     assert solved.metadata["evaluation"]["messages"][0] == {"role": "system", "content": "/no_think"}
@@ -114,7 +120,7 @@ def test_non_nemotron_evaluation_solver_preserves_single_user_prompt():
         current_state.output.completion = '{"answer": "A"}'
         return current_state
 
-    solved = asyncio.run(final5_evaluation_solver("full_question")(state, fake_generate))
+    solved = asyncio.run(evaluation_solver("full_question")(state, fake_generate))
 
     assert solved.metadata["evaluation"]["prediction"] == "A"
     assert solved.metadata["evaluation"]["messages"] == [

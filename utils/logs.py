@@ -42,7 +42,44 @@ def _coerce_score_value(score: Any) -> float | None:
         return None
 
 
-def _normalize_log_summary_from_archive(path: Path) -> dict[str, Any] | None:
+def _score_entries(scores: Any) -> list[Any]:
+    if not scores:
+        return []
+    return list(dict(scores).values())
+
+
+def _score_status(score: Any) -> str:
+    if isinstance(score, dict):
+        metadata = score.get("metadata", {})
+    else:
+        metadata = getattr(score, "metadata", None)
+    return str((metadata or {}).get("status", "") or "")
+
+
+def _sample_summary(scores: Any) -> tuple[float | None, str]:
+    entries = _score_entries(scores)
+    if not entries:
+        return None, ""
+
+    values: list[float] = []
+    statuses: list[str] = []
+    for score in entries:
+        status = _score_status(score)
+        if status:
+            statuses.append(status)
+        value = _coerce_score_value(score)
+        if value is not None:
+            values.append(value)
+
+    sample_value = min(values) if values else None
+    sample_status = ""
+    if statuses:
+        failures = [status for status in statuses if status != "success"]
+        sample_status = failures[0] if failures else "success"
+    return sample_value, sample_status
+
+
+def _read_archive_parts(path: Path) -> tuple[dict[str, Any], list[Any]] | None:
     try:
         with zipfile.ZipFile(path) as archive:
             header = json.loads(archive.read("header.json"))
@@ -50,26 +87,28 @@ def _normalize_log_summary_from_archive(path: Path) -> dict[str, Any] | None:
     except (OSError, zipfile.BadZipFile, KeyError, json.JSONDecodeError):
         return None
 
-    eval_payload = header.get("eval", {}) if isinstance(header, dict) else {}
+    return header if isinstance(header, dict) else {}, summaries if isinstance(summaries, list) else []
+
+
+def _normalize_log_summary_from_archive(path: Path) -> dict[str, Any] | None:
+    archive_parts = _read_archive_parts(path)
+    if archive_parts is None:
+        return None
+    header, summaries = archive_parts
+
+    eval_payload = header.get("eval", {})
     metadata = dict(eval_payload.get("metadata", {}) or {})
     stats = header.get("stats", {}) if isinstance(header, dict) else {}
     score_values: list[float] = []
     sample_statuses: list[str] = []
-    summary_count = 0
-    if isinstance(summaries, list):
-        summary_count = len(summaries)
-        for summary in summaries:
-            if not isinstance(summary, dict):
-                continue
-            scores = summary.get("scores", {})
-            if not isinstance(scores, dict) or not scores:
-                continue
-            score = next(iter(scores.values()))
-            score_metadata = score.get("metadata", {}) if isinstance(score, dict) else {}
-            sample_statuses.append(str(score_metadata.get("status", "") or ""))
-            value = _coerce_score_value(score)
-            if value is not None:
-                score_values.append(value)
+    for summary in summaries:
+        if not isinstance(summary, dict):
+            continue
+        value, status = _sample_summary(summary.get("scores", {}))
+        if status:
+            sample_statuses.append(status)
+        if value is not None:
+            score_values.append(value)
 
     return {
         "status": str(header.get("status", "") or ""),
@@ -77,19 +116,17 @@ def _normalize_log_summary_from_archive(path: Path) -> dict[str, Any] | None:
         "completed_at": str(stats.get("completed_at", "") or ""),
         "score_values": score_values,
         "sample_statuses": sample_statuses,
-        "summary_count": summary_count,
+        "summary_count": len(summaries),
     }
 
 
 def _read_log_payload_from_archive(path: Path) -> dict[str, Any] | None:
-    try:
-        with zipfile.ZipFile(path) as archive:
-            header = json.loads(archive.read("header.json"))
-            summaries = json.loads(archive.read("summaries.json"))
-    except (OSError, zipfile.BadZipFile, KeyError, json.JSONDecodeError):
+    archive_parts = _read_archive_parts(path)
+    if archive_parts is None:
         return None
+    header, summaries = archive_parts
 
-    eval_payload = header.get("eval", {}) if isinstance(header, dict) else {}
+    eval_payload = header.get("eval", {})
     metadata = dict(eval_payload.get("metadata", {}) or {})
     stats = header.get("stats", {}) if isinstance(header, dict) else {}
     return {
@@ -106,13 +143,9 @@ def _normalize_log_summary_from_object(log: Any) -> dict[str, Any]:
     sample_statuses: list[str] = []
     samples = list(getattr(log, "samples", []) or [])
     for sample in samples:
-        scores = getattr(sample, "scores", None)
-        if not scores:
-            continue
-        score = next(iter(scores.values()))
-        score_metadata = dict(getattr(score, "metadata", {}) or {})
-        sample_statuses.append(str(score_metadata.get("status", "") or ""))
-        value = _coerce_score_value(score)
+        value, status = _sample_summary(getattr(sample, "scores", None))
+        if status:
+            sample_statuses.append(status)
         if value is not None:
             score_values.append(value)
     stats = getattr(log, "stats", None)
@@ -133,7 +166,7 @@ def read_log_summary(path: Path | str) -> dict[str, Any] | None:
         return summary
     try:
         return _normalize_log_summary_from_object(read_log(log_path))
-    except Exception:
+    except (AttributeError, KeyError, OSError, TypeError, ValueError):
         return None
 
 
@@ -150,8 +183,7 @@ def _read_log_payload_from_object(log: Any) -> dict[str, Any]:
             "metadata": dict(getattr(sample, "metadata", {}) or {}),
             "scores": {},
         }
-        scores = getattr(sample, "scores", None) or {}
-        for name, score in dict(scores).items():
+        for name, score in dict(getattr(sample, "scores", None) or {}).items():
             sample_payload["scores"][str(name)] = {
                 "value": getattr(score, "value", None),
                 "answer": getattr(score, "answer", None),
@@ -174,7 +206,7 @@ def read_log_payload(path: Path | str) -> dict[str, Any] | None:
         return payload
     try:
         return _read_log_payload_from_object(read_log(log_path))
-    except Exception:
+    except (AttributeError, KeyError, OSError, TypeError, ValueError):
         return None
 
 

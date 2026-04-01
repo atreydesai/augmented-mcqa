@@ -1,63 +1,54 @@
-from datasets import Dataset, DatasetDict
+import json
 
-from data.final5_store import build_evaluation_dataset
+from datasets import Dataset
+
+from data.store import build_evaluation_dataset
+from utils.constants import AUGMENTED_STORE_MANIFEST, AUGMENTED_STORE_SCHEMA_VERSION
 
 
 def _augmented_dataset(path):
-    dataset = DatasetDict(
-        {
-            "arc_challenge": Dataset.from_list(
-                [
-                    {
-                        "id": "arc-1",
-                        "question": "Q1",
-                        "answer": "Gold",
-                        "category": "cat",
-                        "human_from_scratch": ["H1", "H2", "H3"],
-                        "human_from_scratch_options_randomized": ["Gold", "H1", "H2", "H3"],
-                        "human_from_scratch_correct_answer_letter": "A",
-                        "model_from_scratch": [],
-                        "model_from_scratch_options_randomized": [],
-                        "model_from_scratch_correct_answer_letter": "",
-                        "augment_human": [],
-                        "augment_human_options_randomized": [],
-                        "augment_human_correct_answer_letter": "",
-                        "augment_model": [],
-                        "augment_model_options_randomized": [],
-                        "augment_model_correct_answer_letter": "",
-                        "augment_ablation": [],
-                        "augment_ablation_options_randomized": [],
-                        "augment_ablation_correct_answer_letter": "",
-                    },
-                    {
-                        "id": "arc-2",
-                        "question": "Q2",
-                        "answer": "Gold2",
-                        "category": "cat",
-                        "choices_human": ["legacy-1", "legacy-2", "legacy-3"],
-                        "human_from_scratch": ["legacy-1", "legacy-2", "legacy-3"],
-                        "human_from_scratch_options_randomized": [],
-                        "human_from_scratch_correct_answer_letter": "",
-                        "model_from_scratch": [],
-                        "model_from_scratch_options_randomized": [],
-                        "model_from_scratch_correct_answer_letter": "",
-                        "augment_human": [],
-                        "augment_human_options_randomized": [],
-                        "augment_human_correct_answer_letter": "",
-                        "augment_model": [],
-                        "augment_model_options_randomized": [],
-                        "augment_model_correct_answer_letter": "",
-                        "augment_ablation": [],
-                        "augment_ablation_options_randomized": [],
-                        "augment_ablation_correct_answer_letter": "",
-                    },
-                ]
-            ),
-            "mmlu_pro": Dataset.from_list([]),
-            "gpqa": Dataset.from_list([]),
-        }
+    path.mkdir(parents=True, exist_ok=True)
+    (path / AUGMENTED_STORE_MANIFEST).write_text(
+        json.dumps(
+            {
+                "schema_version": AUGMENTED_STORE_SCHEMA_VERSION,
+                "storage_kind": "setting_records",
+                "dataset_types": ["arc_challenge", "mmlu_pro", "gpqa"],
+                "settings": ["human_from_scratch"],
+            }
+        ),
+        encoding="utf-8",
     )
-    dataset.save_to_disk(str(path))
+    Dataset.from_list(
+        [
+            {
+                "id": "arc-1",
+                "dataset_type": "arc_challenge",
+                "sample_id": "arc_challenge:arc-1",
+                "row_index": 0,
+                "question": "Q1",
+                "answer": "Gold",
+                "category": "cat",
+                "human_distractors": ["H1", "H2", "H3"],
+                "model_distractors": [],
+                "options_randomized": ["Gold", "H1", "H2", "H3"],
+                "correct_answer_letter": "A",
+            },
+            {
+                "id": "arc-2",
+                "dataset_type": "arc_challenge",
+                "sample_id": "arc_challenge:arc-2",
+                "row_index": 1,
+                "question": "Q2",
+                "answer": "Gold2",
+                "category": "cat",
+                "human_distractors": ["legacy-1", "legacy-2", "legacy-3"],
+                "model_distractors": [],
+                "options_randomized": [],
+                "correct_answer_letter": "",
+            },
+        ]
+    ).save_to_disk(str(path / "arc_challenge" / "human_from_scratch"))
 
 
 def test_build_evaluation_dataset_requires_new_randomized_columns_without_legacy_fallback(tmp_path):

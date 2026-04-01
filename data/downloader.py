@@ -3,10 +3,36 @@
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from datasets import load_dataset, get_dataset_config_names, DatasetDict, Dataset
+from datasets import DatasetDict, get_dataset_config_names, load_dataset, load_from_disk
 from tqdm import tqdm
 
 from config import DATASET_CONFIGS, HF_TOKEN, RAW_DATASETS_DIR
+
+
+def _safe_cache_name(value: str) -> str:
+    return value.replace("/", "_").replace("-", "_")
+
+
+def _default_dataset_save_path(dataset_name: str, config_name: Optional[str]) -> Path:
+    if dataset_name in DATASET_CONFIGS:
+        base_path = Path(DATASET_CONFIGS[dataset_name].local_path)
+    else:
+        base_path = RAW_DATASETS_DIR / _safe_cache_name(dataset_name)
+    return base_path / _safe_cache_name(config_name) if config_name else base_path
+
+
+def _filter_dataset_splits(dataset: DatasetDict, splits: Optional[List[str]]) -> DatasetDict:
+    if not splits:
+        return dataset
+
+    available_splits = list(dataset.keys())
+    filtered = {}
+    for split in splits:
+        if split in available_splits:
+            filtered[split] = dataset[split]
+        else:
+            print(f"  Warning: Split '{split}' not found. Available: {available_splits}")
+    return DatasetDict(filtered) if filtered else DatasetDict()
 
 
 def download_dataset(
@@ -34,48 +60,31 @@ def download_dataset(
         config = DATASET_CONFIGS[dataset_name]
         hf_path = config.hf_path
         if save_path is None:
-            save_path = config.local_path
+            save_path = _default_dataset_save_path(dataset_name, config_name)
         if splits is None:
             splits = config.splits
     else:
         hf_path = dataset_name
         if save_path is None:
-            # Create path from dataset name
-            safe_name = dataset_name.replace("/", "_").replace("-", "_")
-            save_path = RAW_DATASETS_DIR / safe_name
+            save_path = _default_dataset_save_path(dataset_name, config_name)
     
     save_path = Path(save_path)
     
     # Check if already downloaded
     if save_path.exists() and not force_download:
         print(f"Dataset already exists at {save_path}. Use force_download=True to re-download.")
-        from datasets import load_from_disk
-        return load_from_disk(str(save_path))
+        return _filter_dataset_splits(load_from_disk(str(save_path)), splits)
     
     print(f"Downloading dataset: {hf_path}")
     if config_name:
         print(f"  Config: {config_name}")
     
-    try:
-        if config_name:
-            dataset = load_dataset(hf_path, config_name)
-        else:
-            dataset = load_dataset(hf_path)
-    except Exception as e:
-        print(f"Error downloading dataset: {e}")
-        raise
+    if config_name:
+        dataset = load_dataset(hf_path, config_name)
+    else:
+        dataset = load_dataset(hf_path)
     
-    # Filter to requested splits if specified
-    if splits:
-        available_splits = list(dataset.keys())
-        filtered = {}
-        for split in splits:
-            if split in available_splits:
-                filtered[split] = dataset[split]
-            else:
-                print(f"  Warning: Split '{split}' not found. Available: {available_splits}")
-        if filtered:
-            dataset = DatasetDict(filtered)
+    dataset = _filter_dataset_splits(dataset, splits)
     
     # Save to disk
     save_path.parent.mkdir(parents=True, exist_ok=True)
@@ -113,7 +122,6 @@ def download_mmlu_all_configs(save_path: Optional[Path] = None) -> Dict[str, Dat
         
         if config_path.exists():
             print(f"  {config} already exists, skipping...")
-            from datasets import load_from_disk
             results[config] = load_from_disk(str(config_path))
             continue
             
@@ -149,7 +157,6 @@ def download_arc(save_path: Optional[Path] = None) -> Dict[str, DatasetDict]:
 
     if config_path.exists():
         print(f"  {config} already exists, loading from disk...")
-        from datasets import load_from_disk
         results[config_key] = load_from_disk(str(config_path))
         return results
 
@@ -168,15 +175,16 @@ def download_gpqa(
     split: str = "train",
     force_redownload: bool = False,
 ) -> DatasetDict:
-    """Download GPQA dataset (subset=gpqa_main, split=train)."""
+    """Download a GPQA subset/split into an argument-specific local cache path."""
     hf_path = "Idavidrein/gpqa"
     if save_path is None:
         save_path = RAW_DATASETS_DIR / "gpqa"
+        if subset != "gpqa_main" or split != "train":
+            save_path = save_path / _safe_cache_name(subset) / _safe_cache_name(split)
     save_path = Path(save_path)
     
     if save_path.exists() and not force_redownload:
         print(f"GPQA already exists at {save_path}")
-        from datasets import load_from_disk
         return load_from_disk(str(save_path))
     
     print(f"Downloading GPQA ({subset}/{split})...")

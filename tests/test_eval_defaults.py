@@ -1,8 +1,11 @@
 import os
+import sys
 from pathlib import Path
 from types import SimpleNamespace
 
-import main as app_main
+import pytest
+
+import cli.app as app_main
 from utils.constants import DEFAULT_LOCAL_EVALUATION_MODELS
 from utils.modeling import resolve_model_name, vllm_server_args
 
@@ -71,25 +74,56 @@ def test_main_parser_submit_evaluate_cluster_defaults_use_local_cluster_shape():
     assert args.augmented_dataset is None
 
 
+def test_main_parser_export_requires_explicit_input():
+    parser = app_main.build_parser()
+
+    with pytest.raises(SystemExit) as excinfo:
+        parser.parse_args(["export"])
+
+    assert excinfo.value.code == 2
+
+
+def test_main_parser_export_rejects_removed_generation_resolution_flags():
+    parser = app_main.build_parser()
+
+    with pytest.raises(SystemExit) as excinfo:
+        parser.parse_args(["export", "--generator-run-name", "gen"])
+
+    assert excinfo.value.code == 2
+
+
 def test_supported_main_subcommands_match_the_inspect_first_cli():
     parser = app_main.build_parser()
     subparser_action = next(action for action in parser._actions if getattr(action, "choices", None))
     assert set(subparser_action.choices) == {
         "prepare-data",
+        "materialize-store",
+        "collect-evaluated",
         "generate",
-        "generate-all",
         "evaluate",
-        "evaluate-all",
         "analyze",
-        "signature-table",
         "export",
         "submit-generate-cluster",
         "submit-evaluate-cluster",
-        "materialize-generation-cache",
-        "diagnose-failures",
-        "diagnose-trace",
-        "smoke-generate",
-        "smoke-evaluate",
+    }
+
+
+def test_materialize_store_remains_callable_via_main_parser(monkeypatch):
+    captured = {}
+
+    def fake_run_materialize_store(args):
+        captured["run_name"] = args.run_name
+        captured["model"] = args.model
+        return 0
+
+    monkeypatch.setattr(app_main, "_run_materialize_store", fake_run_materialize_store)
+
+    rc = app_main.main(["materialize-store", "--run-name", "gen", "--model", "Qwen/Qwen3-4B-Instruct-2507"])
+
+    assert rc == 0
+    assert captured == {
+        "run_name": "gen",
+        "model": "Qwen/Qwen3-4B-Instruct-2507",
     }
 
 
@@ -141,7 +175,6 @@ def test_prepare_data_step_all_implies_download_all(monkeypatch):
     assert captured["download_all"] is True
     assert captured["dataset"] is None
 
-
 def test_model_alias_resolution_covers_api_and_local_defaults():
     assert resolve_model_name("gpt-5.2-2025-12-11") == "openai/gpt-5.2-2025-12-11"
     assert resolve_model_name("Qwen/Qwen3.5-397B-A17B") == "together/Qwen/Qwen3.5-397B-A17B"
@@ -173,7 +206,7 @@ def test_inspect_eval_uses_current_venv_bin_on_path(monkeypatch, tmp_path):
         return []
 
     monkeypatch.setattr("inspect_ai.eval", fake_eval)
-    monkeypatch.setattr(app_main.sys, "executable", str(fake_python))
+    monkeypatch.setattr(sys, "executable", str(fake_python))
 
     args = SimpleNamespace(
         model_base_url=None,
@@ -185,7 +218,7 @@ def test_inspect_eval_uses_current_venv_bin_on_path(monkeypatch, tmp_path):
         stop_seqs=None,
     )
 
-    app_main._inspect_eval([], model="Qwen/Qwen3-4B-Instruct-2507", log_dir=tmp_path / "logs", args=args)
+    app_main.inspect_eval([], model="Qwen/Qwen3-4B-Instruct-2507", log_dir=tmp_path / "logs", args=args)
 
     current_bin = str(fake_python.parent)
     assert captured["path"].split(os.pathsep)[0] == current_bin

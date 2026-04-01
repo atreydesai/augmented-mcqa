@@ -9,7 +9,7 @@ def _prediction_type(
     human_indices: list[int],
     model_indices: list[int],
 ) -> str:
-    if not prediction:
+    if not prediction or len(prediction) != 1:
         return "?"
     predicted_index = ord(prediction) - ord("A")
     if predicted_index == gold_index:
@@ -21,12 +21,13 @@ def _prediction_type(
     return "?"
 
 
-@scorer(name="final5_eval", metrics=[mean(), stderr()])
-def final5_evaluation_scorer():
+@scorer(name="augmented_mcqa_eval", metrics=[mean(), stderr()])
+def evaluation_scorer():
     async def score(state, target):  # noqa: ANN001
         target_letter = str(target.text or "").strip().upper()
         evaluation = dict(state.metadata.get("evaluation", {}) or {})
         prediction = str(evaluation.get("prediction", "") or "").strip().upper()
+        raw_output = str(evaluation.get("raw_output", "") or "")
         gold_index = int(state.metadata.get("gold_index", -1))
         human_indices = [int(i) for i in state.metadata.get("human_option_indices", [])]
         model_indices = [int(i) for i in state.metadata.get("model_option_indices", [])]
@@ -47,12 +48,12 @@ def final5_evaluation_scorer():
             "human_option_indices": human_indices,
             "model_option_indices": model_indices,
             "prompt": evaluation.get("prompt", ""),
-            "raw_output": evaluation.get("raw_output", ""),
+            "raw_output": raw_output,
         }
         return Score(
             value=1.0 if is_correct else 0.0,
             answer=prediction or None,
-            explanation=evaluation.get("raw_output", ""),
+            explanation=raw_output,
             metadata=metadata,
         )
 

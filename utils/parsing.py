@@ -20,11 +20,8 @@ def strip_code_fences(text: str) -> str:
 def _extract_last_json_object(blob: str) -> dict[str, object] | None:
     decoder = json.JSONDecoder()
     for start in reversed([match.start() for match in re.finditer(r"\{", blob)]):
-        candidate = blob[start:].lstrip()
-        if not candidate.startswith("{"):
-            continue
         try:
-            parsed, _end = decoder.raw_decode(candidate)
+            parsed, _end = decoder.raw_decode(blob, idx=start)
         except json.JSONDecodeError:
             continue
         if isinstance(parsed, dict):
@@ -55,10 +52,7 @@ def normalize_text(text: str) -> str:
 
 
 def format_choice_lines(options: Iterable[str]) -> str:
-    lines = []
-    for idx, option in enumerate(options):
-        lines.append(f"{chr(ord('A') + idx)}. {str(option).strip()}")
-    return "\n".join(lines)
+    return "\n".join(f"{chr(ord('A') + idx)}. {str(option).strip()}" for idx, option in enumerate(options))
 
 
 def parse_distractors(
@@ -67,7 +61,11 @@ def parse_distractors(
     *,
     forbidden: Iterable[str] | None = None,
 ) -> list[str]:
-    forbidden_normalized = {normalize_text(item).casefold() for item in forbidden or [] if normalize_text(item)}
+    forbidden_normalized = set()
+    for item in forbidden or []:
+        normalized = normalize_text(item)
+        if normalized:
+            forbidden_normalized.add(normalized.casefold())
     payload = _extract_json_object(text)
 
     unexpected = sorted(set(payload.keys()) - {"distractors"})
@@ -98,15 +96,6 @@ def parse_distractors(
         seen_normalized.add(normalized)
         distractors.append(text_value)
     return distractors
-
-
-def parse_labeled_distractors(
-    text: str,
-    labels: list[str],
-    *,
-    forbidden: Iterable[str] | None = None,
-) -> list[str]:
-    return parse_distractors(text, len(labels), forbidden=forbidden)
 
 
 def extract_answer_letter(text: str, valid_letters: str) -> str:
@@ -157,13 +146,12 @@ def _extract_answer_letter_from_answer_field(text: str, valid_letters: str) -> s
 
 
 def extract_answer_letter_from_json(text: str, valid_letters: str) -> str:
-    payload_text = strip_code_fences(text)
-    if not payload_text.lstrip().startswith("{"):
+    if not strip_code_fences(text).lstrip().startswith("{"):
         return ""
     try:
-        payload = _extract_json_object(payload_text)
+        payload = _extract_json_object(text)
     except LabeledParseError:
-        return _extract_answer_letter_from_answer_field(payload_text, valid_letters)
+        return _extract_answer_letter_from_answer_field(text, valid_letters)
 
     answer = normalize_text(payload.get("answer", ""))
     if answer:

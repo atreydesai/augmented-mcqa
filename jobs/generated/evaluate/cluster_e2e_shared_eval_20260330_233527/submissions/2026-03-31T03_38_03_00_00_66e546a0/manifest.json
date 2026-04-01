@@ -1,0 +1,140 @@
+{
+  "stage": "evaluate",
+  "run_name": "cluster_e2e_shared_eval_20260330_233527",
+  "submission_id": "2026-03-31T03_38_03_00_00_66e546a0",
+  "submission_created_at": "2026-03-31T03:38:03+00:00",
+  "task_count": 1,
+  "resources": {
+    "partition": "clip",
+    "account": "clip",
+    "qos": "high",
+    "time_limit": "12:00:00",
+    "memory": "32G",
+    "cpus_per_task": 4,
+    "gpu_type": "rtxa6000"
+  },
+  "concurrency_caps": {
+    "local": null,
+    "api": null
+  },
+  "finalizers": [
+    {
+      "finalizer_index": 0,
+      "kind": "materialize_collected_evaluation",
+      "model": "vllm/Qwen/Qwen3-4B-Instruct-2507",
+      "dependency_refs": [
+        "evaluation|cluster_e2e_shared_eval_20260330_233527|vllm_Qwen_Qwen3-4B-Instruct-2507|arc_challenge|model_from_scratch|choices_only|0|1"
+      ],
+      "argv": [
+        "collect-evaluated",
+        "--run-name",
+        "cluster_e2e_shared_eval_20260330_233527",
+        "--generator-run-name",
+        "cluster_e2e_shared_gen_20260330_233527",
+        "--generator-model",
+        "openai/gpt-5.2-2025-12-11",
+        "--model",
+        "vllm/Qwen/Qwen3-4B-Instruct-2507",
+        "--evaluation-log-root",
+        "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/cluster_e2e_shared_eval_20260330_233527/cluster_e2e_shared_gen_20260330_233527/openai_gpt-5.2-2025-12-11/vllm_Qwen_Qwen3-4B-Instruct-2507",
+        "--augmented-dataset",
+        "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/augmented/cluster_e2e_shared_gen_20260330_233527/openai_gpt-5.2-2025-12-11",
+        "--collected-root",
+        "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/collected",
+        "--dataset-types",
+        "arc_challenge",
+        "--settings",
+        "model_from_scratch",
+        "--modes",
+        "choices_only",
+        "--scheduler-output-dir",
+        "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/cluster_e2e_shared_eval_20260330_233527"
+      ],
+      "resources": {
+        "partition": "clip",
+        "account": "clip",
+        "qos": "high",
+        "time_limit": "00:30:00",
+        "memory": "8G",
+        "cpus_per_task": 2
+      },
+      "task_stdout": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/cluster_e2e_shared_eval_20260330_233527/collect__vllm_Qwen_Qwen3-4B-Instruct-2507__%j.out",
+      "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/cluster_e2e_shared_eval_20260330_233527/collect__vllm_Qwen_Qwen3-4B-Instruct-2507__%j.err",
+      "job_name": "augmented-mcqa-evaluate-collect__vllm_Qwen_Qwen3-4B-Instruct-2507"
+    }
+  ],
+  "tasks": [
+    {
+      "task_index": 0,
+      "stage": "evaluate",
+      "run_name": "cluster_e2e_shared_eval_20260330_233527",
+      "submission_id": "2026-03-31T03_38_03_00_00_66e546a0",
+      "submission_created_at": "2026-03-31T03:38:03+00:00",
+      "model": "vllm/Qwen/Qwen3-4B-Instruct-2507",
+      "model_slug": "vllm_Qwen_Qwen3-4B-Instruct-2507",
+      "dataset_type": "arc_challenge",
+      "dataset_slug": "arc_challenge",
+      "resource_class": "local",
+      "slice_ref": "evaluation|cluster_e2e_shared_eval_20260330_233527|vllm_Qwen_Qwen3-4B-Instruct-2507|arc_challenge|model_from_scratch|choices_only|0|1",
+      "task_slug": "evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__arc_challenge__model_from_scratch__choices_only__0-0",
+      "question_start": 0,
+      "question_end": 1,
+      "chunk_index": 0,
+      "strategy": null,
+      "setting": "model_from_scratch",
+      "mode": "choices_only",
+      "force": false,
+      "generation_run_name": "cluster_e2e_shared_gen_20260330_233527",
+      "generation_model": "openai/gpt-5.2-2025-12-11",
+      "collected_root": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/collected",
+      "state_dependency_refs": [
+        "generation|cluster_e2e_shared_gen_20260330_233527|openai_gpt-5.2-2025-12-11|arc_challenge|model_from_scratch|0|1"
+      ],
+      "submit_dependency_refs": [],
+      "argv": [
+        "evaluate",
+        "--model",
+        "vllm/Qwen/Qwen3-4B-Instruct-2507",
+        "--run-name",
+        "cluster_e2e_shared_eval_20260330_233527",
+        "--generator-run-name",
+        "cluster_e2e_shared_gen_20260330_233527",
+        "--generator-model",
+        "openai/gpt-5.2-2025-12-11",
+        "--processed-dataset",
+        "datasets/processed/unified_processed_v3",
+        "--dataset-types",
+        "arc_challenge",
+        "--settings",
+        "model_from_scratch",
+        "--modes",
+        "choices_only",
+        "--question-start",
+        "0",
+        "--limit",
+        "1",
+        "--max-tokens",
+        "256",
+        "--reasoning-effort",
+        "medium",
+        "--retry-on-error",
+        "2"
+      ],
+      "resources": {
+        "partition": "clip",
+        "account": "clip",
+        "qos": "high",
+        "time_limit": "12:00:00",
+        "memory": "32G",
+        "cpus_per_task": 4,
+        "gpu_type": "rtxa6000"
+      },
+      "task_log_dir": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/cluster_e2e_shared_eval_20260330_233527",
+      "task_stdout": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/cluster_e2e_shared_eval_20260330_233527/evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__arc_challenge__model_from_scratch__choices_only__0-0__%j.out",
+      "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/cluster_e2e_shared_eval_20260330_233527/evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__arc_challenge__model_from_scratch__choices_only__0-0__%j.err",
+      "job_name": "augmented-mcqa-evaluate-evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__arc_challenge__model_from_scratch__choices_only__0-0",
+      "submitted_at": "2026-03-31T03:38:03+00:00",
+      "submitted_job_id": "6487450"
+    }
+  ]
+}

@@ -1,8 +1,10 @@
 import json
 
-from datasets import Dataset, DatasetDict
+import pytest
+from datasets import Dataset, DatasetDict, load_from_disk
 
 from data.benchmarker_export import export_benchmarker_items
+from utils.constants import AUGMENTED_STORE_MANIFEST, AUGMENTED_STORE_SCHEMA_VERSION, SETTING_NAMES
 
 
 def _choices(prefix: str, count: int) -> list[str]:
@@ -10,114 +12,86 @@ def _choices(prefix: str, count: int) -> list[str]:
 
 
 def _build_dataset(path):
-    arc = Dataset.from_list(
-        [
+    path.mkdir(parents=True, exist_ok=True)
+    (path / AUGMENTED_STORE_MANIFEST).write_text(
+        json.dumps(
             {
-                "id": "arc-1",
-                "question": "ARC question 1",
-                "options": ["arc a", "arc b", "arc c", "arc d"],
-                "answer_index": 2,
-                "answer_letter": "3",
-                "human_from_scratch_options_randomized": ["h1", "h2", "h3", "h4"],
-                "human_from_scratch_correct_answer_letter": "B",
-                "model_from_scratch_options_randomized": ["m1", "m2", "m3", "m4"],
-                "model_from_scratch_correct_answer_letter": "D",
-                "augment_human_options_randomized": _choices("ah", 10),
-                "augment_human_correct_answer_letter": "E",
-                "augment_model_options_randomized": _choices("am", 10),
-                "augment_model_correct_answer_letter": "F",
-                "augment_ablation_options_randomized": _choices("aa", 10),
-                "augment_ablation_correct_answer_letter": "G",
+                "schema_version": AUGMENTED_STORE_SCHEMA_VERSION,
+                "storage_kind": "setting_records",
+                "dataset_types": ["arc_challenge", "mmlu_pro", "gpqa"],
+                "settings": list(SETTING_NAMES),
             }
-        ]
+        ),
+        encoding="utf-8",
     )
 
-    mmlu = Dataset.from_list(
-        [
-            {
-                "question_id": 101,
-                "question": "MMLU question 1",
-                "options": _choices("mmlu_opt", 10),
-                "answer": "correct text should not be used",
-                "answer_index": 5,
-                "human_from_scratch_options_randomized": ["mh1", "mh2", "mh3", "mh4"],
-                "human_from_scratch_correct_answer_letter": "A",
-                "model_from_scratch_options_randomized": ["mm1", "mm2", "mm3", "mm4"],
-                "model_from_scratch_correct_answer_letter": "C",
-                "augment_human_options_randomized": _choices("mah", 10),
-                "augment_human_correct_answer_letter": "B",
-                "augment_model_options_randomized": _choices("mam", 10),
-                "augment_model_correct_answer_letter": "H",
-                "augment_ablation_options_randomized": _choices("maa", 10),
-                "augment_ablation_correct_answer_letter": "J",
-            },
-            {
-                "question_id": 102,
-                "question": "MMLU question 2",
-                "options": _choices("mmlu2_opt", 10),
-                "answer": "another text answer",
-                "answer_index": 1,
-                "human_from_scratch_options_randomized": [],
-                "human_from_scratch_correct_answer_letter": "",
-                "model_from_scratch_options_randomized": [],
-                "model_from_scratch_correct_answer_letter": "",
-                "augment_human_options_randomized": [],
-                "augment_human_correct_answer_letter": "",
-                "augment_model_options_randomized": [],
-                "augment_model_correct_answer_letter": "",
-                "augment_ablation_options_randomized": [],
-                "augment_ablation_correct_answer_letter": "",
-            },
-        ]
-    )
+    arc_row = {
+        "id": "arc-1",
+        "sample_id": "arc_challenge:arc-1",
+        "question": "ARC question 1",
+        "options": ["arc a", "arc b", "arc c", "arc d"],
+        "answer_index": 2,
+        "answer": "arc c",
+    }
+    mmlu_row = {
+        "question_id": 101,
+        "sample_id": "mmlu_pro:101",
+        "question": "MMLU question 1",
+        "options": _choices("mmlu_opt", 10),
+        "answer": "correct text should not be used",
+        "answer_index": 5,
+    }
+    gpqa_row = {
+        "id": "gpqa-1",
+        "sample_id": "gpqa:gpqa-1",
+        "question": "GPQA question 1",
+        "options": [],
+        "answer": "gpqa gold",
+        "choices_human": ["gpqa d1", "gpqa d2", "gpqa d3"],
+    }
 
-    gpqa = Dataset.from_list(
-        [
-            {
-                "id": "gpqa-1",
-                "question": "GPQA question 1",
-                "options": [],
-                "answer": "gpqa gold",
-                "choices_human": ["gpqa d1", "gpqa d2", "gpqa d3"],
-                "human_from_scratch_options_randomized": ["gh1", "gh2", "gh3", "gh4"],
-                "human_from_scratch_correct_answer_letter": "D",
-                "model_from_scratch_options_randomized": ["gm1", "gm2", "gm3", "gm4"],
-                "model_from_scratch_correct_answer_letter": "B",
-                "augment_human_options_randomized": _choices("gah", 10),
-                "augment_human_correct_answer_letter": "A",
-                "augment_model_options_randomized": _choices("gam", 10),
-                "augment_model_correct_answer_letter": "C",
-                "augment_ablation_options_randomized": _choices("gaa", 10),
-                "augment_ablation_correct_answer_letter": "I",
-            },
-            {
-                "id": "gpqa-2",
-                "question": "GPQA question 2",
-                "options": [],
-                "answer": "gpqa gold 2",
-                "choices_human": ["gpqa2 d1", "gpqa2 d2", "gpqa2 d3"],
-                "human_from_scratch_options_randomized": [],
-                "human_from_scratch_correct_answer_letter": "",
-                "model_from_scratch_options_randomized": [],
-                "model_from_scratch_correct_answer_letter": "",
-                "augment_human_options_randomized": [],
-                "augment_human_correct_answer_letter": "",
-                "augment_model_options_randomized": [],
-                "augment_model_correct_answer_letter": "",
-                "augment_ablation_options_randomized": [],
-                "augment_ablation_correct_answer_letter": "",
-            },
-        ]
-    )
+    setting_overrides = {
+        "human_from_scratch": {
+            "arc_challenge": (["h1", "h2", "h3", "h4"], "B"),
+            "mmlu_pro": (["mh1", "mh2", "mh3", "mh4"], "A"),
+            "gpqa": (["gh1", "gh2", "gh3", "gh4"], "D"),
+        },
+        "model_from_scratch": {
+            "arc_challenge": (["m1", "m2", "m3", "m4"], "D"),
+            "mmlu_pro": (["mm1", "mm2", "mm3", "mm4"], "C"),
+            "gpqa": (["gm1", "gm2", "gm3", "gm4"], "B"),
+        },
+        "augment_human": {
+            "arc_challenge": (_choices("ah", 10), "E"),
+            "mmlu_pro": (_choices("mah", 10), "B"),
+            "gpqa": (_choices("gah", 10), "A"),
+        },
+        "augment_model": {
+            "arc_challenge": (_choices("am", 10), "F"),
+            "mmlu_pro": (_choices("mam", 10), "H"),
+            "gpqa": (_choices("gam", 10), "C"),
+        },
+        "augment_ablation": {
+            "arc_challenge": (_choices("aa", 10), "G"),
+            "mmlu_pro": (_choices("maa", 10), "J"),
+            "gpqa": (_choices("gaa", 10), "I"),
+        },
+    }
 
-    dataset = DatasetDict(
-        {
-            "arc_challenge": arc,
-            "mmlu_pro": mmlu,
-            "gpqa": gpqa,
-        }
-    )
-    dataset.save_to_disk(str(path))
+    for setting in SETTING_NAMES:
+        arc_choices, arc_answer = setting_overrides[setting]["arc_challenge"]
+        mmlu_choices, mmlu_answer = setting_overrides[setting]["mmlu_pro"]
+        gpqa_choices, gpqa_answer = setting_overrides[setting]["gpqa"]
+
+        Dataset.from_list(
+            [{**arc_row, "options_randomized": arc_choices, "correct_answer_letter": arc_answer}]
+        ).save_to_disk(str(path / "arc_challenge" / setting))
+        Dataset.from_list(
+            [{**mmlu_row, "options_randomized": mmlu_choices, "correct_answer_letter": mmlu_answer}]
+        ).save_to_disk(str(path / "mmlu_pro" / setting))
+        Dataset.from_list(
+            [{**gpqa_row, "options_randomized": gpqa_choices, "correct_answer_letter": gpqa_answer}]
+        ).save_to_disk(str(path / "gpqa" / setting))
 
 
 def _read_jsonl(path):
@@ -129,7 +103,7 @@ def _read_jsonl(path):
 
 
 def test_export_benchmarker_items_end_to_end(tmp_path):
-    dataset_path = tmp_path / "final5_fixture"
+    dataset_path = tmp_path / "augmented_fixture"
     output_root = tmp_path / "benchmarker_items"
     _build_dataset(dataset_path)
 
@@ -153,8 +127,31 @@ def test_export_benchmarker_items_end_to_end(tmp_path):
         assert {path.name for path in split_dir.iterdir()} == expected_files
 
 
+def test_export_benchmarker_items_rejects_manifest_path(tmp_path):
+    dataset_path = tmp_path / "augmented_fixture"
+    output_root = tmp_path / "benchmarker_items"
+    _build_dataset(dataset_path)
+
+    with pytest.raises(ValueError, match="root directory, not a manifest file"):
+        export_benchmarker_items(dataset_path / AUGMENTED_STORE_MANIFEST, output_root)
+
+
+def test_export_benchmarker_items_rejects_unsupported_cache_layout(tmp_path):
+    dataset_path = tmp_path / "legacy_fixture"
+    DatasetDict(
+        {
+            "arc_challenge": Dataset.from_list([{"sample_id": "arc_challenge:arc-1"}]),
+            "mmlu_pro": Dataset.from_list([]),
+            "gpqa": Dataset.from_list([]),
+        }
+    ).save_to_disk(str(dataset_path))
+
+    with pytest.raises(ValueError, match="unsupported augmented cache layout"):
+        export_benchmarker_items(dataset_path, tmp_path / "out")
+
+
 def test_original_arc_exports_use_options_order_and_answer_index(tmp_path):
-    dataset_path = tmp_path / "final5_fixture"
+    dataset_path = tmp_path / "augmented_fixture"
     _build_dataset(dataset_path)
 
     summary_path = export_benchmarker_items(dataset_path, tmp_path / "out")
@@ -171,7 +168,7 @@ def test_original_arc_exports_use_options_order_and_answer_index(tmp_path):
 
 
 def test_original_mmlu_uses_answer_index_not_answer_text(tmp_path):
-    dataset_path = tmp_path / "final5_fixture"
+    dataset_path = tmp_path / "augmented_fixture"
     _build_dataset(dataset_path)
 
     summary_path = export_benchmarker_items(dataset_path, tmp_path / "out")
@@ -184,7 +181,7 @@ def test_original_mmlu_uses_answer_index_not_answer_text(tmp_path):
 
 
 def test_original_gpqa_reconstructs_choices_and_answer_a(tmp_path):
-    dataset_path = tmp_path / "final5_fixture"
+    dataset_path = tmp_path / "augmented_fixture"
     _build_dataset(dataset_path)
 
     summary_path = export_benchmarker_items(dataset_path, tmp_path / "out")
@@ -198,7 +195,7 @@ def test_original_gpqa_reconstructs_choices_and_answer_a(tmp_path):
 
 
 def test_generated_variant_uses_randomized_choices_and_correct_letter(tmp_path):
-    dataset_path = tmp_path / "final5_fixture"
+    dataset_path = tmp_path / "augmented_fixture"
     _build_dataset(dataset_path)
 
     summary_path = export_benchmarker_items(dataset_path, tmp_path / "out")
@@ -213,8 +210,27 @@ def test_generated_variant_uses_randomized_choices_and_correct_letter(tmp_path):
     ]
 
 
+def test_generated_variant_rejects_multi_character_answer_letter(tmp_path):
+    dataset_path = tmp_path / "augmented_fixture"
+    _build_dataset(dataset_path)
+
+    rows = load_from_disk(str(dataset_path / "arc_challenge" / "augment_model"))
+    bad_row = dict(rows[0])
+    bad_row["correct_answer_letter"] = "AB"
+    Dataset.from_list([bad_row]).save_to_disk(str(dataset_path / "arc_challenge" / "augment_model"))
+
+    summary_path = export_benchmarker_items(dataset_path, tmp_path / "out")
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+
+    assert _read_jsonl(summary_path.parent / "arc_challenge" / "augment_model.jsonl") == []
+    assert summary["files"]["arc_challenge"]["augment_model"]["skipped_row_count"] == 1
+    assert summary["files"]["arc_challenge"]["augment_model"]["skipped_rows"][0]["reason"] == (
+        "invalid answer letter in correct_answer_letter"
+    )
+
+
 def test_missing_generated_rows_are_skipped_and_reported(tmp_path):
-    dataset_path = tmp_path / "final5_fixture"
+    dataset_path = tmp_path / "augmented_fixture"
     _build_dataset(dataset_path)
 
     summary_path = export_benchmarker_items(dataset_path, tmp_path / "out")
@@ -239,7 +255,7 @@ def test_missing_generated_rows_are_skipped_and_reported(tmp_path):
 
 
 def test_exported_jsonl_lines_have_only_expected_keys(tmp_path):
-    dataset_path = tmp_path / "final5_fixture"
+    dataset_path = tmp_path / "augmented_fixture"
     _build_dataset(dataset_path)
 
     summary_path = export_benchmarker_items(dataset_path, tmp_path / "out")

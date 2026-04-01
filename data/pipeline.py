@@ -12,7 +12,7 @@ from data.gpqa_processor import process_gpqa_for_experiments
 from data.mmlu_pro_processor import process_mmlu_pro
 
 
-PROCESSED_SCHEMA_VERSION = "final5_processed_v3"
+PROCESSED_SCHEMA_VERSION = "augmented_mcqa_processed_v3"
 DEFAULT_PER_DATASET_LIMIT = 1000
 EXCLUDED_QUESTION_IDS = {
     "gpqa": {
@@ -108,7 +108,6 @@ def _process_mmlu_pro(limit: Optional[int]) -> Dataset:
 
 def _process_arc_challenge(limit: Optional[int]) -> Dataset:
     ds = process_arc_for_experiments(
-        difficulty="challenge",
         output_path=PROCESSED_DATASETS_DIR / "arc_processed" / "arc_challenge",
         limit=None,
     )

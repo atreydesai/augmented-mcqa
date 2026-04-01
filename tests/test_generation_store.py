@@ -1,7 +1,9 @@
 import asyncio
+from dataclasses import replace
 import json
 from pathlib import Path
 import os
+from types import SimpleNamespace
 
 import pytest
 from inspect_ai import Task, eval as inspect_eval
@@ -11,12 +13,14 @@ from inspect_ai.scorer import Score, scorer
 from inspect_ai.solver import TaskState
 from inspect_ai.solver import solver as inspect_solver
 
-from datasets import Dataset, DatasetDict
+from datasets import Dataset, DatasetDict, load_from_disk
 
-from data.final5_store import _load_setting_dataset, build_evaluation_dataset, build_generation_dataset, materialize_augmented_dataset
-from data.final5_store import ensure_augmented_dataset
-from solvers.final5_generation import _fresh_state, final5_generation_solver
+from data.store import _generation_payloads, _load_setting_dataset, build_evaluation_dataset, build_generation_dataset, materialize_augmented_dataset
+from data.store import ensure_augmented_dataset
+from solvers.generation import _fresh_state, generation_solver
+from utils.constants import AUGMENTED_STORE_MANIFEST, AUGMENTED_STORE_SCHEMA_VERSION
 from utils.parsing import LabeledParseError, parse_distractors
+from utils.recipes import get_setting_recipe
 
 
 def _processed_dataset(path):
@@ -93,7 +97,7 @@ def _generation_payload_scorer():
 def _write_generation_log(root: Path, samples: list[Sample]):
     inspect_eval(
         Task(
-            name="final5_generate_test",
+            name="augmented_mcqa_generate_test",
             dataset=MemoryDataset(samples),
             solver=_noop_solver(),
             scorer=_generation_payload_scorer(),
@@ -206,71 +210,24 @@ I need to start over cleanly.
     assert parsed == ["One", "Two", "Three"]
 
 
-def test_parse_distractors_rejects_missing_distractors_key():
-    try:
-        parse_distractors('{"wrong_key": ["One", "Two", "Three"]}', 3)
-    except LabeledParseError as exc:
-        assert 'Missing required key: "distractors"' in str(exc)
-    else:
-        raise AssertionError("Expected parser failure")
+@pytest.mark.parametrize(
+    ("payload", "count", "forbidden", "message"),
+    [
+        ('{"wrong_key": ["One", "Two", "Three"]}', 3, None, 'Missing required key: "distractors"'),
+        ('{"distractors": ["One", "Two", "Three"], "extra": 1}', 3, None, "Unexpected distractor keys: extra"),
+        ('{"distractors": "One"}', 1, None, 'Expected "distractors" to be a list'),
+        ('{"distractors": ["One", "Two"]}', 3, None, "Expected 3 distractors, got 2"),
+        ('{"distractors": ["One", "   ", "Three"]}', 3, None, "Distractor 2 is empty"),
+        ('{"distractors": ["Same", "Same", "Different"]}', 3, ["Gold"], "Duplicate distractor at position 2"),
+        ('{"distractors": ["Gold", "Two", "Three"]}', 3, ["Gold"], "Forbidden distractor at position 1"),
+        ('{"distractors": ["One", 2, "Three"]}', 3, None, "Distractor 2 must be a string"),
+    ],
+)
+def test_parse_distractors_rejects_invalid_payloads(payload, count, forbidden, message):
+    with pytest.raises(LabeledParseError) as exc_info:
+        parse_distractors(payload, count, forbidden=forbidden)
 
-
-def test_parse_distractors_rejects_extra_keys():
-    try:
-        parse_distractors('{"distractors": ["One", "Two", "Three"], "extra": 1}', 3)
-    except LabeledParseError as exc:
-        assert "Unexpected distractor keys: extra" in str(exc)
-    else:
-        raise AssertionError("Expected parser failure")
-
-
-def test_parse_distractors_rejects_non_list_payload():
-    try:
-        parse_distractors('{"distractors": "One"}', 1)
-    except LabeledParseError as exc:
-        assert 'Expected "distractors" to be a list' in str(exc)
-    else:
-        raise AssertionError("Expected parser failure")
-
-
-def test_parse_distractors_rejects_wrong_list_length():
-    try:
-        parse_distractors('{"distractors": ["One", "Two"]}', 3)
-    except LabeledParseError as exc:
-        assert "Expected 3 distractors, got 2" in str(exc)
-    else:
-        raise AssertionError("Expected parser failure")
-
-
-def test_parse_distractors_rejects_empty_items():
-    try:
-        parse_distractors('{"distractors": ["One", "   ", "Three"]}', 3)
-    except LabeledParseError as exc:
-        assert "Distractor 2 is empty" in str(exc)
-    else:
-        raise AssertionError("Expected parser failure")
-
-
-def test_parse_distractors_rejects_duplicates_and_forbidden_answers():
-    for payload in (
-        '{"distractors": ["Same", "Same", "Different"]}',
-        '{"distractors": ["Gold", "Two", "Three"]}',
-    ):
-        try:
-            parse_distractors(payload, 3, forbidden=["Gold"])
-        except LabeledParseError:
-            pass
-        else:
-            raise AssertionError("Expected parser failure")
-
-
-def test_parse_distractors_rejects_non_string_items():
-    try:
-        parse_distractors('{"distractors": ["One", 2, "Three"]}', 3)
-    except LabeledParseError as exc:
-        assert "Distractor 2 must be a string" in str(exc)
-    else:
-        raise AssertionError("Expected parser failure")
+    assert message in str(exc_info.value)
 
 
 def test_generation_solver_preserves_failed_parse_attempts_in_traces():
@@ -297,13 +254,55 @@ def test_generation_solver_preserves_failed_parse_attempts_in_traces():
         current_state.output.completion = "not valid json"
         return current_state
 
-    solved = asyncio.run(final5_generation_solver("model_from_scratch")(state, fake_generate))
+    solved = asyncio.run(generation_solver("model_from_scratch")(state, fake_generate))
 
     generation = solved.metadata["generation"]
     assert generation["status"] == "error"
     assert "Response does not contain a valid JSON object" in generation["error"]
     assert generation["traces"]["model_from_scratch"]["output"] == "not valid json"
     assert generation["traces"]["model_from_scratch"]["attempts"][-1]["output"] == "not valid json"
+
+
+def test_generation_solver_fails_fast_when_recipe_prompt_template_is_missing(monkeypatch):
+    human_recipe = get_setting_recipe("human_from_scratch")
+    broken_recipe = replace(get_setting_recipe("model_from_scratch"), prompt_template=None)
+
+    def fake_get_setting_recipe(name: str):
+        if name == "human_from_scratch":
+            return human_recipe
+        if name == "model_from_scratch":
+            return broken_recipe
+        raise AssertionError(f"unexpected recipe lookup: {name}")
+
+    monkeypatch.setattr("solvers.generation.get_setting_recipe", fake_get_setting_recipe)
+
+    state = TaskState(
+        model="together/Qwen/Qwen3.5-397B-A17B",
+        sample_id="arc_challenge:arc-1",
+        epoch=1,
+        input="Q1",
+        messages=[ChatMessageUser(content="Q1")],
+        output=ModelOutput(model="together/Qwen/Qwen3.5-397B-A17B"),
+        metadata={
+            "sample_id": "arc_challenge:arc-1",
+            "dataset_type": "arc_challenge",
+            "row_index": 0,
+            "question": "Q1",
+            "answer": "Gold 1",
+            "choices_human": ["H1", "H2", "H3"],
+            "category": "science",
+        },
+        store={},
+    )
+
+    async def fake_generate(current_state: TaskState) -> TaskState:
+        raise AssertionError("generation should not run without a prompt template")
+
+    solved = asyncio.run(generation_solver("model_from_scratch")(state, fake_generate))
+
+    generation = solved.metadata["generation"]
+    assert generation["status"] == "error"
+    assert generation["error"] == "Generation recipe 'model_from_scratch' is missing a prompt template"
 
 
 def test_build_generation_dataset_flattens_processed_rows_with_stable_ids(tmp_path):
@@ -388,16 +387,61 @@ def test_build_generation_dataset_augment_model_skips_rows_missing_prerequisites
     assert dataset[0].metadata["existing_model_from_scratch"] == ["B1", "C1", "D1"]
 
 
+def test_generation_payloads_prefers_augmented_generation_score_when_multiple_scores(monkeypatch):
+    preferred = SimpleNamespace(
+        metadata={
+            "status": "success",
+            "sample_id": "arc_challenge:arc-1",
+            "dataset_type": "arc_challenge",
+            "row_index": 0,
+            "question": "Q1",
+            "answer": "Gold 1",
+            "human_from_scratch": ["H1", "H2", "H3"],
+            "human_from_scratch_options_randomized": ["Gold 1", "H1", "H2", "H3"],
+            "human_from_scratch_correct_answer_letter": "A",
+        }
+    )
+    other = SimpleNamespace(
+        metadata={
+            "status": "error",
+            "sample_id": "wrong",
+            "dataset_type": "wrong",
+            "row_index": 9,
+            "question": "Wrong",
+            "answer": "Wrong",
+        }
+    )
+    log = SimpleNamespace(
+        samples=[
+            SimpleNamespace(
+                id="arc_challenge:arc-1",
+                scores={
+                    "other_metric": other,
+                    "augmented_mcqa_generation": preferred,
+                },
+            )
+        ]
+    )
+
+    monkeypatch.setattr("data.store.iter_eval_logs", lambda *args, **kwargs: [("sample.eval", log)])
+
+    payloads = _generation_payloads("logs")
+
+    assert payloads["arc_challenge:arc-1"]["dataset_type"] == "arc_challenge"
+    assert payloads["arc_challenge:arc-1"]["answer"] == "Gold 1"
+    assert payloads["arc_challenge:arc-1"]["human_from_scratch"] == ["H1", "H2", "H3"]
+
+
 def test_build_generation_dataset_augment_model_uses_materialized_cache_prerequisites(tmp_path):
     processed_path = tmp_path / "processed"
     cache_path = tmp_path / "augmented"
     _processed_dataset(processed_path)
 
     cache_path.mkdir(parents=True, exist_ok=True)
-    (cache_path / "augmented_manifest.json").write_text(
+    (cache_path / AUGMENTED_STORE_MANIFEST).write_text(
         json.dumps(
             {
-                "schema_version": "augmented_store_v2",
+                "schema_version": AUGMENTED_STORE_SCHEMA_VERSION,
                 "storage_kind": "setting_records",
                 "dataset_types": ["arc_challenge"],
                 "settings": [
@@ -451,6 +495,51 @@ def test_build_generation_dataset_augment_model_uses_materialized_cache_prerequi
     assert len(dataset) == 1
     assert dataset[0].id == "arc_challenge:arc-1"
     assert dataset[0].metadata["existing_model_from_scratch"] == ["B1", "C1", "D1"]
+
+
+def test_build_generation_dataset_rejects_non_manifest_json_processed_input(tmp_path):
+    processed_path = tmp_path / "processed.json"
+    processed_path.write_text("{}", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="DatasetDict root or a dataset manifest JSON"):
+        build_generation_dataset(processed_path)
+
+
+def test_build_generation_dataset_rejects_manifest_dataset_source_format(tmp_path):
+    source_path = tmp_path / "custom"
+    Dataset.from_list([{"qid": "custom-1", "prompt": "Q1", "gold": "A", "human": ["d1", "d2", "d3"]}]).save_to_disk(
+        str(source_path)
+    )
+    manifest_path = tmp_path / "datasets_manifest.json"
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "augmented_mcqa_dataset_manifest_v1",
+                "datasets": {
+                    "custom_benchmark": {
+                        "path": str(source_path),
+                        "format": "dataset",
+                        "question_key": "prompt",
+                        "answer_key": "gold",
+                        "choices_human_key": "human",
+                        "question_id_key": "qid",
+                    }
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="Unsupported dataset manifest format: dataset"):
+        build_generation_dataset(manifest_path)
+
+
+def test_build_generation_dataset_rejects_single_dataset_processed_root(tmp_path):
+    processed_path = tmp_path / "processed"
+    Dataset.from_list([{"id": "arc-1", "question": "Q1", "answer": "A"}]).save_to_disk(str(processed_path))
+
+    with pytest.raises(TypeError, match="Expected DatasetDict"):
+        build_generation_dataset(processed_path)
 
 
 def test_materialized_augmented_cache_preserves_rows_without_successful_generations(tmp_path):
@@ -576,7 +665,7 @@ def test_ensure_augmented_dataset_refreshes_existing_cache_when_new_shard_logs_a
     ]
 
 
-def test_ensure_augmented_dataset_materializes_when_only_cluster_slices_exist(tmp_path):
+def test_ensure_augmented_dataset_rejects_cluster_slice_staging_root(tmp_path):
     processed_path = tmp_path / "processed"
     log_dir = tmp_path / "logs"
     cache_path = tmp_path / "augmented"
@@ -602,10 +691,58 @@ def test_ensure_augmented_dataset_materializes_when_only_cluster_slices_exist(tm
     staging_path = cache_path / "_cluster_slices" / "arc_challenge" / "model_from_scratch" / "0-1"
     DatasetDict({"arc_challenge": Dataset.from_list([{"sample_id": "arc_challenge:arc-1"}])}).save_to_disk(str(staging_path))
 
-    ensure_augmented_dataset(processed_path, log_dir, cache_path)
+    with pytest.raises(ValueError, match="unsupported augmented cache layout"):
+        ensure_augmented_dataset(processed_path, log_dir, cache_path)
 
-    assert (cache_path / "augmented_manifest.json").exists()
-    assert _setting_sample_ids(cache_path, "arc_challenge") == ["arc_challenge:arc-1"]
+    assert not (cache_path / AUGMENTED_STORE_MANIFEST).exists()
+    assert staging_path.exists()
+
+
+def test_ensure_augmented_dataset_rejects_legacy_cache_without_overwriting(tmp_path):
+    processed_path = tmp_path / "processed"
+    cache_path = tmp_path / "augmented"
+    _processed_dataset(processed_path)
+
+    DatasetDict(
+        {
+            "arc_challenge": Dataset.from_list(
+                [
+                    {"sample_id": "arc_challenge:arc-1", "status": "success"},
+                    {"sample_id": "arc_challenge:arc-2", "status": "success"},
+                ]
+            )
+        }
+    ).save_to_disk(str(cache_path))
+
+    with pytest.raises(ValueError, match="unsupported augmented cache layout"):
+        ensure_augmented_dataset(processed_path, tmp_path / "logs", cache_path)
+
+    assert (cache_path / "dataset_dict.json").exists()
+    preserved = load_from_disk(str(cache_path))
+    assert isinstance(preserved, DatasetDict)
+    assert [row["sample_id"] for row in preserved["arc_challenge"]] == [
+        "arc_challenge:arc-1",
+        "arc_challenge:arc-2",
+    ]
+    assert not (cache_path / AUGMENTED_STORE_MANIFEST).exists()
+
+
+def test_build_evaluation_dataset_rejects_unsupported_cache_layout(tmp_path):
+    cache_path = tmp_path / "augmented"
+    DatasetDict(
+        {
+            "arc_challenge": Dataset.from_list([{"sample_id": "arc_challenge:arc-1", "status": "success"}]),
+            "mmlu_pro": Dataset.from_list([]),
+            "gpqa": Dataset.from_list([]),
+        }
+    ).save_to_disk(str(cache_path))
+
+    with pytest.raises(ValueError, match="unsupported augmented cache layout"):
+        build_evaluation_dataset(
+            cache_path,
+            setting="human_from_scratch",
+            mode="full_question",
+        )
 
 
 def test_augmented_cache_rejects_paths_overlapping_processed_dataset(tmp_path):
@@ -623,91 +760,134 @@ def test_augmented_cache_rejects_paths_overlapping_processed_dataset(tmp_path):
         )
 
 
+def _setting_record(
+    *,
+    dataset_type: str,
+    sample_id: str,
+    row_index: int,
+    question: str,
+    answer: str,
+    human_distractors: list[str],
+    options_randomized: list[str],
+    correct_answer_letter: str,
+) -> dict[str, object]:
+    return {
+        "id": sample_id.split(":")[-1],
+        "question_id": None,
+        "dataset_type": dataset_type,
+        "row_index": row_index,
+        "sample_id": sample_id,
+        "question": question,
+        "answer": answer,
+        "category": "",
+        "options": [],
+        "answer_index": None,
+        "choices_human": [],
+        "setting": "human_from_scratch",
+        "generation_strategy": "human_from_scratch",
+        "status": "success",
+        "num_human": len(human_distractors),
+        "num_model": 0,
+        "num_choices": len(options_randomized),
+        "human_distractors": list(human_distractors),
+        "model_distractors": [],
+        "distractors": list(human_distractors),
+        "options_randomized": list(options_randomized),
+        "correct_answer_letter": correct_answer_letter,
+        "traces": {},
+    }
+
+
+def _write_human_from_scratch_store(path: Path, rows_by_dataset: dict[str, list[dict[str, object]]]) -> None:
+    path.mkdir(parents=True, exist_ok=True)
+    (path / AUGMENTED_STORE_MANIFEST).write_text(
+        json.dumps(
+            {
+                "schema_version": AUGMENTED_STORE_SCHEMA_VERSION,
+                "storage_kind": "setting_records",
+                "dataset_types": list(rows_by_dataset.keys()),
+                "settings": ["human_from_scratch"],
+            }
+        ),
+        encoding="utf-8",
+    )
+    for dataset_type, rows in rows_by_dataset.items():
+        Dataset.from_list(rows).save_to_disk(str(path / dataset_type / "human_from_scratch"))
+
+
 def test_build_evaluation_dataset_limit_applies_per_dataset_split(tmp_path):
     path = tmp_path / "augmented"
-    dataset = DatasetDict(
+    _write_human_from_scratch_store(
+        path,
         {
-            "arc_challenge": Dataset.from_list(
-                [
-                    {
-                        "id": "arc-1",
-                        "sample_id": "arc_challenge:arc-1",
-                        "row_index": 0,
-                        "question": "ARC 1",
-                        "answer": "Gold ARC 1",
-                        "category": "",
-                        "human_from_scratch": ["A1", "A2", "A3"],
-                        "human_from_scratch_options_randomized": ["Gold ARC 1", "A1", "A2", "A3"],
-                        "human_from_scratch_correct_answer_letter": "A",
-                    },
-                    {
-                        "id": "arc-2",
-                        "sample_id": "arc_challenge:arc-2",
-                        "row_index": 1,
-                        "question": "ARC 2",
-                        "answer": "Gold ARC 2",
-                        "category": "",
-                        "human_from_scratch": ["A4", "A5", "A6"],
-                        "human_from_scratch_options_randomized": ["Gold ARC 2", "A4", "A5", "A6"],
-                        "human_from_scratch_correct_answer_letter": "A",
-                    },
-                ]
-            ),
-            "mmlu_pro": Dataset.from_list(
-                [
-                    {
-                        "question_id": 101,
-                        "sample_id": "mmlu_pro:101",
-                        "row_index": 0,
-                        "question": "MMLU 1",
-                        "answer": "Gold MMLU 1",
-                        "category": "",
-                        "human_from_scratch": ["M1", "M2", "M3"],
-                        "human_from_scratch_options_randomized": ["Gold MMLU 1", "M1", "M2", "M3"],
-                        "human_from_scratch_correct_answer_letter": "A",
-                    },
-                    {
-                        "question_id": 102,
-                        "sample_id": "mmlu_pro:102",
-                        "row_index": 1,
-                        "question": "MMLU 2",
-                        "answer": "Gold MMLU 2",
-                        "category": "",
-                        "human_from_scratch": ["M4", "M5", "M6"],
-                        "human_from_scratch_options_randomized": ["Gold MMLU 2", "M4", "M5", "M6"],
-                        "human_from_scratch_correct_answer_letter": "A",
-                    },
-                ]
-            ),
-            "gpqa": Dataset.from_list(
-                [
-                    {
-                        "id": "gpqa-1",
-                        "sample_id": "gpqa:gpqa-1",
-                        "row_index": 0,
-                        "question": "GPQA 1",
-                        "answer": "Gold GPQA 1",
-                        "category": "",
-                        "human_from_scratch": ["G1", "G2", "G3"],
-                        "human_from_scratch_options_randomized": ["Gold GPQA 1", "G1", "G2", "G3"],
-                        "human_from_scratch_correct_answer_letter": "A",
-                    },
-                    {
-                        "id": "gpqa-2",
-                        "sample_id": "gpqa:gpqa-2",
-                        "row_index": 1,
-                        "question": "GPQA 2",
-                        "answer": "Gold GPQA 2",
-                        "category": "",
-                        "human_from_scratch": ["G4", "G5", "G6"],
-                        "human_from_scratch_options_randomized": ["Gold GPQA 2", "G4", "G5", "G6"],
-                        "human_from_scratch_correct_answer_letter": "A",
-                    },
-                ]
-            ),
-        }
+            "arc_challenge": [
+                _setting_record(
+                    dataset_type="arc_challenge",
+                    sample_id="arc_challenge:arc-1",
+                    row_index=0,
+                    question="ARC 1",
+                    answer="Gold ARC 1",
+                    human_distractors=["A1", "A2", "A3"],
+                    options_randomized=["Gold ARC 1", "A1", "A2", "A3"],
+                    correct_answer_letter="A",
+                ),
+                _setting_record(
+                    dataset_type="arc_challenge",
+                    sample_id="arc_challenge:arc-2",
+                    row_index=1,
+                    question="ARC 2",
+                    answer="Gold ARC 2",
+                    human_distractors=["A4", "A5", "A6"],
+                    options_randomized=["Gold ARC 2", "A4", "A5", "A6"],
+                    correct_answer_letter="A",
+                ),
+            ],
+            "mmlu_pro": [
+                _setting_record(
+                    dataset_type="mmlu_pro",
+                    sample_id="mmlu_pro:101",
+                    row_index=0,
+                    question="MMLU 1",
+                    answer="Gold MMLU 1",
+                    human_distractors=["M1", "M2", "M3"],
+                    options_randomized=["Gold MMLU 1", "M1", "M2", "M3"],
+                    correct_answer_letter="A",
+                ),
+                _setting_record(
+                    dataset_type="mmlu_pro",
+                    sample_id="mmlu_pro:102",
+                    row_index=1,
+                    question="MMLU 2",
+                    answer="Gold MMLU 2",
+                    human_distractors=["M4", "M5", "M6"],
+                    options_randomized=["Gold MMLU 2", "M4", "M5", "M6"],
+                    correct_answer_letter="A",
+                ),
+            ],
+            "gpqa": [
+                _setting_record(
+                    dataset_type="gpqa",
+                    sample_id="gpqa:gpqa-1",
+                    row_index=0,
+                    question="GPQA 1",
+                    answer="Gold GPQA 1",
+                    human_distractors=["G1", "G2", "G3"],
+                    options_randomized=["Gold GPQA 1", "G1", "G2", "G3"],
+                    correct_answer_letter="A",
+                ),
+                _setting_record(
+                    dataset_type="gpqa",
+                    sample_id="gpqa:gpqa-2",
+                    row_index=1,
+                    question="GPQA 2",
+                    answer="Gold GPQA 2",
+                    human_distractors=["G4", "G5", "G6"],
+                    options_randomized=["Gold GPQA 2", "G4", "G5", "G6"],
+                    correct_answer_letter="A",
+                ),
+            ],
+        },
     )
-    dataset.save_to_disk(str(path))
 
     eval_dataset = build_evaluation_dataset(path, setting="human_from_scratch", mode="full_question", limit=1)
 
@@ -721,61 +901,55 @@ def test_build_evaluation_dataset_limit_applies_per_dataset_split(tmp_path):
 
 def test_build_evaluation_dataset_respects_raw_question_chunk_bounds(tmp_path):
     path = tmp_path / "augmented"
-    dataset = DatasetDict(
+    _write_human_from_scratch_store(
+        path,
         {
-            "arc_challenge": Dataset.from_list(
-                [
-                    {
-                        "id": "arc-0",
-                        "sample_id": "arc_challenge:arc-0",
-                        "row_index": 0,
-                        "question": "ARC 0",
-                        "answer": "Gold ARC 0",
-                        "category": "",
-                        "human_from_scratch": ["A1", "A2", "A3"],
-                        "human_from_scratch_options_randomized": ["Gold ARC 0", "A1", "A2", "A3"],
-                        "human_from_scratch_correct_answer_letter": "A",
-                    },
-                    {
-                        "id": "arc-1",
-                        "sample_id": "arc_challenge:arc-1",
-                        "row_index": 1,
-                        "question": "ARC 1",
-                        "answer": "Gold ARC 1",
-                        "category": "",
-                        "human_from_scratch": ["B1", "B2", "B3"],
-                        "human_from_scratch_options_randomized": [],
-                        "human_from_scratch_correct_answer_letter": "",
-                    },
-                    {
-                        "id": "arc-2",
-                        "sample_id": "arc_challenge:arc-2",
-                        "row_index": 2,
-                        "question": "ARC 2",
-                        "answer": "Gold ARC 2",
-                        "category": "",
-                        "human_from_scratch": ["C1", "C2", "C3"],
-                        "human_from_scratch_options_randomized": ["Gold ARC 2", "C1", "C2", "C3"],
-                        "human_from_scratch_correct_answer_letter": "A",
-                    },
-                    {
-                        "id": "arc-3",
-                        "sample_id": "arc_challenge:arc-3",
-                        "row_index": 3,
-                        "question": "ARC 3",
-                        "answer": "Gold ARC 3",
-                        "category": "",
-                        "human_from_scratch": ["D1", "D2", "D3"],
-                        "human_from_scratch_options_randomized": ["Gold ARC 3", "D1", "D2", "D3"],
-                        "human_from_scratch_correct_answer_letter": "A",
-                    },
-                ]
-            ),
-            "mmlu_pro": Dataset.from_list([]),
-            "gpqa": Dataset.from_list([]),
-        }
+            "arc_challenge": [
+                _setting_record(
+                    dataset_type="arc_challenge",
+                    sample_id="arc_challenge:arc-0",
+                    row_index=0,
+                    question="ARC 0",
+                    answer="Gold ARC 0",
+                    human_distractors=["A1", "A2", "A3"],
+                    options_randomized=["Gold ARC 0", "A1", "A2", "A3"],
+                    correct_answer_letter="A",
+                ),
+                _setting_record(
+                    dataset_type="arc_challenge",
+                    sample_id="arc_challenge:arc-1",
+                    row_index=1,
+                    question="ARC 1",
+                    answer="Gold ARC 1",
+                    human_distractors=["B1", "B2", "B3"],
+                    options_randomized=[],
+                    correct_answer_letter="",
+                ),
+                _setting_record(
+                    dataset_type="arc_challenge",
+                    sample_id="arc_challenge:arc-2",
+                    row_index=2,
+                    question="ARC 2",
+                    answer="Gold ARC 2",
+                    human_distractors=["C1", "C2", "C3"],
+                    options_randomized=["Gold ARC 2", "C1", "C2", "C3"],
+                    correct_answer_letter="A",
+                ),
+                _setting_record(
+                    dataset_type="arc_challenge",
+                    sample_id="arc_challenge:arc-3",
+                    row_index=3,
+                    question="ARC 3",
+                    answer="Gold ARC 3",
+                    human_distractors=["D1", "D2", "D3"],
+                    options_randomized=["Gold ARC 3", "D1", "D2", "D3"],
+                    correct_answer_letter="A",
+                ),
+            ],
+            "mmlu_pro": [],
+            "gpqa": [],
+        },
     )
-    dataset.save_to_disk(str(path))
 
     eval_dataset = build_evaluation_dataset(
         path,

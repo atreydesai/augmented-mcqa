@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 from datasets import Dataset
 from inspect_ai import Task, eval
@@ -12,7 +13,7 @@ from utils.constants import (
     AUGMENTED_STORE_MANIFEST,
     AUGMENTED_STORE_SCHEMA_VERSION,
     CHOICE_LABELS,
-    FINAL5_SETTINGS,
+    SETTING_NAMES,
     MODE_CHOICES,
     SETTING_SPECS,
 )
@@ -112,7 +113,7 @@ def _build_augmented_cache(path: Path):
                 "schema_version": AUGMENTED_STORE_SCHEMA_VERSION,
                 "storage_kind": "setting_records",
                 "dataset_types": list(DATASET_ROWS),
-                "settings": list(FINAL5_SETTINGS),
+                "settings": list(SETTING_NAMES),
             },
             indent=2,
         ),
@@ -120,7 +121,7 @@ def _build_augmented_cache(path: Path):
     )
     for dataset_index, (dataset_type, base_row) in enumerate(DATASET_ROWS.items()):
         (path / dataset_type).mkdir(parents=True, exist_ok=True)
-        for setting_index, setting in enumerate(FINAL5_SETTINGS):
+        for setting_index, setting in enumerate(SETTING_NAMES):
             record = _setting_record(
                 dataset_type,
                 base_row,
@@ -135,7 +136,7 @@ def _build_augmented_cache(path: Path):
 def _write_writing_flaws(path):
     rows = []
     for dataset_index, (dataset_type, base_row) in enumerate(DATASET_ROWS.items()):
-        for setting_index, setting in enumerate(FINAL5_SETTINGS):
+        for setting_index, setting in enumerate(SETTING_NAMES):
             fail_count = (dataset_index + setting_index) % 4
             outcomes = ["fail"] * fail_count + ["pass"] * (19 - fail_count)
             rows.append(
@@ -187,7 +188,7 @@ def _write_eval_logs(root, *, generation_run_name: str, generation_model: str, e
     resolved_evaluation_model = resolve_model_name(evaluation_model)
 
     for mode in MODE_CHOICES:
-        for setting_index, setting in enumerate(FINAL5_SETTINGS):
+        for setting_index, setting in enumerate(SETTING_NAMES):
             samples = []
             choice_count = SETTING_SPECS[setting]["num_choices"]
             for dataset_index, (dataset_type, row) in enumerate(DATASET_ROWS.items()):
@@ -276,3 +277,74 @@ def test_benchmarker_analysis_recreates_legacy_figure_set_from_inspect_artifacts
     assert rc == 0
     assert {path.name for path in output_dir.glob("*.png")} == EXPECTED_FIGURES
     assert all(path.stat().st_size > 0 for path in output_dir.glob("*.png"))
+
+
+def test_load_evaluation_samples_prefers_augmented_eval_score_when_multiple_scores(monkeypatch, tmp_path):
+    good_score = SimpleNamespace(
+        value=1.0,
+        metadata={
+            "sample_id": "arc_challenge:arc-1",
+            "dataset_type": "arc_challenge",
+            "question_idx": 0,
+            "category": "science",
+            "setting": "human_from_scratch",
+            "mode": "full_question",
+            "prediction": "B",
+            "prediction_type": "G",
+            "gold_answer_letter": "B",
+        },
+    )
+    bad_score = SimpleNamespace(
+        value=0.0,
+        metadata={
+            "sample_id": "wrong",
+            "dataset_type": "",
+            "question_idx": 999,
+            "category": "wrong",
+            "setting": "augment_model",
+            "mode": "choices_only",
+            "prediction": "A",
+            "prediction_type": "M",
+            "gold_answer_letter": "C",
+        },
+    )
+    log = SimpleNamespace(
+        eval=SimpleNamespace(
+            metadata={
+                "generation_model": "openai/gpt-5.2-2025-12-11",
+                "generation_run_name": "bench-run",
+                "evaluation_model": "vllm/Qwen/Qwen3-4B-Instruct-2507",
+            },
+            model="vllm/Qwen/Qwen3-4B-Instruct-2507",
+        ),
+        samples=[
+            SimpleNamespace(
+                id="arc_challenge:arc-1",
+                scores={
+                    "other_metric": bad_score,
+                    "augmented_mcqa_eval": good_score,
+                },
+            )
+        ],
+    )
+
+    monkeypatch.setattr(
+        benchmarker_analysis,
+        "iter_eval_logs",
+        lambda *args, **kwargs: [(tmp_path / "sample.eval", log)],
+    )
+
+    df = benchmarker_analysis.load_evaluation_samples(
+        results_root=tmp_path,
+        generator_model="openai/gpt-5.2-2025-12-11",
+        generator_run_name="bench-run",
+        eval_models=["vllm/Qwen/Qwen3-4B-Instruct-2507"],
+    )
+
+    assert len(df) == 1
+    row = df.iloc[0]
+    assert row["sample_id"] == "arc_challenge:arc-1"
+    assert row["dataset"] == "arc_challenge"
+    assert row["setting"] == "human_from_scratch"
+    assert row["mode"] == "full_question"
+    assert bool(row["is_correct"]) is True

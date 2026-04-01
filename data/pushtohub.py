@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import sys
 from pathlib import Path
 
@@ -11,10 +12,6 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from config import HF_TOKEN
-
-
-DATASET_PATH = "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/augmented/gen_gpt52_v2/openai_gpt-5.2-2025-12-11"
-REPO_ID = "atreydesai/gpt-5.2_v2"
 
 CANONICAL_FEATURES = Features(
     {
@@ -140,12 +137,30 @@ def normalize_dataset_dict(dataset: DatasetDict) -> DatasetDict:
     return DatasetDict(normalized)
 
 
-def main() -> None:
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="Normalize a local Augmented MCQA DatasetDict and push it to the Hugging Face Hub.",
+    )
+    parser.add_argument(
+        "dataset_path",
+        help="Path to a local DatasetDict saved with datasets.save_to_disk().",
+    )
+    parser.add_argument(
+        "repo_id",
+        help="Target Hugging Face dataset repo id, for example org/name or user/name.",
+    )
+    return parser
+
+
+def main(argv: list[str] | None = None) -> None:
+    args = build_parser().parse_args(argv)
+    dataset_path = Path(args.dataset_path)
+
     print("Loading dataset from local disk...")
-    dataset = load_from_disk(DATASET_PATH)
+    dataset = load_from_disk(str(dataset_path))
 
     if not isinstance(dataset, DatasetDict):
-        raise TypeError(f"Expected DatasetDict at {DATASET_PATH}")
+        raise TypeError(f"Expected DatasetDict at {dataset_path}")
 
     print("Normalizing split schemas...")
     dataset = normalize_dataset_dict(dataset)
@@ -156,14 +171,14 @@ def main() -> None:
         push_kwargs["token"] = HF_TOKEN
 
     try:
-        dataset.push_to_hub(REPO_ID, **push_kwargs)
+        dataset.push_to_hub(args.repo_id, **push_kwargs)
     except (HfHubHTTPError, RepositoryNotFoundError) as exc:
         message = str(exc)
         if "401" in message or "Invalid username or password" in message:
             raise RuntimeError(
                 "Hugging Face authentication failed. Set HF_TOKEN to a valid write-scoped token "
                 "for the account or org that owns the target dataset repo, then rerun "
-                "`python data/pushtohub.py`."
+                "`python data/pushtohub.py <dataset_path> <repo_id>`."
             ) from exc
         raise
 

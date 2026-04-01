@@ -1,4 +1,4 @@
-"""Final5 analysis and plotting utilities built from materialized evaluated datasets."""
+"""Augmented MCQA analysis and plotting utilities built from materialized evaluated datasets."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ import pandas as pd
 from datasets import load_from_disk
 from matplotlib.patches import Rectangle
 
-from utils.constants import DEFAULT_EVALUATION_MODELS, EVALUATED_STORE_MANIFEST, SETTING_SPECS
+from utils.constants import CHOICE_LABELS, DEFAULT_LOCAL_EVALUATION_MODELS, EVALUATED_STORE_MANIFEST, SETTING_SPECS
 
 
 SETTING_OPTION_COUNTS: dict[str, int] = {
@@ -72,7 +72,7 @@ SETTING_SHORT_LABELS: dict[str, str] = {
 }
 SETTING_ORDER = list(SETTING_SPECS)
 DEFAULT_EVAL_MODEL_VARIANTS = tuple(
-    model if str(model).startswith("vllm/") else f"vllm/{model}" for model in DEFAULT_EVALUATION_MODELS
+    model if str(model).startswith("vllm/") else f"vllm/{model}" for model in DEFAULT_LOCAL_EVALUATION_MODELS
 )
 DATASET_PLOT_ORDER = ["arc_challenge", "mmlu_pro", "gpqa"]
 MCNEMAR_SIGNIFICANCE_LEGEND = (
@@ -81,7 +81,7 @@ MCNEMAR_SIGNIFICANCE_LEGEND = (
 )
 COMPLETENESS_LEGEND = "Hatched bars = partial coverage, gray bars = missing result"
 PREDICTION_TYPE_ORDER = ["G", "H", "M", "?"]
-PREDICTION_LETTER_ORDER = list("ABCDEFGHIJ")
+PREDICTION_LETTER_ORDER = list(CHOICE_LABELS)
 HIDDEN_EVAL_MODEL_IDENTITIES = {
     "mistralai/Ministral-3-14B-Instruct-2512",
 }
@@ -325,12 +325,12 @@ def _add_missing_eval_model_rows(summary_df: pd.DataFrame) -> pd.DataFrame:
     return pd.concat([summary_df, pd.DataFrame(rows)], ignore_index=True)
 
 
-def collect_final5_results(results_root: Path | str) -> pd.DataFrame:
+def collect_results_summary(results_root: Path | str) -> pd.DataFrame:
     row_df = _evaluated_row_frame(results_root)
-    return _collect_final5_results_from_rows(row_df)
+    return _collect_results_summary_from_rows(row_df)
 
 
-def _collect_final5_results_from_rows(row_df: pd.DataFrame) -> pd.DataFrame:
+def _collect_results_summary_from_rows(row_df: pd.DataFrame) -> pd.DataFrame:
     if row_df.empty:
         return _empty_results_frame()
 
@@ -390,19 +390,19 @@ def _collect_final5_results_from_rows(row_df: pd.DataFrame) -> pd.DataFrame:
     return summary_df
 
 
-def load_final5_analysis_frames(results_root: Path | str) -> tuple[pd.DataFrame, pd.DataFrame]:
+def load_analysis_frames(results_root: Path | str) -> tuple[pd.DataFrame, pd.DataFrame]:
     row_df = _evaluated_row_frame(results_root)
-    summary_df = _collect_final5_results_from_rows(row_df)
+    summary_df = _collect_results_summary_from_rows(row_df)
     return row_df, summary_df
 
 
-def write_final5_summary_table(
+def write_results_summary_table(
     results_root: Path | str,
     output_csv: Path | str,
     *,
     summary_df: pd.DataFrame | None = None,
 ) -> pd.DataFrame:
-    df = collect_final5_results(results_root) if summary_df is None else summary_df.copy()
+    df = collect_results_summary(results_root) if summary_df is None else summary_df.copy()
     out = Path(output_csv)
     out.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(out, index=False)
@@ -628,7 +628,7 @@ def _write_issue_tables(summary_df: pd.DataFrame, output_dir: Path) -> list[Path
         inplace=True,
         ignore_index=True,
     )
-    issue_path = tables_dir / "final5_missing_or_partial.csv"
+    issue_path = tables_dir / "augmented_mcqa_missing_or_partial.csv"
     issue_df.to_csv(issue_path, index=False)
     outputs.append(issue_path)
     return outputs
@@ -647,7 +647,7 @@ def _write_failure_tables(row_df: pd.DataFrame, output_dir: Path) -> list[Path]:
         inplace=True,
         ignore_index=True,
     )
-    failed_path = tables_dir / "final5_failed_questions.csv"
+    failed_path = tables_dir / "augmented_mcqa_failed_questions.csv"
     failed.to_csv(failed_path, index=False)
     outputs.append(failed_path)
 
@@ -657,7 +657,7 @@ def _write_failure_tables(row_df: pd.DataFrame, output_dir: Path) -> list[Path]:
         inplace=True,
         ignore_index=True,
     )
-    missing_path = tables_dir / "final5_missing_questions.csv"
+    missing_path = tables_dir / "augmented_mcqa_missing_questions.csv"
     missing.to_csv(missing_path, index=False)
     outputs.append(missing_path)
     return outputs
@@ -840,7 +840,7 @@ def _plot_distribution(
     return outputs
 
 
-def plot_final5_pairwise(
+def plot_pairwise_accuracy(
     results_root: Path | str,
     output_dir: Path | str,
     include_tables: bool = True,
@@ -849,7 +849,7 @@ def plot_final5_pairwise(
     summary_df: pd.DataFrame | None = None,
 ) -> list[Path]:
     if row_df is None or summary_df is None:
-        row_df, summary_df = load_final5_analysis_frames(results_root)
+        row_df, summary_df = load_analysis_frames(results_root)
     out_dir = Path(output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     if summary_df.empty:
@@ -913,7 +913,7 @@ def plot_final5_pairwise(
                 ).to_csv(pairwise_csv, index=False)
                 outputs.append(pairwise_csv)
     if include_tables:
-        full_csv = out_dir / "tables" / "final5_results_summary.csv"
+        full_csv = out_dir / "tables" / "augmented_mcqa_results_summary.csv"
         full_csv.parent.mkdir(parents=True, exist_ok=True)
         summary_df.to_csv(full_csv, index=False)
         outputs.append(full_csv)

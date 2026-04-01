@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from inspect_ai import Task
 
-from data.final5_store import build_generation_dataset
-from scorers.generation import final5_generation_scorer
-from solvers.final5_generation import final5_generation_solver
-from utils.constants import FINAL5_SETTINGS
+from data.store import build_generation_dataset
+from scorers.generation import generation_scorer
+from solvers.generation import generation_solver
+from utils.constants import SETTING_NAMES
 
 
 def build_generation_tasks(
@@ -46,7 +46,7 @@ def build_generation_tasks(
             "run_name": run_name,
             "generation_model": generation_model,
             "dataset_types": list(dataset_types),
-            "settings": list(FINAL5_SETTINGS),
+            "settings": list(SETTING_NAMES),
             "generation_strategy": strategy,
             "question_start": question_start,
             "limit": limit,
@@ -57,10 +57,10 @@ def build_generation_tasks(
         task_metadata.update(dict(task_metadata_by_strategy.get(strategy, {}) or {}))
         tasks.append(
             Task(
-                name=f"final5_generate_{strategy}",
+                name=f"augmented_mcqa_generate_{strategy}",
                 dataset=dataset,
-                solver=final5_generation_solver(strategy),
-                scorer=final5_generation_scorer(),
+                solver=generation_solver(strategy),
+                scorer=generation_scorer(),
                 metadata=task_metadata,
             )
         )

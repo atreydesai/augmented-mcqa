@@ -27,40 +27,38 @@ class SettingRecipe:
 @lru_cache(maxsize=1)
 def load_setting_recipes() -> tuple[SettingRecipe, ...]:
     payload = json.loads(RECIPES_CONFIG_PATH.read_text(encoding="utf-8"))
-    recipes = []
-    for raw in payload.get("settings", []):
-        recipes.append(
-            SettingRecipe(
-                name=str(raw["name"]),
-                generation_strategy=str(raw.get("generation_strategy") or raw["name"]),
-                prompt_template=raw.get("prompt_template"),
-                prompt_mode=str(raw.get("prompt_mode") or "qa"),
-                num_human=int(raw.get("num_human", 0) or 0),
-                num_model=int(raw.get("num_model", 0) or 0),
-                num_choices=int(raw.get("num_choices", 0) or 0),
-                generated_count=int(raw.get("generated_count", 0) or 0),
-                is_schedulable=bool(raw.get("is_schedulable", False)),
-                conditioned_on=raw.get("conditioned_on"),
-                prerequisite_setting=raw.get("prerequisite_setting"),
-            )
+    return tuple(
+        SettingRecipe(
+            name=str(raw["name"]),
+            generation_strategy=str(raw.get("generation_strategy") or raw["name"]),
+            prompt_template=raw.get("prompt_template"),
+            prompt_mode=str(raw.get("prompt_mode") or "qa"),
+            num_human=int(raw.get("num_human", 0) or 0),
+            num_model=int(raw.get("num_model", 0) or 0),
+            num_choices=int(raw.get("num_choices", 0) or 0),
+            generated_count=int(raw.get("generated_count", 0) or 0),
+            is_schedulable=bool(raw.get("is_schedulable", False)),
+            conditioned_on=raw.get("conditioned_on"),
+            prerequisite_setting=raw.get("prerequisite_setting"),
         )
-    return tuple(recipes)
+        for raw in payload.get("settings", [])
+    )
 
 
 @lru_cache(maxsize=1)
-def setting_recipe_map() -> dict[str, SettingRecipe]:
+def _setting_recipe_map() -> dict[str, SettingRecipe]:
     return {recipe.name: recipe for recipe in load_setting_recipes()}
 
 
 def get_setting_recipe(name: str) -> SettingRecipe:
     try:
-        return setting_recipe_map()[name]
+        return _setting_recipe_map()[name]
     except KeyError as exc:
         raise ValueError(f"Unknown setting recipe: {name}") from exc
 
 
 def schedulable_generation_strategies() -> tuple[str, ...]:
-    return tuple(recipe.name for recipe in load_setting_recipes() if recipe.is_schedulable)
+    return tuple(recipe.generation_strategy for recipe in load_setting_recipes() if recipe.is_schedulable)
 
 
 def setting_specs() -> dict[str, dict[str, int]]:

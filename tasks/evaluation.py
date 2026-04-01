@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from inspect_ai import Task
 
-from data.final5_store import build_evaluation_dataset
-from scorers.evaluation import final5_evaluation_scorer
-from solvers.final5_evaluation import final5_evaluation_solver
+from data.store import build_evaluation_dataset
+from scorers.evaluation import evaluation_scorer
+from solvers.evaluation import evaluation_solver
 
 
 def build_evaluation_tasks(
@@ -59,10 +59,10 @@ def build_evaluation_tasks(
             task_metadata.update(dict(task_metadata_by_setting_mode.get((setting, mode), {}) or {}))
             tasks.append(
                 Task(
-                    name=f"final5_eval_{setting}_{mode}",
+                    name=f"augmented_mcqa_eval_{setting}_{mode}",
                     dataset=dataset,
-                    solver=final5_evaluation_solver(mode),
-                    scorer=final5_evaluation_scorer(),
+                    solver=evaluation_solver(mode),
+                    scorer=evaluation_scorer(),
                     metadata=task_metadata,
                 )
             )

@@ -1,5 +1,4 @@
 import os
-from types import SimpleNamespace
 from pathlib import Path
 from unittest.mock import patch
 
@@ -9,14 +8,13 @@ from inspect_ai.scorer import Score, scorer
 from inspect_ai.solver import solver
 
 from utils.scheduler_state import (
-    STATUS_CURRENT,
     STATUS_FAILED,
     STATUS_PENDING,
     STATUS_PLANNED,
     STATUS_STALE,
     build_scheduler_state,
+    build_scheduler_state_from_tasks,
     collect_slice_attempts,
-    render_scheduler_dashboard,
 )
 
 
@@ -50,7 +48,7 @@ def _write_eval_log(root: Path, *, slice_ref: str, score_value: float, kind: str
     ):
         eval(
             Task(
-                name="final5_eval_test",
+                name="augmented_mcqa_eval_test",
                 dataset=MemoryDataset([Sample(input="Q", choices=["A", "B"], target="A", id="arc:0")]),
                 solver=_solver(),
                 scorer=_score_with(score_value),
@@ -218,93 +216,60 @@ def test_build_scheduler_state_does_not_mark_dead_submitted_jobs_pending():
     assert by_ref["dead-job"]["status"] == STATUS_PLANNED
 
 
-def test_render_scheduler_dashboard_contains_statuses():
-    state = {
-        "stage": "evaluate",
-        "run_name": "run1",
-        "submission_count": 1,
-        "slice_count": 2,
-        "generated_at": "2026-03-11T12:00:00+00:00",
-        "slices": [
+def test_build_scheduler_state_from_tasks_tracks_local_plans_without_manifests():
+    state = build_scheduler_state_from_tasks(
+        stage="evaluate",
+        run_name="eval-run",
+        planned_tasks=[
             {
-                "slice_ref": "a",
+                "slice_ref": "slice-current",
                 "stage": "evaluate",
                 "model": "vllm/model-a",
                 "dataset_type": "arc_challenge",
-                "setting": "model_from_scratch",
+                "setting": "human_from_scratch",
                 "mode": "full_question",
+                "task_slug": "slice-current-task",
                 "question_start": 0,
-                "question_end": 10,
-                "task_slug": "task-a",
-                "status": STATUS_CURRENT,
-                "latest_attempt": {"status": "success"},
+                "question_end": 1,
+                "generation_run_name": "gen-run",
+                "generation_model": "vllm/model-g",
+                "state_dependency_refs": [],
+                "submit_dependency_refs": [],
+                "force": False,
             },
             {
-                "slice_ref": "b",
+                "slice_ref": "slice-planned",
                 "stage": "evaluate",
                 "model": "vllm/model-a",
                 "dataset_type": "arc_challenge",
-                "setting": "augment_model",
+                "setting": "human_from_scratch",
                 "mode": "choices_only",
-                "question_start": 0,
-                "question_end": 10,
-                "task_slug": "task-b",
-                "status": STATUS_STALE,
-                "latest_attempt": {"status": "success"},
+                "task_slug": "slice-planned-task",
+                "question_start": 1,
+                "question_end": 2,
+                "generation_run_name": "gen-run",
+                "generation_model": "vllm/model-g",
+                "state_dependency_refs": [],
+                "submit_dependency_refs": [],
+                "force": False,
             },
         ],
-    }
+        attempts_by_slice={
+            "slice-current": [
+                {
+                    "slice_ref": "slice-current",
+                    "status": "success",
+                    "completed_at": "2026-03-11T11:00:00+00:00",
+                }
+            ]
+        },
+    )
+    by_ref = {entry["slice_ref"]: entry for entry in state["slices"]}
 
-    html = render_scheduler_dashboard(state)
-    assert "evaluate scheduler status" in html
-    assert "task-a" in html
-    assert STATUS_CURRENT in html
-    assert STATUS_STALE in html
-
-
-def test_render_scheduler_dashboard_uses_generation_strategies_as_columns():
-    state = {
-        "stage": "generate",
-        "run_name": "run1",
-        "submission_count": 1,
-        "slice_count": 2,
-        "generated_at": "2026-03-11T12:00:00+00:00",
-        "slices": [
-            {
-                "slice_ref": "a",
-                "stage": "generate",
-                "model": "together/model-a",
-                "dataset_type": "arc_challenge",
-                "strategy": "model_from_scratch",
-                "question_start": 0,
-                "question_end": 10,
-                "task_slug": "task-a",
-                "status": STATUS_CURRENT,
-                "latest_attempt": {"status": "success"},
-            },
-            {
-                "slice_ref": "b",
-                "stage": "generate",
-                "model": "together/model-a",
-                "dataset_type": "arc_challenge",
-                "strategy": "augment_model",
-                "question_start": 0,
-                "question_end": 10,
-                "task_slug": "task-b",
-                "status": STATUS_PLANNED,
-                "latest_attempt": {},
-            },
-        ],
-    }
-
-    html = render_scheduler_dashboard(state)
-    assert "<th>model_from_scratch</th>" in html
-    assert "<th>augment_model</th>" in html
-    assert "task-a" in html
-    assert "task-b" in html
-    assert "None:None" not in html
-
-
+    assert by_ref["slice-current"]["status"] == "current"
+    assert by_ref["slice-current"]["generation_run_name"] == "gen-run"
+    assert by_ref["slice-current"]["setting"] == "human_from_scratch"
+    assert by_ref["slice-planned"]["status"] == STATUS_PLANNED
 def test_collect_slice_attempts_treats_completed_evaluation_logs_as_success(tmp_path):
     root = tmp_path / "eval-logs"
     _write_eval_log(root, slice_ref="evaluation|run1|model|arc|setting|mode|0|1", score_value=0.0)

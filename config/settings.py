@@ -1,19 +1,10 @@
-"""
-Central configuration module for Augmented MCQA.
+"""Central configuration and dataset metadata for Augmented MCQA."""
 
-This module provides:
-- Environment variable loading
-- Path configurations
-- Unified distractor naming conventions
-- Prompt templates
-- Model configurations
-"""
-
+from dataclasses import dataclass, field
+from enum import Enum
 import os
 from pathlib import Path
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional
-from enum import Enum
+from typing import List, Optional
 
 from dotenv import load_dotenv
 
@@ -31,14 +22,24 @@ DATASETS_DIR = Path(os.getenv("DATASETS_DIR", PROJECT_ROOT / "datasets"))
 RESULTS_DIR = Path(os.getenv("RESULTS_DIR", PROJECT_ROOT / "results"))
 MODEL_CACHE_DIR = Path(os.getenv("MODEL_CACHE_DIR", "/fs/nexus-scratch/adesai10/hub"))
 
+def _is_writable_dir(path: Path) -> bool:
+    return path.is_dir() and os.access(path, os.W_OK | os.X_OK)
+
+
 def _ensure_writable_dir(path: Path, fallback: Path, name: str) -> Path:
     try:
         path.mkdir(parents=True, exist_ok=True)
-        return path
     except OSError:
-        print(f"⚠️ {name} not writable at {path}; falling back to {fallback}")
-        fallback.mkdir(parents=True, exist_ok=True)
+        pass
+    else:
+        if _is_writable_dir(path):
+            return path
+
+    print(f"⚠️ {name} not writable at {path}; falling back to {fallback}")
+    fallback.mkdir(parents=True, exist_ok=True)
+    if _is_writable_dir(fallback):
         return fallback
+    raise OSError(f"{name} is not writable at {path} or fallback {fallback}")
 
 
 DATASETS_DIR = _ensure_writable_dir(DATASETS_DIR, PROJECT_ROOT / "datasets", "DATASETS_DIR")
@@ -63,24 +64,17 @@ HF_TOKEN = os.getenv("HF_TOKEN", "")
 # HuggingFace settings
 _hf_home_env = os.getenv("HF_HOME")
 if _hf_home_env:
-    HF_HOME = _hf_home_env
+    HF_HOME = Path(_hf_home_env)
 else:
     default_hf_home = Path(MODEL_CACHE_DIR)
     if str(default_hf_home).startswith("/fs"):
-        HF_HOME = str(PROJECT_ROOT / ".hf_cache")
+        HF_HOME = PROJECT_ROOT / ".hf_cache"
     else:
-        HF_HOME = str(default_hf_home)
-# Set HF environment variables
-try:
-    Path(HF_HOME).mkdir(parents=True, exist_ok=True)
-except OSError:
-    fallback_hf_home = PROJECT_ROOT / ".hf_cache"
-    print(f"⚠️ HF_HOME not writable at {HF_HOME}; falling back to {fallback_hf_home}")
-    fallback_hf_home.mkdir(parents=True, exist_ok=True)
-    HF_HOME = str(fallback_hf_home)
-os.environ["HF_HOME"] = HF_HOME
-os.environ["TRANSFORMERS_CACHE"] = str(Path(HF_HOME) / "transformers")
-os.environ["HF_DATASETS_CACHE"] = str(Path(HF_HOME) / "datasets")
+        HF_HOME = default_hf_home
+HF_HOME = _ensure_writable_dir(HF_HOME, PROJECT_ROOT / ".hf_cache", "HF_HOME")
+os.environ["HF_HOME"] = str(HF_HOME)
+os.environ["TRANSFORMERS_CACHE"] = str(HF_HOME / "transformers")
+os.environ["HF_DATASETS_CACHE"] = str(HF_HOME / "datasets")
 
 
 # =============================================================================
@@ -95,11 +89,6 @@ CHOICE_LABELS = "ABCDEFGHIJ"
 # =============================================================================
 
 RANDOM_SEED = int(os.getenv("RANDOM_SEED", "12345"))
-DEFAULT_LIMIT = os.getenv("DEFAULT_LIMIT")
-if DEFAULT_LIMIT and DEFAULT_LIMIT.lower() != "none":
-    DEFAULT_LIMIT = int(DEFAULT_LIMIT)
-else:
-    DEFAULT_LIMIT = None
 
 
 # =============================================================================
@@ -190,44 +179,6 @@ DATASET_SCHEMA = {
         "splits": ["train"],
     },
 }
-
-
-def get_answer_index(entry: dict, dataset_type: DatasetType) -> int:
-    """Get answer index from entry based on dataset type."""
-    schema = DATASET_SCHEMA[dataset_type]
-    
-    # If answer_index is directly available
-    if schema.get("answer_index") and schema["answer_index"] in entry:
-        return int(entry[schema["answer_index"]])
-    
-    # Compute from answer_letter
-    if schema.get("answer_letter") and schema["answer_letter"] in entry:
-        letter = entry[schema["answer_letter"]]
-        if letter and len(letter) == 1:
-            return ord(letter.upper()) - ord('A')
-    
-    return 0
-
-
-def get_options_from_entry(entry: dict, dataset_type: DatasetType) -> List[str]:
-    """Get options list from entry based on dataset type."""
-    schema = DATASET_SCHEMA[dataset_type]
-    options_key = schema["options"]
-
-    if not options_key:
-        return []
-    
-    # Handle nested dict access (e.g., 'choices.text')
-    if "." in options_key:
-        parts = options_key.split(".")
-        val = entry
-        for part in parts:
-            val = val.get(part, [])
-        return list(val) if val else []
-    
-    return list(entry.get(options_key, []))
-
-
 # =============================================================================
 # Dataset Configuration
 # =============================================================================

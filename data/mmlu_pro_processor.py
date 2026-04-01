@@ -9,7 +9,6 @@ Processes MMLU-Pro to:
 4. Push processed datasets to Hugging Face Hub.
 """
 
-import re
 from pathlib import Path
 from typing import List, Dict, Set, Optional, Tuple
 from collections import defaultdict
@@ -32,13 +31,6 @@ def clean_whitespace(text: str) -> str:
     if isinstance(text, str):
         return text.strip()
     return text
-
-
-def clean_options(options: List[str]) -> List[str]:
-    """Clean whitespace from all options in a list."""
-    return [clean_whitespace(opt) for opt in options]
-
-
 def build_mmlu_lookup(mmlu_path: Path) -> Dict[str, Set[str]]:
     """
     Build a lookup table of all MMLU options indexed by question.

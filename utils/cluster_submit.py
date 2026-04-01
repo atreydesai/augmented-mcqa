@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
+from utils.constants import DEFAULT_AUGMENTED_CACHE_ROOT, DEFAULT_COLLECTED_DATASET_ROOT, DEFAULT_EVALUATION_LOG_ROOT
 from utils.modeling import safe_name
 from utils.scheduler_state import iso_now
 
@@ -118,6 +119,15 @@ slot_previous = {}
 slot_counters = {}
 concurrency_caps = dict(manifest.get("concurrency_caps", {}))
 
+def ordered_unique(values):
+    ordered = []
+    seen = set()
+    for value in values:
+        if value and value not in seen:
+            seen.add(value)
+            ordered.append(value)
+    return ordered
+
 def record_submission(task_index, job_id):
     task_record = manifest["tasks"][task_index]
     task_record["submitted_at"] = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
@@ -160,20 +170,10 @@ for task in manifest["tasks"]:
         cmd.extend(["--gres", f"gpu:{task['resources']['gpu_type']}:1"])
     dependency_parts = []
     if logical_deps:
-        ordered = []
-        seen = set()
-        for dependency_job_id in logical_deps:
-            if dependency_job_id not in seen:
-                seen.add(dependency_job_id)
-                ordered.append(dependency_job_id)
+        ordered = ordered_unique(logical_deps)
         dependency_parts.append("afterok:" + ":".join(ordered))
     if throttle_deps:
-        ordered = []
-        seen = set()
-        for dependency_job_id in throttle_deps:
-            if dependency_job_id not in seen:
-                seen.add(dependency_job_id)
-                ordered.append(dependency_job_id)
+        ordered = ordered_unique(throttle_deps)
         dependency_parts.append("afterany:" + ":".join(ordered))
     if dependency_parts:
         cmd.extend(["--dependency", ",".join(dependency_parts)])
@@ -226,12 +226,7 @@ for finalizer in manifest.get("finalizers", []):
         "--cpus-per-task", str(finalizer["resources"]["cpus_per_task"]),
     ]
     if dependency_job_ids:
-        ordered = []
-        seen = set()
-        for dependency_job_id in dependency_job_ids:
-            if dependency_job_id not in seen:
-                seen.add(dependency_job_id)
-                ordered.append(dependency_job_id)
+        ordered = ordered_unique(dependency_job_ids)
         cmd.extend(["--dependency", "afterany:" + ":".join(ordered)])
     cmd.extend(
         [
@@ -279,6 +274,7 @@ class ClusterTask:
     force: bool = False
     generation_run_name: str | None = None
     generation_model: str | None = None
+    collected_root: str | None = None
 
     def as_dict(self, *, task_index: int, submission_created_at: str, submission_id: str, task_log_dir: Path) -> dict[str, Any]:
         task_stdout = task_log_dir / f"{self.task_slug}__%j.out"
@@ -305,6 +301,7 @@ class ClusterTask:
             "force": self.force,
             "generation_run_name": self.generation_run_name,
             "generation_model": self.generation_model,
+            "collected_root": self.collected_root,
             "state_dependency_refs": list(self.state_dependency_refs or []),
             "submit_dependency_refs": list(self.submit_dependency_refs or []),
             "argv": list(self.argv),
@@ -312,7 +309,7 @@ class ClusterTask:
             "task_log_dir": str(task_log_dir),
             "task_stdout": str(task_stdout),
             "task_stderr": str(task_stderr),
-            "job_name": f"final5-{self.stage}-{self.task_slug}",
+            "job_name": f"augmented-mcqa-{self.stage}-{self.task_slug}",
             "submitted_at": "",
             "submitted_job_id": "",
         }
@@ -329,7 +326,6 @@ class ClusterBundlePaths:
     finalizer_wrapper_path: Path
     log_dir: Path
     state_path: Path
-    dashboard_path: Path
     submission_id: str
     submission_created_at: str
 
@@ -351,7 +347,6 @@ def build_bundle_paths(*, stage: str, run_name: str, output_dir: str | Path | No
         finalizer_wrapper_path=submission_dir / "run_finalize_task.sbatch",
         log_dir=log_dir,
         state_path=run_dir / "scheduler_state.json",
-        dashboard_path=run_dir / "scheduler_status.html",
         submission_id=submission_id,
         submission_created_at=submission_created_at,
     )
@@ -379,6 +374,43 @@ def _topological_order(tasks: list[ClusterTask]) -> list[ClusterTask]:
     return ordered
 
 
+def _finalizer_resources(resources: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "partition": resources["partition"],
+        "account": resources["account"],
+        "qos": resources["qos"],
+        "time_limit": "00:30:00",
+        "memory": "8G",
+        "cpus_per_task": 2,
+    }
+
+
+def _finalizer_record(
+    *,
+    finalizer_index: int,
+    kind: str,
+    model: str,
+    dependency_refs: list[str],
+    argv: list[str],
+    resources: dict[str, Any],
+    log_prefix: str,
+    job_prefix: str,
+    paths: ClusterBundlePaths,
+) -> dict[str, Any]:
+    model_slug = safe_name(model)
+    return {
+        "finalizer_index": finalizer_index,
+        "kind": kind,
+        "model": model,
+        "dependency_refs": dependency_refs,
+        "argv": argv,
+        "resources": _finalizer_resources(resources),
+        "task_stdout": str(paths.log_dir / f"{log_prefix}__{model_slug}__%j.out"),
+        "task_stderr": str(paths.log_dir / f"{log_prefix}__{model_slug}__%j.err"),
+        "job_name": f"{job_prefix}__{model_slug}",
+    }
+
+
 def render_manifest(
     *,
     stage: str,
@@ -394,12 +426,11 @@ def render_manifest(
         models = sorted({task.model for task in ordered_tasks})
         for finalizer_index, model in enumerate(models):
             representative_task = next(task for task in ordered_tasks if task.model == model)
-            model_slug = safe_name(model)
             dependency_refs = [task.slice_ref for task in ordered_tasks if task.model == model]
             if not dependency_refs:
                 continue
             argv = [
-                "materialize-generation-cache",
+                "materialize-store",
                 "--run-name",
                 run_name,
                 "--model",
@@ -408,24 +439,112 @@ def render_manifest(
                 str(representative_task.argv[representative_task.argv.index("--processed-dataset") + 1]),
             ]
             finalizers.append(
+                _finalizer_record(
+                    finalizer_index=finalizer_index,
+                    kind="materialize_generation_cache",
+                    model=model,
+                    dependency_refs=dependency_refs,
+                    argv=argv,
+                    resources=resources,
+                    log_prefix="materialize",
+                    job_prefix="augmented-mcqa-generate-materialize",
+                    paths=paths,
+                )
+            )
+    elif stage == "evaluate":
+        def task_arg(task: ClusterTask, flag: str) -> str | None:
+            argv = list(task.argv)
+            if flag not in argv:
+                return None
+            index = argv.index(flag) + 1
+            return argv[index] if index < len(argv) else None
+
+        grouped_tasks: dict[tuple[str, str, str], list[ClusterTask]] = {}
+        for task in ordered_tasks:
+            grouped_tasks.setdefault(
+                (task.model, str(task.generation_run_name or ""), str(task.generation_model or "")),
+                [],
+            ).append(task)
+
+        for finalizer_index, ((evaluation_model, generation_run_name, generation_model), group_tasks) in enumerate(sorted(grouped_tasks.items())):
+            representative_task = group_tasks[0]
+            dependency_refs = [task.slice_ref for task in group_tasks]
+            if not dependency_refs:
+                continue
+            collected_root = representative_task.collected_root or str(DEFAULT_COLLECTED_DATASET_ROOT)
+            explicit_augmented_dataset = task_arg(representative_task, "--augmented-dataset")
+            augmented_dataset = (
+                explicit_augmented_dataset
+                or str(
+                    Path(DEFAULT_AUGMENTED_CACHE_ROOT)
+                    / safe_name(generation_run_name or "unknown_generation_run")
+                    / safe_name(generation_model or "unknown_generation_model")
+                )
+            )
+            evaluation_log_root = str(
+                Path(DEFAULT_EVALUATION_LOG_ROOT)
+                / safe_name(run_name)
+                / safe_name(generation_run_name or "unknown_generation_run")
+                / safe_name(generation_model or "unknown_generation_model")
+                / safe_name(evaluation_model)
+            )
+            dataset_types = sorted(
                 {
-                    "finalizer_index": finalizer_index,
-                    "kind": "materialize_generation_cache",
-                    "model": model,
-                    "dependency_refs": dependency_refs,
-                    "argv": argv,
-                    "resources": {
-                        "partition": resources["partition"],
-                        "account": resources["account"],
-                        "qos": resources["qos"],
-                        "time_limit": "00:30:00",
-                        "memory": "8G",
-                        "cpus_per_task": 2,
-                    },
-                    "task_stdout": str(paths.log_dir / f"materialize__{model_slug}__%j.out"),
-                    "task_stderr": str(paths.log_dir / f"materialize__{model_slug}__%j.err"),
-                    "job_name": f"final5-generate-materialize__{model_slug}",
+                    task.dataset_type
+                    for task in group_tasks
                 }
+            )
+            settings = sorted(
+                {
+                    str(task.setting or "")
+                    for task in group_tasks
+                    if str(task.setting or "")
+                }
+            )
+            modes = sorted(
+                {
+                    str(task.mode or "")
+                    for task in group_tasks
+                    if str(task.mode or "")
+                }
+            )
+            argv = [
+                "collect-evaluated",
+                "--run-name",
+                run_name,
+                "--generator-run-name",
+                generation_run_name,
+                "--generator-model",
+                generation_model,
+                "--model",
+                evaluation_model,
+                "--evaluation-log-root",
+                evaluation_log_root,
+                "--augmented-dataset",
+                augmented_dataset,
+                "--collected-root",
+                collected_root,
+                "--dataset-types",
+                ",".join(dataset_types),
+                "--settings",
+                ",".join(settings),
+                "--modes",
+                ",".join(modes),
+                "--scheduler-output-dir",
+                str(paths.run_dir),
+            ]
+            finalizers.append(
+                _finalizer_record(
+                    finalizer_index=finalizer_index,
+                    kind="materialize_collected_evaluation",
+                    model=evaluation_model,
+                    dependency_refs=dependency_refs,
+                    argv=argv,
+                    resources=resources,
+                    log_prefix="collect",
+                    job_prefix="augmented-mcqa-evaluate-collect",
+                    paths=paths,
+                )
             )
     payload = {
         "stage": stage,
@@ -447,16 +566,6 @@ def render_manifest(
         ],
     }
     return json.dumps(payload, indent=2) + "\n"
-
-
-def render_wrapper_script() -> str:
-    return WRAPPER_TEMPLATE
-
-
-def render_finalizer_wrapper_script() -> str:
-    return FINALIZER_WRAPPER_TEMPLATE
-
-
 def render_submit_script(paths: ClusterBundlePaths) -> str:
     return (
         MASTER_SUBMIT_TEMPLATE.replace("__MANIFEST_PATH__", str(paths.manifest_path))
@@ -480,15 +589,16 @@ def write_bundle(
     paths.run_dir.mkdir(parents=True, exist_ok=True)
     paths.submission_dir.mkdir(parents=True, exist_ok=True)
     paths.log_dir.mkdir(parents=True, exist_ok=True)
-    paths.manifest_path.write_text(manifest_text, encoding="utf-8")
-    paths.submit_path.write_text(submit_text, encoding="utf-8")
-    paths.local_wrapper_path.write_text(local_wrapper_text, encoding="utf-8")
-    paths.api_wrapper_path.write_text(api_wrapper_text, encoding="utf-8")
-    paths.finalizer_wrapper_path.write_text(finalizer_wrapper_text, encoding="utf-8")
-    paths.submit_path.chmod(0o755)
-    paths.local_wrapper_path.chmod(0o755)
-    paths.api_wrapper_path.chmod(0o755)
-    paths.finalizer_wrapper_path.chmod(0o755)
+    for path, content in (
+        (paths.manifest_path, manifest_text),
+        (paths.submit_path, submit_text),
+        (paths.local_wrapper_path, local_wrapper_text),
+        (paths.api_wrapper_path, api_wrapper_text),
+        (paths.finalizer_wrapper_path, finalizer_wrapper_text),
+    ):
+        path.write_text(content, encoding="utf-8")
+    for path in (paths.submit_path, paths.local_wrapper_path, paths.api_wrapper_path, paths.finalizer_wrapper_path):
+        path.chmod(0o755)
 
 
 def submit_bundle(paths: ClusterBundlePaths) -> subprocess.CompletedProcess[str]:
@@ -503,11 +613,11 @@ def submit_bundle(paths: ClusterBundlePaths) -> subprocess.CompletedProcess[str]
 __all__ = [
     "ClusterBundlePaths",
     "ClusterTask",
+    "FINALIZER_WRAPPER_TEMPLATE",
+    "WRAPPER_TEMPLATE",
     "build_bundle_paths",
-    "render_finalizer_wrapper_script",
     "render_manifest",
     "render_submit_script",
-    "render_wrapper_script",
     "submit_bundle",
     "write_bundle",
 ]

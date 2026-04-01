@@ -9,8 +9,20 @@ from tqdm import tqdm
 from config import DATASET_SCHEMA, PROCESSED_DATASETS_DIR, DatasetType
 
 
+ARC_OUTPUT_DIRNAME = "arc_processed"
+
+
+def _answer_index(labels: list[str], answer_key: str) -> int | None:
+    try:
+        return labels.index(answer_key)
+    except ValueError:
+        if not answer_key.isdigit():
+            return None
+        index = int(answer_key) - 1
+        return index if index >= 0 else None
+
+
 def load_arc_dataset(
-    difficulty: str = "challenge",
     split: str = "test",
     limit: Optional[int] = None,
 ) -> List[Dict[str, Any]]:
@@ -18,16 +30,12 @@ def load_arc_dataset(
     Load ARC dataset with proper column parsing.
     
     Args:
-        difficulty: Must be "challenge" (ARC-Easy is not active)
         split: Dataset split to load
         limit: Optional limit on number of entries
         
     Returns:
         List of entries in unified format
     """
-    if difficulty != "challenge":
-        raise ValueError("Only difficulty='challenge' is supported in active Final5 pipeline")
-
     dataset_type = DatasetType.ARC_CHALLENGE
     schema = DATASET_SCHEMA[dataset_type]
     
@@ -39,12 +47,13 @@ def load_arc_dataset(
         trust_remote_code=True,
     )
     
-    if limit:
+    if limit is not None:
         ds = ds.select(range(min(limit, len(ds))))
     
     # Convert to unified format
     entries = []
-    skipped_count = 0
+    skipped_option_count = 0
+    skipped_answer_count = 0
     for entry in tqdm(ds, desc="Loading ARC-Challenge"):
         # Extract options from nested dict
         options = entry["choices"]["text"]
@@ -52,24 +61,24 @@ def load_arc_dataset(
         
         # Filter: minimum 4 options required
         if len(options) < 4:
-            skipped_count += 1
+            skipped_option_count += 1
             continue
             
         # Get answer index from letter
         answer_letter = entry["answerKey"]
-        try:
-            answer_index = labels.index(answer_letter)
-        except ValueError:
-            # Handle edge case where answerKey might be numeric
-            answer_index = int(answer_letter) - 1 if answer_letter.isdigit() else 0
+        answer_index = _answer_index(labels, answer_letter)
+        if answer_index is None or answer_index >= len(options):
+            skipped_answer_count += 1
+            continue
+        answer = options[answer_index]
         
         unified_entry = {
             "id": entry["id"],
             "question": entry["question"],
             "options": options,
             "labels": labels,
-            "answer": options[answer_index] if answer_index < len(options) else options[0],
-            "choices_answer": [options[answer_index] if answer_index < len(options) else options[0]],
+            "answer": answer,
+            "choices_answer": [answer],
             "answer_index": answer_index,
             "answer_letter": answer_letter,
             "dataset_type": dataset_type.value,
@@ -81,14 +90,15 @@ def load_arc_dataset(
         }
         entries.append(unified_entry)
         
-    if skipped_count > 0:
-        print(f"  Skipped {skipped_count} entries with fewer than 4 options")
+    if skipped_option_count > 0:
+        print(f"  Skipped {skipped_option_count} entries with fewer than 4 options")
+    if skipped_answer_count > 0:
+        print(f"  Skipped {skipped_answer_count} entries with invalid answer keys")
     
     return entries
 
 
 def process_arc_for_experiments(
-    difficulty: str = "challenge",
     split: str = "test",
     limit: Optional[int] = None,
     output_dir: Optional[Path] = None,
@@ -98,7 +108,6 @@ def process_arc_for_experiments(
     Process ARC dataset and save as HF Dataset for experiments.
     
     Args:
-        difficulty: Must be "challenge"
         split: Dataset split
         limit: Optional limit
         output_dir: Output base directory
@@ -108,7 +117,7 @@ def process_arc_for_experiments(
         Processed Dataset
     """
     from datasets import Dataset
-    entries = load_arc_dataset(difficulty, split, limit)
+    entries = load_arc_dataset(split=split, limit=limit)
     
     # Convert to HF Dataset for standardization
     dataset = Dataset.from_list(entries)
@@ -117,8 +126,7 @@ def process_arc_for_experiments(
         if output_dir is None:
             output_dir = PROCESSED_DATASETS_DIR
         
-        # Default path structure: output_dir/arc_processed/arc_challenge
-        output_path = output_dir / "arc_processed" / "arc_challenge"
+        output_path = output_dir / ARC_OUTPUT_DIRNAME / DatasetType.ARC_CHALLENGE.value
     
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)

@@ -25,9 +25,9 @@ def _load_prompt(name: str) -> str:
     return (Path(PROMPTS_DIR) / name).read_text(encoding="utf-8").strip()
 
 
-def _prompt_template(name: str | None) -> str:
+def _prompt_template(strategy: str, name: str | None) -> str:
     if not name:
-        return ""
+        raise ValueError(f"Generation recipe '{strategy}' is missing a prompt template")
     return _load_prompt(name)
 
 
@@ -83,7 +83,7 @@ async def _call_and_parse(
 
 
 @solver
-def final5_generation_solver(strategy: str):
+def generation_solver(strategy: str):
     async def solve(state: TaskState, generate: Generate) -> TaskState:
         if strategy not in SCHEDULABLE_GENERATION_STRATEGIES:
             raise ValueError(f"Unknown schedulable generation strategy: {strategy}")
@@ -122,7 +122,7 @@ def final5_generation_solver(strategy: str):
             }
 
             if recipe.prompt_mode == "qa":
-                prompt = _prompt_template(recipe.prompt_template).format(
+                prompt = _prompt_template(strategy, recipe.prompt_template).format(
                     count=recipe.generated_count,
                     question=question,
                     gold_answer=answer,
@@ -166,7 +166,7 @@ def final5_generation_solver(strategy: str):
                 else:
                     raise ValueError(f"Unsupported conditioned recipe source: {recipe.conditioned_on}")
 
-                prompt = _prompt_template(recipe.prompt_template).format(
+                prompt = _prompt_template(strategy, recipe.prompt_template).format(
                     count=recipe.generated_count,
                     old_count=1 + len(prior_distractors),
                     question=question,
