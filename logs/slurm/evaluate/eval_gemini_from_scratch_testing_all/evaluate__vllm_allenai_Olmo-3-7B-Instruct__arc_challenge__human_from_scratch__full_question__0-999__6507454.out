@@ -1,0 +1,32 @@
+---------------------------------------------------------                                                                                            
+augmented_mcqa_eval_human_from_scratch_full_question (1,000 samples): vllm/allenai/Olmo-3-7B-Instruct                                                
+max_tokens: 2048, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, log_realtime: False, log_buffer: 100, score_display: False,     
+dataset: (samples)                                                                                                                                   
+---------------------------------------------------------                                                                                            
+                                                                                                                                                     
+Steps:  10/1000   1% | Samples:   1/1000 | vllm:  0/10 | HTTP retries: 0
+Steps: 122/1000  12% | Samples: 121/1000 | vllm:  8/10 | HTTP retries: 0
+Steps: 229/1000  22% | Samples: 229/1000 | vllm:  9/10 | HTTP retries: 0
+Steps: 349/1000  34% | Samples: 349/1000 | vllm:  9/10 | HTTP retries: 0
+Steps: 460/1000  46% | Samples: 460/1000 | vllm:  9/10 | HTTP retries: 0
+Steps: 577/1000  57% | Samples: 576/1000 | vllm:  4/10 | HTTP retries: 0
+Steps: 680/1000  68% | Samples: 680/1000 | vllm:  9/10 | HTTP retries: 0
+Steps: 794/1000  79% | Samples: 794/1000 | vllm:  9/10 | HTTP retries: 0
+Steps: 912/1000  91% | Samples: 911/1000 | vllm:  8/10 | HTTP retries: 0
+Steps: 1000/1000 100% | Samples: 1000/1000 | vllm:  0/10 | HTTP retries: 0
+
+---------------------------------------------------------                                                                                            
+augmented_mcqa_eval_human_from_scratch_full_question (1,000 samples): vllm/allenai/Olmo-3-7B-Instruct                                                
+max_tokens: 2048, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, log_realtime: False, log_buffer: 100, score_display: False,     
+dataset: (samples)                                                                                                                                   
+                                                                                                                                                     
+total time:                                                         0:02:01                                                                          
+vllm/allenai/Olmo-3-7B-Instruct                                     182,731 tokens [I: 172,953, O: 9,778]                                            
+augmented_mcqa_eval                                                                                                                                  
+mean                 0.768                                                                                                                           
+stderr               0.013                                                                                                                           
+Log:                                                                                                                                                 
+results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_allenai_Olmo-3-7B-Ins…
+---------------------------------------------------------                                                                                            
+                                                                                                                                                     
+Running: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/python main.py evaluate --model vllm/allenai/Olmo-3-7B-Instruct --run-name eval_gemini_from_scratch_testing_all --generator-run-name gemini_from_scratch_testing --generator-model google/gemini-3.1-pro-preview --processed-dataset /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/processed/unified_processed_v3 --dataset-types arc_challenge --settings human_from_scratch --modes full_question --question-start 0 --limit 1000 --augmented-dataset /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/augmented/gemini_from_scratch_testing/google_gemini-3.1-pro-preview --max-tokens 2048 --reasoning-effort medium --retry-on-error 2

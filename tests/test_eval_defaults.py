@@ -37,6 +37,7 @@ def test_main_parser_evaluate_defaults_use_inspect_first_shape():
     assert Path(args.cache_root).parts[-1] == "augmented"
     assert Path(args.log_root).parts[-2:] == ("inspect", "evaluation")
     assert args.shard_count == 1
+    assert args.collect_evaluated is True
 
 
 def test_main_parser_submit_generate_cluster_defaults_use_local_cluster_shape():
@@ -179,10 +180,6 @@ def test_model_alias_resolution_covers_api_and_local_defaults():
     assert resolve_model_name("gpt-5.2-2025-12-11") == "openai/gpt-5.2-2025-12-11"
     assert resolve_model_name("Qwen/Qwen3.5-397B-A17B") == "together/Qwen/Qwen3.5-397B-A17B"
     assert resolve_model_name("Qwen/Qwen3-4B-Instruct-2507") == "vllm/Qwen/Qwen3-4B-Instruct-2507"
-    assert (
-        resolve_model_name("mistralai/Ministral-3-14B-Instruct-2512")
-        == "vllm/mistralai/Ministral-3-14B-Instruct-2512"
-    )
     assert resolve_model_name("custom-model", "openai") == "openai/custom-model"
 
 

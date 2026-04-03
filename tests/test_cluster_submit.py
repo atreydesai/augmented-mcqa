@@ -587,6 +587,11 @@ def test_submit_evaluate_cluster_writes_setting_mode_chunk_tasks_when_generation
     assert rc == 0
     manifest = _read_manifest(bundle_dir)
     assert manifest["task_count"] == 8
+    assert len(manifest["finalizers"]) == 1
+    finalizer = manifest["finalizers"][0]
+    assert finalizer["kind"] == "materialize_collected_evaluation_run"
+    assert finalizer["argv"][:2] == ["collect-evaluated", "--run-name"]
+    assert finalizer["argv"].count("--collection-spec") == 2
     assert {task["resource_class"] for task in manifest["tasks"]} == {"local", "api"}
     assert {task["setting"] for task in manifest["tasks"]} == {"model_from_scratch"}
     assert {task["mode"] for task in manifest["tasks"]} == {"full_question", "choices_only"}
@@ -596,6 +601,7 @@ def test_submit_evaluate_cluster_writes_setting_mode_chunk_tasks_when_generation
         task_by_model.setdefault(task["model"], []).append(task)
         assert "--settings" in task["argv"]
         assert "--modes" in task["argv"]
+        assert "--skip-collect-evaluated" in task["argv"]
         assert task["submit_dependency_refs"] == []
         assert len(task["state_dependency_refs"]) == 1
 

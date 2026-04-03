@@ -64,16 +64,6 @@ def test_vllm_server_args_use_eval_friendly_defaults():
     assert vllm_server_args("gpt-5.2-2025-12-11") == {}
 
 
-def test_ministral_uses_mistral_vllm_startup_flags():
-    assert vllm_server_args("mistralai/Ministral-3-14B-Instruct-2512") == {
-        "enforce_eager": True,
-        "max_model_len": 8192,
-        "tokenizer_mode": "mistral",
-        "config_format": "mistral",
-        "load_format": "mistral",
-    }
-
-
 def test_reasoning_effort_is_disabled_for_together_qwen_models():
     assert reasoning_effort_for_model("Qwen/Qwen3.5-397B-A17B", "medium") is None
     assert reasoning_effort_for_model("together/Qwen/Qwen3.5-397B-A17B", "medium") is None

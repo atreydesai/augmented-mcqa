@@ -713,6 +713,7 @@ def _build_evaluation_cluster_tasks(args: argparse.Namespace) -> tuple[list[Clus
                         ]
                         if explicit_augmented_dataset is not None:
                             argv.extend(["--augmented-dataset", str(explicit_augmented_dataset)])
+                        argv.append("--skip-collect-evaluated")
                         argv.extend(_runtime_argv(args))
                         tasks.append(
                             _cluster_task(
@@ -1175,22 +1176,23 @@ def _run_evaluate(args: argparse.Namespace) -> int:
         return 0
     planned_tasks = _local_evaluation_task_plans(tasks, fallback_model=eval_model)
     eval_logs = inspect_eval(tasks, model=eval_model, log_dir=log_dir, args=args)
-    collected_outputs = _materialize_collected_evaluation(
-        run_name=args.run_name,
-        evaluation_log_root=log_dir,
-        collected_root=Path(args.collected_root),
-        augmented_dataset=cache_dir,
-        generation_run_name=args.generator_run_name,
-        generation_model=generation_model,
-        evaluation_model=eval_model,
-        dataset_types=dataset_types,
-        settings=settings,
-        modes=modes,
-        planned_tasks=planned_tasks,
-    )
     print(f"Evaluation logs: {log_dir}")
-    for output in collected_outputs:
-        print(output)
+    if args.collect_evaluated:
+        collected_outputs = _materialize_collected_evaluation(
+            run_name=args.run_name,
+            evaluation_log_root=log_dir,
+            collected_root=Path(args.collected_root),
+            augmented_dataset=cache_dir,
+            generation_run_name=args.generator_run_name,
+            generation_model=generation_model,
+            evaluation_model=eval_model,
+            dataset_types=dataset_types,
+            settings=settings,
+            modes=modes,
+            planned_tasks=planned_tasks,
+        )
+        for output in collected_outputs:
+            print(output)
     return 0 if evaluation_logs_completed(eval_logs) else 1
 
 
@@ -1226,19 +1228,38 @@ def _run_analyze(args: argparse.Namespace) -> int:
 
 
 def _run_collect_evaluated(args: argparse.Namespace) -> int:
-    outputs = _materialize_collected_evaluation(
-        run_name=args.run_name,
-        evaluation_log_root=Path(args.evaluation_log_root),
-        collected_root=Path(args.collected_root),
-        augmented_dataset=Path(args.augmented_dataset),
-        generation_run_name=args.generator_run_name,
-        generation_model=args.generator_model,
-        evaluation_model=args.model,
-        dataset_types=_select_values(args.dataset_types, default=args.default_dataset_types, allowed=list(ACTIVE_DATASET_TYPES), label="dataset types"),
-        settings=_select_values(args.settings, default=list(SETTING_NAMES), allowed=list(SETTING_NAMES), label="settings"),
-        modes=_select_values(args.modes, default=list(MODE_CHOICES), allowed=list(MODE_CHOICES), label="modes"),
-        scheduler_output_dir=args.scheduler_output_dir,
-    )
+    outputs: list[Path] = []
+    if args.collection_spec:
+        for raw_spec in args.collection_spec:
+            spec = json.loads(raw_spec)
+            model_outputs = _materialize_collected_evaluation(
+                run_name=args.run_name,
+                evaluation_log_root=Path(spec["evaluation_log_root"]),
+                collected_root=Path(args.collected_root),
+                augmented_dataset=Path(spec["augmented_dataset"]),
+                generation_run_name=str(spec["generator_run_name"]),
+                generation_model=str(spec["generator_model"]),
+                evaluation_model=str(spec["evaluation_model"]),
+                dataset_types=list(spec["dataset_types"]),
+                settings=list(spec["settings"]),
+                modes=list(spec["modes"]),
+                scheduler_output_dir=args.scheduler_output_dir,
+            )
+            outputs.extend(model_outputs)
+    else:
+        outputs = _materialize_collected_evaluation(
+            run_name=args.run_name,
+            evaluation_log_root=Path(args.evaluation_log_root),
+            collected_root=Path(args.collected_root),
+            augmented_dataset=Path(args.augmented_dataset),
+            generation_run_name=args.generator_run_name,
+            generation_model=args.generator_model,
+            evaluation_model=args.model,
+            dataset_types=_select_values(args.dataset_types, default=args.default_dataset_types, allowed=list(ACTIVE_DATASET_TYPES), label="dataset types"),
+            settings=_select_values(args.settings, default=list(SETTING_NAMES), allowed=list(SETTING_NAMES), label="settings"),
+            modes=_select_values(args.modes, default=list(MODE_CHOICES), allowed=list(MODE_CHOICES), label="modes"),
+            scheduler_output_dir=args.scheduler_output_dir,
+        )
     for output in outputs:
         print(output)
     return 0
@@ -1344,15 +1365,15 @@ def _add_collect_evaluated_parser(
     parser = sub.add_parser(
         "collect-evaluated",
         prog="main.py collect-evaluated",
-        description="Materialize one collected evaluation dataset directly from evaluation logs.",
+        description="Materialize collected evaluation datasets directly from evaluation logs.",
         formatter_class=formatter,
     )
     parser.add_argument("--run-name", required=True)
-    parser.add_argument("--generator-run-name", required=True)
-    parser.add_argument("--generator-model", required=True)
-    parser.add_argument("--model", required=True, help="Evaluation model whose collected dataset should be materialized.")
-    parser.add_argument("--evaluation-log-root", required=True)
-    parser.add_argument("--augmented-dataset", required=True)
+    parser.add_argument("--generator-run-name", required=False)
+    parser.add_argument("--generator-model", required=False)
+    parser.add_argument("--model", required=False, help="Evaluation model whose collected dataset should be materialized.")
+    parser.add_argument("--evaluation-log-root", required=False)
+    parser.add_argument("--augmented-dataset", required=False)
     parser.add_argument(
         "--collected-root",
         default=str(DEFAULT_COLLECTED_DATASET_ROOT),
@@ -1377,6 +1398,12 @@ def _add_collect_evaluated_parser(
         "--modes",
         default=None,
         help="Comma-separated subset of modes expected in the collected dataset.",
+    )
+    parser.add_argument(
+        "--collection-spec",
+        action="append",
+        default=[],
+        help="JSON-encoded per-model collection spec emitted by the cluster scheduler.",
     )
     parser.set_defaults(default_dataset_types=list(DEFAULT_DATASET_TYPES))
     parser.set_defaults(handler=_run_collect_evaluated)
@@ -1649,7 +1676,24 @@ def _add_evaluate_parser(sub: argparse._SubParsersAction[argparse.ArgumentParser
     evaluate.add_argument("--modes", default=None, help="Advanced subset override: comma-separated subset of evaluation modes to run.")
     evaluate.add_argument("--limit", type=int, default=None, help="Advanced/debug option: optional per-dataset cap on the number of evaluation samples.")
     evaluate.add_argument("--log-root", default=str(DEFAULT_EVALUATION_LOG_ROOT), help="Advanced override: root directory for Inspect evaluation logs.")
-    evaluate.add_argument("--collected-root", default=str(DEFAULT_COLLECTED_DATASET_ROOT), help="Root directory where the collected evaluation dataset should be written automatically after evaluation completes.")
+    evaluate.add_argument(
+        "--collected-root",
+        default=str(DEFAULT_COLLECTED_DATASET_ROOT),
+        help="Root directory where the collected evaluation dataset should be written when collection is enabled.",
+    )
+    evaluate.add_argument(
+        "--collect-evaluated",
+        dest="collect_evaluated",
+        action="store_true",
+        default=True,
+        help="Materialize the collected evaluation dataset immediately after this evaluate command finishes.",
+    )
+    evaluate.add_argument(
+        "--skip-collect-evaluated",
+        dest="collect_evaluated",
+        action="store_false",
+        help="Skip collected dataset materialization for this evaluate command. Intended for cluster slice jobs that defer collection to a finalizer.",
+    )
     evaluate.add_argument("--rebuild-cache", action="store_true", help="Advanced override: force regeneration of the augmented cache before evaluation.")
     evaluate.set_defaults(default_dataset_types=list(DEFAULT_DATASET_TYPES))
     add_runtime_flags(evaluate)

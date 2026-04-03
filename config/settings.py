@@ -73,6 +73,7 @@ else:
         HF_HOME = default_hf_home
 HF_HOME = _ensure_writable_dir(HF_HOME, PROJECT_ROOT / ".hf_cache", "HF_HOME")
 os.environ["HF_HOME"] = str(HF_HOME)
+os.environ["HUGGINGFACE_HUB_CACHE"] = str(HF_HOME)
 os.environ["TRANSFORMERS_CACHE"] = str(HF_HOME / "transformers")
 os.environ["HF_DATASETS_CACHE"] = str(HF_HOME / "datasets")
 

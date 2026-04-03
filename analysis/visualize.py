@@ -53,8 +53,6 @@ EVAL_MODEL_DISPLAY_LABELS: dict[str, str] = {
     "vllm/meta-llama/Llama-3.1-8B-Instruct": "Llama3.1-8B",
     "nvidia/NVIDIA-Nemotron-Nano-9B-v2": "Nemotron-Nano-9B",
     "vllm/nvidia/NVIDIA-Nemotron-Nano-9B-v2": "Nemotron-Nano-9B",
-    "mistralai/Ministral-3-14B-Instruct-2512": "Ministral-14B",
-    "vllm/mistralai/Ministral-3-14B-Instruct-2512": "Ministral-14B",
 }
 SETTING_DISPLAY_LABELS: dict[str, str] = {
     "human_from_scratch": "human_from_scratch (Normal Benchmark)",
@@ -83,7 +81,6 @@ COMPLETENESS_LEGEND = "Hatched bars = partial coverage, gray bars = missing resu
 PREDICTION_TYPE_ORDER = ["G", "H", "M", "?"]
 PREDICTION_LETTER_ORDER = list(CHOICE_LABELS)
 HIDDEN_EVAL_MODEL_IDENTITIES = {
-    "mistralai/Ministral-3-14B-Instruct-2512",
 }
 
 

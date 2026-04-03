@@ -1,0 +1,31 @@
+---------------------------------------------------------                                                                                            
+augmented_mcqa_eval_augment_model_choices_only (1,000 samples): vllm/Qwen/Qwen3-4B-Instruct-2507                                                     
+max_tokens: 2048, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, log_realtime: False, log_buffer: 100, score_display: False,     
+dataset: (samples)                                                                                                                                   
+---------------------------------------------------------                                                                                            
+                                                                                                                                                     
+Steps:  10/1000   1% | Samples:   1/1000 | vllm:  0/10 | HTTP retries: 0
+Steps: 141/1000  14% | Samples: 137/1000 | vllm:  5/10 | HTTP retries: 0
+Steps: 268/1000  26% | Samples: 268/1000 | vllm:  9/10 | HTTP retries: 0
+Steps: 405/1000  40% | Samples: 404/1000 | vllm:  8/10 | HTTP retries: 0
+Steps: 540/1000  54% | Samples: 533/1000 | vllm:  2/10 | HTTP retries: 0
+Steps: 659/1000  65% | Samples: 657/1000 | vllm:  7/10 | HTTP retries: 0
+Steps: 793/1000  79% | Samples: 793/1000 | vllm:  9/10 | HTTP retries: 0
+Steps: 926/1000  92% | Samples: 926/1000 | vllm:  9/10 | HTTP retries: 0
+Steps: 1000/1000 100% | Samples: 1000/1000 | vllm:  0/10 | HTTP retries: 0
+
+---------------------------------------------------------                                                                                            
+augmented_mcqa_eval_augment_model_choices_only (1,000 samples): vllm/Qwen/Qwen3-4B-Instruct-2507                                                     
+max_tokens: 2048, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, log_realtime: False, log_buffer: 100, score_display: False,     
+dataset: (samples)                                                                                                                                   
+                                                                                                                                                     
+total time:                                                          0:01:59                                                                         
+vllm/Qwen/Qwen3-4B-Instruct-2507                                     252,141 tokens [I: 242,141, O: 10,000]                                          
+augmented_mcqa_eval                                                                                                                                  
+mean                 0.337                                                                                                                           
+stderr               0.015                                                                                                                           
+Log:                                                                                                                                                 
+results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_Qwen_Qwen3-4B-Instruc…
+---------------------------------------------------------                                                                                            
+                                                                                                                                                     
+Running: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/python main.py evaluate --model vllm/Qwen/Qwen3-4B-Instruct-2507 --run-name eval_gemini_from_scratch_testing_all --generator-run-name gemini_from_scratch_testing --generator-model google/gemini-3.1-pro-preview --processed-dataset /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/processed/unified_processed_v3 --dataset-types arc_challenge --settings augment_model --modes choices_only --question-start 0 --limit 1000 --augmented-dataset /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/augmented/gemini_from_scratch_testing/google_gemini-3.1-pro-preview --max-tokens 2048 --reasoning-effort medium --retry-on-error 2

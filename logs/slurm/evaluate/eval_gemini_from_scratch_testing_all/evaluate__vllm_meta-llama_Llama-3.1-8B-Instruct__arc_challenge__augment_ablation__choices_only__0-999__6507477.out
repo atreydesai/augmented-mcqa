@@ -1,0 +1,35 @@
+---------------------------------------------------------                                                                                            
+augmented_mcqa_eval_augment_ablation_choices_only (1,000 samples): vllm/meta-llama/Llama-3.1-8B-Instruct                                             
+max_tokens: 2048, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, log_realtime: False, log_buffer: 100, score_display: False,     
+dataset: (samples)                                                                                                                                   
+---------------------------------------------------------                                                                                            
+                                                                                                                                                     
+Steps:  10/1000   1% | Samples:   1/1000 | vllm:  0/10 | HTTP retries: 0
+Steps: 101/1000  10% | Samples: 101/1000 | vllm:  9/10 | HTTP retries: 0
+Steps: 196/1000  19% | Samples: 187/1000 | vllm:  0/10 | HTTP retries: 0
+Steps: 279/1000  27% | Samples: 273/1000 | vllm:  2/10 | HTTP retries: 0
+Steps: 365/1000  36% | Samples: 364/1000 | vllm:  8/10 | HTTP retries: 0
+Steps: 454/1000  45% | Samples: 451/1000 | vllm:  6/10 | HTTP retries: 0
+Steps: 550/1000  55% | Samples: 546/1000 | vllm:  5/10 | HTTP retries: 0
+Steps: 638/1000  63% | Samples: 638/1000 | vllm:  9/10 | HTTP retries: 0
+Steps: 730/1000  73% | Samples: 729/1000 | vllm:  8/10 | HTTP retries: 0
+Steps: 820/1000  82% | Samples: 820/1000 | vllm:  9/10 | HTTP retries: 0
+Steps: 919/1000  91% | Samples: 919/1000 | vllm:  9/10 | HTTP retries: 0
+Steps: 1000/1000 100% | Samples: 1000/1000 | vllm:  0/10 | HTTP retries: 0
+
+---------------------------------------------------------                                                                                            
+augmented_mcqa_eval_augment_ablation_choices_only (1,000 samples): vllm/meta-llama/Llama-3.1-8B-Instruct                                             
+max_tokens: 2048, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, log_realtime: False, log_buffer: 100, score_display: False,     
+dataset: (samples)                                                                                                                                   
+                                                                                                                                                     
+total time:                                                               0:02:26                                                                    
+vllm/meta-llama/Llama-3.1-8B-Instruct                                     276,000 tokens [I: 266,000, O: 10,000]                                     
+augmented_mcqa_eval                                                                                                                                  
+mean                 0.263                                                                                                                           
+stderr               0.014                                                                                                                           
+Log:                                                                                                                                                 
+results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_meta-llama_Llama-3.1-…
+---------------------------------------------------------                                                                                            
+                                                                                                                                                     
+Evaluation logs: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_meta-llama_Llama-3.1-8B-Instruct
+Running: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/python main.py evaluate --model vllm/meta-llama/Llama-3.1-8B-Instruct --run-name eval_gemini_from_scratch_testing_all --generator-run-name gemini_from_scratch_testing --generator-model google/gemini-3.1-pro-preview --processed-dataset /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/processed/unified_processed_v3 --dataset-types arc_challenge --settings augment_ablation --modes choices_only --question-start 0 --limit 1000 --augmented-dataset /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/augmented/gemini_from_scratch_testing/google_gemini-3.1-pro-preview --max-tokens 2048 --reasoning-effort medium --retry-on-error 2

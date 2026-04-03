@@ -1,0 +1,37 @@
+---------------------------------------------------------                                                                                            
+augmented_mcqa_eval_augment_ablation_full_question (1,000 samples): vllm/allenai/Olmo-3-7B-Instruct                                                  
+max_tokens: 2048, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, log_realtime: False, log_buffer: 100, score_display: False,     
+dataset: (samples)                                                                                                                                   
+---------------------------------------------------------                                                                                            
+                                                                                                                                                     
+Steps:  10/1000   1% | Samples:   1/1000 | vllm:  0/10 | HTTP retries: 0
+Steps:  95/1000   9% | Samples:  95/1000 | vllm:  9/10 | HTTP retries: 0
+Steps: 187/1000  18% | Samples: 187/1000 | vllm:  9/10 | HTTP retries: 0
+Steps: 275/1000  27% | Samples: 272/1000 | vllm:  6/10 | HTTP retries: 0
+Steps: 363/1000  36% | Samples: 362/1000 | vllm:  8/10 | HTTP retries: 0
+Steps: 449/1000  44% | Samples: 449/1000 | vllm:  9/10 | HTTP retries: 0
+Steps: 539/1000  53% | Samples: 539/1000 | vllm:  9/10 | HTTP retries: 0
+Steps: 626/1000  62% | Samples: 625/1000 | vllm:  8/10 | HTTP retries: 0
+Steps: 722/1000  72% | Samples: 721/1000 | vllm:  8/10 | HTTP retries: 0
+Steps: 812/1000  81% | Samples: 812/1000 | vllm:  9/10 | HTTP retries: 0
+Steps: 903/1000  90% | Samples: 903/1000 | vllm:  9/10 | HTTP retries: 0
+Steps: 990/1000  99% | Samples: 986/1000 | vllm:  5/10 | HTTP retries: 0
+Steps: 1000/1000 100% | Samples: 1000/1000 | vllm:  0/10 | HTTP retries: 0
+
+---------------------------------------------------------                                                                                            
+augmented_mcqa_eval_augment_ablation_full_question (1,000 samples): vllm/allenai/Olmo-3-7B-Instruct                                                  
+max_tokens: 2048, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, log_realtime: False, log_buffer: 100, score_display: False,     
+dataset: (samples)                                                                                                                                   
+                                                                                                                                                     
+total time:                                                         0:01:56                                                                          
+vllm/allenai/Olmo-3-7B-Instruct                                     286,153 tokens [I: 276,606, O: 9,547]                                            
+augmented_mcqa_eval                                                                                                                                  
+mean                 0.604                                                                                                                           
+stderr               0.015                                                                                                                           
+Log:                                                                                                                                                 
+results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_allenai_Olmo-3-7B-Ins…
+---------------------------------------------------------                                                                                            
+                                                                                                                                                     
+Evaluation logs: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_allenai_Olmo-3-7B-Instruct
+/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/collected/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_allenai_Olmo-3-7B-Instruct
+Running: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/python main.py evaluate --model vllm/allenai/Olmo-3-7B-Instruct --run-name eval_gemini_from_scratch_testing_all --generator-run-name gemini_from_scratch_testing --generator-model google/gemini-3.1-pro-preview --processed-dataset /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/processed/unified_processed_v3 --dataset-types arc_challenge --settings augment_ablation --modes full_question --question-start 0 --limit 1000 --augmented-dataset /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/augmented/gemini_from_scratch_testing/google_gemini-3.1-pro-preview --max-tokens 2048 --reasoning-effort medium --retry-on-error 2

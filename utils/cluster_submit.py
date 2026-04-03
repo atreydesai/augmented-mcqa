@@ -20,6 +20,18 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TMPDIR_ROOT="${SLURM_TMPDIR:-/tmp}"
 export TMPDIR="$(mktemp -d "$TMPDIR_ROOT/task.XXXXXX")"
 trap 'rm -rf "$TMPDIR"' EXIT
+export MODEL_HUB_ROOT="${MODEL_HUB_ROOT:-/fs/nexus-scratch/adesai10/hub}"
+export RUNTIME_CACHE_ROOT="$MODEL_HUB_ROOT/runtime-cache"
+export XDG_CACHE_HOME="$RUNTIME_CACHE_ROOT/xdg-cache"
+export XDG_DATA_HOME="$RUNTIME_CACHE_ROOT/xdg-data"
+export XDG_STATE_HOME="$RUNTIME_CACHE_ROOT/xdg-state"
+export HF_HOME="$MODEL_HUB_ROOT"
+export HUGGINGFACE_HUB_CACHE="$MODEL_HUB_ROOT"
+export TRANSFORMERS_CACHE="$MODEL_HUB_ROOT/transformers"
+export TORCH_HOME="$MODEL_HUB_ROOT/torch"
+export TRITON_CACHE_DIR="$RUNTIME_CACHE_ROOT/triton"
+export TORCHINDUCTOR_CACHE_DIR="$RUNTIME_CACHE_ROOT/torchinductor"
+mkdir -p "$XDG_CACHE_HOME" "$XDG_DATA_HOME" "$XDG_STATE_HOME" "$HF_HOME" "$TRANSFORMERS_CACHE" "$TORCH_HOME" "$TRITON_CACHE_DIR" "$TORCHINDUCTOR_CACHE_DIR"
 
 MANIFEST_PATH="$1"
 TASK_INDEX="$2"
@@ -57,6 +69,18 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TMPDIR_ROOT="${SLURM_TMPDIR:-/tmp}"
 export TMPDIR="$(mktemp -d "$TMPDIR_ROOT/finalizer.XXXXXX")"
 trap 'rm -rf "$TMPDIR"' EXIT
+export MODEL_HUB_ROOT="${MODEL_HUB_ROOT:-/fs/nexus-scratch/adesai10/hub}"
+export RUNTIME_CACHE_ROOT="$MODEL_HUB_ROOT/runtime-cache"
+export XDG_CACHE_HOME="$RUNTIME_CACHE_ROOT/xdg-cache"
+export XDG_DATA_HOME="$RUNTIME_CACHE_ROOT/xdg-data"
+export XDG_STATE_HOME="$RUNTIME_CACHE_ROOT/xdg-state"
+export HF_HOME="$MODEL_HUB_ROOT"
+export HUGGINGFACE_HUB_CACHE="$MODEL_HUB_ROOT"
+export TRANSFORMERS_CACHE="$MODEL_HUB_ROOT/transformers"
+export TORCH_HOME="$MODEL_HUB_ROOT/torch"
+export TRITON_CACHE_DIR="$RUNTIME_CACHE_ROOT/triton"
+export TORCHINDUCTOR_CACHE_DIR="$RUNTIME_CACHE_ROOT/torchinductor"
+mkdir -p "$XDG_CACHE_HOME" "$XDG_DATA_HOME" "$XDG_STATE_HOME" "$HF_HOME" "$TRANSFORMERS_CACHE" "$TORCH_HOME" "$TRITON_CACHE_DIR" "$TORCHINDUCTOR_CACHE_DIR"
 
 MANIFEST_PATH="$1"
 FINALIZER_INDEX="$2"
@@ -465,79 +489,59 @@ def render_manifest(
                 (task.model, str(task.generation_run_name or ""), str(task.generation_model or "")),
                 [],
             ).append(task)
-
-        for finalizer_index, ((evaluation_model, generation_run_name, generation_model), group_tasks) in enumerate(sorted(grouped_tasks.items())):
-            representative_task = group_tasks[0]
-            dependency_refs = [task.slice_ref for task in group_tasks]
-            if not dependency_refs:
-                continue
+        if grouped_tasks:
+            representative_task = next(iter(grouped_tasks.values()))[0]
             collected_root = representative_task.collected_root or str(DEFAULT_COLLECTED_DATASET_ROOT)
-            explicit_augmented_dataset = task_arg(representative_task, "--augmented-dataset")
-            augmented_dataset = (
-                explicit_augmented_dataset
-                or str(
-                    Path(DEFAULT_AUGMENTED_CACHE_ROOT)
+            dependency_refs = [task.slice_ref for task in ordered_tasks]
+            collection_specs: list[str] = []
+            for (evaluation_model, generation_run_name, generation_model), group_tasks in sorted(grouped_tasks.items()):
+                explicit_augmented_dataset = task_arg(group_tasks[0], "--augmented-dataset")
+                augmented_dataset = (
+                    explicit_augmented_dataset
+                    or str(
+                        Path(DEFAULT_AUGMENTED_CACHE_ROOT)
+                        / safe_name(generation_run_name or "unknown_generation_run")
+                        / safe_name(generation_model or "unknown_generation_model")
+                    )
+                )
+                evaluation_log_root = str(
+                    Path(DEFAULT_EVALUATION_LOG_ROOT)
+                    / safe_name(run_name)
                     / safe_name(generation_run_name or "unknown_generation_run")
                     / safe_name(generation_model or "unknown_generation_model")
+                    / safe_name(evaluation_model)
                 )
-            )
-            evaluation_log_root = str(
-                Path(DEFAULT_EVALUATION_LOG_ROOT)
-                / safe_name(run_name)
-                / safe_name(generation_run_name or "unknown_generation_run")
-                / safe_name(generation_model or "unknown_generation_model")
-                / safe_name(evaluation_model)
-            )
-            dataset_types = sorted(
-                {
-                    task.dataset_type
-                    for task in group_tasks
-                }
-            )
-            settings = sorted(
-                {
-                    str(task.setting or "")
-                    for task in group_tasks
-                    if str(task.setting or "")
-                }
-            )
-            modes = sorted(
-                {
-                    str(task.mode or "")
-                    for task in group_tasks
-                    if str(task.mode or "")
-                }
-            )
+                collection_specs.append(
+                    json.dumps(
+                        {
+                            "generator_run_name": generation_run_name,
+                            "generator_model": generation_model,
+                            "evaluation_model": evaluation_model,
+                            "evaluation_log_root": evaluation_log_root,
+                            "augmented_dataset": augmented_dataset,
+                            "dataset_types": sorted({task.dataset_type for task in group_tasks}),
+                            "settings": sorted({str(task.setting or "") for task in group_tasks if str(task.setting or "")}),
+                            "modes": sorted({str(task.mode or "") for task in group_tasks if str(task.mode or "")}),
+                        },
+                        sort_keys=True,
+                    )
+                )
             argv = [
                 "collect-evaluated",
                 "--run-name",
                 run_name,
-                "--generator-run-name",
-                generation_run_name,
-                "--generator-model",
-                generation_model,
-                "--model",
-                evaluation_model,
-                "--evaluation-log-root",
-                evaluation_log_root,
-                "--augmented-dataset",
-                augmented_dataset,
                 "--collected-root",
                 collected_root,
-                "--dataset-types",
-                ",".join(dataset_types),
-                "--settings",
-                ",".join(settings),
-                "--modes",
-                ",".join(modes),
                 "--scheduler-output-dir",
                 str(paths.run_dir),
             ]
+            for spec in collection_specs:
+                argv.extend(["--collection-spec", spec])
             finalizers.append(
                 _finalizer_record(
-                    finalizer_index=finalizer_index,
-                    kind="materialize_collected_evaluation",
-                    model=evaluation_model,
+                    finalizer_index=0,
+                    kind="materialize_collected_evaluation_run",
+                    model=run_name,
                     dependency_refs=dependency_refs,
                     argv=argv,
                     resources=resources,

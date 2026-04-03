@@ -17,7 +17,6 @@ DEFAULT_LOCAL_EVALUATION_MODELS = (
     "allenai/Olmo-3-7B-Instruct",
     "meta-llama/Llama-3.1-8B-Instruct",
     "nvidia/NVIDIA-Nemotron-Nano-9B-v2",
-    # "mistralai/Ministral-3-14B-Instruct-2512",
 )
 DEFAULT_PROCESSED_DATASET = PROCESSED_DATASETS_DIR / "unified_processed_v3"
 DEFAULT_GENERATION_LOG_ROOT = RESULTS_DIR / "inspect" / "generation"

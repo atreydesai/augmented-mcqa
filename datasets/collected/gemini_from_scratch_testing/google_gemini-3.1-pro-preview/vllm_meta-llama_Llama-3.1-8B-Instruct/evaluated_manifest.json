@@ -1,0 +1,25 @@
+{
+  "schema_version": "evaluated_mcqa_setting_mode_records_v1",
+  "storage_kind": "evaluated_setting_mode_records",
+  "dataset_types": [
+    "arc_challenge",
+    "mmlu_pro",
+    "gpqa"
+  ],
+  "settings": [
+    "human_from_scratch",
+    "model_from_scratch",
+    "augment_human",
+    "augment_model",
+    "augment_ablation"
+  ],
+  "modes": [
+    "full_question",
+    "choices_only"
+  ],
+  "generation_run_name": "gemini_from_scratch_testing",
+  "generation_model": "google/gemini-3.1-pro-preview",
+  "evaluation_model": "vllm/meta-llama/Llama-3.1-8B-Instruct",
+  "source_results_root": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_meta-llama_Llama-3.1-8B-Instruct",
+  "collection_state_file": "collected_state.json"
+}
