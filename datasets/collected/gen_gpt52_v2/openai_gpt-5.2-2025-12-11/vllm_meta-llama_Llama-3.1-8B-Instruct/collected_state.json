@@ -1,103 +1,3005 @@
 {
   "schema_version": "augmented_mcqa_collected_state_v1",
   "storage_kind": "evaluation_slice_state",
-  "generated_at": "2026-04-03T01:37:48+00:00",
-  "run_name": "eval_smoke_llama31_8b_on_gen_gpt52_v2",
+  "generated_at": "2026-04-03T14:53:13+00:00",
+  "run_name": "eval_gen_gpt52_v2",
   "generation_run_name": "gen_gpt52_v2",
   "generation_model": "openai/gpt-5.2-2025-12-11",
   "evaluation_model": "vllm/meta-llama/Llama-3.1-8B-Instruct",
-  "slice_count": 1,
+  "slice_count": 130,
   "status_counts": {
-    "failed": 1
+    "current": 130
   },
   "slices": [
     {
-      "task_index": 0,
-      "stage": "evaluate",
-      "run_name": "eval_smoke_llama31_8b_on_gen_gpt52_v2",
-      "submission_id": "2026-04-03T01_37_09_00_00_bf6f8002",
-      "submission_created_at": "2026-04-03T01:37:09+00:00",
-      "model": "vllm/meta-llama/Llama-3.1-8B-Instruct",
-      "model_slug": "vllm_meta-llama_Llama-3.1-8B-Instruct",
-      "dataset_type": "arc_challenge",
-      "dataset_slug": "arc_challenge",
-      "resource_class": "local",
-      "slice_ref": "evaluation|eval_smoke_llama31_8b_on_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|model_from_scratch|full_question|0|2",
-      "task_slug": "evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__arc_challenge__model_from_scratch__full_question__0-1",
-      "question_start": 0,
-      "question_end": 2,
-      "chunk_index": 0,
-      "strategy": null,
-      "setting": "model_from_scratch",
-      "mode": "full_question",
-      "force": false,
-      "generation_run_name": "gen_gpt52_v2",
-      "generation_model": "openai/gpt-5.2-2025-12-11",
-      "collected_root": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/collected",
-      "state_dependency_refs": [],
-      "submit_dependency_refs": [],
-      "argv": [
-        "evaluate",
-        "--model",
-        "vllm/meta-llama/Llama-3.1-8B-Instruct",
-        "--run-name",
-        "eval_smoke_llama31_8b_on_gen_gpt52_v2",
-        "--generator-run-name",
-        "gen_gpt52_v2",
-        "--generator-model",
-        "openai/gpt-5.2-2025-12-11",
-        "--processed-dataset",
-        "datasets/processed/unified_processed_v3",
-        "--dataset-types",
-        "arc_challenge",
-        "--settings",
-        "model_from_scratch",
-        "--modes",
-        "full_question",
-        "--question-start",
-        "0",
-        "--limit",
-        "2",
-        "--augmented-dataset",
-        "datasets/augmented/gen_gpt52_v2/openai_gpt-5.2-2025-12-11",
-        "--skip-collect-evaluated",
-        "--max-tokens",
-        "2048",
-        "--reasoning-effort",
-        "medium",
-        "--retry-on-error",
-        "2"
-      ],
-      "resources": {
-        "partition": "clip",
-        "account": "clip",
-        "qos": "high",
-        "time_limit": "12:00:00",
-        "memory": "32G",
-        "cpus_per_task": 4,
-        "gpu_type": "rtxa6000"
-      },
-      "task_log_dir": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_smoke_llama31_8b_on_gen_gpt52_v2",
-      "task_stdout": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_smoke_llama31_8b_on_gen_gpt52_v2/evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__arc_challenge__model_from_scratch__full_question__0-1__%j.out",
-      "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_smoke_llama31_8b_on_gen_gpt52_v2/evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__arc_challenge__model_from_scratch__full_question__0-1__%j.err",
-      "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__arc_challenge__model_from_scratch__full_question__0-1",
-      "submitted_at": "2026-04-03T01:37:10+00:00",
-      "submitted_job_id": "6510061",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_smoke_llama31_8b_on_gen_gpt52_v2/submissions/2026-04-03T01_37_09_00_00_bf6f8002/manifest.json",
-      "submission_count": 1,
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_ablation|choices_only|0|200",
+      "submission_count": 0,
       "latest_attempt": {
-        "slice_ref": "evaluation|eval_smoke_llama31_8b_on_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|model_from_scratch|full_question|0|2",
-        "status": "failed",
-        "completed_at": "2026-04-03T01:37:37+00:00",
-        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/eval_smoke_llama31_8b_on_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-04-03T01-37-27-00-00_augmented-mcqa-eval-model-from-scratch-full-question_GAUdspBXAQFppPWn2z4LoD.eval",
-        "sample_count": 0
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_ablation|choices_only|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T03:11:04+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T03-08-17+00-00_final5-eval-augment-ablation-choices-only_MmT76FfCoNoVcwbPbzxCCu.eval",
+        "sample_count": 200
       },
-      "latest_success": null,
-      "latest_submitted_at": "2026-04-03T01:37:10+00:00",
-      "latest_attempt_at": "2026-04-03T01:37:37+00:00",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-04-03T01:37:37+00:00",
-      "status": "failed"
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_ablation|choices_only|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T03:11:04+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T03-08-17+00-00_final5-eval-augment-ablation-choices-only_MmT76FfCoNoVcwbPbzxCCu.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T03:11:04+00:00",
+      "latest_success_at": "2026-03-18T03:11:04+00:00",
+      "dependency_change_at": "2026-03-18T03:11:04+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_ablation|choices_only|200|400",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_ablation|choices_only|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T03:36:20+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T03-31-41+00-00_final5-eval-augment-ablation-choices-only_f9vkW7kL3ZgKnyPV6NY3Hi.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_ablation|choices_only|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T03:36:20+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T03-31-41+00-00_final5-eval-augment-ablation-choices-only_f9vkW7kL3ZgKnyPV6NY3Hi.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T03:36:20+00:00",
+      "latest_success_at": "2026-03-18T03:36:20+00:00",
+      "dependency_change_at": "2026-03-18T03:36:20+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_ablation|choices_only|400|600",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_ablation|choices_only|400|600",
+        "status": "success",
+        "completed_at": "2026-03-18T03:37:44+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T03-33-22+00-00_final5-eval-augment-ablation-choices-only_Sd3UDXG3YYGDAFUkTNchgS.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_ablation|choices_only|400|600",
+        "status": "success",
+        "completed_at": "2026-03-18T03:37:44+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T03-33-22+00-00_final5-eval-augment-ablation-choices-only_Sd3UDXG3YYGDAFUkTNchgS.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T03:37:44+00:00",
+      "latest_success_at": "2026-03-18T03:37:44+00:00",
+      "dependency_change_at": "2026-03-18T03:37:44+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_ablation|choices_only|600|800",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_ablation|choices_only|600|800",
+        "status": "success",
+        "completed_at": "2026-03-18T03:13:26+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T03-11-16+00-00_final5-eval-augment-ablation-choices-only_8EZC7audWHviEsJcV9xyHZ.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_ablation|choices_only|600|800",
+        "status": "success",
+        "completed_at": "2026-03-18T03:13:26+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T03-11-16+00-00_final5-eval-augment-ablation-choices-only_8EZC7audWHviEsJcV9xyHZ.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T03:13:26+00:00",
+      "latest_success_at": "2026-03-18T03:13:26+00:00",
+      "dependency_change_at": "2026-03-18T03:13:26+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_ablation|choices_only|800|1000",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_ablation|choices_only|800|1000",
+        "status": "success",
+        "completed_at": "2026-03-18T03:41:17+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T03-36-32+00-00_final5-eval-augment-ablation-choices-only_MqcUgLXFSchvmcyG4qZJz4.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_ablation|choices_only|800|1000",
+        "status": "success",
+        "completed_at": "2026-03-18T03:41:17+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T03-36-32+00-00_final5-eval-augment-ablation-choices-only_MqcUgLXFSchvmcyG4qZJz4.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T03:41:17+00:00",
+      "latest_success_at": "2026-03-18T03:41:17+00:00",
+      "dependency_change_at": "2026-03-18T03:41:17+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_ablation|full_question|0|200",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_ablation|full_question|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T03:42:13+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T03-37-54+00-00_final5-eval-augment-ablation-full-question_MCGMk6PsQw2m9Twzyhnxjk.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_ablation|full_question|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T03:42:13+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T03-37-54+00-00_final5-eval-augment-ablation-full-question_MCGMk6PsQw2m9Twzyhnxjk.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T03:42:13+00:00",
+      "latest_success_at": "2026-03-18T03:42:13+00:00",
+      "dependency_change_at": "2026-03-18T03:42:13+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_ablation|full_question|200|400",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_ablation|full_question|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T03:18:25+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T03-13-37+00-00_final5-eval-augment-ablation-full-question_QfWdq7Xj4RKL8q7eHXmXVU.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_ablation|full_question|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T03:18:25+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T03-13-37+00-00_final5-eval-augment-ablation-full-question_QfWdq7Xj4RKL8q7eHXmXVU.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T03:18:25+00:00",
+      "latest_success_at": "2026-03-18T03:18:25+00:00",
+      "dependency_change_at": "2026-03-18T03:18:25+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_ablation|full_question|400|600",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_ablation|full_question|400|600",
+        "status": "success",
+        "completed_at": "2026-03-18T03:46:34+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T03-41-29+00-00_final5-eval-augment-ablation-full-question_MHt4c2PVPimGxMc227vDej.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_ablation|full_question|400|600",
+        "status": "success",
+        "completed_at": "2026-03-18T03:46:34+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T03-41-29+00-00_final5-eval-augment-ablation-full-question_MHt4c2PVPimGxMc227vDej.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T03:46:34+00:00",
+      "latest_success_at": "2026-03-18T03:46:34+00:00",
+      "dependency_change_at": "2026-03-18T03:46:34+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_ablation|full_question|600|800",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_ablation|full_question|600|800",
+        "status": "success",
+        "completed_at": "2026-03-18T03:47:14+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T03-42-23+00-00_final5-eval-augment-ablation-full-question_6tRBuS2tACUtc68vsermou.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_ablation|full_question|600|800",
+        "status": "success",
+        "completed_at": "2026-03-18T03:47:14+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T03-42-23+00-00_final5-eval-augment-ablation-full-question_6tRBuS2tACUtc68vsermou.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T03:47:14+00:00",
+      "latest_success_at": "2026-03-18T03:47:14+00:00",
+      "dependency_change_at": "2026-03-18T03:47:14+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_ablation|full_question|800|1000",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_ablation|full_question|800|1000",
+        "status": "success",
+        "completed_at": "2026-03-18T03:22:48+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T03-18-34+00-00_final5-eval-augment-ablation-full-question_YEkoiqqGpC6SAWtBtPgYJb.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_ablation|full_question|800|1000",
+        "status": "success",
+        "completed_at": "2026-03-18T03:22:48+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T03-18-34+00-00_final5-eval-augment-ablation-full-question_YEkoiqqGpC6SAWtBtPgYJb.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T03:22:48+00:00",
+      "latest_success_at": "2026-03-18T03:22:48+00:00",
+      "dependency_change_at": "2026-03-18T03:22:48+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_human|choices_only|0|200",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_human|choices_only|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T03:51:55+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T03-46-43+00-00_final5-eval-augment-human-choices-only_Fsb9tsHXCzcd2JFTEsF8is.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_human|choices_only|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T03:51:55+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T03-46-43+00-00_final5-eval-augment-human-choices-only_Fsb9tsHXCzcd2JFTEsF8is.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T03:51:55+00:00",
+      "latest_success_at": "2026-03-18T03:51:55+00:00",
+      "dependency_change_at": "2026-03-18T03:51:55+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_human|choices_only|200|400",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_human|choices_only|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T03:52:16+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T03-47-23+00-00_final5-eval-augment-human-choices-only_2ntmK7WVmYNEhh2H5tdopx.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_human|choices_only|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T03:52:16+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T03-47-23+00-00_final5-eval-augment-human-choices-only_2ntmK7WVmYNEhh2H5tdopx.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T03:52:16+00:00",
+      "latest_success_at": "2026-03-18T03:52:16+00:00",
+      "dependency_change_at": "2026-03-18T03:52:16+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_human|choices_only|400|600",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_human|choices_only|400|600",
+        "status": "success",
+        "completed_at": "2026-03-18T03:27:10+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T03-22-57+00-00_final5-eval-augment-human-choices-only_VsEbynZo7zsVEtbFP6qjLZ.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_human|choices_only|400|600",
+        "status": "success",
+        "completed_at": "2026-03-18T03:27:10+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T03-22-57+00-00_final5-eval-augment-human-choices-only_VsEbynZo7zsVEtbFP6qjLZ.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T03:27:10+00:00",
+      "latest_success_at": "2026-03-18T03:27:10+00:00",
+      "dependency_change_at": "2026-03-18T03:27:10+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_human|choices_only|600|800",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_human|choices_only|600|800",
+        "status": "success",
+        "completed_at": "2026-03-18T03:57:19+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T03-52-06+00-00_final5-eval-augment-human-choices-only_M8pPton3dkUzkAcanpGrNC.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_human|choices_only|600|800",
+        "status": "success",
+        "completed_at": "2026-03-18T03:57:19+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T03-52-06+00-00_final5-eval-augment-human-choices-only_M8pPton3dkUzkAcanpGrNC.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T03:57:19+00:00",
+      "latest_success_at": "2026-03-18T03:57:19+00:00",
+      "dependency_change_at": "2026-03-18T03:57:19+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_human|choices_only|800|1000",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_human|choices_only|800|1000",
+        "status": "success",
+        "completed_at": "2026-03-18T03:57:29+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T03-52-25+00-00_final5-eval-augment-human-choices-only_6jFw4iSLsMdzhXz8A6o3oa.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_human|choices_only|800|1000",
+        "status": "success",
+        "completed_at": "2026-03-18T03:57:29+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T03-52-25+00-00_final5-eval-augment-human-choices-only_6jFw4iSLsMdzhXz8A6o3oa.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T03:57:29+00:00",
+      "latest_success_at": "2026-03-18T03:57:29+00:00",
+      "dependency_change_at": "2026-03-18T03:57:29+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_human|full_question|0|200",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_human|full_question|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T03:31:43+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T03-27-19+00-00_final5-eval-augment-human-full-question_KketHv4pBjhi4tZ92bDEg7.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_human|full_question|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T03:31:43+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T03-27-19+00-00_final5-eval-augment-human-full-question_KketHv4pBjhi4tZ92bDEg7.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T03:31:43+00:00",
+      "latest_success_at": "2026-03-18T03:31:43+00:00",
+      "dependency_change_at": "2026-03-18T03:31:43+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_human|full_question|200|400",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_human|full_question|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T04:05:49+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-00-07+00-00_final5-eval-augment-human-full-question_PYmwhaEsBPhUzx8jN2XgP7.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_human|full_question|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T04:05:49+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-00-07+00-00_final5-eval-augment-human-full-question_PYmwhaEsBPhUzx8jN2XgP7.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T04:05:49+00:00",
+      "latest_success_at": "2026-03-18T04:05:49+00:00",
+      "dependency_change_at": "2026-03-18T04:05:49+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_human|full_question|400|600",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_human|full_question|400|600",
+        "status": "success",
+        "completed_at": "2026-03-18T04:05:49+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-00-07+00-00_final5-eval-augment-human-full-question_Yax2JuPYCfzHcUqrc48A8m.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_human|full_question|400|600",
+        "status": "success",
+        "completed_at": "2026-03-18T04:05:49+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-00-07+00-00_final5-eval-augment-human-full-question_Yax2JuPYCfzHcUqrc48A8m.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T04:05:49+00:00",
+      "latest_success_at": "2026-03-18T04:05:49+00:00",
+      "dependency_change_at": "2026-03-18T04:05:49+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_human|full_question|600|800",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_human|full_question|600|800",
+        "status": "success",
+        "completed_at": "2026-03-18T03:36:30+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T03-31-53+00-00_final5-eval-augment-human-full-question_CZBtAw7gcr2oMXMHFZmmuT.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_human|full_question|600|800",
+        "status": "success",
+        "completed_at": "2026-03-18T03:36:30+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T03-31-53+00-00_final5-eval-augment-human-full-question_CZBtAw7gcr2oMXMHFZmmuT.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T03:36:30+00:00",
+      "latest_success_at": "2026-03-18T03:36:30+00:00",
+      "dependency_change_at": "2026-03-18T03:36:30+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_human|full_question|800|1000",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_human|full_question|800|1000",
+        "status": "success",
+        "completed_at": "2026-03-18T04:11:24+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-05-58+00-00_final5-eval-augment-human-full-question_3kZupCVcTHtcCEax6tBsEN.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_human|full_question|800|1000",
+        "status": "success",
+        "completed_at": "2026-03-18T04:11:24+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-05-58+00-00_final5-eval-augment-human-full-question_3kZupCVcTHtcCEax6tBsEN.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T04:11:24+00:00",
+      "latest_success_at": "2026-03-18T04:11:24+00:00",
+      "dependency_change_at": "2026-03-18T04:11:24+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_model|choices_only|0|200",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_model|choices_only|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T04:11:23+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-05-58+00-00_final5-eval-augment-model-choices-only_fHexuqeG8eugSQdXtMae6M.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_model|choices_only|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T04:11:23+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-05-58+00-00_final5-eval-augment-model-choices-only_fHexuqeG8eugSQdXtMae6M.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T04:11:23+00:00",
+      "latest_success_at": "2026-03-18T04:11:23+00:00",
+      "dependency_change_at": "2026-03-18T04:11:23+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_model|choices_only|200|400",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_model|choices_only|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T03:41:19+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T03-36-38+00-00_final5-eval-augment-model-choices-only_SmsxuVeGjU88FEo69TetZ2.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_model|choices_only|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T03:41:19+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T03-36-38+00-00_final5-eval-augment-model-choices-only_SmsxuVeGjU88FEo69TetZ2.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T03:41:19+00:00",
+      "latest_success_at": "2026-03-18T03:41:19+00:00",
+      "dependency_change_at": "2026-03-18T03:41:19+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_model|choices_only|400|600",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_model|choices_only|400|600",
+        "status": "success",
+        "completed_at": "2026-03-18T04:17:02+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-11-32+00-00_final5-eval-augment-model-choices-only_YCbnBAjjgHf7nesge7p7kz.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_model|choices_only|400|600",
+        "status": "success",
+        "completed_at": "2026-03-18T04:17:02+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-11-32+00-00_final5-eval-augment-model-choices-only_YCbnBAjjgHf7nesge7p7kz.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T04:17:02+00:00",
+      "latest_success_at": "2026-03-18T04:17:02+00:00",
+      "dependency_change_at": "2026-03-18T04:17:02+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_model|choices_only|600|800",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_model|choices_only|600|800",
+        "status": "success",
+        "completed_at": "2026-03-18T04:17:02+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-11-32+00-00_final5-eval-augment-model-choices-only_du4sTgHQdygfKa9J4Fj9xb.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_model|choices_only|600|800",
+        "status": "success",
+        "completed_at": "2026-03-18T04:17:02+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-11-32+00-00_final5-eval-augment-model-choices-only_du4sTgHQdygfKa9J4Fj9xb.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T04:17:02+00:00",
+      "latest_success_at": "2026-03-18T04:17:02+00:00",
+      "dependency_change_at": "2026-03-18T04:17:02+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_model|choices_only|800|1000",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_model|choices_only|800|1000",
+        "status": "success",
+        "completed_at": "2026-03-18T03:46:31+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T03-41-29+00-00_final5-eval-augment-model-choices-only_7rcEK43CMeTm82RfQKs8jy.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_model|choices_only|800|1000",
+        "status": "success",
+        "completed_at": "2026-03-18T03:46:31+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T03-41-29+00-00_final5-eval-augment-model-choices-only_7rcEK43CMeTm82RfQKs8jy.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T03:46:31+00:00",
+      "latest_success_at": "2026-03-18T03:46:31+00:00",
+      "dependency_change_at": "2026-03-18T03:46:31+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_model|full_question|0|200",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_model|full_question|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T04:22:54+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-17-12+00-00_final5-eval-augment-model-full-question_2j5Njx7egPoCHDq8ggyLCK.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_model|full_question|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T04:22:54+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-17-12+00-00_final5-eval-augment-model-full-question_2j5Njx7egPoCHDq8ggyLCK.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T04:22:54+00:00",
+      "latest_success_at": "2026-03-18T04:22:54+00:00",
+      "dependency_change_at": "2026-03-18T04:22:54+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_model|full_question|200|400",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_model|full_question|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T04:22:54+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-17-12+00-00_final5-eval-augment-model-full-question_gbUwKAwDTkmNsgneZdHfPF.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_model|full_question|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T04:22:54+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-17-12+00-00_final5-eval-augment-model-full-question_gbUwKAwDTkmNsgneZdHfPF.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T04:22:54+00:00",
+      "latest_success_at": "2026-03-18T04:22:54+00:00",
+      "dependency_change_at": "2026-03-18T04:22:54+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_model|full_question|400|600",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_model|full_question|400|600",
+        "status": "success",
+        "completed_at": "2026-03-18T03:51:56+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T03-46-43+00-00_final5-eval-augment-model-full-question_oUiA9AJThdAi7B2FmJw3aw.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_model|full_question|400|600",
+        "status": "success",
+        "completed_at": "2026-03-18T03:51:56+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T03-46-43+00-00_final5-eval-augment-model-full-question_oUiA9AJThdAi7B2FmJw3aw.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T03:51:56+00:00",
+      "latest_success_at": "2026-03-18T03:51:56+00:00",
+      "dependency_change_at": "2026-03-18T03:51:56+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_model|full_question|600|800",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_model|full_question|600|800",
+        "status": "success",
+        "completed_at": "2026-03-18T04:28:53+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-23-03+00-00_final5-eval-augment-model-full-question_g2m6XxV6rMFxgMKpZEgp2T.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_model|full_question|600|800",
+        "status": "success",
+        "completed_at": "2026-03-18T04:28:53+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-23-03+00-00_final5-eval-augment-model-full-question_g2m6XxV6rMFxgMKpZEgp2T.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T04:28:53+00:00",
+      "latest_success_at": "2026-03-18T04:28:53+00:00",
+      "dependency_change_at": "2026-03-18T04:28:53+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_model|full_question|800|1000",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_model|full_question|800|1000",
+        "status": "success",
+        "completed_at": "2026-03-18T04:28:53+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-23-03+00-00_final5-eval-augment-model-full-question_3xDgp6U8gaDMeY64fTmwzj.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_model|full_question|800|1000",
+        "status": "success",
+        "completed_at": "2026-03-18T04:28:53+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-23-03+00-00_final5-eval-augment-model-full-question_3xDgp6U8gaDMeY64fTmwzj.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T04:28:53+00:00",
+      "latest_success_at": "2026-03-18T04:28:53+00:00",
+      "dependency_change_at": "2026-03-18T04:28:53+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|human_from_scratch|choices_only|0|200",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|human_from_scratch|choices_only|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T03:57:16+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T03-52-06+00-00_final5-eval-human-from-scratch-choices-only_GJ4j9eznMrGxpctinwvsUH.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|human_from_scratch|choices_only|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T03:57:16+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T03-52-06+00-00_final5-eval-human-from-scratch-choices-only_GJ4j9eznMrGxpctinwvsUH.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T03:57:16+00:00",
+      "latest_success_at": "2026-03-18T03:57:16+00:00",
+      "dependency_change_at": "2026-03-18T03:57:16+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|human_from_scratch|choices_only|200|400",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|human_from_scratch|choices_only|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T04:34:55+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-29-02+00-00_final5-eval-human-from-scratch-choices-only_YgPkFAFhSTbK6z2LNoKhRo.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|human_from_scratch|choices_only|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T04:34:55+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-29-02+00-00_final5-eval-human-from-scratch-choices-only_YgPkFAFhSTbK6z2LNoKhRo.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T04:34:55+00:00",
+      "latest_success_at": "2026-03-18T04:34:55+00:00",
+      "dependency_change_at": "2026-03-18T04:34:55+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|human_from_scratch|choices_only|400|600",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|human_from_scratch|choices_only|400|600",
+        "status": "success",
+        "completed_at": "2026-03-18T04:34:55+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-29-02+00-00_final5-eval-human-from-scratch-choices-only_7sjCF8N6PDZCjVJReRXVUP.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|human_from_scratch|choices_only|400|600",
+        "status": "success",
+        "completed_at": "2026-03-18T04:34:55+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-29-02+00-00_final5-eval-human-from-scratch-choices-only_7sjCF8N6PDZCjVJReRXVUP.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T04:34:55+00:00",
+      "latest_success_at": "2026-03-18T04:34:55+00:00",
+      "dependency_change_at": "2026-03-18T04:34:55+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|human_from_scratch|choices_only|600|800",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|human_from_scratch|choices_only|600|800",
+        "status": "success",
+        "completed_at": "2026-03-18T04:05:42+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-00-07+00-00_final5-eval-human-from-scratch-choices-only_56UgcDH3AYhZnKk86JFZsq.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|human_from_scratch|choices_only|600|800",
+        "status": "success",
+        "completed_at": "2026-03-18T04:05:42+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-00-07+00-00_final5-eval-human-from-scratch-choices-only_56UgcDH3AYhZnKk86JFZsq.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T04:05:42+00:00",
+      "latest_success_at": "2026-03-18T04:05:42+00:00",
+      "dependency_change_at": "2026-03-18T04:05:42+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|human_from_scratch|choices_only|800|1000",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|human_from_scratch|choices_only|800|1000",
+        "status": "success",
+        "completed_at": "2026-03-18T04:40:57+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-35-04+00-00_final5-eval-human-from-scratch-choices-only_aw3TtBRNt4JQz9BcPttaPh.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|human_from_scratch|choices_only|800|1000",
+        "status": "success",
+        "completed_at": "2026-03-18T04:40:57+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-35-04+00-00_final5-eval-human-from-scratch-choices-only_aw3TtBRNt4JQz9BcPttaPh.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T04:40:57+00:00",
+      "latest_success_at": "2026-03-18T04:40:57+00:00",
+      "dependency_change_at": "2026-03-18T04:40:57+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|human_from_scratch|full_question|0|200",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|human_from_scratch|full_question|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T04:41:03+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-35-04+00-00_final5-eval-human-from-scratch-full-question_MSoCc9Y3JFeJ7GGJDbY3zW.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|human_from_scratch|full_question|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T04:41:03+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-35-04+00-00_final5-eval-human-from-scratch-full-question_MSoCc9Y3JFeJ7GGJDbY3zW.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T04:41:03+00:00",
+      "latest_success_at": "2026-03-18T04:41:03+00:00",
+      "dependency_change_at": "2026-03-18T04:41:03+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|human_from_scratch|full_question|200|400",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|human_from_scratch|full_question|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T04:11:14+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-05-53+00-00_final5-eval-human-from-scratch-full-question_SxhpvoHNFZwAt5J4HagwwB.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|human_from_scratch|full_question|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T04:11:14+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-05-53+00-00_final5-eval-human-from-scratch-full-question_SxhpvoHNFZwAt5J4HagwwB.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T04:11:14+00:00",
+      "latest_success_at": "2026-03-18T04:11:14+00:00",
+      "dependency_change_at": "2026-03-18T04:11:14+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|human_from_scratch|full_question|400|600",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|human_from_scratch|full_question|400|600",
+        "status": "success",
+        "completed_at": "2026-03-18T04:47:27+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-41-08+00-00_final5-eval-human-from-scratch-full-question_YMKxVotrQTMFHYqLrVgwDE.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|human_from_scratch|full_question|400|600",
+        "status": "success",
+        "completed_at": "2026-03-18T04:47:27+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-41-08+00-00_final5-eval-human-from-scratch-full-question_YMKxVotrQTMFHYqLrVgwDE.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T04:47:27+00:00",
+      "latest_success_at": "2026-03-18T04:47:27+00:00",
+      "dependency_change_at": "2026-03-18T04:47:27+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|human_from_scratch|full_question|600|800",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|human_from_scratch|full_question|600|800",
+        "status": "success",
+        "completed_at": "2026-03-18T04:47:26+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-41-12+00-00_final5-eval-human-from-scratch-full-question_SnWTJNB3gYKqxbHLNYzvhe.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|human_from_scratch|full_question|600|800",
+        "status": "success",
+        "completed_at": "2026-03-18T04:47:26+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-41-12+00-00_final5-eval-human-from-scratch-full-question_SnWTJNB3gYKqxbHLNYzvhe.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T04:47:26+00:00",
+      "latest_success_at": "2026-03-18T04:47:26+00:00",
+      "dependency_change_at": "2026-03-18T04:47:26+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|human_from_scratch|full_question|800|1000",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|human_from_scratch|full_question|800|1000",
+        "status": "success",
+        "completed_at": "2026-03-18T04:16:55+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-11-25+00-00_final5-eval-human-from-scratch-full-question_fjQcSaQx2YNcvjpjHZKQsT.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|human_from_scratch|full_question|800|1000",
+        "status": "success",
+        "completed_at": "2026-03-18T04:16:55+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-11-25+00-00_final5-eval-human-from-scratch-full-question_fjQcSaQx2YNcvjpjHZKQsT.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T04:16:55+00:00",
+      "latest_success_at": "2026-03-18T04:16:55+00:00",
+      "dependency_change_at": "2026-03-18T04:16:55+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|model_from_scratch|choices_only|0|200",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|model_from_scratch|choices_only|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T04:55:03+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-47-38+00-00_final5-eval-model-from-scratch-choices-only_kBLjLRXivJSr5UdiB59p6m.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|model_from_scratch|choices_only|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T04:55:03+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-47-38+00-00_final5-eval-model-from-scratch-choices-only_kBLjLRXivJSr5UdiB59p6m.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T04:55:03+00:00",
+      "latest_success_at": "2026-03-18T04:55:03+00:00",
+      "dependency_change_at": "2026-03-18T04:55:03+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|model_from_scratch|choices_only|200|400",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|model_from_scratch|choices_only|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T04:55:04+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-47-38+00-00_final5-eval-model-from-scratch-choices-only_YvVabTEyrrKC26G2XiyVqo.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|model_from_scratch|choices_only|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T04:55:04+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-47-38+00-00_final5-eval-model-from-scratch-choices-only_YvVabTEyrrKC26G2XiyVqo.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T04:55:04+00:00",
+      "latest_success_at": "2026-03-18T04:55:04+00:00",
+      "dependency_change_at": "2026-03-18T04:55:04+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|model_from_scratch|choices_only|400|600",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|model_from_scratch|choices_only|400|600",
+        "status": "success",
+        "completed_at": "2026-03-18T04:22:45+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-17-08+00-00_final5-eval-model-from-scratch-choices-only_BS6DAti86XSU8F5fktdhw2.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|model_from_scratch|choices_only|400|600",
+        "status": "success",
+        "completed_at": "2026-03-18T04:22:45+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-17-08+00-00_final5-eval-model-from-scratch-choices-only_BS6DAti86XSU8F5fktdhw2.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T04:22:45+00:00",
+      "latest_success_at": "2026-03-18T04:22:45+00:00",
+      "dependency_change_at": "2026-03-18T04:22:45+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|model_from_scratch|choices_only|600|800",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|model_from_scratch|choices_only|600|800",
+        "status": "success",
+        "completed_at": "2026-03-18T05:02:20+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-55-15+00-00_final5-eval-model-from-scratch-choices-only_gQjFnzPmCG7hNkEhrWQxTz.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|model_from_scratch|choices_only|600|800",
+        "status": "success",
+        "completed_at": "2026-03-18T05:02:20+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-55-15+00-00_final5-eval-model-from-scratch-choices-only_gQjFnzPmCG7hNkEhrWQxTz.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T05:02:20+00:00",
+      "latest_success_at": "2026-03-18T05:02:20+00:00",
+      "dependency_change_at": "2026-03-18T05:02:20+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|model_from_scratch|choices_only|800|1000",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|model_from_scratch|choices_only|800|1000",
+        "status": "success",
+        "completed_at": "2026-03-18T05:02:19+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-55-15+00-00_final5-eval-model-from-scratch-choices-only_KRbywvKC4A5HBhwcXkoF8D.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|model_from_scratch|choices_only|800|1000",
+        "status": "success",
+        "completed_at": "2026-03-18T05:02:19+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-55-15+00-00_final5-eval-model-from-scratch-choices-only_KRbywvKC4A5HBhwcXkoF8D.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T05:02:19+00:00",
+      "latest_success_at": "2026-03-18T05:02:19+00:00",
+      "dependency_change_at": "2026-03-18T05:02:19+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|model_from_scratch|full_question|0|200",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|model_from_scratch|full_question|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T04:28:43+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-22-56+00-00_final5-eval-model-from-scratch-full-question_EiB3LyrdLxzEhVkDwM9oHn.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|model_from_scratch|full_question|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T04:28:43+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-22-56+00-00_final5-eval-model-from-scratch-full-question_EiB3LyrdLxzEhVkDwM9oHn.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T04:28:43+00:00",
+      "latest_success_at": "2026-03-18T04:28:43+00:00",
+      "dependency_change_at": "2026-03-18T04:28:43+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|model_from_scratch|full_question|200|400",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|model_from_scratch|full_question|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T05:09:50+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-02-31+00-00_final5-eval-model-from-scratch-full-question_5DVDtRVX2CtxenzH94Risu.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|model_from_scratch|full_question|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T05:09:50+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-02-31+00-00_final5-eval-model-from-scratch-full-question_5DVDtRVX2CtxenzH94Risu.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T05:09:50+00:00",
+      "latest_success_at": "2026-03-18T05:09:50+00:00",
+      "dependency_change_at": "2026-03-18T05:09:50+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|model_from_scratch|full_question|400|600",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|model_from_scratch|full_question|400|600",
+        "status": "success",
+        "completed_at": "2026-03-18T05:09:50+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-02-31+00-00_final5-eval-model-from-scratch-full-question_ZdhEwVXSL2pmu8MnWp9JuY.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|model_from_scratch|full_question|400|600",
+        "status": "success",
+        "completed_at": "2026-03-18T05:09:50+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-02-31+00-00_final5-eval-model-from-scratch-full-question_ZdhEwVXSL2pmu8MnWp9JuY.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T05:09:50+00:00",
+      "latest_success_at": "2026-03-18T05:09:50+00:00",
+      "dependency_change_at": "2026-03-18T05:09:50+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|model_from_scratch|full_question|600|800",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|model_from_scratch|full_question|600|800",
+        "status": "success",
+        "completed_at": "2026-03-18T04:34:48+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-28-54+00-00_final5-eval-model-from-scratch-full-question_kHc6Wu33iooKcBFsSZrfVX.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|model_from_scratch|full_question|600|800",
+        "status": "success",
+        "completed_at": "2026-03-18T04:34:48+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-28-54+00-00_final5-eval-model-from-scratch-full-question_kHc6Wu33iooKcBFsSZrfVX.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T04:34:48+00:00",
+      "latest_success_at": "2026-03-18T04:34:48+00:00",
+      "dependency_change_at": "2026-03-18T04:34:48+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|model_from_scratch|full_question|800|1000",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|model_from_scratch|full_question|800|1000",
+        "status": "success",
+        "completed_at": "2026-03-18T05:17:28+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-10-01+00-00_final5-eval-model-from-scratch-full-question_S5NqPeetVW7Tk9V7zhPFh5.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|model_from_scratch|full_question|800|1000",
+        "status": "success",
+        "completed_at": "2026-03-18T05:17:28+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-10-01+00-00_final5-eval-model-from-scratch-full-question_S5NqPeetVW7Tk9V7zhPFh5.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T05:17:28+00:00",
+      "latest_success_at": "2026-03-18T05:17:28+00:00",
+      "dependency_change_at": "2026-03-18T05:17:28+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_ablation|choices_only|0|200",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_ablation|choices_only|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T05:17:31+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-10-01+00-00_final5-eval-augment-ablation-choices-only_fsjvoLq3FD9YSCrVfwKvGm.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_ablation|choices_only|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T05:17:31+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-10-01+00-00_final5-eval-augment-ablation-choices-only_fsjvoLq3FD9YSCrVfwKvGm.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T05:17:31+00:00",
+      "latest_success_at": "2026-03-18T05:17:31+00:00",
+      "dependency_change_at": "2026-03-18T05:17:31+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_ablation|choices_only|200|400",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_ablation|choices_only|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T04:41:06+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-35-00+00-00_final5-eval-augment-ablation-choices-only_FrwLSkHBut8GoMAxB3kBTS.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_ablation|choices_only|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T04:41:06+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-35-00+00-00_final5-eval-augment-ablation-choices-only_FrwLSkHBut8GoMAxB3kBTS.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T04:41:06+00:00",
+      "latest_success_at": "2026-03-18T04:41:06+00:00",
+      "dependency_change_at": "2026-03-18T04:41:06+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_ablation|choices_only|400|444",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_ablation|choices_only|400|444",
+        "status": "success",
+        "completed_at": "2026-03-18T05:20:51+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-17-41+00-00_final5-eval-augment-ablation-choices-only_Au7ephoLEYMsuGrkrmXRoP.eval",
+        "sample_count": 44
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_ablation|choices_only|400|444",
+        "status": "success",
+        "completed_at": "2026-03-18T05:20:51+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-17-41+00-00_final5-eval-augment-ablation-choices-only_Au7ephoLEYMsuGrkrmXRoP.eval",
+        "sample_count": 44
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T05:20:51+00:00",
+      "latest_success_at": "2026-03-18T05:20:51+00:00",
+      "dependency_change_at": "2026-03-18T05:20:51+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_ablation|full_question|0|200",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_ablation|full_question|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T05:24:52+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-17-41+00-00_final5-eval-augment-ablation-full-question_PFB6koMcTAk4yieHKC3YzZ.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_ablation|full_question|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T05:24:52+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-17-41+00-00_final5-eval-augment-ablation-full-question_PFB6koMcTAk4yieHKC3YzZ.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T05:24:52+00:00",
+      "latest_success_at": "2026-03-18T05:24:52+00:00",
+      "dependency_change_at": "2026-03-18T05:24:52+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_ablation|full_question|200|400",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_ablation|full_question|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T04:47:36+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-41-15+00-00_final5-eval-augment-ablation-full-question_C3PWbWSNEwtLbWzMpMyQYE.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_ablation|full_question|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T04:47:36+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-41-15+00-00_final5-eval-augment-ablation-full-question_C3PWbWSNEwtLbWzMpMyQYE.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T04:47:36+00:00",
+      "latest_success_at": "2026-03-18T04:47:36+00:00",
+      "dependency_change_at": "2026-03-18T04:47:36+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_ablation|full_question|400|444",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_ablation|full_question|400|444",
+        "status": "success",
+        "completed_at": "2026-03-18T05:23:02+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-21-02+00-00_final5-eval-augment-ablation-full-question_24eeJUmmNDnR4fKGxfDRbh.eval",
+        "sample_count": 44
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_ablation|full_question|400|444",
+        "status": "success",
+        "completed_at": "2026-03-18T05:23:02+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-21-02+00-00_final5-eval-augment-ablation-full-question_24eeJUmmNDnR4fKGxfDRbh.eval",
+        "sample_count": 44
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T05:23:02+00:00",
+      "latest_success_at": "2026-03-18T05:23:02+00:00",
+      "dependency_change_at": "2026-03-18T05:23:02+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_human|choices_only|0|200",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_human|choices_only|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T05:31:02+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-25-01+00-00_final5-eval-augment-human-choices-only_NasBb4oyaR3jsNam74J3ar.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_human|choices_only|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T05:31:02+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-25-01+00-00_final5-eval-augment-human-choices-only_NasBb4oyaR3jsNam74J3ar.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T05:31:02+00:00",
+      "latest_success_at": "2026-03-18T05:31:02+00:00",
+      "dependency_change_at": "2026-03-18T05:31:02+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_human|choices_only|200|400",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_human|choices_only|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T04:55:09+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-47-45+00-00_final5-eval-augment-human-choices-only_iuTFYpbMXuoaEgFULBnnWg.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_human|choices_only|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T04:55:09+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-47-45+00-00_final5-eval-augment-human-choices-only_iuTFYpbMXuoaEgFULBnnWg.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T04:55:09+00:00",
+      "latest_success_at": "2026-03-18T04:55:09+00:00",
+      "dependency_change_at": "2026-03-18T04:55:09+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_human|choices_only|400|444",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_human|choices_only|400|444",
+        "status": "success",
+        "completed_at": "2026-03-18T05:25:02+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-23-12+00-00_final5-eval-augment-human-choices-only_9TzkKfhqv4QfqpS5sZvfMD.eval",
+        "sample_count": 44
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_human|choices_only|400|444",
+        "status": "success",
+        "completed_at": "2026-03-18T05:25:02+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-23-12+00-00_final5-eval-augment-human-choices-only_9TzkKfhqv4QfqpS5sZvfMD.eval",
+        "sample_count": 44
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T05:25:02+00:00",
+      "latest_success_at": "2026-03-18T05:25:02+00:00",
+      "dependency_change_at": "2026-03-18T05:25:02+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_human|full_question|0|200",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_human|full_question|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T05:37:18+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-31-10+00-00_final5-eval-augment-human-full-question_Q6G8adQBKxKzQD3wzhp2af.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_human|full_question|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T05:37:18+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-31-10+00-00_final5-eval-augment-human-full-question_Q6G8adQBKxKzQD3wzhp2af.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T05:37:18+00:00",
+      "latest_success_at": "2026-03-18T05:37:18+00:00",
+      "dependency_change_at": "2026-03-18T05:37:18+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_human|full_question|200|400",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_human|full_question|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T05:02:29+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-55-17+00-00_final5-eval-augment-human-full-question_HEAXYLTV3iSjGwaqLnYcFg.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_human|full_question|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T05:02:29+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T04-55-17+00-00_final5-eval-augment-human-full-question_HEAXYLTV3iSjGwaqLnYcFg.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T05:02:29+00:00",
+      "latest_success_at": "2026-03-18T05:02:29+00:00",
+      "dependency_change_at": "2026-03-18T05:02:29+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_human|full_question|400|444",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_human|full_question|400|444",
+        "status": "success",
+        "completed_at": "2026-03-18T05:27:03+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-25-10+00-00_final5-eval-augment-human-full-question_anWPDThWLvXFiTGTXy2Pqb.eval",
+        "sample_count": 44
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_human|full_question|400|444",
+        "status": "success",
+        "completed_at": "2026-03-18T05:27:03+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-25-10+00-00_final5-eval-augment-human-full-question_anWPDThWLvXFiTGTXy2Pqb.eval",
+        "sample_count": 44
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T05:27:03+00:00",
+      "latest_success_at": "2026-03-18T05:27:03+00:00",
+      "dependency_change_at": "2026-03-18T05:27:03+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_model|choices_only|0|200",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_model|choices_only|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T05:43:32+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-37-27+00-00_final5-eval-augment-model-choices-only_SLFCtrCXPJ2MyyHrmuEojw.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_model|choices_only|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T05:43:32+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-37-27+00-00_final5-eval-augment-model-choices-only_SLFCtrCXPJ2MyyHrmuEojw.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T05:43:32+00:00",
+      "latest_success_at": "2026-03-18T05:43:32+00:00",
+      "dependency_change_at": "2026-03-18T05:43:32+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_model|choices_only|200|400",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_model|choices_only|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T05:09:54+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-02-38+00-00_final5-eval-augment-model-choices-only_2BhC89L3FkymvzFumrB9Pj.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_model|choices_only|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T05:09:54+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-02-38+00-00_final5-eval-augment-model-choices-only_2BhC89L3FkymvzFumrB9Pj.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T05:09:54+00:00",
+      "latest_success_at": "2026-03-18T05:09:54+00:00",
+      "dependency_change_at": "2026-03-18T05:09:54+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_model|choices_only|400|444",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_model|choices_only|400|444",
+        "status": "success",
+        "completed_at": "2026-03-18T05:29:13+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-27-14+00-00_final5-eval-augment-model-choices-only_9uuUfUQeLRiKjaX5qm5ZW5.eval",
+        "sample_count": 44
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_model|choices_only|400|444",
+        "status": "success",
+        "completed_at": "2026-03-18T05:29:13+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-27-14+00-00_final5-eval-augment-model-choices-only_9uuUfUQeLRiKjaX5qm5ZW5.eval",
+        "sample_count": 44
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T05:29:13+00:00",
+      "latest_success_at": "2026-03-18T05:29:13+00:00",
+      "dependency_change_at": "2026-03-18T05:29:13+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_model|full_question|0|200",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_model|full_question|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T05:50:15+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-43-44+00-00_final5-eval-augment-model-full-question_6zXiBY4cUZohSyUfmoxDF3.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_model|full_question|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T05:50:15+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-43-44+00-00_final5-eval-augment-model-full-question_6zXiBY4cUZohSyUfmoxDF3.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T05:50:15+00:00",
+      "latest_success_at": "2026-03-18T05:50:15+00:00",
+      "dependency_change_at": "2026-03-18T05:50:15+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_model|full_question|200|400",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_model|full_question|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T05:17:35+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-10-03+00-00_final5-eval-augment-model-full-question_FDJuZAq9e6CK76gwwobgAh.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_model|full_question|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T05:17:35+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-10-03+00-00_final5-eval-augment-model-full-question_FDJuZAq9e6CK76gwwobgAh.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T05:17:35+00:00",
+      "latest_success_at": "2026-03-18T05:17:35+00:00",
+      "dependency_change_at": "2026-03-18T05:17:35+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_model|full_question|400|444",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_model|full_question|400|444",
+        "status": "success",
+        "completed_at": "2026-03-18T05:31:18+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-29-25+00-00_final5-eval-augment-model-full-question_hNLWNnZz9nbhPCREBSVkdo.eval",
+        "sample_count": 44
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_model|full_question|400|444",
+        "status": "success",
+        "completed_at": "2026-03-18T05:31:18+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-29-25+00-00_final5-eval-augment-model-full-question_hNLWNnZz9nbhPCREBSVkdo.eval",
+        "sample_count": 44
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T05:31:18+00:00",
+      "latest_success_at": "2026-03-18T05:31:18+00:00",
+      "dependency_change_at": "2026-03-18T05:31:18+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|human_from_scratch|choices_only|0|200",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|human_from_scratch|choices_only|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T05:55:17+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-50-27+00-00_final5-eval-human-from-scratch-choices-only_2EHUhAqNQmqQ56J9nXFekM.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|human_from_scratch|choices_only|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T05:55:17+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-50-27+00-00_final5-eval-human-from-scratch-choices-only_2EHUhAqNQmqQ56J9nXFekM.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T05:55:17+00:00",
+      "latest_success_at": "2026-03-18T05:55:17+00:00",
+      "dependency_change_at": "2026-03-18T05:55:17+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|human_from_scratch|choices_only|200|400",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|human_from_scratch|choices_only|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T05:24:42+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-17-45+00-00_final5-eval-human-from-scratch-choices-only_CkTa6jzsRU34cinaVR5H6U.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|human_from_scratch|choices_only|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T05:24:42+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-17-45+00-00_final5-eval-human-from-scratch-choices-only_CkTa6jzsRU34cinaVR5H6U.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T05:24:42+00:00",
+      "latest_success_at": "2026-03-18T05:24:42+00:00",
+      "dependency_change_at": "2026-03-18T05:24:42+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|human_from_scratch|choices_only|400|444",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|human_from_scratch|choices_only|400|444",
+        "status": "success",
+        "completed_at": "2026-03-18T05:33:18+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-31-27+00-00_final5-eval-human-from-scratch-choices-only_3asFHURp3DYXGHGCRs96JU.eval",
+        "sample_count": 44
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|human_from_scratch|choices_only|400|444",
+        "status": "success",
+        "completed_at": "2026-03-18T05:33:18+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-31-27+00-00_final5-eval-human-from-scratch-choices-only_3asFHURp3DYXGHGCRs96JU.eval",
+        "sample_count": 44
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T05:33:18+00:00",
+      "latest_success_at": "2026-03-18T05:33:18+00:00",
+      "dependency_change_at": "2026-03-18T05:33:18+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|human_from_scratch|full_question|0|200",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|human_from_scratch|full_question|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T06:01:25+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-56-40+00-00_final5-eval-human-from-scratch-full-question_ELzKJpDJDbjGHMTxtjZ8jN.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|human_from_scratch|full_question|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T06:01:25+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-56-40+00-00_final5-eval-human-from-scratch-full-question_ELzKJpDJDbjGHMTxtjZ8jN.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T06:01:25+00:00",
+      "latest_success_at": "2026-03-18T06:01:25+00:00",
+      "dependency_change_at": "2026-03-18T06:01:25+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|human_from_scratch|full_question|200|400",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|human_from_scratch|full_question|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T05:30:56+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-24-52+00-00_final5-eval-human-from-scratch-full-question_VzH3v3MXB7t3WEDzpCE5jQ.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|human_from_scratch|full_question|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T05:30:56+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-24-52+00-00_final5-eval-human-from-scratch-full-question_VzH3v3MXB7t3WEDzpCE5jQ.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T05:30:56+00:00",
+      "latest_success_at": "2026-03-18T05:30:56+00:00",
+      "dependency_change_at": "2026-03-18T05:30:56+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|human_from_scratch|full_question|400|444",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|human_from_scratch|full_question|400|444",
+        "status": "success",
+        "completed_at": "2026-03-18T05:35:29+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-33-29+00-00_final5-eval-human-from-scratch-full-question_Uv4bWRnNvi5dT3KyyEefrk.eval",
+        "sample_count": 44
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|human_from_scratch|full_question|400|444",
+        "status": "success",
+        "completed_at": "2026-03-18T05:35:29+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-33-29+00-00_final5-eval-human-from-scratch-full-question_Uv4bWRnNvi5dT3KyyEefrk.eval",
+        "sample_count": 44
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T05:35:29+00:00",
+      "latest_success_at": "2026-03-18T05:35:29+00:00",
+      "dependency_change_at": "2026-03-18T05:35:29+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|model_from_scratch|choices_only|0|200",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|model_from_scratch|choices_only|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T06:35:57+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T06-34-09+00-00_final5-eval-model-from-scratch-choices-only_ZNspRcQCLoqjy263MaQAG5.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|model_from_scratch|choices_only|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T06:35:57+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T06-34-09+00-00_final5-eval-model-from-scratch-choices-only_ZNspRcQCLoqjy263MaQAG5.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T06:35:57+00:00",
+      "latest_success_at": "2026-03-18T06:35:57+00:00",
+      "dependency_change_at": "2026-03-18T06:35:57+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|model_from_scratch|choices_only|200|400",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|model_from_scratch|choices_only|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T05:37:10+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-31-07+00-00_final5-eval-model-from-scratch-choices-only_5U2WXzS8h4hQ5Y5Jr3eyeQ.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|model_from_scratch|choices_only|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T05:37:10+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-31-07+00-00_final5-eval-model-from-scratch-choices-only_5U2WXzS8h4hQ5Y5Jr3eyeQ.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T05:37:10+00:00",
+      "latest_success_at": "2026-03-18T05:37:10+00:00",
+      "dependency_change_at": "2026-03-18T05:37:10+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|model_from_scratch|choices_only|400|444",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|model_from_scratch|choices_only|400|444",
+        "status": "success",
+        "completed_at": "2026-03-18T05:37:28+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-35-40+00-00_final5-eval-model-from-scratch-choices-only_9AxQsa3gaY6mcWG4wvDF6A.eval",
+        "sample_count": 44
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|model_from_scratch|choices_only|400|444",
+        "status": "success",
+        "completed_at": "2026-03-18T05:37:28+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-35-40+00-00_final5-eval-model-from-scratch-choices-only_9AxQsa3gaY6mcWG4wvDF6A.eval",
+        "sample_count": 44
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T05:37:28+00:00",
+      "latest_success_at": "2026-03-18T05:37:28+00:00",
+      "dependency_change_at": "2026-03-18T05:37:28+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|model_from_scratch|full_question|0|200",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|model_from_scratch|full_question|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T06:51:54+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T06-49-14+00-00_final5-eval-model-from-scratch-full-question_hVUq7jSi3gNMNxWRdM9rXg.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|model_from_scratch|full_question|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T06:51:54+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T06-49-14+00-00_final5-eval-model-from-scratch-full-question_hVUq7jSi3gNMNxWRdM9rXg.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T06:51:54+00:00",
+      "latest_success_at": "2026-03-18T06:51:54+00:00",
+      "dependency_change_at": "2026-03-18T06:51:54+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|model_from_scratch|full_question|200|400",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|model_from_scratch|full_question|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T05:43:32+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-37-22+00-00_final5-eval-model-from-scratch-full-question_arsvBgCSfTmDfvruatgcnV.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|model_from_scratch|full_question|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T05:43:32+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-37-22+00-00_final5-eval-model-from-scratch-full-question_arsvBgCSfTmDfvruatgcnV.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T05:43:32+00:00",
+      "latest_success_at": "2026-03-18T05:43:32+00:00",
+      "dependency_change_at": "2026-03-18T05:43:32+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|model_from_scratch|full_question|400|444",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|model_from_scratch|full_question|400|444",
+        "status": "success",
+        "completed_at": "2026-03-18T05:39:26+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-37-36+00-00_final5-eval-model-from-scratch-full-question_9dCcSxsP3Gua6UQCkWdc7S.eval",
+        "sample_count": 44
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|model_from_scratch|full_question|400|444",
+        "status": "success",
+        "completed_at": "2026-03-18T05:39:26+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-37-36+00-00_final5-eval-model-from-scratch-full-question_9dCcSxsP3Gua6UQCkWdc7S.eval",
+        "sample_count": 44
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T05:39:26+00:00",
+      "latest_success_at": "2026-03-18T05:39:26+00:00",
+      "dependency_change_at": "2026-03-18T05:39:26+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_ablation|choices_only|0|200",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_ablation|choices_only|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T06:54:34+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T06-52-23+00-00_final5-eval-augment-ablation-choices-only_gnHJR6NLpYXnXeqcm3Ww8B.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_ablation|choices_only|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T06:54:34+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T06-52-23+00-00_final5-eval-augment-ablation-choices-only_gnHJR6NLpYXnXeqcm3Ww8B.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T06:54:34+00:00",
+      "latest_success_at": "2026-03-18T06:54:34+00:00",
+      "dependency_change_at": "2026-03-18T06:54:34+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_ablation|choices_only|200|400",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_ablation|choices_only|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T05:50:15+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-43-44+00-00_final5-eval-augment-ablation-choices-only_CVqbvdD6M49ZD9GaEwKFPV.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_ablation|choices_only|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T05:50:15+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-43-44+00-00_final5-eval-augment-ablation-choices-only_CVqbvdD6M49ZD9GaEwKFPV.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T05:50:15+00:00",
+      "latest_success_at": "2026-03-18T05:50:15+00:00",
+      "dependency_change_at": "2026-03-18T05:50:15+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_ablation|choices_only|400|600",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_ablation|choices_only|400|600",
+        "status": "success",
+        "completed_at": "2026-03-18T05:45:21+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-39-38+00-00_final5-eval-augment-ablation-choices-only_EGDNiyh8N5Tt67suoTrBJ7.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_ablation|choices_only|400|600",
+        "status": "success",
+        "completed_at": "2026-03-18T05:45:21+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-39-38+00-00_final5-eval-augment-ablation-choices-only_EGDNiyh8N5Tt67suoTrBJ7.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T05:45:21+00:00",
+      "latest_success_at": "2026-03-18T05:45:21+00:00",
+      "dependency_change_at": "2026-03-18T05:45:21+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_ablation|choices_only|600|800",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_ablation|choices_only|600|800",
+        "status": "success",
+        "completed_at": "2026-03-18T06:56:38+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T06-54-44+00-00_final5-eval-augment-ablation-choices-only_6djEuPDK9n9PEwkVSSn4qS.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_ablation|choices_only|600|800",
+        "status": "success",
+        "completed_at": "2026-03-18T06:56:38+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T06-54-44+00-00_final5-eval-augment-ablation-choices-only_6djEuPDK9n9PEwkVSSn4qS.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T06:56:38+00:00",
+      "latest_success_at": "2026-03-18T06:56:38+00:00",
+      "dependency_change_at": "2026-03-18T06:56:38+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_ablation|choices_only|800|999",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_ablation|choices_only|800|999",
+        "status": "success",
+        "completed_at": "2026-03-18T05:56:29+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-51-40+00-00_final5-eval-augment-ablation-choices-only_S8qma5fYktYh49RAqgivak.eval",
+        "sample_count": 198
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_ablation|choices_only|800|999",
+        "status": "success",
+        "completed_at": "2026-03-18T05:56:29+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-51-40+00-00_final5-eval-augment-ablation-choices-only_S8qma5fYktYh49RAqgivak.eval",
+        "sample_count": 198
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T05:56:29+00:00",
+      "latest_success_at": "2026-03-18T05:56:29+00:00",
+      "dependency_change_at": "2026-03-18T05:56:29+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_ablation|full_question|0|200",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_ablation|full_question|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T05:51:29+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-45-33+00-00_final5-eval-augment-ablation-full-question_hLWMCpwuNV9sNySqws6FfB.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_ablation|full_question|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T05:51:29+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-45-33+00-00_final5-eval-augment-ablation-full-question_hLWMCpwuNV9sNySqws6FfB.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T05:51:29+00:00",
+      "latest_success_at": "2026-03-18T05:51:29+00:00",
+      "dependency_change_at": "2026-03-18T05:51:29+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_ablation|full_question|200|400",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_ablation|full_question|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T06:58:42+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T06-56-49+00-00_final5-eval-augment-ablation-full-question_XAa6hmsjLLQDWQf2XbPpBR.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_ablation|full_question|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T06:58:42+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T06-56-49+00-00_final5-eval-augment-ablation-full-question_XAa6hmsjLLQDWQf2XbPpBR.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T06:58:42+00:00",
+      "latest_success_at": "2026-03-18T06:58:42+00:00",
+      "dependency_change_at": "2026-03-18T06:58:42+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_ablation|full_question|400|600",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_ablation|full_question|400|600",
+        "status": "success",
+        "completed_at": "2026-03-18T06:30:43+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T06-28-08+00-00_final5-eval-augment-ablation-full-question_EjGRbPDeRpY7eBo8JFdTCD.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_ablation|full_question|400|600",
+        "status": "success",
+        "completed_at": "2026-03-18T06:30:43+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T06-28-08+00-00_final5-eval-augment-ablation-full-question_EjGRbPDeRpY7eBo8JFdTCD.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T06:30:43+00:00",
+      "latest_success_at": "2026-03-18T06:30:43+00:00",
+      "dependency_change_at": "2026-03-18T06:30:43+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_ablation|full_question|600|800",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_ablation|full_question|600|800",
+        "status": "success",
+        "completed_at": "2026-03-18T06:00:36+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-55-28+00-00_final5-eval-augment-ablation-full-question_aHzkvXbLR2aw54jV29sby9.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_ablation|full_question|600|800",
+        "status": "success",
+        "completed_at": "2026-03-18T06:00:36+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T05-55-28+00-00_final5-eval-augment-ablation-full-question_aHzkvXbLR2aw54jV29sby9.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T06:00:36+00:00",
+      "latest_success_at": "2026-03-18T06:00:36+00:00",
+      "dependency_change_at": "2026-03-18T06:00:36+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_ablation|full_question|800|999",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_ablation|full_question|800|999",
+        "status": "success",
+        "completed_at": "2026-03-18T07:00:43+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T06-58-53+00-00_final5-eval-augment-ablation-full-question_kh3aJsjN4uDH6uwGSSqxj8.eval",
+        "sample_count": 198
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_ablation|full_question|800|999",
+        "status": "success",
+        "completed_at": "2026-03-18T07:00:43+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T06-58-53+00-00_final5-eval-augment-ablation-full-question_kh3aJsjN4uDH6uwGSSqxj8.eval",
+        "sample_count": 198
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T07:00:43+00:00",
+      "latest_success_at": "2026-03-18T07:00:43+00:00",
+      "dependency_change_at": "2026-03-18T07:00:43+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_human|choices_only|0|200",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_human|choices_only|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T06:47:24+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T06-45-33+00-00_final5-eval-augment-human-choices-only_7C57eR2JxQe7rkGsBFhrLB.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_human|choices_only|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T06:47:24+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T06-45-33+00-00_final5-eval-augment-human-choices-only_7C57eR2JxQe7rkGsBFhrLB.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T06:47:24+00:00",
+      "latest_success_at": "2026-03-18T06:47:24+00:00",
+      "dependency_change_at": "2026-03-18T06:47:24+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_human|choices_only|200|400",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_human|choices_only|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T06:33:02+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T06-31-08+00-00_final5-eval-augment-human-choices-only_WGgDN32x7zcCAV77yoropf.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_human|choices_only|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T06:33:02+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T06-31-08+00-00_final5-eval-augment-human-choices-only_WGgDN32x7zcCAV77yoropf.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T06:33:02+00:00",
+      "latest_success_at": "2026-03-18T06:33:02+00:00",
+      "dependency_change_at": "2026-03-18T06:33:02+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_human|choices_only|400|600",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_human|choices_only|400|600",
+        "status": "success",
+        "completed_at": "2026-03-18T07:02:50+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-00-54+00-00_final5-eval-augment-human-choices-only_AKcTpibAbQRUuGEh5YEXYV.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_human|choices_only|400|600",
+        "status": "success",
+        "completed_at": "2026-03-18T07:02:50+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-00-54+00-00_final5-eval-augment-human-choices-only_AKcTpibAbQRUuGEh5YEXYV.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T07:02:50+00:00",
+      "latest_success_at": "2026-03-18T07:02:50+00:00",
+      "dependency_change_at": "2026-03-18T07:02:50+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_human|choices_only|600|800",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_human|choices_only|600|800",
+        "status": "success",
+        "completed_at": "2026-03-18T06:51:40+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T06-49-35+00-00_final5-eval-augment-human-choices-only_YztiBbeTDcwHsbPnB2yfNo.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_human|choices_only|600|800",
+        "status": "success",
+        "completed_at": "2026-03-18T06:51:40+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T06-49-35+00-00_final5-eval-augment-human-choices-only_YztiBbeTDcwHsbPnB2yfNo.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T06:51:40+00:00",
+      "latest_success_at": "2026-03-18T06:51:40+00:00",
+      "dependency_change_at": "2026-03-18T06:51:40+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_human|choices_only|800|999",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_human|choices_only|800|999",
+        "status": "success",
+        "completed_at": "2026-03-18T06:49:25+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T06-47-35+00-00_final5-eval-augment-human-choices-only_ZqVsHgCAAvHTR5WkypmP4t.eval",
+        "sample_count": 199
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_human|choices_only|800|999",
+        "status": "success",
+        "completed_at": "2026-03-18T06:49:25+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T06-47-35+00-00_final5-eval-augment-human-choices-only_ZqVsHgCAAvHTR5WkypmP4t.eval",
+        "sample_count": 199
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T06:49:25+00:00",
+      "latest_success_at": "2026-03-18T06:49:25+00:00",
+      "dependency_change_at": "2026-03-18T06:49:25+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_human|full_question|0|200",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_human|full_question|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T07:04:55+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-03-00+00-00_final5-eval-augment-human-full-question_AnhhQWiBmeCtsf5SnHZcg8.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_human|full_question|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T07:04:55+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-03-00+00-00_final5-eval-augment-human-full-question_AnhhQWiBmeCtsf5SnHZcg8.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T07:04:55+00:00",
+      "latest_success_at": "2026-03-18T07:04:55+00:00",
+      "dependency_change_at": "2026-03-18T07:04:55+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_human|full_question|200|400",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_human|full_question|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T06:55:57+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T06-53-58+00-00_final5-eval-augment-human-full-question_epUhFKro6HJJdwMsdu4FWR.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_human|full_question|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T06:55:57+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T06-53-58+00-00_final5-eval-augment-human-full-question_epUhFKro6HJJdwMsdu4FWR.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T06:55:57+00:00",
+      "latest_success_at": "2026-03-18T06:55:57+00:00",
+      "dependency_change_at": "2026-03-18T06:55:57+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_human|full_question|400|600",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_human|full_question|400|600",
+        "status": "success",
+        "completed_at": "2026-03-18T06:53:47+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T06-51-52+00-00_final5-eval-augment-human-full-question_33hd5zvUbVtYnnV2KHrwab.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_human|full_question|400|600",
+        "status": "success",
+        "completed_at": "2026-03-18T06:53:47+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T06-51-52+00-00_final5-eval-augment-human-full-question_33hd5zvUbVtYnnV2KHrwab.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T06:53:47+00:00",
+      "latest_success_at": "2026-03-18T06:53:47+00:00",
+      "dependency_change_at": "2026-03-18T06:53:47+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_human|full_question|600|800",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_human|full_question|600|800",
+        "status": "success",
+        "completed_at": "2026-03-18T07:07:03+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-05-06+00-00_final5-eval-augment-human-full-question_QZJneXy8uEfjpN7FfrHcxp.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_human|full_question|600|800",
+        "status": "success",
+        "completed_at": "2026-03-18T07:07:03+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-05-06+00-00_final5-eval-augment-human-full-question_QZJneXy8uEfjpN7FfrHcxp.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T07:07:03+00:00",
+      "latest_success_at": "2026-03-18T07:07:03+00:00",
+      "dependency_change_at": "2026-03-18T07:07:03+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_human|full_question|800|999",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_human|full_question|800|999",
+        "status": "success",
+        "completed_at": "2026-03-18T07:00:06+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T06-58-11+00-00_final5-eval-augment-human-full-question_M3bHjatsL97VUNJ4qJMBTf.eval",
+        "sample_count": 199
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_human|full_question|800|999",
+        "status": "success",
+        "completed_at": "2026-03-18T07:00:06+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T06-58-11+00-00_final5-eval-augment-human-full-question_M3bHjatsL97VUNJ4qJMBTf.eval",
+        "sample_count": 199
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T07:00:06+00:00",
+      "latest_success_at": "2026-03-18T07:00:06+00:00",
+      "dependency_change_at": "2026-03-18T07:00:06+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_model|choices_only|0|200",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_model|choices_only|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T06:58:00+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T06-56-08+00-00_final5-eval-augment-model-choices-only_biac9kKuckr54n8QCSeL8a.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_model|choices_only|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T06:58:00+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T06-56-08+00-00_final5-eval-augment-model-choices-only_biac9kKuckr54n8QCSeL8a.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T06:58:00+00:00",
+      "latest_success_at": "2026-03-18T06:58:00+00:00",
+      "dependency_change_at": "2026-03-18T06:58:00+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_model|choices_only|200|400",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_model|choices_only|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T07:09:10+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-07-13+00-00_final5-eval-augment-model-choices-only_dNTDA45RNCkToaX7tfuQoB.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_model|choices_only|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T07:09:10+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-07-13+00-00_final5-eval-augment-model-choices-only_dNTDA45RNCkToaX7tfuQoB.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T07:09:10+00:00",
+      "latest_success_at": "2026-03-18T07:09:10+00:00",
+      "dependency_change_at": "2026-03-18T07:09:10+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_model|choices_only|400|600",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_model|choices_only|400|600",
+        "status": "success",
+        "completed_at": "2026-03-18T07:02:16+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-00-17+00-00_final5-eval-augment-model-choices-only_9ygVpQrFXyQ2dCrCE8FA62.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_model|choices_only|400|600",
+        "status": "success",
+        "completed_at": "2026-03-18T07:02:16+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-00-17+00-00_final5-eval-augment-model-choices-only_9ygVpQrFXyQ2dCrCE8FA62.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T07:02:16+00:00",
+      "latest_success_at": "2026-03-18T07:02:16+00:00",
+      "dependency_change_at": "2026-03-18T07:02:16+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_model|choices_only|600|800",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_model|choices_only|600|800",
+        "status": "success",
+        "completed_at": "2026-03-18T07:03:04+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-00-10+00-00_final5-eval-augment-model-choices-only_PJtx86AX8DJUvYsBjp4Was.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_model|choices_only|600|800",
+        "status": "success",
+        "completed_at": "2026-03-18T07:03:04+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-00-10+00-00_final5-eval-augment-model-choices-only_PJtx86AX8DJUvYsBjp4Was.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T07:03:04+00:00",
+      "latest_success_at": "2026-03-18T07:03:04+00:00",
+      "dependency_change_at": "2026-03-18T07:03:04+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_model|choices_only|800|999",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_model|choices_only|800|999",
+        "status": "success",
+        "completed_at": "2026-03-18T07:11:16+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-09-21+00-00_final5-eval-augment-model-choices-only_4rYWEvuPf37SnYtDvvhRLR.eval",
+        "sample_count": 199
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_model|choices_only|800|999",
+        "status": "success",
+        "completed_at": "2026-03-18T07:11:16+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-09-21+00-00_final5-eval-augment-model-choices-only_4rYWEvuPf37SnYtDvvhRLR.eval",
+        "sample_count": 199
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T07:11:16+00:00",
+      "latest_success_at": "2026-03-18T07:11:16+00:00",
+      "dependency_change_at": "2026-03-18T07:11:16+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_model|full_question|0|200",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_model|full_question|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T07:04:25+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-02-27+00-00_final5-eval-augment-model-full-question_bhmExpWPdya7EYLArPjX7Y.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_model|full_question|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T07:04:25+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-02-27+00-00_final5-eval-augment-model-full-question_bhmExpWPdya7EYLArPjX7Y.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T07:04:25+00:00",
+      "latest_success_at": "2026-03-18T07:04:25+00:00",
+      "dependency_change_at": "2026-03-18T07:04:25+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_model|full_question|200|400",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_model|full_question|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T07:05:15+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-03-14+00-00_final5-eval-augment-model-full-question_LDzWbtG7aFcZpcLCid9DFt.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_model|full_question|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T07:05:15+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-03-14+00-00_final5-eval-augment-model-full-question_LDzWbtG7aFcZpcLCid9DFt.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T07:05:15+00:00",
+      "latest_success_at": "2026-03-18T07:05:15+00:00",
+      "dependency_change_at": "2026-03-18T07:05:15+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_model|full_question|400|600",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_model|full_question|400|600",
+        "status": "success",
+        "completed_at": "2026-03-18T07:13:24+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-11-26+00-00_final5-eval-augment-model-full-question_BswSJX6NwJ883GZ9AGSahB.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_model|full_question|400|600",
+        "status": "success",
+        "completed_at": "2026-03-18T07:13:24+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-11-26+00-00_final5-eval-augment-model-full-question_BswSJX6NwJ883GZ9AGSahB.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T07:13:24+00:00",
+      "latest_success_at": "2026-03-18T07:13:24+00:00",
+      "dependency_change_at": "2026-03-18T07:13:24+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_model|full_question|600|800",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_model|full_question|600|800",
+        "status": "success",
+        "completed_at": "2026-03-18T07:06:40+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-04-36+00-00_final5-eval-augment-model-full-question_XURUjTXemxxzn2yDmKnhvk.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_model|full_question|600|800",
+        "status": "success",
+        "completed_at": "2026-03-18T07:06:40+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-04-36+00-00_final5-eval-augment-model-full-question_XURUjTXemxxzn2yDmKnhvk.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T07:06:40+00:00",
+      "latest_success_at": "2026-03-18T07:06:40+00:00",
+      "dependency_change_at": "2026-03-18T07:06:40+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_model|full_question|800|999",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_model|full_question|800|999",
+        "status": "success",
+        "completed_at": "2026-03-18T07:07:27+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-05-24+00-00_final5-eval-augment-model-full-question_ks9w4LGRSYFEabHvjEF4e9.eval",
+        "sample_count": 199
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_model|full_question|800|999",
+        "status": "success",
+        "completed_at": "2026-03-18T07:07:27+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-05-24+00-00_final5-eval-augment-model-full-question_ks9w4LGRSYFEabHvjEF4e9.eval",
+        "sample_count": 199
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T07:07:27+00:00",
+      "latest_success_at": "2026-03-18T07:07:27+00:00",
+      "dependency_change_at": "2026-03-18T07:07:27+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|human_from_scratch|choices_only|0|200",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|human_from_scratch|choices_only|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T07:15:32+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-13-34+00-00_final5-eval-human-from-scratch-choices-only_KXUYZ4n7DjXX2dPZ8zhsVd.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|human_from_scratch|choices_only|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T07:15:32+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-13-34+00-00_final5-eval-human-from-scratch-choices-only_KXUYZ4n7DjXX2dPZ8zhsVd.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T07:15:32+00:00",
+      "latest_success_at": "2026-03-18T07:15:32+00:00",
+      "dependency_change_at": "2026-03-18T07:15:32+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|human_from_scratch|choices_only|200|400",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|human_from_scratch|choices_only|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T07:08:58+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-06-52+00-00_final5-eval-human-from-scratch-choices-only_RDaAg2N46uffDwoTHpXADk.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|human_from_scratch|choices_only|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T07:08:58+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-06-52+00-00_final5-eval-human-from-scratch-choices-only_RDaAg2N46uffDwoTHpXADk.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T07:08:58+00:00",
+      "latest_success_at": "2026-03-18T07:08:58+00:00",
+      "dependency_change_at": "2026-03-18T07:08:58+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|human_from_scratch|choices_only|400|600",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|human_from_scratch|choices_only|400|600",
+        "status": "success",
+        "completed_at": "2026-03-18T07:09:33+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-07-36+00-00_final5-eval-human-from-scratch-choices-only_nxXyy9VdTaTCmi8Lf9Jjs6.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|human_from_scratch|choices_only|400|600",
+        "status": "success",
+        "completed_at": "2026-03-18T07:09:33+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-07-36+00-00_final5-eval-human-from-scratch-choices-only_nxXyy9VdTaTCmi8Lf9Jjs6.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T07:09:33+00:00",
+      "latest_success_at": "2026-03-18T07:09:33+00:00",
+      "dependency_change_at": "2026-03-18T07:09:33+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|human_from_scratch|choices_only|600|800",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|human_from_scratch|choices_only|600|800",
+        "status": "success",
+        "completed_at": "2026-03-18T07:17:37+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-15-42+00-00_final5-eval-human-from-scratch-choices-only_ZHp4xRGHGYiqCgfbTsm7ib.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|human_from_scratch|choices_only|600|800",
+        "status": "success",
+        "completed_at": "2026-03-18T07:17:37+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-15-42+00-00_final5-eval-human-from-scratch-choices-only_ZHp4xRGHGYiqCgfbTsm7ib.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T07:17:37+00:00",
+      "latest_success_at": "2026-03-18T07:17:37+00:00",
+      "dependency_change_at": "2026-03-18T07:17:37+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|human_from_scratch|choices_only|800|999",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|human_from_scratch|choices_only|800|999",
+        "status": "success",
+        "completed_at": "2026-03-18T07:11:10+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-09-09+00-00_final5-eval-human-from-scratch-choices-only_3cEd7d3RXdMaecDvKJQgc8.eval",
+        "sample_count": 199
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|human_from_scratch|choices_only|800|999",
+        "status": "success",
+        "completed_at": "2026-03-18T07:11:10+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-09-09+00-00_final5-eval-human-from-scratch-choices-only_3cEd7d3RXdMaecDvKJQgc8.eval",
+        "sample_count": 199
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T07:11:10+00:00",
+      "latest_success_at": "2026-03-18T07:11:10+00:00",
+      "dependency_change_at": "2026-03-18T07:11:10+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|human_from_scratch|full_question|0|200",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|human_from_scratch|full_question|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T07:11:40+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-09-42+00-00_final5-eval-human-from-scratch-full-question_35bL5jq4S6UtWGiUpdGcGp.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|human_from_scratch|full_question|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T07:11:40+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-09-42+00-00_final5-eval-human-from-scratch-full-question_35bL5jq4S6UtWGiUpdGcGp.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T07:11:40+00:00",
+      "latest_success_at": "2026-03-18T07:11:40+00:00",
+      "dependency_change_at": "2026-03-18T07:11:40+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|human_from_scratch|full_question|200|400",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|human_from_scratch|full_question|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T07:19:42+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-17-48+00-00_final5-eval-human-from-scratch-full-question_M5Q9yGXuaBvNg3acQn5uCj.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|human_from_scratch|full_question|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T07:19:42+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-17-48+00-00_final5-eval-human-from-scratch-full-question_M5Q9yGXuaBvNg3acQn5uCj.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T07:19:42+00:00",
+      "latest_success_at": "2026-03-18T07:19:42+00:00",
+      "dependency_change_at": "2026-03-18T07:19:42+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|human_from_scratch|full_question|400|600",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|human_from_scratch|full_question|400|600",
+        "status": "success",
+        "completed_at": "2026-03-18T07:13:25+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-11-21+00-00_final5-eval-human-from-scratch-full-question_NZZ9KrwCJMNMaYHgvP4bVz.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|human_from_scratch|full_question|400|600",
+        "status": "success",
+        "completed_at": "2026-03-18T07:13:25+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-11-21+00-00_final5-eval-human-from-scratch-full-question_NZZ9KrwCJMNMaYHgvP4bVz.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T07:13:25+00:00",
+      "latest_success_at": "2026-03-18T07:13:25+00:00",
+      "dependency_change_at": "2026-03-18T07:13:25+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|human_from_scratch|full_question|600|800",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|human_from_scratch|full_question|600|800",
+        "status": "success",
+        "completed_at": "2026-03-18T07:13:47+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-11-49+00-00_final5-eval-human-from-scratch-full-question_ML7wbP7E9VHHPRd6NHzcHg.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|human_from_scratch|full_question|600|800",
+        "status": "success",
+        "completed_at": "2026-03-18T07:13:47+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-11-49+00-00_final5-eval-human-from-scratch-full-question_ML7wbP7E9VHHPRd6NHzcHg.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T07:13:47+00:00",
+      "latest_success_at": "2026-03-18T07:13:47+00:00",
+      "dependency_change_at": "2026-03-18T07:13:47+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|human_from_scratch|full_question|800|999",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|human_from_scratch|full_question|800|999",
+        "status": "success",
+        "completed_at": "2026-03-18T07:21:43+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-19-53+00-00_final5-eval-human-from-scratch-full-question_i4vJ2jSw78PFdQaAuRaCLk.eval",
+        "sample_count": 199
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|human_from_scratch|full_question|800|999",
+        "status": "success",
+        "completed_at": "2026-03-18T07:21:43+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-19-53+00-00_final5-eval-human-from-scratch-full-question_i4vJ2jSw78PFdQaAuRaCLk.eval",
+        "sample_count": 199
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T07:21:43+00:00",
+      "latest_success_at": "2026-03-18T07:21:43+00:00",
+      "dependency_change_at": "2026-03-18T07:21:43+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|model_from_scratch|choices_only|0|200",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|model_from_scratch|choices_only|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T07:15:39+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-13-36+00-00_final5-eval-model-from-scratch-choices-only_K6xs2NTkEimXAmaTwsbmfc.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|model_from_scratch|choices_only|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T07:15:39+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-13-36+00-00_final5-eval-model-from-scratch-choices-only_K6xs2NTkEimXAmaTwsbmfc.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T07:15:39+00:00",
+      "latest_success_at": "2026-03-18T07:15:39+00:00",
+      "dependency_change_at": "2026-03-18T07:15:39+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|model_from_scratch|choices_only|200|400",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|model_from_scratch|choices_only|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T07:15:55+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-13-56+00-00_final5-eval-model-from-scratch-choices-only_FVXcixAnSerhmyHSBnZpMk.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|model_from_scratch|choices_only|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T07:15:55+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-13-56+00-00_final5-eval-model-from-scratch-choices-only_FVXcixAnSerhmyHSBnZpMk.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T07:15:55+00:00",
+      "latest_success_at": "2026-03-18T07:15:55+00:00",
+      "dependency_change_at": "2026-03-18T07:15:55+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|model_from_scratch|choices_only|400|600",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|model_from_scratch|choices_only|400|600",
+        "status": "success",
+        "completed_at": "2026-03-18T07:24:26+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-21-56+00-00_final5-eval-model-from-scratch-choices-only_bqdh53DG2tCPQmU2gU7oXB.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|model_from_scratch|choices_only|400|600",
+        "status": "success",
+        "completed_at": "2026-03-18T07:24:26+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-21-56+00-00_final5-eval-model-from-scratch-choices-only_bqdh53DG2tCPQmU2gU7oXB.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T07:24:26+00:00",
+      "latest_success_at": "2026-03-18T07:24:26+00:00",
+      "dependency_change_at": "2026-03-18T07:24:26+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|model_from_scratch|choices_only|600|800",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|model_from_scratch|choices_only|600|800",
+        "status": "success",
+        "completed_at": "2026-03-18T07:17:52+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-15-49+00-00_final5-eval-model-from-scratch-choices-only_hNcqjRUVPVEySLX8zFNbQD.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|model_from_scratch|choices_only|600|800",
+        "status": "success",
+        "completed_at": "2026-03-18T07:17:52+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-15-49+00-00_final5-eval-model-from-scratch-choices-only_hNcqjRUVPVEySLX8zFNbQD.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T07:17:52+00:00",
+      "latest_success_at": "2026-03-18T07:17:52+00:00",
+      "dependency_change_at": "2026-03-18T07:17:52+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|model_from_scratch|choices_only|800|999",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|model_from_scratch|choices_only|800|999",
+        "status": "success",
+        "completed_at": "2026-03-18T07:18:02+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-16-04+00-00_final5-eval-model-from-scratch-choices-only_ELBa4gXCyfiVLVSTcoFHJQ.eval",
+        "sample_count": 199
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|model_from_scratch|choices_only|800|999",
+        "status": "success",
+        "completed_at": "2026-03-18T07:18:02+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-16-04+00-00_final5-eval-model-from-scratch-choices-only_ELBa4gXCyfiVLVSTcoFHJQ.eval",
+        "sample_count": 199
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T07:18:02+00:00",
+      "latest_success_at": "2026-03-18T07:18:02+00:00",
+      "dependency_change_at": "2026-03-18T07:18:02+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|model_from_scratch|full_question|0|200",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|model_from_scratch|full_question|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T07:26:29+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-24-37+00-00_final5-eval-model-from-scratch-full-question_M6BqrFnDLFacpshcmNFFP3.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|model_from_scratch|full_question|0|200",
+        "status": "success",
+        "completed_at": "2026-03-18T07:26:29+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-24-37+00-00_final5-eval-model-from-scratch-full-question_M6BqrFnDLFacpshcmNFFP3.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T07:26:29+00:00",
+      "latest_success_at": "2026-03-18T07:26:29+00:00",
+      "dependency_change_at": "2026-03-18T07:26:29+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|model_from_scratch|full_question|200|400",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|model_from_scratch|full_question|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T07:20:09+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-18-05+00-00_final5-eval-model-from-scratch-full-question_Qv8ZyVWZtoXGBd68WF7WaF.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|model_from_scratch|full_question|200|400",
+        "status": "success",
+        "completed_at": "2026-03-18T07:20:09+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-18-05+00-00_final5-eval-model-from-scratch-full-question_Qv8ZyVWZtoXGBd68WF7WaF.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T07:20:09+00:00",
+      "latest_success_at": "2026-03-18T07:20:09+00:00",
+      "dependency_change_at": "2026-03-18T07:20:09+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|model_from_scratch|full_question|400|600",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|model_from_scratch|full_question|400|600",
+        "status": "success",
+        "completed_at": "2026-03-18T07:20:09+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-18-11+00-00_final5-eval-model-from-scratch-full-question_ZxLh2Y4EShM9XikA6jFkAr.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|model_from_scratch|full_question|400|600",
+        "status": "success",
+        "completed_at": "2026-03-18T07:20:09+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-18-11+00-00_final5-eval-model-from-scratch-full-question_ZxLh2Y4EShM9XikA6jFkAr.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T07:20:09+00:00",
+      "latest_success_at": "2026-03-18T07:20:09+00:00",
+      "dependency_change_at": "2026-03-18T07:20:09+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|model_from_scratch|full_question|600|800",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|model_from_scratch|full_question|600|800",
+        "status": "success",
+        "completed_at": "2026-03-18T07:28:35+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-26-40+00-00_final5-eval-model-from-scratch-full-question_mR9uRYFDBFx3tdmhsYUJLF.eval",
+        "sample_count": 200
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|model_from_scratch|full_question|600|800",
+        "status": "success",
+        "completed_at": "2026-03-18T07:28:35+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-26-40+00-00_final5-eval-model-from-scratch-full-question_mR9uRYFDBFx3tdmhsYUJLF.eval",
+        "sample_count": 200
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T07:28:35+00:00",
+      "latest_success_at": "2026-03-18T07:28:35+00:00",
+      "dependency_change_at": "2026-03-18T07:28:35+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|model_from_scratch|full_question|800|999",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|model_from_scratch|full_question|800|999",
+        "status": "success",
+        "completed_at": "2026-03-18T07:22:14+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-20-20+00-00_final5-eval-model-from-scratch-full-question_HQA8xNdZzJTUkKkbS3MyN5.eval",
+        "sample_count": 199
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gen_gpt52_v2|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|model_from_scratch|full_question|800|999",
+        "status": "success",
+        "completed_at": "2026-03-18T07:22:14+00:00",
+        "log_path": "results/inspect/evaluation/eval_gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-03-18T07-20-20+00-00_final5-eval-model-from-scratch-full-question_HQA8xNdZzJTUkKkbS3MyN5.eval",
+        "sample_count": 199
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-03-18T07:22:14+00:00",
+      "latest_success_at": "2026-03-18T07:22:14+00:00",
+      "dependency_change_at": "2026-03-18T07:22:14+00:00",
+      "status": "current"
     }
   ]
 }

@@ -118,16 +118,12 @@
         "_type": "Value"
       }
     },
-    "evaluation_status": {
-      "dtype": "string",
-      "_type": "Value"
-    },
     "evaluation_is_correct": {
-      "dtype": "null",
+      "dtype": "bool",
       "_type": "Value"
     },
     "evaluation_score": {
-      "dtype": "null",
+      "dtype": "float64",
       "_type": "Value"
     },
     "evaluation_prediction": {
@@ -143,6 +139,10 @@
       "_type": "Value"
     },
     "evaluation_prompt": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "evaluation_status": {
       "dtype": "string",
       "_type": "Value"
     },

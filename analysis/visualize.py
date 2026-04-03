@@ -10,6 +10,8 @@ from typing import Iterable
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import pyarrow as pa
+import pyarrow.ipc as ipc
 from datasets import load_from_disk
 from matplotlib.patches import Rectangle
 
@@ -73,11 +75,15 @@ DEFAULT_EVAL_MODEL_VARIANTS = tuple(
     model if str(model).startswith("vllm/") else f"vllm/{model}" for model in DEFAULT_LOCAL_EVALUATION_MODELS
 )
 DATASET_PLOT_ORDER = ["arc_challenge", "mmlu_pro", "gpqa"]
+COMPLETE_MISSING_SAMPLE_THRESHOLD = 10
 MCNEMAR_SIGNIFICANCE_LEGEND = (
     "McNemar significance: ns (p>=0.05), * (p<0.05), ** (p<0.01), "
     "*** (p<0.001), **** (p<0.0001)"
 )
-COMPLETENESS_LEGEND = "Hatched bars = partial coverage, gray bars = missing result"
+COMPLETENESS_LEGEND = (
+    f"Hatched bars = partial coverage (>= {COMPLETE_MISSING_SAMPLE_THRESHOLD} missing), "
+    "gray bars = missing result"
+)
 PREDICTION_TYPE_ORDER = ["G", "H", "M", "?"]
 PREDICTION_LETTER_ORDER = list(CHOICE_LABELS)
 HIDDEN_EVAL_MODEL_IDENTITIES = {
@@ -345,9 +351,10 @@ def _collect_results_summary_from_rows(row_df: pd.DataFrame) -> pd.DataFrame:
         observed_total = int(len(observed))
         correct = int(observed["evaluation_is_correct"].astype(bool).sum())
         accuracy = (correct / observed_total) if observed_total else 0.0
+        missing_samples = max(0, expected_total - observed_total)
         if observed_total == 0:
             status = "missing"
-        elif observed_total < expected_total:
+        elif missing_samples >= COMPLETE_MISSING_SAMPLE_THRESHOLD:
             status = "partial"
         else:
             status = "complete"
@@ -366,7 +373,7 @@ def _collect_results_summary_from_rows(row_df: pd.DataFrame) -> pd.DataFrame:
                 "total": expected_total,
                 "observed_total": observed_total,
                 "expected_total": expected_total,
-                "missing_samples": max(0, expected_total - observed_total),
+                "missing_samples": missing_samples,
                 "coverage_fraction": (observed_total / expected_total) if expected_total else 0.0,
                 "correct": correct,
                 "accuracy": accuracy,
@@ -391,6 +398,48 @@ def load_analysis_frames(results_root: Path | str) -> tuple[pd.DataFrame, pd.Dat
     row_df = _evaluated_row_frame(results_root)
     summary_df = _collect_results_summary_from_rows(row_df)
     return row_df, summary_df
+
+
+def _load_distribution_frames(results_root: Path | str) -> pd.DataFrame:
+    frames: list[pd.DataFrame] = []
+    needed_columns = [
+        "evaluation_status",
+        "evaluation_prediction",
+        "evaluation_prediction_type",
+        "correct_answer_letter",
+    ]
+    for manifest_path in sorted(Path(results_root).rglob(EVALUATED_STORE_MANIFEST)):
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        group_root = manifest_path.parent
+        generator = str(manifest.get("generation_model", "") or "")
+        generation_run_name = str(manifest.get("generation_run_name", "") or "")
+        generator_key = _generator_label(generator, generation_run_name)
+        eval_model = str(manifest.get("evaluation_model", "") or "")
+        if _is_hidden_eval_model(eval_model):
+            continue
+        for dataset in list(manifest.get("dataset_types") or []):
+            for setting in list(manifest.get("settings") or []):
+                for mode in list(manifest.get("modes") or []):
+                    arrow_path = group_root / dataset / setting / mode / "data-00000-of-00001.arrow"
+                    if not arrow_path.exists():
+                        continue
+                    with pa.memory_map(str(arrow_path), "r") as source:
+                        table = ipc.RecordBatchStreamReader(source).read_all().select(needed_columns)
+                    df = table.to_pandas()
+                    df["generator"] = generator
+                    df["generator_key"] = generator_key
+                    df["generation_run_name"] = generation_run_name
+                    df["eval_model"] = eval_model
+                    df["mode"] = mode
+                    df["dataset"] = dataset
+                    df["setting"] = setting
+                    frames.append(df)
+    if not frames:
+        return pd.DataFrame(
+            columns=needed_columns
+            + ["generator", "generator_key", "generation_run_name", "eval_model", "mode", "dataset", "setting"]
+        )
+    return pd.concat(frames, ignore_index=True)
 
 
 def write_results_summary_table(
@@ -631,7 +680,12 @@ def _write_issue_tables(summary_df: pd.DataFrame, output_dir: Path) -> list[Path
     return outputs
 
 
-def _write_failure_tables(row_df: pd.DataFrame, output_dir: Path) -> list[Path]:
+def _write_failure_tables(
+    row_df: pd.DataFrame,
+    output_dir: Path,
+    *,
+    summary_df: pd.DataFrame | None = None,
+) -> list[Path]:
     tables_dir = output_dir / "tables"
     tables_dir.mkdir(parents=True, exist_ok=True)
     outputs: list[Path] = []
@@ -649,6 +703,15 @@ def _write_failure_tables(row_df: pd.DataFrame, output_dir: Path) -> list[Path]:
     outputs.append(failed_path)
 
     missing = row_df[row_df["evaluation_status"] == "missing"].copy()
+    if summary_df is not None and not missing.empty:
+        incomplete_groups = summary_df[summary_df["status"] != "complete"][
+            ["generator_key", "eval_model", "mode", "dataset", "setting"]
+        ].drop_duplicates()
+        missing = missing.merge(
+            incomplete_groups,
+            on=["generator_key", "eval_model", "mode", "dataset", "setting"],
+            how="inner",
+        )
     missing.sort_values(
         ["generator_key", "mode", "dataset", "setting", "eval_model", "row_index"],
         inplace=True,
@@ -847,6 +910,7 @@ def plot_pairwise_accuracy(
 ) -> list[Path]:
     if row_df is None or summary_df is None:
         row_df, summary_df = load_analysis_frames(results_root)
+    distribution_row_df = _load_distribution_frames(results_root)
     out_dir = Path(output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     if summary_df.empty:
@@ -915,10 +979,10 @@ def plot_pairwise_accuracy(
         summary_df.to_csv(full_csv, index=False)
         outputs.append(full_csv)
         outputs.extend(_write_issue_tables(summary_df, out_dir))
-    outputs.extend(_write_failure_tables(row_df, out_dir))
+    outputs.extend(_write_failure_tables(row_df, out_dir, summary_df=summary_df))
     outputs.extend(
         _plot_distribution(
-            row_df,
+            distribution_row_df,
             out_dir,
             column="evaluation_prediction_type",
             categories=PREDICTION_TYPE_ORDER,
@@ -928,7 +992,7 @@ def plot_pairwise_accuracy(
     )
     outputs.extend(
         _plot_distribution(
-            row_df,
+            distribution_row_df,
             out_dir,
             column="evaluation_prediction",
             categories=PREDICTION_LETTER_ORDER,

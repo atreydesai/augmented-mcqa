@@ -1,0 +1,52 @@
+---------------------------------------------------------                                               
+augmented_mcqa_eval_augment_ablation_full_question (249 samples): vllm/nvidia/NVIDIA-Nemotron-Nano-9B-v2
+max_tokens: 2048, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples) 
+---------------------------------------------------------                                               
+                                                                                                        
+Steps:  10/249   4% | Samples:   1/249 | mean:  n/a | vllm:  0/10 | HTTP retries: 0
+Steps:  12/249   4% | Samples:  12/249 | mean: 0.20 | vllm:  0/10 | HTTP retries: 1
+Steps:  24/249   9% | Samples:  24/249 | mean: 0.30 | vllm:  0/10 | HTTP retries: 1
+Steps:  35/249  14% | Samples:  35/249 | mean: 0.32 | vllm:  9/10 | HTTP retries: 1
+Steps:  45/249  18% | Samples:  37/249 | mean: 0.33 | vllm:  1/10 | HTTP retries: 1
+Steps:  47/249  18% | Samples:  47/249 | mean: 0.30 | vllm:  9/10 | HTTP retries: 1
+Steps:  57/249  22% | Samples:  48/249 | mean: 0.30 | vllm:  0/10 | HTTP retries: 1
+Steps:  67/249  26% | Samples:  58/249 | mean: 0.31 | vllm:  0/10 | HTTP retries: 1
+Steps:  77/249  30% | Samples:  68/249 | mean: 0.31 | vllm:  0/10 | HTTP retries: 2
+Steps:  87/249  34% | Samples:  78/249 | mean: 0.30 | vllm:  0/10 | HTTP retries: 3
+Steps:  97/249  38% | Samples:  88/249 | mean: 0.30 | vllm:  0/10 | HTTP retries: 4
+Steps: 107/249  42% | Samples:  98/249 | mean: 0.30 | vllm:  0/10 | HTTP retries: 5
+Steps: 117/249  46% | Samples: 108/249 | mean: 0.30 | vllm:  0/10 | HTTP retries: 6
+Steps: 127/249  51% | Samples: 118/249 | mean: 0.32 | vllm:  0/10 | HTTP retries: 6
+Steps: 137/249  55% | Samples: 128/249 | mean: 0.30 | vllm:  0/10 | HTTP retries: 6
+Steps: 138/249  55% | Samples: 138/249 | mean: 0.29 | vllm:  9/10 | HTTP retries: 6
+Steps: 149/249  59% | Samples: 141/249 | mean: 0.29 | vllm:  1/10 | HTTP retries: 6
+Steps: 161/249  64% | Samples: 152/249 | mean: 0.28 | vllm:  0/10 | HTTP retries: 6
+Steps: 163/249  65% | Samples: 163/249 | mean: 0.28 | vllm:  9/10 | HTTP retries: 6
+Steps: 173/249  69% | Samples: 165/249 | mean: 0.29 | vllm:  0/10 | HTTP retries: 6
+Steps: 183/249  73% | Samples: 174/249 | mean: 0.29 | vllm:  0/10 | HTTP retries: 6
+Steps: 185/249  74% | Samples: 185/249 | mean: 0.28 | vllm:  0/10 | HTTP retries: 6
+Steps: 195/249  78% | Samples: 193/249 | mean: 0.27 | vllm:  6/10 | HTTP retries: 6
+Steps: 201/249  80% | Samples: 199/249 | mean: 0.27 | vllm:  2/10 | HTTP retries: 6
+Steps: 209/249  83% | Samples: 208/249 | mean: 0.27 | vllm:  6/10 | HTTP retries: 6
+Steps: 217/249  87% | Samples: 214/249 | mean: 0.28 | vllm:  4/10 | HTTP retries: 6
+Steps: 225/249  90% | Samples: 222/249 | mean: 0.28 | vllm:  6/10 | HTTP retries: 8
+Steps: 228/249  91% | Samples: 226/249 | mean: 0.28 | vllm:  1/10 | HTTP retries: 8
+Steps: 236/249  94% | Samples: 236/249 | mean: 0.28 | vllm:  9/10 | HTTP retries: 8
+Steps: 247/249  99% | Samples: 238/249 | mean: 0.28 | vllm:  0/10 | HTTP retries: 8
+Steps: 249/249 100% | Samples: 249/249 | mean: 0.28 | vllm:  0/10 | HTTP retries: 8
+
+---------------------------------------------------------                                                                                                   
+augmented_mcqa_eval_augment_ablation_full_question (249 samples): vllm/nvidia/NVIDIA-Nemotron-Nano-9B-v2                                                    
+max_tokens: 2048, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)                                                     
+                                                                                                                                                            
+total time:                                                                    0:04:48                                                                      
+vllm/nvidia/NVIDIA-Nemotron-Nano-9B-v2                                         112,440 tokens [I: 109,774, O: 2,666]                                        
+augmented_mcqa_eval                                                                                                                                         
+mean                 0.277                                                                                                                                  
+stderr               0.028                                                                                                                                  
+Log:                                                                                                                                                        
+results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-…
+---------------------------------------------------------                                                                                                   
+                                                                                                                                                            
+Evaluation logs: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2
+Running: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/python main.py evaluate --model vllm/nvidia/NVIDIA-Nemotron-Nano-9B-v2 --run-name eval_gemini_from_scratch_testing_all --generator-run-name gemini_from_scratch_testing --generator-model google/gemini-3.1-pro-preview --processed-dataset /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/processed/unified_processed_v3 --dataset-types gpqa --settings augment_ablation --modes full_question --question-start 0 --limit 250 --augmented-dataset /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/augmented/gemini_from_scratch_testing/google_gemini-3.1-pro-preview --skip-collect-evaluated --max-tokens 2048 --reasoning-effort medium --retry-on-error 2

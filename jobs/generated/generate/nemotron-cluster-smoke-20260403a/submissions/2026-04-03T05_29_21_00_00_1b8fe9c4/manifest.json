@@ -1,0 +1,116 @@
+{
+  "stage": "generate",
+  "run_name": "nemotron-cluster-smoke-20260403a",
+  "submission_id": "2026-04-03T05_29_21_00_00_1b8fe9c4",
+  "submission_created_at": "2026-04-03T05:29:21+00:00",
+  "task_count": 1,
+  "resources": {
+    "partition": "clip",
+    "account": "clip",
+    "qos": "high",
+    "time_limit": "12:00:00",
+    "memory": "32G",
+    "cpus_per_task": 4,
+    "gpu_type": "rtxa6000"
+  },
+  "concurrency_caps": {
+    "local": null,
+    "api": null
+  },
+  "finalizers": [
+    {
+      "finalizer_index": 0,
+      "kind": "materialize_generation_cache",
+      "model": "vllm/nvidia/NVIDIA-Nemotron-Nano-9B-v2",
+      "dependency_refs": [
+        "generation|nemotron-cluster-smoke-20260403a|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|model_from_scratch|0|2"
+      ],
+      "argv": [
+        "materialize-store",
+        "--run-name",
+        "nemotron-cluster-smoke-20260403a",
+        "--model",
+        "vllm/nvidia/NVIDIA-Nemotron-Nano-9B-v2",
+        "--processed-dataset",
+        "datasets/processed/unified_processed_v3"
+      ],
+      "resources": {
+        "partition": "clip",
+        "account": "clip",
+        "qos": "high",
+        "time_limit": "00:30:00",
+        "memory": "8G",
+        "cpus_per_task": 2
+      },
+      "task_stdout": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/generate/nemotron-cluster-smoke-20260403a/materialize__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__%j.out",
+      "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/generate/nemotron-cluster-smoke-20260403a/materialize__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__%j.err",
+      "job_name": "augmented-mcqa-generate-materialize__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2"
+    }
+  ],
+  "tasks": [
+    {
+      "task_index": 0,
+      "stage": "generate",
+      "run_name": "nemotron-cluster-smoke-20260403a",
+      "submission_id": "2026-04-03T05_29_21_00_00_1b8fe9c4",
+      "submission_created_at": "2026-04-03T05:29:21+00:00",
+      "model": "vllm/nvidia/NVIDIA-Nemotron-Nano-9B-v2",
+      "model_slug": "vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2",
+      "dataset_type": "arc_challenge",
+      "dataset_slug": "arc_challenge",
+      "resource_class": "local",
+      "slice_ref": "generation|nemotron-cluster-smoke-20260403a|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|model_from_scratch|0|2",
+      "task_slug": "generate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__arc_challenge__model_from_scratch__0-1",
+      "question_start": 0,
+      "question_end": 2,
+      "chunk_index": 0,
+      "strategy": "model_from_scratch",
+      "setting": null,
+      "mode": null,
+      "force": false,
+      "generation_run_name": null,
+      "generation_model": null,
+      "collected_root": null,
+      "state_dependency_refs": [],
+      "submit_dependency_refs": [],
+      "argv": [
+        "generate",
+        "--model",
+        "vllm/nvidia/NVIDIA-Nemotron-Nano-9B-v2",
+        "--run-name",
+        "nemotron-cluster-smoke-20260403a",
+        "--processed-dataset",
+        "datasets/processed/unified_processed_v3",
+        "--dataset-types",
+        "arc_challenge",
+        "--generation-strategies",
+        "model_from_scratch",
+        "--question-start",
+        "0",
+        "--limit",
+        "2",
+        "--max-tokens",
+        "2048",
+        "--reasoning-effort",
+        "medium",
+        "--retry-on-error",
+        "2"
+      ],
+      "resources": {
+        "partition": "clip",
+        "account": "clip",
+        "qos": "high",
+        "time_limit": "12:00:00",
+        "memory": "32G",
+        "cpus_per_task": 4,
+        "gpu_type": "rtxa6000"
+      },
+      "task_log_dir": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/generate/nemotron-cluster-smoke-20260403a",
+      "task_stdout": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/generate/nemotron-cluster-smoke-20260403a/generate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__arc_challenge__model_from_scratch__0-1__%j.out",
+      "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/generate/nemotron-cluster-smoke-20260403a/generate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__arc_challenge__model_from_scratch__0-1__%j.err",
+      "job_name": "augmented-mcqa-generate-generate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__arc_challenge__model_from_scratch__0-1",
+      "submitted_at": "2026-04-03T05:37:41+00:00",
+      "submitted_job_id": "6510921"
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+---------------------------------------------------------                                              
+augmented_mcqa_eval_augment_ablation_choices_only (250 samples): vllm/nvidia/NVIDIA-Nemotron-Nano-9B-v2
+max_tokens: 2048, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)
+---------------------------------------------------------                                              
+                                                                                                       
+Steps:  10/250   4% | Samples:   1/250 | mean:  n/a | vllm:  0/10 | HTTP retries: 0
+Steps:  18/250   7% | Samples:  16/250 | mean: 0.50 | vllm:  6/10 | HTTP retries: 0
+Steps:  28/250  11% | Samples:  25/250 | mean: 0.50 | vllm:  6/10 | HTTP retries: 0
+Steps:  37/250  14% | Samples:  35/250 | mean: 0.50 | vllm:  5/10 | HTTP retries: 1
+Steps:  48/250  19% | Samples:  45/250 | mean: 0.45 | vllm:  5/10 | HTTP retries: 1
+Steps:  57/250  22% | Samples:  55/250 | mean: 0.42 | vllm:  5/10 | HTTP retries: 1
+Steps:  64/250  25% | Samples:  63/250 | mean: 0.37 | vllm:  6/10 | HTTP retries: 1
+Steps:  72/250  28% | Samples:  71/250 | mean: 0.39 | vllm:  6/10 | HTTP retries: 1
+Steps:  81/250  32% | Samples:  80/250 | mean: 0.37 | vllm:  6/10 | HTTP retries: 1
+Steps:  91/250  36% | Samples:  90/250 | mean: 0.37 | vllm:  4/10 | HTTP retries: 1
+Steps: 102/250  40% | Samples:  99/250 | mean: 0.37 | vllm:  5/10 | HTTP retries: 1
+Steps: 110/250  44% | Samples: 109/250 | mean: 0.38 | vllm:  6/10 | HTTP retries: 1
+Steps: 121/250  48% | Samples: 119/250 | mean: 0.37 | vllm:  6/10 | HTTP retries: 1
+Steps: 127/250  50% | Samples: 126/250 | mean: 0.37 | vllm:  4/10 | HTTP retries: 1
+Steps: 136/250  54% | Samples: 134/250 | mean: 0.36 | vllm:  6/10 | HTTP retries: 1
+Steps: 144/250  57% | Samples: 141/250 | mean: 0.35 | vllm:  5/10 | HTTP retries: 1
+Steps: 151/250  60% | Samples: 149/250 | mean: 0.34 | vllm:  4/10 | HTTP retries: 1
+Steps: 161/250  64% | Samples: 157/250 | mean: 0.34 | vllm:  3/10 | HTTP retries: 1
+Steps: 168/250  67% | Samples: 167/250 | mean: 0.33 | vllm:  5/10 | HTTP retries: 1
+Steps: 179/250  71% | Samples: 176/250 | mean: 0.33 | vllm:  4/10 | HTTP retries: 1
+Steps: 188/250  75% | Samples: 185/250 | mean: 0.32 | vllm:  5/10 | HTTP retries: 1
+Steps: 197/250  78% | Samples: 194/250 | mean: 0.32 | vllm:  5/10 | HTTP retries: 1
+Steps: 203/250  81% | Samples: 202/250 | mean: 0.33 | vllm:  5/10 | HTTP retries: 2
+Steps: 213/250  85% | Samples: 211/250 | mean: 0.35 | vllm:  4/10 | HTTP retries: 2
+Steps: 224/250  89% | Samples: 221/250 | mean: 0.36 | vllm:  4/10 | HTTP retries: 2
+Steps: 230/250  92% | Samples: 229/250 | mean: 0.37 | vllm:  5/10 | HTTP retries: 2
+Steps: 238/250  95% | Samples: 237/250 | mean: 0.37 | vllm:  6/10 | HTTP retries: 2
+Steps: 250/250 100% | Samples: 250/250 | mean: 0.38 | vllm:  0/10 | HTTP retries: 2
+
+---------------------------------------------------------                                                                                                   
+augmented_mcqa_eval_augment_ablation_choices_only (250 samples): vllm/nvidia/NVIDIA-Nemotron-Nano-9B-v2                                                     
+max_tokens: 2048, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)                                                     
+                                                                                                                                                            
+total time:                                                                       0:03:17                                                                   
+vllm/nvidia/NVIDIA-Nemotron-Nano-9B-v2                                            63,926 tokens [I: 61,298, O: 2,628]                                       
+augmented_mcqa_eval                                                                                                                                         
+mean                 0.380                                                                                                                                  
+stderr               0.031                                                                                                                                  
+Log:                                                                                                                                                        
+results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-…
+---------------------------------------------------------                                                                                                   
+                                                                                                                                                            
+Evaluation logs: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2
+Running: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/python main.py evaluate --model vllm/nvidia/NVIDIA-Nemotron-Nano-9B-v2 --run-name eval_gemini_from_scratch_testing_all --generator-run-name gemini_from_scratch_testing --generator-model google/gemini-3.1-pro-preview --processed-dataset /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/processed/unified_processed_v3 --dataset-types arc_challenge --settings augment_ablation --modes choices_only --question-start 0 --limit 250 --augmented-dataset /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/augmented/gemini_from_scratch_testing/google_gemini-3.1-pro-preview --skip-collect-evaluated --max-tokens 2048 --reasoning-effort medium --retry-on-error 2

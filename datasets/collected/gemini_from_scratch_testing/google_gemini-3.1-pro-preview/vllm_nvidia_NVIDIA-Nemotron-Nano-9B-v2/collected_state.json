@@ -1,0 +1,2315 @@
+{
+  "schema_version": "augmented_mcqa_collected_state_v1",
+  "storage_kind": "evaluation_slice_state",
+  "generated_at": "2026-04-03T14:53:13+00:00",
+  "run_name": "eval_gemini_from_scratch_testing_all",
+  "generation_run_name": "gemini_from_scratch_testing",
+  "generation_model": "google/gemini-3.1-pro-preview",
+  "evaluation_model": "vllm/nvidia/NVIDIA-Nemotron-Nano-9B-v2",
+  "slice_count": 100,
+  "status_counts": {
+    "current": 100
+  },
+  "slices": [
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_ablation|choices_only|0|250",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_ablation|choices_only|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T06:02:34+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T05-59-17-00-00_augmented-mcqa-eval-augment-ablation-choices-only_CUVWpDZmb4TDEkchVQUrVj.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_ablation|choices_only|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T06:02:34+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T05-59-17-00-00_augmented-mcqa-eval-augment-ablation-choices-only_CUVWpDZmb4TDEkchVQUrVj.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:02:34+00:00",
+      "latest_success_at": "2026-04-03T06:02:34+00:00",
+      "dependency_change_at": "2026-04-03T06:02:34+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_ablation|choices_only|250|500",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_ablation|choices_only|250|500",
+        "status": "success",
+        "completed_at": "2026-04-03T06:02:48+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T05-59-19-00-00_augmented-mcqa-eval-augment-ablation-choices-only_eCayuwWe5KaQZmuTfGhtt7.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_ablation|choices_only|250|500",
+        "status": "success",
+        "completed_at": "2026-04-03T06:02:48+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T05-59-19-00-00_augmented-mcqa-eval-augment-ablation-choices-only_eCayuwWe5KaQZmuTfGhtt7.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:02:48+00:00",
+      "latest_success_at": "2026-04-03T06:02:48+00:00",
+      "dependency_change_at": "2026-04-03T06:02:48+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_ablation|choices_only|500|750",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_ablation|choices_only|500|750",
+        "status": "success",
+        "completed_at": "2026-04-03T06:02:54+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T05-59-19-00-00_augmented-mcqa-eval-augment-ablation-choices-only_At7muGSQmPQ3W2RhMkoEV9.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_ablation|choices_only|500|750",
+        "status": "success",
+        "completed_at": "2026-04-03T06:02:54+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T05-59-19-00-00_augmented-mcqa-eval-augment-ablation-choices-only_At7muGSQmPQ3W2RhMkoEV9.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:02:54+00:00",
+      "latest_success_at": "2026-04-03T06:02:54+00:00",
+      "dependency_change_at": "2026-04-03T06:02:54+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_ablation|choices_only|750|1000",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_ablation|choices_only|750|1000",
+        "status": "success",
+        "completed_at": "2026-04-03T06:02:55+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T05-59-21-00-00_augmented-mcqa-eval-augment-ablation-choices-only_iimLi8d8FEUA9FSueKGbgZ.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_ablation|choices_only|750|1000",
+        "status": "success",
+        "completed_at": "2026-04-03T06:02:55+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T05-59-21-00-00_augmented-mcqa-eval-augment-ablation-choices-only_iimLi8d8FEUA9FSueKGbgZ.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:02:55+00:00",
+      "latest_success_at": "2026-04-03T06:02:55+00:00",
+      "dependency_change_at": "2026-04-03T06:02:55+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_ablation|full_question|0|250",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_ablation|full_question|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T06:03:02+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T05-59-21-00-00_augmented-mcqa-eval-augment-ablation-full-question_RVJZXajk3GYVfRLSNUNoCi.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_ablation|full_question|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T06:03:02+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T05-59-21-00-00_augmented-mcqa-eval-augment-ablation-full-question_RVJZXajk3GYVfRLSNUNoCi.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:03:02+00:00",
+      "latest_success_at": "2026-04-03T06:03:02+00:00",
+      "dependency_change_at": "2026-04-03T06:03:02+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_ablation|full_question|250|500",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_ablation|full_question|250|500",
+        "status": "success",
+        "completed_at": "2026-04-03T06:03:20+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T05-59-20-00-00_augmented-mcqa-eval-augment-ablation-full-question_WoLhL5EDvyVMsjMaxfamq4.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_ablation|full_question|250|500",
+        "status": "success",
+        "completed_at": "2026-04-03T06:03:20+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T05-59-20-00-00_augmented-mcqa-eval-augment-ablation-full-question_WoLhL5EDvyVMsjMaxfamq4.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:03:20+00:00",
+      "latest_success_at": "2026-04-03T06:03:20+00:00",
+      "dependency_change_at": "2026-04-03T06:03:20+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_ablation|full_question|500|750",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_ablation|full_question|500|750",
+        "status": "success",
+        "completed_at": "2026-04-03T06:03:18+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T05-59-20-00-00_augmented-mcqa-eval-augment-ablation-full-question_nsRQEiKRGBLPFTUFufdf4M.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_ablation|full_question|500|750",
+        "status": "success",
+        "completed_at": "2026-04-03T06:03:18+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T05-59-20-00-00_augmented-mcqa-eval-augment-ablation-full-question_nsRQEiKRGBLPFTUFufdf4M.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:03:18+00:00",
+      "latest_success_at": "2026-04-03T06:03:18+00:00",
+      "dependency_change_at": "2026-04-03T06:03:18+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_ablation|full_question|750|1000",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_ablation|full_question|750|1000",
+        "status": "success",
+        "completed_at": "2026-04-03T06:06:16+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-02-43-00-00_augmented-mcqa-eval-augment-ablation-full-question_YF7HaAps6CwXBTnDhZQGuo.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_ablation|full_question|750|1000",
+        "status": "success",
+        "completed_at": "2026-04-03T06:06:16+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-02-43-00-00_augmented-mcqa-eval-augment-ablation-full-question_YF7HaAps6CwXBTnDhZQGuo.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:06:16+00:00",
+      "latest_success_at": "2026-04-03T06:06:16+00:00",
+      "dependency_change_at": "2026-04-03T06:06:16+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_human|choices_only|0|250",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_human|choices_only|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T06:06:37+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-02-59-00-00_augmented-mcqa-eval-augment-human-choices-only_FwzKtZTfxRSGxfLzF76URk.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_human|choices_only|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T06:06:37+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-02-59-00-00_augmented-mcqa-eval-augment-human-choices-only_FwzKtZTfxRSGxfLzF76URk.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:06:37+00:00",
+      "latest_success_at": "2026-04-03T06:06:37+00:00",
+      "dependency_change_at": "2026-04-03T06:06:37+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_human|choices_only|250|500",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_human|choices_only|250|500",
+        "status": "success",
+        "completed_at": "2026-04-03T06:06:31+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-03-01-00-00_augmented-mcqa-eval-augment-human-choices-only_FEAKmXZFpg8Se8cc9g22VV.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_human|choices_only|250|500",
+        "status": "success",
+        "completed_at": "2026-04-03T06:06:31+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-03-01-00-00_augmented-mcqa-eval-augment-human-choices-only_FEAKmXZFpg8Se8cc9g22VV.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:06:31+00:00",
+      "latest_success_at": "2026-04-03T06:06:31+00:00",
+      "dependency_change_at": "2026-04-03T06:06:31+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_human|choices_only|500|750",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_human|choices_only|500|750",
+        "status": "success",
+        "completed_at": "2026-04-03T06:06:43+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-03-06-00-00_augmented-mcqa-eval-augment-human-choices-only_7BtAQgjhiFmidmtbNXKyaV.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_human|choices_only|500|750",
+        "status": "success",
+        "completed_at": "2026-04-03T06:06:43+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-03-06-00-00_augmented-mcqa-eval-augment-human-choices-only_7BtAQgjhiFmidmtbNXKyaV.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:06:43+00:00",
+      "latest_success_at": "2026-04-03T06:06:43+00:00",
+      "dependency_change_at": "2026-04-03T06:06:43+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_human|choices_only|750|1000",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_human|choices_only|750|1000",
+        "status": "success",
+        "completed_at": "2026-04-03T06:06:42+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-03-09-00-00_augmented-mcqa-eval-augment-human-choices-only_XSa8QpRu59w3k6KaKrvYVH.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_human|choices_only|750|1000",
+        "status": "success",
+        "completed_at": "2026-04-03T06:06:42+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-03-09-00-00_augmented-mcqa-eval-augment-human-choices-only_XSa8QpRu59w3k6KaKrvYVH.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:06:42+00:00",
+      "latest_success_at": "2026-04-03T06:06:42+00:00",
+      "dependency_change_at": "2026-04-03T06:06:42+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_human|full_question|0|250",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_human|full_question|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T06:07:17+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-03-29-00-00_augmented-mcqa-eval-augment-human-full-question_TCVqSyg8aroAsCbtmUHMKh.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_human|full_question|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T06:07:17+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-03-29-00-00_augmented-mcqa-eval-augment-human-full-question_TCVqSyg8aroAsCbtmUHMKh.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:07:17+00:00",
+      "latest_success_at": "2026-04-03T06:07:17+00:00",
+      "dependency_change_at": "2026-04-03T06:07:17+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_human|full_question|250|500",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_human|full_question|250|500",
+        "status": "success",
+        "completed_at": "2026-04-03T06:07:06+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-03-29-00-00_augmented-mcqa-eval-augment-human-full-question_4vtbqM9vHAE5NuEbx89vGH.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_human|full_question|250|500",
+        "status": "success",
+        "completed_at": "2026-04-03T06:07:06+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-03-29-00-00_augmented-mcqa-eval-augment-human-full-question_4vtbqM9vHAE5NuEbx89vGH.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:07:06+00:00",
+      "latest_success_at": "2026-04-03T06:07:06+00:00",
+      "dependency_change_at": "2026-04-03T06:07:06+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_human|full_question|500|750",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_human|full_question|500|750",
+        "status": "success",
+        "completed_at": "2026-04-03T06:09:40+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-06-25-00-00_augmented-mcqa-eval-augment-human-full-question_Ua9KjLVgg8EJKe872WQoxM.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_human|full_question|500|750",
+        "status": "success",
+        "completed_at": "2026-04-03T06:09:40+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-06-25-00-00_augmented-mcqa-eval-augment-human-full-question_Ua9KjLVgg8EJKe872WQoxM.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:09:40+00:00",
+      "latest_success_at": "2026-04-03T06:09:40+00:00",
+      "dependency_change_at": "2026-04-03T06:09:40+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_human|full_question|750|1000",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_human|full_question|750|1000",
+        "status": "success",
+        "completed_at": "2026-04-03T06:10:01+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-06-41-00-00_augmented-mcqa-eval-augment-human-full-question_dppYMuzbDUKgT9jQvHE3AH.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_human|full_question|750|1000",
+        "status": "success",
+        "completed_at": "2026-04-03T06:10:01+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-06-41-00-00_augmented-mcqa-eval-augment-human-full-question_dppYMuzbDUKgT9jQvHE3AH.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:10:01+00:00",
+      "latest_success_at": "2026-04-03T06:10:01+00:00",
+      "dependency_change_at": "2026-04-03T06:10:01+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_model|choices_only|0|250",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_model|choices_only|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T06:09:56+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-06-44-00-00_augmented-mcqa-eval-augment-model-choices-only_L3yLvJfZLjQdraPMCe4TNg.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_model|choices_only|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T06:09:56+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-06-44-00-00_augmented-mcqa-eval-augment-model-choices-only_L3yLvJfZLjQdraPMCe4TNg.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:09:56+00:00",
+      "latest_success_at": "2026-04-03T06:09:56+00:00",
+      "dependency_change_at": "2026-04-03T06:09:56+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_model|choices_only|250|500",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_model|choices_only|250|500",
+        "status": "success",
+        "completed_at": "2026-04-03T06:10:33+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-06-53-00-00_augmented-mcqa-eval-augment-model-choices-only_2B3kXuKDqsCriwTb8mm3Dt.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_model|choices_only|250|500",
+        "status": "success",
+        "completed_at": "2026-04-03T06:10:33+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-06-53-00-00_augmented-mcqa-eval-augment-model-choices-only_2B3kXuKDqsCriwTb8mm3Dt.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:10:33+00:00",
+      "latest_success_at": "2026-04-03T06:10:33+00:00",
+      "dependency_change_at": "2026-04-03T06:10:33+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_model|choices_only|500|750",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_model|choices_only|500|750",
+        "status": "success",
+        "completed_at": "2026-04-03T06:10:34+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-06-53-00-00_augmented-mcqa-eval-augment-model-choices-only_H2dtbonEsdbZsTvTABzAFT.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_model|choices_only|500|750",
+        "status": "success",
+        "completed_at": "2026-04-03T06:10:34+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-06-53-00-00_augmented-mcqa-eval-augment-model-choices-only_H2dtbonEsdbZsTvTABzAFT.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:10:34+00:00",
+      "latest_success_at": "2026-04-03T06:10:34+00:00",
+      "dependency_change_at": "2026-04-03T06:10:34+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_model|choices_only|750|1000",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_model|choices_only|750|1000",
+        "status": "success",
+        "completed_at": "2026-04-03T06:10:45+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-07-16-00-00_augmented-mcqa-eval-augment-model-choices-only_4bBE78qHsNxGkKYrmLXDvT.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_model|choices_only|750|1000",
+        "status": "success",
+        "completed_at": "2026-04-03T06:10:45+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-07-16-00-00_augmented-mcqa-eval-augment-model-choices-only_4bBE78qHsNxGkKYrmLXDvT.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:10:45+00:00",
+      "latest_success_at": "2026-04-03T06:10:45+00:00",
+      "dependency_change_at": "2026-04-03T06:10:45+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_model|full_question|0|250",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_model|full_question|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T06:10:58+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-07-26-00-00_augmented-mcqa-eval-augment-model-full-question_V4TJLArdJp7YiMQo4tyg6Z.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_model|full_question|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T06:10:58+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-07-26-00-00_augmented-mcqa-eval-augment-model-full-question_V4TJLArdJp7YiMQo4tyg6Z.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:10:58+00:00",
+      "latest_success_at": "2026-04-03T06:10:58+00:00",
+      "dependency_change_at": "2026-04-03T06:10:58+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_model|full_question|250|500",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_model|full_question|250|500",
+        "status": "success",
+        "completed_at": "2026-04-03T06:13:23+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-09-49-00-00_augmented-mcqa-eval-augment-model-full-question_kiM4W9paDHuJyuMzPp4mfk.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_model|full_question|250|500",
+        "status": "success",
+        "completed_at": "2026-04-03T06:13:23+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-09-49-00-00_augmented-mcqa-eval-augment-model-full-question_kiM4W9paDHuJyuMzPp4mfk.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:13:23+00:00",
+      "latest_success_at": "2026-04-03T06:13:23+00:00",
+      "dependency_change_at": "2026-04-03T06:13:23+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_model|full_question|500|750",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_model|full_question|500|750",
+        "status": "success",
+        "completed_at": "2026-04-03T06:13:54+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-10-06-00-00_augmented-mcqa-eval-augment-model-full-question_RN6FigBrRpbbd2Rgaao96y.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_model|full_question|500|750",
+        "status": "success",
+        "completed_at": "2026-04-03T06:13:54+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-10-06-00-00_augmented-mcqa-eval-augment-model-full-question_RN6FigBrRpbbd2Rgaao96y.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:13:54+00:00",
+      "latest_success_at": "2026-04-03T06:13:54+00:00",
+      "dependency_change_at": "2026-04-03T06:13:54+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_model|full_question|750|1000",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_model|full_question|750|1000",
+        "status": "success",
+        "completed_at": "2026-04-03T06:13:59+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-10-09-00-00_augmented-mcqa-eval-augment-model-full-question_d3CGbx2Psfs8XeUAT44GiP.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_model|full_question|750|1000",
+        "status": "success",
+        "completed_at": "2026-04-03T06:13:59+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-10-09-00-00_augmented-mcqa-eval-augment-model-full-question_d3CGbx2Psfs8XeUAT44GiP.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:13:59+00:00",
+      "latest_success_at": "2026-04-03T06:13:59+00:00",
+      "dependency_change_at": "2026-04-03T06:13:59+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|human_from_scratch|choices_only|0|250",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|human_from_scratch|choices_only|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T06:17:47+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-10-43-00-00_augmented-mcqa-eval-human-from-scratch-choices-only_Jr7shTW3Ld7gnPQiJvLs6C.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|human_from_scratch|choices_only|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T06:17:47+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-10-43-00-00_augmented-mcqa-eval-human-from-scratch-choices-only_Jr7shTW3Ld7gnPQiJvLs6C.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:17:47+00:00",
+      "latest_success_at": "2026-04-03T06:17:47+00:00",
+      "dependency_change_at": "2026-04-03T06:17:47+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|human_from_scratch|choices_only|250|500",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|human_from_scratch|choices_only|250|500",
+        "status": "success",
+        "completed_at": "2026-04-03T06:14:45+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-10-43-00-00_augmented-mcqa-eval-human-from-scratch-choices-only_PVrLtmVPpFRXfXoynzgzcG.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|human_from_scratch|choices_only|250|500",
+        "status": "success",
+        "completed_at": "2026-04-03T06:14:45+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-10-43-00-00_augmented-mcqa-eval-human-from-scratch-choices-only_PVrLtmVPpFRXfXoynzgzcG.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:14:45+00:00",
+      "latest_success_at": "2026-04-03T06:14:45+00:00",
+      "dependency_change_at": "2026-04-03T06:14:45+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|human_from_scratch|choices_only|500|750",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|human_from_scratch|choices_only|500|750",
+        "status": "success",
+        "completed_at": "2026-04-03T06:14:31+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-10-55-00-00_augmented-mcqa-eval-human-from-scratch-choices-only_MxmstJHE9NhiJWbaoDmryP.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|human_from_scratch|choices_only|500|750",
+        "status": "success",
+        "completed_at": "2026-04-03T06:14:31+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-10-55-00-00_augmented-mcqa-eval-human-from-scratch-choices-only_MxmstJHE9NhiJWbaoDmryP.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:14:31+00:00",
+      "latest_success_at": "2026-04-03T06:14:31+00:00",
+      "dependency_change_at": "2026-04-03T06:14:31+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|human_from_scratch|choices_only|750|1000",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|human_from_scratch|choices_only|750|1000",
+        "status": "success",
+        "completed_at": "2026-04-03T06:14:23+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-11-07-00-00_augmented-mcqa-eval-human-from-scratch-choices-only_9R8dBsMNPsGSXkuq2jirPt.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|human_from_scratch|choices_only|750|1000",
+        "status": "success",
+        "completed_at": "2026-04-03T06:14:23+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-11-07-00-00_augmented-mcqa-eval-human-from-scratch-choices-only_9R8dBsMNPsGSXkuq2jirPt.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:14:23+00:00",
+      "latest_success_at": "2026-04-03T06:14:23+00:00",
+      "dependency_change_at": "2026-04-03T06:14:23+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|human_from_scratch|full_question|0|250",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|human_from_scratch|full_question|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T06:17:24+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-13-32-00-00_augmented-mcqa-eval-human-from-scratch-full-question_W7XTrJciBpBxkfJikWJbGq.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|human_from_scratch|full_question|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T06:17:24+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-13-32-00-00_augmented-mcqa-eval-human-from-scratch-full-question_W7XTrJciBpBxkfJikWJbGq.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:17:24+00:00",
+      "latest_success_at": "2026-04-03T06:17:24+00:00",
+      "dependency_change_at": "2026-04-03T06:17:24+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|human_from_scratch|full_question|250|500",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|human_from_scratch|full_question|250|500",
+        "status": "success",
+        "completed_at": "2026-04-03T06:23:19+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-14-08-00-00_augmented-mcqa-eval-human-from-scratch-full-question_ZYCfAHKcg9PzevinPovkrc.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|human_from_scratch|full_question|250|500",
+        "status": "success",
+        "completed_at": "2026-04-03T06:23:19+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-14-08-00-00_augmented-mcqa-eval-human-from-scratch-full-question_ZYCfAHKcg9PzevinPovkrc.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:23:19+00:00",
+      "latest_success_at": "2026-04-03T06:23:19+00:00",
+      "dependency_change_at": "2026-04-03T06:23:19+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|human_from_scratch|full_question|500|750",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|human_from_scratch|full_question|500|750",
+        "status": "success",
+        "completed_at": "2026-04-03T06:23:11+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-14-09-00-00_augmented-mcqa-eval-human-from-scratch-full-question_NQkkfUDNyjrDZRhy45s4Qs.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|human_from_scratch|full_question|500|750",
+        "status": "success",
+        "completed_at": "2026-04-03T06:23:11+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-14-09-00-00_augmented-mcqa-eval-human-from-scratch-full-question_NQkkfUDNyjrDZRhy45s4Qs.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:23:11+00:00",
+      "latest_success_at": "2026-04-03T06:23:11+00:00",
+      "dependency_change_at": "2026-04-03T06:23:11+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|human_from_scratch|full_question|750|1000",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|human_from_scratch|full_question|750|1000",
+        "status": "success",
+        "completed_at": "2026-04-03T06:19:03+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-14-35-00-00_augmented-mcqa-eval-human-from-scratch-full-question_fWQP2rUSguUApVnjYW5aVu.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|human_from_scratch|full_question|750|1000",
+        "status": "success",
+        "completed_at": "2026-04-03T06:19:03+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-14-35-00-00_augmented-mcqa-eval-human-from-scratch-full-question_fWQP2rUSguUApVnjYW5aVu.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:19:03+00:00",
+      "latest_success_at": "2026-04-03T06:19:03+00:00",
+      "dependency_change_at": "2026-04-03T06:19:03+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|model_from_scratch|choices_only|0|250",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|model_from_scratch|choices_only|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T06:24:18+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-14-40-00-00_augmented-mcqa-eval-model-from-scratch-choices-only_QmrtidKEgm5Pgu2VuFsHu9.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|model_from_scratch|choices_only|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T06:24:18+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-14-40-00-00_augmented-mcqa-eval-model-from-scratch-choices-only_QmrtidKEgm5Pgu2VuFsHu9.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:24:18+00:00",
+      "latest_success_at": "2026-04-03T06:24:18+00:00",
+      "dependency_change_at": "2026-04-03T06:24:18+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|model_from_scratch|choices_only|250|500",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|model_from_scratch|choices_only|250|500",
+        "status": "success",
+        "completed_at": "2026-04-03T06:23:41+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-14-57-00-00_augmented-mcqa-eval-model-from-scratch-choices-only_XdiSAJ4soSuFJC9Z9V65Tb.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|model_from_scratch|choices_only|250|500",
+        "status": "success",
+        "completed_at": "2026-04-03T06:23:41+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-14-57-00-00_augmented-mcqa-eval-model-from-scratch-choices-only_XdiSAJ4soSuFJC9Z9V65Tb.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:23:41+00:00",
+      "latest_success_at": "2026-04-03T06:23:41+00:00",
+      "dependency_change_at": "2026-04-03T06:23:41+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|model_from_scratch|choices_only|500|750",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|model_from_scratch|choices_only|500|750",
+        "status": "success",
+        "completed_at": "2026-04-03T06:22:26+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-17-42-00-00_augmented-mcqa-eval-model-from-scratch-choices-only_UNu9aaJQe9wHFQC4vbGBfT.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|model_from_scratch|choices_only|500|750",
+        "status": "success",
+        "completed_at": "2026-04-03T06:22:26+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-17-42-00-00_augmented-mcqa-eval-model-from-scratch-choices-only_UNu9aaJQe9wHFQC4vbGBfT.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:22:26+00:00",
+      "latest_success_at": "2026-04-03T06:22:26+00:00",
+      "dependency_change_at": "2026-04-03T06:22:26+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|model_from_scratch|choices_only|750|1000",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|model_from_scratch|choices_only|750|1000",
+        "status": "success",
+        "completed_at": "2026-04-03T06:26:38+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-17-57-00-00_augmented-mcqa-eval-model-from-scratch-choices-only_j6gRAQyC9Rqpoe7yfPdYxp.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|model_from_scratch|choices_only|750|1000",
+        "status": "success",
+        "completed_at": "2026-04-03T06:26:38+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-17-57-00-00_augmented-mcqa-eval-model-from-scratch-choices-only_j6gRAQyC9Rqpoe7yfPdYxp.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:26:38+00:00",
+      "latest_success_at": "2026-04-03T06:26:38+00:00",
+      "dependency_change_at": "2026-04-03T06:26:38+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|model_from_scratch|full_question|0|250",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|model_from_scratch|full_question|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T06:23:20+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-19-20-00-00_augmented-mcqa-eval-model-from-scratch-full-question_WdvGGGbwB9FQpiE2R5vzUk.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|model_from_scratch|full_question|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T06:23:20+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-19-20-00-00_augmented-mcqa-eval-model-from-scratch-full-question_WdvGGGbwB9FQpiE2R5vzUk.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:23:20+00:00",
+      "latest_success_at": "2026-04-03T06:23:20+00:00",
+      "dependency_change_at": "2026-04-03T06:23:20+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|model_from_scratch|full_question|250|500",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|model_from_scratch|full_question|250|500",
+        "status": "success",
+        "completed_at": "2026-04-03T06:29:15+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-22-42-00-00_augmented-mcqa-eval-model-from-scratch-full-question_do7nedGoNVgTMQUVFHPDmp.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|model_from_scratch|full_question|250|500",
+        "status": "success",
+        "completed_at": "2026-04-03T06:29:15+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-22-42-00-00_augmented-mcqa-eval-model-from-scratch-full-question_do7nedGoNVgTMQUVFHPDmp.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:29:15+00:00",
+      "latest_success_at": "2026-04-03T06:29:15+00:00",
+      "dependency_change_at": "2026-04-03T06:29:15+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|model_from_scratch|full_question|500|750",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|model_from_scratch|full_question|500|750",
+        "status": "success",
+        "completed_at": "2026-04-03T06:36:55+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-23-41-00-00_augmented-mcqa-eval-model-from-scratch-full-question_VCWWwJ27z5yPYmksejWeJE.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|model_from_scratch|full_question|500|750",
+        "status": "success",
+        "completed_at": "2026-04-03T06:36:55+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-23-41-00-00_augmented-mcqa-eval-model-from-scratch-full-question_VCWWwJ27z5yPYmksejWeJE.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:36:55+00:00",
+      "latest_success_at": "2026-04-03T06:36:55+00:00",
+      "dependency_change_at": "2026-04-03T06:36:55+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|model_from_scratch|full_question|750|1000",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|model_from_scratch|full_question|750|1000",
+        "status": "success",
+        "completed_at": "2026-04-03T06:34:13+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-23-41-00-00_augmented-mcqa-eval-model-from-scratch-full-question_3e4ApT7bonj89RUXFVSDWW.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|model_from_scratch|full_question|750|1000",
+        "status": "success",
+        "completed_at": "2026-04-03T06:34:13+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-23-41-00-00_augmented-mcqa-eval-model-from-scratch-full-question_3e4ApT7bonj89RUXFVSDWW.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:34:13+00:00",
+      "latest_success_at": "2026-04-03T06:34:13+00:00",
+      "dependency_change_at": "2026-04-03T06:34:13+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|augment_ablation|choices_only|0|250",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|augment_ablation|choices_only|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T06:27:31+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-23-35-00-00_augmented-mcqa-eval-augment-ablation-choices-only_ZFgcx9x2pw4MvRfyTTpNqi.eval",
+        "sample_count": 249
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|augment_ablation|choices_only|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T06:27:31+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-23-35-00-00_augmented-mcqa-eval-augment-ablation-choices-only_ZFgcx9x2pw4MvRfyTTpNqi.eval",
+        "sample_count": 249
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:27:31+00:00",
+      "latest_success_at": "2026-04-03T06:27:31+00:00",
+      "dependency_change_at": "2026-04-03T06:27:31+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|augment_ablation|choices_only|250|444",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|augment_ablation|choices_only|250|444",
+        "status": "success",
+        "completed_at": "2026-04-03T06:31:24+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-23-51-00-00_augmented-mcqa-eval-augment-ablation-choices-only_Vsrk25ywvuyow932vAxwoS.eval",
+        "sample_count": 191
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|augment_ablation|choices_only|250|444",
+        "status": "success",
+        "completed_at": "2026-04-03T06:31:24+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-23-51-00-00_augmented-mcqa-eval-augment-ablation-choices-only_Vsrk25ywvuyow932vAxwoS.eval",
+        "sample_count": 191
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:31:24+00:00",
+      "latest_success_at": "2026-04-03T06:31:24+00:00",
+      "dependency_change_at": "2026-04-03T06:31:24+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|augment_ablation|full_question|0|250",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|augment_ablation|full_question|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T06:29:18+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-24-29-00-00_augmented-mcqa-eval-augment-ablation-full-question_NuTuC4XCYbHm2CS7R7AGx8.eval",
+        "sample_count": 249
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|augment_ablation|full_question|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T06:29:18+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-24-29-00-00_augmented-mcqa-eval-augment-ablation-full-question_NuTuC4XCYbHm2CS7R7AGx8.eval",
+        "sample_count": 249
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:29:18+00:00",
+      "latest_success_at": "2026-04-03T06:29:18+00:00",
+      "dependency_change_at": "2026-04-03T06:29:18+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|augment_ablation|full_question|250|444",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|augment_ablation|full_question|250|444",
+        "status": "success",
+        "completed_at": "2026-04-03T06:37:52+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-26-48-00-00_augmented-mcqa-eval-augment-ablation-full-question_DttkDxs2ZZLY73vZYThBzG.eval",
+        "sample_count": 191
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|augment_ablation|full_question|250|444",
+        "status": "success",
+        "completed_at": "2026-04-03T06:37:52+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-26-48-00-00_augmented-mcqa-eval-augment-ablation-full-question_DttkDxs2ZZLY73vZYThBzG.eval",
+        "sample_count": 191
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:37:52+00:00",
+      "latest_success_at": "2026-04-03T06:37:52+00:00",
+      "dependency_change_at": "2026-04-03T06:37:52+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|augment_human|choices_only|0|250",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|augment_human|choices_only|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T06:31:58+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-27-49-00-00_augmented-mcqa-eval-augment-human-choices-only_a23XbfurTG4dqBgAjTgJXZ.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|augment_human|choices_only|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T06:31:58+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-27-49-00-00_augmented-mcqa-eval-augment-human-choices-only_a23XbfurTG4dqBgAjTgJXZ.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:31:58+00:00",
+      "latest_success_at": "2026-04-03T06:31:58+00:00",
+      "dependency_change_at": "2026-04-03T06:31:58+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|augment_human|choices_only|250|444",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|augment_human|choices_only|250|444",
+        "status": "success",
+        "completed_at": "2026-04-03T06:33:48+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-29-30-00-00_augmented-mcqa-eval-augment-human-choices-only_Yb6cw45r6BvFNYCFCJmFnH.eval",
+        "sample_count": 193
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|augment_human|choices_only|250|444",
+        "status": "success",
+        "completed_at": "2026-04-03T06:33:48+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-29-30-00-00_augmented-mcqa-eval-augment-human-choices-only_Yb6cw45r6BvFNYCFCJmFnH.eval",
+        "sample_count": 193
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:33:48+00:00",
+      "latest_success_at": "2026-04-03T06:33:48+00:00",
+      "dependency_change_at": "2026-04-03T06:33:48+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|augment_human|full_question|0|250",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|augment_human|full_question|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T06:33:56+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-29-33-00-00_augmented-mcqa-eval-augment-human-full-question_MeD5LaEArPHdYJBtEEtmPs.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|augment_human|full_question|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T06:33:56+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-29-33-00-00_augmented-mcqa-eval-augment-human-full-question_MeD5LaEArPHdYJBtEEtmPs.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:33:56+00:00",
+      "latest_success_at": "2026-04-03T06:33:56+00:00",
+      "dependency_change_at": "2026-04-03T06:33:56+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|augment_human|full_question|250|444",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|augment_human|full_question|250|444",
+        "status": "success",
+        "completed_at": "2026-04-03T06:40:47+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-31-34-00-00_augmented-mcqa-eval-augment-human-full-question_XeU5XftsNGAJg2qSEEBQ9k.eval",
+        "sample_count": 193
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|augment_human|full_question|250|444",
+        "status": "success",
+        "completed_at": "2026-04-03T06:40:47+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-31-34-00-00_augmented-mcqa-eval-augment-human-full-question_XeU5XftsNGAJg2qSEEBQ9k.eval",
+        "sample_count": 193
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:40:47+00:00",
+      "latest_success_at": "2026-04-03T06:40:47+00:00",
+      "dependency_change_at": "2026-04-03T06:40:47+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|augment_model|choices_only|0|250",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|augment_model|choices_only|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T06:36:30+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-32-16-00-00_augmented-mcqa-eval-augment-model-choices-only_ShdaJhVgLxGgddrGdTycwo.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|augment_model|choices_only|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T06:36:30+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-32-16-00-00_augmented-mcqa-eval-augment-model-choices-only_ShdaJhVgLxGgddrGdTycwo.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:36:30+00:00",
+      "latest_success_at": "2026-04-03T06:36:30+00:00",
+      "dependency_change_at": "2026-04-03T06:36:30+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|augment_model|choices_only|250|444",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|augment_model|choices_only|250|444",
+        "status": "success",
+        "completed_at": "2026-04-03T06:39:38+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-34-03-00-00_augmented-mcqa-eval-augment-model-choices-only_6MFSLtNSCbKDswbwoufj2v.eval",
+        "sample_count": 192
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|augment_model|choices_only|250|444",
+        "status": "success",
+        "completed_at": "2026-04-03T06:39:38+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-34-03-00-00_augmented-mcqa-eval-augment-model-choices-only_6MFSLtNSCbKDswbwoufj2v.eval",
+        "sample_count": 192
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:39:38+00:00",
+      "latest_success_at": "2026-04-03T06:39:38+00:00",
+      "dependency_change_at": "2026-04-03T06:39:38+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|augment_model|full_question|0|250",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|augment_model|full_question|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T06:38:24+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-34-10-00-00_augmented-mcqa-eval-augment-model-full-question_3YRPVHoorxJ7oguJEGmR3q.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|augment_model|full_question|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T06:38:24+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-34-10-00-00_augmented-mcqa-eval-augment-model-full-question_3YRPVHoorxJ7oguJEGmR3q.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:38:24+00:00",
+      "latest_success_at": "2026-04-03T06:38:24+00:00",
+      "dependency_change_at": "2026-04-03T06:38:24+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|augment_model|full_question|250|444",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|augment_model|full_question|250|444",
+        "status": "success",
+        "completed_at": "2026-04-03T06:47:25+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-34-50-00-00_augmented-mcqa-eval-augment-model-full-question_8j5JeQkNNmw9XKhHm6pw26.eval",
+        "sample_count": 192
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|augment_model|full_question|250|444",
+        "status": "success",
+        "completed_at": "2026-04-03T06:47:25+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-34-50-00-00_augmented-mcqa-eval-augment-model-full-question_8j5JeQkNNmw9XKhHm6pw26.eval",
+        "sample_count": 192
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:47:25+00:00",
+      "latest_success_at": "2026-04-03T06:47:25+00:00",
+      "dependency_change_at": "2026-04-03T06:47:25+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|human_from_scratch|choices_only|0|250",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|human_from_scratch|choices_only|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T06:40:44+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-36-45-00-00_augmented-mcqa-eval-human-from-scratch-choices-only_WZN6JiMEBEaifzDeoeda3w.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|human_from_scratch|choices_only|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T06:40:44+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-36-45-00-00_augmented-mcqa-eval-human-from-scratch-choices-only_WZN6JiMEBEaifzDeoeda3w.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:40:44+00:00",
+      "latest_success_at": "2026-04-03T06:40:44+00:00",
+      "dependency_change_at": "2026-04-03T06:40:44+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|human_from_scratch|choices_only|250|444",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|human_from_scratch|choices_only|250|444",
+        "status": "success",
+        "completed_at": "2026-04-03T06:50:19+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-37-27-00-00_augmented-mcqa-eval-human-from-scratch-choices-only_n2nLnNykSXXLpjv8C3iazL.eval",
+        "sample_count": 193
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|human_from_scratch|choices_only|250|444",
+        "status": "success",
+        "completed_at": "2026-04-03T06:50:19+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-37-27-00-00_augmented-mcqa-eval-human-from-scratch-choices-only_n2nLnNykSXXLpjv8C3iazL.eval",
+        "sample_count": 193
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:50:19+00:00",
+      "latest_success_at": "2026-04-03T06:50:19+00:00",
+      "dependency_change_at": "2026-04-03T06:50:19+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|human_from_scratch|full_question|0|250",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|human_from_scratch|full_question|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T06:49:32+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-38-03-00-00_augmented-mcqa-eval-human-from-scratch-full-question_i8XKoVHMarnAyTvX7UL8MR.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|human_from_scratch|full_question|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T06:49:32+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-38-03-00-00_augmented-mcqa-eval-human-from-scratch-full-question_i8XKoVHMarnAyTvX7UL8MR.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:49:32+00:00",
+      "latest_success_at": "2026-04-03T06:49:32+00:00",
+      "dependency_change_at": "2026-04-03T06:49:32+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|human_from_scratch|full_question|250|444",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|human_from_scratch|full_question|250|444",
+        "status": "success",
+        "completed_at": "2026-04-03T06:42:07+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-38-39-00-00_augmented-mcqa-eval-human-from-scratch-full-question_kek6ViqC5whpDM8MPbQ4Bg.eval",
+        "sample_count": 193
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|human_from_scratch|full_question|250|444",
+        "status": "success",
+        "completed_at": "2026-04-03T06:42:07+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-38-39-00-00_augmented-mcqa-eval-human-from-scratch-full-question_kek6ViqC5whpDM8MPbQ4Bg.eval",
+        "sample_count": 193
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:42:07+00:00",
+      "latest_success_at": "2026-04-03T06:42:07+00:00",
+      "dependency_change_at": "2026-04-03T06:42:07+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|model_from_scratch|choices_only|0|250",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|model_from_scratch|choices_only|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T06:45:33+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-39-51-00-00_augmented-mcqa-eval-model-from-scratch-choices-only_7gwSVAjXrkhZn9jKaxL2JV.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|model_from_scratch|choices_only|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T06:45:33+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-39-51-00-00_augmented-mcqa-eval-model-from-scratch-choices-only_7gwSVAjXrkhZn9jKaxL2JV.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:45:33+00:00",
+      "latest_success_at": "2026-04-03T06:45:33+00:00",
+      "dependency_change_at": "2026-04-03T06:45:33+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|model_from_scratch|choices_only|250|444",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|model_from_scratch|choices_only|250|444",
+        "status": "success",
+        "completed_at": "2026-04-03T06:44:22+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-41-03-00-00_augmented-mcqa-eval-model-from-scratch-choices-only_GZauDGQZSzkZYPaPUsyrMx.eval",
+        "sample_count": 192
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|model_from_scratch|choices_only|250|444",
+        "status": "success",
+        "completed_at": "2026-04-03T06:44:22+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-41-03-00-00_augmented-mcqa-eval-model-from-scratch-choices-only_GZauDGQZSzkZYPaPUsyrMx.eval",
+        "sample_count": 192
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:44:22+00:00",
+      "latest_success_at": "2026-04-03T06:44:22+00:00",
+      "dependency_change_at": "2026-04-03T06:44:22+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|model_from_scratch|full_question|0|250",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|model_from_scratch|full_question|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T06:53:20+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-40-58-00-00_augmented-mcqa-eval-model-from-scratch-full-question_G2aifyxvektV93cUC2kmoh.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|model_from_scratch|full_question|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T06:53:20+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-40-58-00-00_augmented-mcqa-eval-model-from-scratch-full-question_G2aifyxvektV93cUC2kmoh.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:53:20+00:00",
+      "latest_success_at": "2026-04-03T06:53:20+00:00",
+      "dependency_change_at": "2026-04-03T06:53:20+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|model_from_scratch|full_question|250|444",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|model_from_scratch|full_question|250|444",
+        "status": "success",
+        "completed_at": "2026-04-03T06:45:54+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-42-22-00-00_augmented-mcqa-eval-model-from-scratch-full-question_Fsx5HSUqz4knrQLD4XPtCT.eval",
+        "sample_count": 192
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|model_from_scratch|full_question|250|444",
+        "status": "success",
+        "completed_at": "2026-04-03T06:45:54+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-42-22-00-00_augmented-mcqa-eval-model-from-scratch-full-question_Fsx5HSUqz4knrQLD4XPtCT.eval",
+        "sample_count": 192
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:45:54+00:00",
+      "latest_success_at": "2026-04-03T06:45:54+00:00",
+      "dependency_change_at": "2026-04-03T06:45:54+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_ablation|choices_only|0|250",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_ablation|choices_only|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T06:50:27+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-44-42-00-00_augmented-mcqa-eval-augment-ablation-choices-only_SdFxeN7U46F8cHfqusQxox.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_ablation|choices_only|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T06:50:27+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-44-42-00-00_augmented-mcqa-eval-augment-ablation-choices-only_SdFxeN7U46F8cHfqusQxox.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:50:27+00:00",
+      "latest_success_at": "2026-04-03T06:50:27+00:00",
+      "dependency_change_at": "2026-04-03T06:50:27+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_ablation|choices_only|250|500",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_ablation|choices_only|250|500",
+        "status": "success",
+        "completed_at": "2026-04-03T06:52:22+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-45-18-00-00_augmented-mcqa-eval-augment-ablation-choices-only_oDjsVYJ3L9yLBzHvp5haR4.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_ablation|choices_only|250|500",
+        "status": "success",
+        "completed_at": "2026-04-03T06:52:22+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-45-18-00-00_augmented-mcqa-eval-augment-ablation-choices-only_oDjsVYJ3L9yLBzHvp5haR4.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:52:22+00:00",
+      "latest_success_at": "2026-04-03T06:52:22+00:00",
+      "dependency_change_at": "2026-04-03T06:52:22+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_ablation|choices_only|500|750",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_ablation|choices_only|500|750",
+        "status": "success",
+        "completed_at": "2026-04-03T06:52:10+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-45-18-00-00_augmented-mcqa-eval-augment-ablation-choices-only_QwXjpSnRvoKhffTkcQqLag.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_ablation|choices_only|500|750",
+        "status": "success",
+        "completed_at": "2026-04-03T06:52:10+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-45-18-00-00_augmented-mcqa-eval-augment-ablation-choices-only_QwXjpSnRvoKhffTkcQqLag.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:52:10+00:00",
+      "latest_success_at": "2026-04-03T06:52:10+00:00",
+      "dependency_change_at": "2026-04-03T06:52:10+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_ablation|choices_only|750|999",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_ablation|choices_only|750|999",
+        "status": "success",
+        "completed_at": "2026-04-03T06:52:07+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-45-45-00-00_augmented-mcqa-eval-augment-ablation-choices-only_3PcTP9BZ2UwdezzG8RZvaM.eval",
+        "sample_count": 249
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_ablation|choices_only|750|999",
+        "status": "success",
+        "completed_at": "2026-04-03T06:52:07+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-45-45-00-00_augmented-mcqa-eval-augment-ablation-choices-only_3PcTP9BZ2UwdezzG8RZvaM.eval",
+        "sample_count": 249
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:52:07+00:00",
+      "latest_success_at": "2026-04-03T06:52:07+00:00",
+      "dependency_change_at": "2026-04-03T06:52:07+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_ablation|full_question|0|250",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_ablation|full_question|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T06:53:14+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-46-09-00-00_augmented-mcqa-eval-augment-ablation-full-question_M3Mh4BdTktK7v9XfQERQUa.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_ablation|full_question|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T06:53:14+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-46-09-00-00_augmented-mcqa-eval-augment-ablation-full-question_M3Mh4BdTktK7v9XfQERQUa.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:53:14+00:00",
+      "latest_success_at": "2026-04-03T06:53:14+00:00",
+      "dependency_change_at": "2026-04-03T06:53:14+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_ablation|full_question|250|500",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_ablation|full_question|250|500",
+        "status": "success",
+        "completed_at": "2026-04-03T07:05:05+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-48-15-00-00_augmented-mcqa-eval-augment-ablation-full-question_i88TFSdb8gGHvW8ozjBbFM.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_ablation|full_question|250|500",
+        "status": "success",
+        "completed_at": "2026-04-03T07:05:05+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-48-15-00-00_augmented-mcqa-eval-augment-ablation-full-question_i88TFSdb8gGHvW8ozjBbFM.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T07:05:05+00:00",
+      "latest_success_at": "2026-04-03T07:05:05+00:00",
+      "dependency_change_at": "2026-04-03T07:05:05+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_ablation|full_question|500|750",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_ablation|full_question|500|750",
+        "status": "success",
+        "completed_at": "2026-04-03T07:03:25+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-49-44-00-00_augmented-mcqa-eval-augment-ablation-full-question_CeoEmebwrp9urtxSf5nc3T.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_ablation|full_question|500|750",
+        "status": "success",
+        "completed_at": "2026-04-03T07:03:25+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-49-44-00-00_augmented-mcqa-eval-augment-ablation-full-question_CeoEmebwrp9urtxSf5nc3T.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T07:03:25+00:00",
+      "latest_success_at": "2026-04-03T07:03:25+00:00",
+      "dependency_change_at": "2026-04-03T07:03:25+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_ablation|full_question|750|999",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_ablation|full_question|750|999",
+        "status": "success",
+        "completed_at": "2026-04-03T07:05:52+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-50-53-00-00_augmented-mcqa-eval-augment-ablation-full-question_eLeBnHfPqGawqpDKTXhVxG.eval",
+        "sample_count": 249
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_ablation|full_question|750|999",
+        "status": "success",
+        "completed_at": "2026-04-03T07:05:52+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-50-53-00-00_augmented-mcqa-eval-augment-ablation-full-question_eLeBnHfPqGawqpDKTXhVxG.eval",
+        "sample_count": 249
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T07:05:52+00:00",
+      "latest_success_at": "2026-04-03T07:05:52+00:00",
+      "dependency_change_at": "2026-04-03T07:05:52+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_human|choices_only|0|250",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_human|choices_only|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T06:57:17+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-50-46-00-00_augmented-mcqa-eval-augment-human-choices-only_iTmbGxTTQFPR4RiTHRgEdz.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_human|choices_only|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T06:57:17+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-50-46-00-00_augmented-mcqa-eval-augment-human-choices-only_iTmbGxTTQFPR4RiTHRgEdz.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:57:17+00:00",
+      "latest_success_at": "2026-04-03T06:57:17+00:00",
+      "dependency_change_at": "2026-04-03T06:57:17+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_human|choices_only|250|500",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_human|choices_only|250|500",
+        "status": "success",
+        "completed_at": "2026-04-03T06:59:10+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-52-24-00-00_augmented-mcqa-eval-augment-human-choices-only_Dd7282WFrtrb2wshHWx3ne.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_human|choices_only|250|500",
+        "status": "success",
+        "completed_at": "2026-04-03T06:59:10+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-52-24-00-00_augmented-mcqa-eval-augment-human-choices-only_Dd7282WFrtrb2wshHWx3ne.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:59:10+00:00",
+      "latest_success_at": "2026-04-03T06:59:10+00:00",
+      "dependency_change_at": "2026-04-03T06:59:10+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_human|choices_only|500|750",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_human|choices_only|500|750",
+        "status": "success",
+        "completed_at": "2026-04-03T06:59:57+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-52-24-00-00_augmented-mcqa-eval-augment-human-choices-only_6Miro9Xjr23rbwQVczDGv9.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_human|choices_only|500|750",
+        "status": "success",
+        "completed_at": "2026-04-03T06:59:57+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-52-24-00-00_augmented-mcqa-eval-augment-human-choices-only_6Miro9Xjr23rbwQVczDGv9.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:59:57+00:00",
+      "latest_success_at": "2026-04-03T06:59:57+00:00",
+      "dependency_change_at": "2026-04-03T06:59:57+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_human|choices_only|750|999",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_human|choices_only|750|999",
+        "status": "success",
+        "completed_at": "2026-04-03T06:58:44+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-52-33-00-00_augmented-mcqa-eval-augment-human-choices-only_XVVLhUUm6dfMzNAqzPGqT3.eval",
+        "sample_count": 249
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_human|choices_only|750|999",
+        "status": "success",
+        "completed_at": "2026-04-03T06:58:44+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-52-33-00-00_augmented-mcqa-eval-augment-human-choices-only_XVVLhUUm6dfMzNAqzPGqT3.eval",
+        "sample_count": 249
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:58:44+00:00",
+      "latest_success_at": "2026-04-03T06:58:44+00:00",
+      "dependency_change_at": "2026-04-03T06:58:44+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_human|full_question|0|250",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_human|full_question|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T06:59:25+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-53-32-00-00_augmented-mcqa-eval-augment-human-full-question_J6pejfYAeE7nsnyPoJdYLw.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_human|full_question|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T06:59:25+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-53-32-00-00_augmented-mcqa-eval-augment-human-full-question_J6pejfYAeE7nsnyPoJdYLw.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T06:59:25+00:00",
+      "latest_success_at": "2026-04-03T06:59:25+00:00",
+      "dependency_change_at": "2026-04-03T06:59:25+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_human|full_question|250|500",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_human|full_question|250|500",
+        "status": "success",
+        "completed_at": "2026-04-03T07:08:21+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-53-32-00-00_augmented-mcqa-eval-augment-human-full-question_HNh4iydnRxXEWfvvse9rfu.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_human|full_question|250|500",
+        "status": "success",
+        "completed_at": "2026-04-03T07:08:21+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-53-32-00-00_augmented-mcqa-eval-augment-human-full-question_HNh4iydnRxXEWfvvse9rfu.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T07:08:21+00:00",
+      "latest_success_at": "2026-04-03T07:08:21+00:00",
+      "dependency_change_at": "2026-04-03T07:08:21+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_human|full_question|500|750",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_human|full_question|500|750",
+        "status": "success",
+        "completed_at": "2026-04-03T07:04:35+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-57-34-00-00_augmented-mcqa-eval-augment-human-full-question_UJXVGPgfdZMMXVXmakUFSA.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_human|full_question|500|750",
+        "status": "success",
+        "completed_at": "2026-04-03T07:04:35+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-57-34-00-00_augmented-mcqa-eval-augment-human-full-question_UJXVGPgfdZMMXVXmakUFSA.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T07:04:35+00:00",
+      "latest_success_at": "2026-04-03T07:04:35+00:00",
+      "dependency_change_at": "2026-04-03T07:04:35+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_human|full_question|750|999",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_human|full_question|750|999",
+        "status": "success",
+        "completed_at": "2026-04-03T07:07:22+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-59-01-00-00_augmented-mcqa-eval-augment-human-full-question_dhEdn27AeZczmto4H74vdq.eval",
+        "sample_count": 249
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_human|full_question|750|999",
+        "status": "success",
+        "completed_at": "2026-04-03T07:07:22+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-59-01-00-00_augmented-mcqa-eval-augment-human-full-question_dhEdn27AeZczmto4H74vdq.eval",
+        "sample_count": 249
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T07:07:22+00:00",
+      "latest_success_at": "2026-04-03T07:07:22+00:00",
+      "dependency_change_at": "2026-04-03T07:07:22+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_model|choices_only|0|250",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_model|choices_only|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T07:05:42+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-59-22-00-00_augmented-mcqa-eval-augment-model-choices-only_m6sLNvd83aFzRi3Fiv5TFL.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_model|choices_only|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T07:05:42+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-59-22-00-00_augmented-mcqa-eval-augment-model-choices-only_m6sLNvd83aFzRi3Fiv5TFL.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T07:05:42+00:00",
+      "latest_success_at": "2026-04-03T07:05:42+00:00",
+      "dependency_change_at": "2026-04-03T07:05:42+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_model|choices_only|250|500",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_model|choices_only|250|500",
+        "status": "success",
+        "completed_at": "2026-04-03T07:06:18+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-59-40-00-00_augmented-mcqa-eval-augment-model-choices-only_aMrNQ866ouZRCkwuy3knrQ.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_model|choices_only|250|500",
+        "status": "success",
+        "completed_at": "2026-04-03T07:06:18+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T06-59-40-00-00_augmented-mcqa-eval-augment-model-choices-only_aMrNQ866ouZRCkwuy3knrQ.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T07:06:18+00:00",
+      "latest_success_at": "2026-04-03T07:06:18+00:00",
+      "dependency_change_at": "2026-04-03T07:06:18+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_model|choices_only|500|750",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_model|choices_only|500|750",
+        "status": "success",
+        "completed_at": "2026-04-03T07:07:45+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T07-00-11-00-00_augmented-mcqa-eval-augment-model-choices-only_oAxJx6nVtbWZdSWhyHaQvR.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_model|choices_only|500|750",
+        "status": "success",
+        "completed_at": "2026-04-03T07:07:45+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T07-00-11-00-00_augmented-mcqa-eval-augment-model-choices-only_oAxJx6nVtbWZdSWhyHaQvR.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T07:07:45+00:00",
+      "latest_success_at": "2026-04-03T07:07:45+00:00",
+      "dependency_change_at": "2026-04-03T07:07:45+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_model|choices_only|750|999",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_model|choices_only|750|999",
+        "status": "success",
+        "completed_at": "2026-04-03T07:18:27+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T07-03-37-00-00_augmented-mcqa-eval-augment-model-choices-only_fZmkaDY7cZ6qeNbkQaJXja.eval",
+        "sample_count": 249
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_model|choices_only|750|999",
+        "status": "success",
+        "completed_at": "2026-04-03T07:18:27+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T07-03-37-00-00_augmented-mcqa-eval-augment-model-choices-only_fZmkaDY7cZ6qeNbkQaJXja.eval",
+        "sample_count": 249
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T07:18:27+00:00",
+      "latest_success_at": "2026-04-03T07:18:27+00:00",
+      "dependency_change_at": "2026-04-03T07:18:27+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_model|full_question|0|250",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_model|full_question|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T07:10:55+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T07-04-54-00-00_augmented-mcqa-eval-augment-model-full-question_nL5SAuntMxDYtqZm9wgx6s.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_model|full_question|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T07:10:55+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T07-04-54-00-00_augmented-mcqa-eval-augment-model-full-question_nL5SAuntMxDYtqZm9wgx6s.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T07:10:55+00:00",
+      "latest_success_at": "2026-04-03T07:10:55+00:00",
+      "dependency_change_at": "2026-04-03T07:10:55+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_model|full_question|250|500",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_model|full_question|250|500",
+        "status": "success",
+        "completed_at": "2026-04-03T07:22:02+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T07-05-41-00-00_augmented-mcqa-eval-augment-model-full-question_UXuFPkobcHRJyxn2a5eVrV.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_model|full_question|250|500",
+        "status": "success",
+        "completed_at": "2026-04-03T07:22:02+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T07-05-41-00-00_augmented-mcqa-eval-augment-model-full-question_UXuFPkobcHRJyxn2a5eVrV.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T07:22:02+00:00",
+      "latest_success_at": "2026-04-03T07:22:02+00:00",
+      "dependency_change_at": "2026-04-03T07:22:02+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_model|full_question|500|750",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_model|full_question|500|750",
+        "status": "success",
+        "completed_at": "2026-04-03T07:13:13+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T07-05-57-00-00_augmented-mcqa-eval-augment-model-full-question_nNvvRuxehrnp7rL3an67PY.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_model|full_question|500|750",
+        "status": "success",
+        "completed_at": "2026-04-03T07:13:13+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T07-05-57-00-00_augmented-mcqa-eval-augment-model-full-question_nNvvRuxehrnp7rL3an67PY.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T07:13:13+00:00",
+      "latest_success_at": "2026-04-03T07:13:13+00:00",
+      "dependency_change_at": "2026-04-03T07:13:13+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_model|full_question|750|999",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_model|full_question|750|999",
+        "status": "success",
+        "completed_at": "2026-04-03T07:22:14+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T07-06-19-00-00_augmented-mcqa-eval-augment-model-full-question_JvdfKMMKVyMKagTinC3kih.eval",
+        "sample_count": 249
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_model|full_question|750|999",
+        "status": "success",
+        "completed_at": "2026-04-03T07:22:14+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T07-06-19-00-00_augmented-mcqa-eval-augment-model-full-question_JvdfKMMKVyMKagTinC3kih.eval",
+        "sample_count": 249
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T07:22:14+00:00",
+      "latest_success_at": "2026-04-03T07:22:14+00:00",
+      "dependency_change_at": "2026-04-03T07:22:14+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|human_from_scratch|choices_only|0|250",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|human_from_scratch|choices_only|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T07:12:16+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T07-06-32-00-00_augmented-mcqa-eval-human-from-scratch-choices-only_cSzLUtRywKRRao7u53x4PU.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|human_from_scratch|choices_only|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T07:12:16+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T07-06-32-00-00_augmented-mcqa-eval-human-from-scratch-choices-only_cSzLUtRywKRRao7u53x4PU.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T07:12:16+00:00",
+      "latest_success_at": "2026-04-03T07:12:16+00:00",
+      "dependency_change_at": "2026-04-03T07:12:16+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|human_from_scratch|choices_only|250|500",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|human_from_scratch|choices_only|250|500",
+        "status": "success",
+        "completed_at": "2026-04-03T07:14:36+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T07-07-36-00-00_augmented-mcqa-eval-human-from-scratch-choices-only_6no84HNK2d5QivyFpP4SzQ.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|human_from_scratch|choices_only|250|500",
+        "status": "success",
+        "completed_at": "2026-04-03T07:14:36+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T07-07-36-00-00_augmented-mcqa-eval-human-from-scratch-choices-only_6no84HNK2d5QivyFpP4SzQ.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T07:14:36+00:00",
+      "latest_success_at": "2026-04-03T07:14:36+00:00",
+      "dependency_change_at": "2026-04-03T07:14:36+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|human_from_scratch|choices_only|500|750",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|human_from_scratch|choices_only|500|750",
+        "status": "success",
+        "completed_at": "2026-04-03T07:14:42+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T07-07-58-00-00_augmented-mcqa-eval-human-from-scratch-choices-only_i7tdJaMB8vfi45G6dAZGsB.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|human_from_scratch|choices_only|500|750",
+        "status": "success",
+        "completed_at": "2026-04-03T07:14:42+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T07-07-58-00-00_augmented-mcqa-eval-human-from-scratch-choices-only_i7tdJaMB8vfi45G6dAZGsB.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T07:14:42+00:00",
+      "latest_success_at": "2026-04-03T07:14:42+00:00",
+      "dependency_change_at": "2026-04-03T07:14:42+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|human_from_scratch|choices_only|750|999",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|human_from_scratch|choices_only|750|999",
+        "status": "success",
+        "completed_at": "2026-04-03T07:22:59+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T07-08-33-00-00_augmented-mcqa-eval-human-from-scratch-choices-only_5LSuZEjQoMK8s3S73AUmmK.eval",
+        "sample_count": 249
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|human_from_scratch|choices_only|750|999",
+        "status": "success",
+        "completed_at": "2026-04-03T07:22:59+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T07-08-33-00-00_augmented-mcqa-eval-human-from-scratch-choices-only_5LSuZEjQoMK8s3S73AUmmK.eval",
+        "sample_count": 249
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T07:22:59+00:00",
+      "latest_success_at": "2026-04-03T07:22:59+00:00",
+      "dependency_change_at": "2026-04-03T07:22:59+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|human_from_scratch|full_question|0|250",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|human_from_scratch|full_question|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T07:17:40+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T07-11-14-00-00_augmented-mcqa-eval-human-from-scratch-full-question_i3W93nWPA56okiNA9XA6y6.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|human_from_scratch|full_question|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T07:17:40+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T07-11-14-00-00_augmented-mcqa-eval-human-from-scratch-full-question_i3W93nWPA56okiNA9XA6y6.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T07:17:40+00:00",
+      "latest_success_at": "2026-04-03T07:17:40+00:00",
+      "dependency_change_at": "2026-04-03T07:17:40+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|human_from_scratch|full_question|250|500",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|human_from_scratch|full_question|250|500",
+        "status": "success",
+        "completed_at": "2026-04-03T07:19:02+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T07-12-32-00-00_augmented-mcqa-eval-human-from-scratch-full-question_2Us6CsRPw6SaD2Q3A9vgB2.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|human_from_scratch|full_question|250|500",
+        "status": "success",
+        "completed_at": "2026-04-03T07:19:02+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T07-12-32-00-00_augmented-mcqa-eval-human-from-scratch-full-question_2Us6CsRPw6SaD2Q3A9vgB2.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T07:19:02+00:00",
+      "latest_success_at": "2026-04-03T07:19:02+00:00",
+      "dependency_change_at": "2026-04-03T07:19:02+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|human_from_scratch|full_question|500|750",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|human_from_scratch|full_question|500|750",
+        "status": "success",
+        "completed_at": "2026-04-03T07:20:29+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T07-13-32-00-00_augmented-mcqa-eval-human-from-scratch-full-question_633agxnX76LVHS2gCRGcG2.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|human_from_scratch|full_question|500|750",
+        "status": "success",
+        "completed_at": "2026-04-03T07:20:29+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T07-13-32-00-00_augmented-mcqa-eval-human-from-scratch-full-question_633agxnX76LVHS2gCRGcG2.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T07:20:29+00:00",
+      "latest_success_at": "2026-04-03T07:20:29+00:00",
+      "dependency_change_at": "2026-04-03T07:20:29+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|human_from_scratch|full_question|750|999",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|human_from_scratch|full_question|750|999",
+        "status": "success",
+        "completed_at": "2026-04-03T07:21:21+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T07-14-48-00-00_augmented-mcqa-eval-human-from-scratch-full-question_a3oi8iwAU2DRKetDGbqLwc.eval",
+        "sample_count": 249
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|human_from_scratch|full_question|750|999",
+        "status": "success",
+        "completed_at": "2026-04-03T07:21:21+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T07-14-48-00-00_augmented-mcqa-eval-human-from-scratch-full-question_a3oi8iwAU2DRKetDGbqLwc.eval",
+        "sample_count": 249
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T07:21:21+00:00",
+      "latest_success_at": "2026-04-03T07:21:21+00:00",
+      "dependency_change_at": "2026-04-03T07:21:21+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|model_from_scratch|choices_only|0|250",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|model_from_scratch|choices_only|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T07:21:27+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T07-14-51-00-00_augmented-mcqa-eval-model-from-scratch-choices-only_7YG34XVeSm8HiczvhtwGPR.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|model_from_scratch|choices_only|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T07:21:27+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T07-14-51-00-00_augmented-mcqa-eval-model-from-scratch-choices-only_7YG34XVeSm8HiczvhtwGPR.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T07:21:27+00:00",
+      "latest_success_at": "2026-04-03T07:21:27+00:00",
+      "dependency_change_at": "2026-04-03T07:21:27+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|model_from_scratch|choices_only|250|500",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|model_from_scratch|choices_only|250|500",
+        "status": "success",
+        "completed_at": "2026-04-03T07:25:51+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T07-18-04-00-00_augmented-mcqa-eval-model-from-scratch-choices-only_f2GbVv3m2rYJSu4Ry6T7Sf.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|model_from_scratch|choices_only|250|500",
+        "status": "success",
+        "completed_at": "2026-04-03T07:25:51+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T07-18-04-00-00_augmented-mcqa-eval-model-from-scratch-choices-only_f2GbVv3m2rYJSu4Ry6T7Sf.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T07:25:51+00:00",
+      "latest_success_at": "2026-04-03T07:25:51+00:00",
+      "dependency_change_at": "2026-04-03T07:25:51+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|model_from_scratch|choices_only|500|750",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|model_from_scratch|choices_only|500|750",
+        "status": "success",
+        "completed_at": "2026-04-03T07:31:20+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T07-18-39-00-00_augmented-mcqa-eval-model-from-scratch-choices-only_ZKKeKTh3krqLmLfRB39o2s.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|model_from_scratch|choices_only|500|750",
+        "status": "success",
+        "completed_at": "2026-04-03T07:31:20+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T07-18-39-00-00_augmented-mcqa-eval-model-from-scratch-choices-only_ZKKeKTh3krqLmLfRB39o2s.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T07:31:20+00:00",
+      "latest_success_at": "2026-04-03T07:31:20+00:00",
+      "dependency_change_at": "2026-04-03T07:31:20+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|model_from_scratch|choices_only|750|999",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|model_from_scratch|choices_only|750|999",
+        "status": "success",
+        "completed_at": "2026-04-03T07:26:43+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T07-19-18-00-00_augmented-mcqa-eval-model-from-scratch-choices-only_GjUZZFdM9VFeA33iYKQox3.eval",
+        "sample_count": 249
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|model_from_scratch|choices_only|750|999",
+        "status": "success",
+        "completed_at": "2026-04-03T07:26:43+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T07-19-18-00-00_augmented-mcqa-eval-model-from-scratch-choices-only_GjUZZFdM9VFeA33iYKQox3.eval",
+        "sample_count": 249
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T07:26:43+00:00",
+      "latest_success_at": "2026-04-03T07:26:43+00:00",
+      "dependency_change_at": "2026-04-03T07:26:43+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|model_from_scratch|full_question|0|250",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|model_from_scratch|full_question|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T07:28:11+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T07-20-45-00-00_augmented-mcqa-eval-model-from-scratch-full-question_7eC8GFDeZp6mcwVCThwWw8.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|model_from_scratch|full_question|0|250",
+        "status": "success",
+        "completed_at": "2026-04-03T07:28:11+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T07-20-45-00-00_augmented-mcqa-eval-model-from-scratch-full-question_7eC8GFDeZp6mcwVCThwWw8.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T07:28:11+00:00",
+      "latest_success_at": "2026-04-03T07:28:11+00:00",
+      "dependency_change_at": "2026-04-03T07:28:11+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|model_from_scratch|full_question|250|500",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|model_from_scratch|full_question|250|500",
+        "status": "success",
+        "completed_at": "2026-04-03T07:28:54+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T07-21-35-00-00_augmented-mcqa-eval-model-from-scratch-full-question_NTjpuArdgbSCzMcApVJzfs.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|model_from_scratch|full_question|250|500",
+        "status": "success",
+        "completed_at": "2026-04-03T07:28:54+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T07-21-35-00-00_augmented-mcqa-eval-model-from-scratch-full-question_NTjpuArdgbSCzMcApVJzfs.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T07:28:54+00:00",
+      "latest_success_at": "2026-04-03T07:28:54+00:00",
+      "dependency_change_at": "2026-04-03T07:28:54+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|model_from_scratch|full_question|500|750",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|model_from_scratch|full_question|500|750",
+        "status": "success",
+        "completed_at": "2026-04-03T07:28:13+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T07-21-38-00-00_augmented-mcqa-eval-model-from-scratch-full-question_Cwn2KvQojGVBr3WnQfbRaA.eval",
+        "sample_count": 250
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|model_from_scratch|full_question|500|750",
+        "status": "success",
+        "completed_at": "2026-04-03T07:28:13+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T07-21-38-00-00_augmented-mcqa-eval-model-from-scratch-full-question_Cwn2KvQojGVBr3WnQfbRaA.eval",
+        "sample_count": 250
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T07:28:13+00:00",
+      "latest_success_at": "2026-04-03T07:28:13+00:00",
+      "dependency_change_at": "2026-04-03T07:28:13+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|model_from_scratch|full_question|750|999",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|model_from_scratch|full_question|750|999",
+        "status": "success",
+        "completed_at": "2026-04-03T07:34:48+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T07-22-42-00-00_augmented-mcqa-eval-model-from-scratch-full-question_2UEDJNk523yXyabetWLDQ3.eval",
+        "sample_count": 249
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gemini_from_scratch_testing_all|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|model_from_scratch|full_question|750|999",
+        "status": "success",
+        "completed_at": "2026-04-03T07:34:48+00:00",
+        "log_path": "results/inspect/evaluation/eval_gemini_from_scratch_testing_all/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-03T07-22-42-00-00_augmented-mcqa-eval-model-from-scratch-full-question_2UEDJNk523yXyabetWLDQ3.eval",
+        "sample_count": 249
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-03T07:34:48+00:00",
+      "latest_success_at": "2026-04-03T07:34:48+00:00",
+      "dependency_change_at": "2026-04-03T07:34:48+00:00",
+      "status": "current"
+    }
+  ]
+}
