@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import hashlib
 import json
+import random
 import shutil
 from pathlib import Path
 from typing import Any
@@ -237,6 +239,19 @@ def _answer_text(row: dict[str, Any]) -> str:
     return ""
 
 
+def _stable_seed(sample_id: str, setting: str) -> int:
+    digest = hashlib.sha256(f"{sample_id}:{setting}".encode("utf-8")).digest()
+    return int.from_bytes(digest[:8], byteorder="big", signed=False)
+
+
+def _shuffle_options(sample_id: str, setting: str, answer: str, distractors: list[str]) -> tuple[list[str], str]:
+    options = [answer, *distractors]
+    rng = random.Random(_stable_seed(sample_id, setting))
+    rng.shuffle(options)
+    gold_index = options.index(answer)
+    return options, CHOICE_LABELS[gold_index]
+
+
 def _selected_values(
     selected: list[str] | None,
     default: list[str],
@@ -429,18 +444,52 @@ def _empty_setting_record(
     }
 
 
+def _human_from_scratch_record(base: dict[str, Any]) -> dict[str, Any]:
+    recipe = get_setting_recipe("human_from_scratch")
+    sample_id = str(base.get("sample_id", "") or "")
+    answer = str(base.get("answer", "") or "").strip()
+    human = [str(item).strip() for item in list(base.get("choices_human") or []) if str(item).strip()]
+    selected_human = human[: recipe.num_human]
+    if len(selected_human) < recipe.num_human or not sample_id or not answer:
+        return _empty_setting_record(
+            base,
+            setting="human_from_scratch",
+            status="missing",
+            human_distractors=selected_human,
+        )
+    randomized, correct = _shuffle_options(sample_id, "human_from_scratch", answer, selected_human)
+    record = _record_from_setting_values(
+        base,
+        setting="human_from_scratch",
+        status="success",
+        human_distractors=selected_human,
+        model_distractors=[],
+        options_randomized=randomized,
+        correct_answer_letter=correct,
+        traces={"prompt": f"passthrough: choices_human[:{recipe.num_human}]", "output": ""},
+    )
+    if record is not None:
+        return record
+    return _empty_setting_record(
+        base,
+        setting="human_from_scratch",
+        status="missing",
+        human_distractors=selected_human,
+    )
+
+
 def _record_from_generation_payload(
     base: dict[str, Any],
     payload: dict[str, Any],
     *,
     setting: str,
 ) -> dict[str, Any] | None:
+    if setting == "human_from_scratch":
+        return _human_from_scratch_record(base)
+
     status = str(payload.get("status", "") or "")
     human = [str(item).strip() for item in list(payload.get("human_from_scratch") or []) if str(item).strip()]
-    if setting == "human_from_scratch":
-        human_distractors = human
-        model_distractors = []
-    elif setting == "model_from_scratch":
+    if setting == "model_from_scratch":
         human_distractors = []
         model_distractors = [str(item).strip() for item in list(payload.get("model_from_scratch") or []) if str(item).strip()]
     elif setting == "augment_human":
@@ -452,35 +501,29 @@ def _record_from_generation_payload(
     else:
         human_distractors = []
         model_distractors = [str(item).strip() for item in list(payload.get("augment_ablation") or []) if str(item).strip()]
-    if status and status != "success":
-        return _empty_setting_record(
-            base,
-            setting=setting,
-            status=status,
-            human_distractors=human_distractors,
-            model_distractors=model_distractors,
-            traces=dict((payload.get("traces") or {}).get(setting, {}) or {}),
-        )
+    traces = dict((payload.get("traces") or {}).get(setting, {}) or {})
     record = _record_from_setting_values(
         base,
         setting=setting,
-        status=status,
+        status="success",
         human_distractors=human_distractors,
         model_distractors=model_distractors,
         options_randomized=list(payload.get(f"{setting}_options_randomized") or []),
         correct_answer_letter=str(payload.get(f"{setting}_correct_answer_letter", "") or ""),
-        traces=dict((payload.get("traces") or {}).get(setting, {}) or {}),
+        traces=traces,
     )
     if record is not None:
         return record
     return _empty_setting_record(
         base,
         setting=setting,
-        status=str(payload.get("status", "") or ""),
+        status=status or "missing",
         human_distractors=human_distractors,
         model_distractors=model_distractors,
-        traces=dict((payload.get("traces") or {}).get(setting, {}) or {}),
+        traces=traces,
     )
+
+
 def build_generation_dataset(
     processed_dataset_path: Path | str,
     *,

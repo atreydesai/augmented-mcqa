@@ -88,6 +88,7 @@ PREDICTION_TYPE_ORDER = ["G", "H", "M", "?"]
 PREDICTION_LETTER_ORDER = list(CHOICE_LABELS)
 HIDDEN_EVAL_MODEL_IDENTITIES = {
 }
+SHARED_SUPPORT_COLUMNS = ["eval_model", "mode", "dataset", "setting", "sample_id"]
 
 
 def _display_generator(generator: str) -> str:
@@ -258,6 +259,46 @@ def _evaluated_row_frame(root: Path | str) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def _shared_generator_support(row_df: pd.DataFrame) -> pd.DataFrame:
+    if row_df.empty:
+        return pd.DataFrame(columns=SHARED_SUPPORT_COLUMNS)
+    observed = row_df[row_df["evaluation_status"].fillna("missing") != "missing"][
+        ["generator_key", *SHARED_SUPPORT_COLUMNS]
+    ].drop_duplicates()
+    if observed.empty:
+        return pd.DataFrame(columns=SHARED_SUPPORT_COLUMNS)
+    required = (
+        observed.groupby(SHARED_SUPPORT_COLUMNS[:-1], sort=False, observed=True)["generator_key"]
+        .nunique()
+        .rename("required_generators")
+        .reset_index()
+    )
+    sample_counts = (
+        observed.groupby(SHARED_SUPPORT_COLUMNS, sort=False, observed=True)["generator_key"]
+        .nunique()
+        .rename("present_generators")
+        .reset_index()
+    )
+    eligible = sample_counts.merge(required, on=SHARED_SUPPORT_COLUMNS[:-1], how="inner")
+    return eligible[eligible["present_generators"] == eligible["required_generators"]][SHARED_SUPPORT_COLUMNS].copy()
+
+
+def _filter_frame_to_shared_generator_support(df: pd.DataFrame, eligible: pd.DataFrame) -> pd.DataFrame:
+    if df.empty:
+        return df.copy()
+    if eligible.empty:
+        return df.iloc[0:0].copy()
+    join_columns = [column for column in SHARED_SUPPORT_COLUMNS if column in df.columns]
+    if "sample_id" not in join_columns:
+        return df.copy()
+    return df.merge(eligible[join_columns].drop_duplicates(), on=join_columns, how="inner")
+
+
+def _filter_rows_to_shared_generator_support(row_df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    eligible = _shared_generator_support(row_df)
+    return _filter_frame_to_shared_generator_support(row_df, eligible), eligible
+
+
 def _empty_results_frame() -> pd.DataFrame:
     return pd.DataFrame(
         columns=[
@@ -330,6 +371,7 @@ def _add_missing_eval_model_rows(summary_df: pd.DataFrame) -> pd.DataFrame:
 
 def collect_results_summary(results_root: Path | str) -> pd.DataFrame:
     row_df = _evaluated_row_frame(results_root)
+    row_df, _eligible = _filter_rows_to_shared_generator_support(row_df)
     return _collect_results_summary_from_rows(row_df)
 
 
@@ -396,6 +438,7 @@ def _collect_results_summary_from_rows(row_df: pd.DataFrame) -> pd.DataFrame:
 
 def load_analysis_frames(results_root: Path | str) -> tuple[pd.DataFrame, pd.DataFrame]:
     row_df = _evaluated_row_frame(results_root)
+    row_df, _eligible = _filter_rows_to_shared_generator_support(row_df)
     summary_df = _collect_results_summary_from_rows(row_df)
     return row_df, summary_df
 
@@ -403,6 +446,7 @@ def load_analysis_frames(results_root: Path | str) -> tuple[pd.DataFrame, pd.Dat
 def _load_distribution_frames(results_root: Path | str) -> pd.DataFrame:
     frames: list[pd.DataFrame] = []
     needed_columns = [
+        "sample_id",
         "evaluation_status",
         "evaluation_prediction",
         "evaluation_prediction_type",
@@ -911,6 +955,7 @@ def plot_pairwise_accuracy(
     if row_df is None or summary_df is None:
         row_df, summary_df = load_analysis_frames(results_root)
     distribution_row_df = _load_distribution_frames(results_root)
+    distribution_row_df = _filter_frame_to_shared_generator_support(distribution_row_df, _shared_generator_support(row_df))
     out_dir = Path(output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     if summary_df.empty:
