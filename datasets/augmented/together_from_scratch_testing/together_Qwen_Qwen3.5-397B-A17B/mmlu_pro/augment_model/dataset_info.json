@@ -3,11 +3,11 @@
   "description": "",
   "features": {
     "id": {
-      "dtype": "null",
+      "dtype": "string",
       "_type": "Value"
     },
     "question_id": {
-      "dtype": "int64",
+      "dtype": "null",
       "_type": "Value"
     },
     "dataset_type": {
@@ -47,7 +47,7 @@
     },
     "choices_human": {
       "feature": {
-        "dtype": "string",
+        "dtype": "null",
         "_type": "Value"
       },
       "_type": "List"
@@ -57,10 +57,6 @@
       "_type": "Value"
     },
     "generation_strategy": {
-      "dtype": "string",
-      "_type": "Value"
-    },
-    "status": {
       "dtype": "string",
       "_type": "Value"
     },
@@ -109,28 +105,11 @@
       "_type": "Value"
     },
     "traces": {
-      "attempts": {
-        "feature": {
-          "attempt": {
-            "dtype": "int64",
-            "_type": "Value"
-          },
-          "output": {
-            "dtype": "string",
-            "_type": "Value"
-          },
-          "prompt": {
-            "dtype": "string",
-            "_type": "Value"
-          }
-        },
-        "_type": "List"
-      },
-      "output": {
-        "dtype": "string",
+      "reconstructed_from_evaluation": {
+        "dtype": "bool",
         "_type": "Value"
       },
-      "prompt": {
+      "source_eval_log": {
         "dtype": "string",
         "_type": "Value"
       }

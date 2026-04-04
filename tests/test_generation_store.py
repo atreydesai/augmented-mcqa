@@ -599,13 +599,11 @@ def test_materialized_augmented_cache_preserves_rows_without_successful_generati
 
     gpqa_row = dict(_load_setting_dataset(cache_path, "gpqa", "human_from_scratch")[0])
     assert gpqa_row["sample_id"] == "gpqa:gpqa-1"
-    assert gpqa_row["status"] == "error"
-    assert gpqa_row["options_randomized"] == []
-    assert gpqa_row["correct_answer_letter"] == ""
+    assert gpqa_row["options_randomized"]
+    assert gpqa_row["correct_answer_letter"] in {"A", "B", "C", "D"}
 
     gpqa_missing_row = dict(_load_setting_dataset(cache_path, "gpqa", "human_from_scratch")[1])
     assert gpqa_missing_row["sample_id"] == "gpqa:gpqa-2"
-    assert gpqa_missing_row["status"] == "missing"
     assert gpqa_missing_row["options_randomized"] == []
 
 
@@ -635,7 +633,10 @@ def test_ensure_augmented_dataset_refreshes_existing_cache_when_new_shard_logs_a
     os.utime(first_log, (1000, 1000))
 
     ensure_augmented_dataset(processed_path, log_dir, cache_path)
-    assert _setting_sample_ids(cache_path, "arc_challenge") == ["arc_challenge:arc-1"]
+    assert _setting_sample_ids(cache_path, "arc_challenge") == [
+        "arc_challenge:arc-1",
+        "arc_challenge:arc-2",
+    ]
 
     cache_mtime = max(path.stat().st_mtime for path in cache_path.rglob("*") if path.is_file())
 

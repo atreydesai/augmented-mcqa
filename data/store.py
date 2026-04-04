@@ -18,10 +18,13 @@ from utils.constants import (
     COLLECTED_STATE_FILENAME,
     DEFAULT_AUGMENTED_CACHE_ROOT,
     DEFAULT_COLLECTED_DATASET_ROOT,
+    DEFAULT_SUPPORT_SET_ROOT,
     EVALUATED_STORE_MANIFEST,
     EVALUATED_STORE_SCHEMA_VERSION,
     MODE_CHOICES,
     SETTING_NAMES,
+    SUPPORT_SET_MANIFEST,
+    SUPPORT_SET_SCHEMA_VERSION,
 )
 from utils.logs import iter_eval_logs, iter_log_payloads
 from utils.modeling import safe_name
@@ -43,7 +46,6 @@ AUGMENTED_RECORD_COLUMNS = (
     "choices_human",
     "setting",
     "generation_strategy",
-    "status",
     "num_human",
     "num_model",
     "num_choices",
@@ -58,6 +60,7 @@ AUGMENTED_RECORD_COLUMNS = (
 DATASET_MANIFEST_SCHEMA_VERSION = "augmented_mcqa_dataset_manifest_v1"
 EVALUATED_RECORD_COLUMNS = AUGMENTED_RECORD_COLUMNS + (
     "evaluation_status",
+    "evaluation_used_random_fallback",
     "evaluation_is_correct",
     "evaluation_score",
     "evaluation_prediction",
@@ -252,6 +255,36 @@ def _shuffle_options(sample_id: str, setting: str, answer: str, distractors: lis
     return options, CHOICE_LABELS[gold_index]
 
 
+def _evaluation_fallback_seed(*, sample_id: str, setting: str, eval_model: str, mode: str, dataset_type: str) -> int:
+    digest = hashlib.sha256(
+        f"{sample_id}:{setting}:{eval_model}:{mode}:{dataset_type}".encode("utf-8")
+    ).digest()
+    return int.from_bytes(digest[:8], byteorder="big", signed=False)
+
+
+def _deterministic_fallback_prediction(
+    *,
+    sample_id: str,
+    setting: str,
+    eval_model: str,
+    mode: str,
+    dataset_type: str,
+    choice_count: int,
+) -> str:
+    if choice_count <= 0:
+        return ""
+    rng = random.Random(
+        _evaluation_fallback_seed(
+            sample_id=sample_id,
+            setting=setting,
+            eval_model=eval_model,
+            mode=mode,
+            dataset_type=dataset_type,
+        )
+    )
+    return CHOICE_LABELS[rng.randrange(choice_count)]
+
+
 def _selected_values(
     selected: list[str] | None,
     default: list[str],
@@ -337,6 +370,165 @@ def iter_augmented_rows(
                 yield dict(row)
 
 
+def _support_manifest_dir(root: Path | str, *, run_name: str, generation_model: str) -> Path:
+    return Path(root) / safe_name(run_name or "unknown_generation_run") / safe_name(generation_model or "unknown_generation_model")
+
+
+def _support_manifest_path(root: Path | str, *, run_name: str, generation_model: str) -> Path:
+    return _support_manifest_dir(root, run_name=run_name, generation_model=generation_model) / SUPPORT_SET_MANIFEST
+
+
+def _load_support_manifest(path: Path | str) -> dict[str, Any]:
+    payload = json.loads(Path(path).read_text(encoding="utf-8"))
+    if payload.get("schema_version") != SUPPORT_SET_SCHEMA_VERSION:
+        raise ValueError(f"Unsupported support manifest schema at {path}")
+    return payload
+
+
+def _eligible_support_ids(payload: dict[str, Any]) -> dict[str, set[str]]:
+    return {
+        str(dataset_type): {str(sample_id) for sample_id in list(sample_ids or [])}
+        for dataset_type, sample_ids in dict(payload.get("eligible_sample_ids_by_dataset", {}) or {}).items()
+    }
+
+
+def _setting_record_is_usable(record: dict[str, Any], *, setting: str) -> bool:
+    recipe = get_setting_recipe(setting)
+    options = [str(option) for option in list(record.get("options_randomized") or []) if str(option)]
+    correct_letter = str(record.get("correct_answer_letter", "") or "")
+    if len(options) != recipe.num_choices or correct_letter not in CHOICE_LABELS[: len(options)]:
+        return False
+    human = [str(item).strip() for item in list(record.get("human_distractors") or []) if str(item).strip()]
+    model = [str(item).strip() for item in list(record.get("model_distractors") or []) if str(item).strip()]
+    return len(human) == recipe.num_human and len(model) == recipe.num_model
+
+
+def _human_from_scratch_is_valid(row: dict[str, Any]) -> bool:
+    return _setting_record_is_usable(_human_from_scratch_record(_base_record(row)), setting="human_from_scratch")
+
+
+def _generation_successes(log_dir: Path | str) -> dict[str, set[str]]:
+    successes: dict[str, set[str]] = {}
+    for _path, log in iter_log_payloads(log_dir, kind="generation"):
+        log_meta = dict(log.get("metadata", {}) or {})
+        for sample in list(log.get("summaries", []) or []):
+            scores = dict(sample.get("scores", {}) or {})
+            if not scores:
+                continue
+            score = _preferred_score(scores, preferred_metric="augmented_mcqa_generation")
+            if score is None:
+                continue
+            score_meta = dict(score.get("metadata", {}) or {})
+            sample_meta = dict(sample.get("metadata", {}) or {})
+            strategy = str(
+                score_meta.get("generation_strategy")
+                or sample_meta.get("generation_strategy")
+                or log_meta.get("generation_strategy")
+                or ""
+            )
+            if not strategy:
+                continue
+            if str(score_meta.get("status", "") or "") != "success":
+                continue
+            sample_id = str(score_meta.get("sample_id") or sample_meta.get("sample_id") or sample.get("id", "") or "")
+            if not sample_id:
+                continue
+            successes.setdefault(sample_id, set()).add(strategy)
+    return successes
+
+
+def build_generation_support_manifest(
+    *,
+    processed_dataset_path: Path | str,
+    generation_log_dir: Path | str,
+    run_name: str,
+    generation_model: str,
+    output_root: Path | str = DEFAULT_SUPPORT_SET_ROOT,
+    dataset_types: list[str] | None = None,
+) -> Path:
+    wanted = _selected_values(dataset_types, list(ACTIVE_DATASET_TYPES))
+    rows = iter_processed_rows(processed_dataset_path, dataset_types=wanted)
+    successes = _generation_successes(generation_log_dir)
+    non_hfs_settings = [setting for setting in SETTING_NAMES if setting != "human_from_scratch"]
+    eligible_by_dataset: dict[str, list[str]] = {dataset_type: [] for dataset_type in wanted}
+    totals_by_dataset = {dataset_type: 0 for dataset_type in wanted}
+    excluded_by_setting: dict[str, dict[str, int]] = {
+        dataset_type: {setting: 0 for setting in SETTING_NAMES} for dataset_type in wanted
+    }
+
+    for row in rows:
+        dataset_type = str(row["dataset_type"])
+        sample_id = str(row["sample_id"])
+        totals_by_dataset[dataset_type] += 1
+        hfs_valid = _human_from_scratch_is_valid(row)
+        if not hfs_valid:
+            excluded_by_setting[dataset_type]["human_from_scratch"] += 1
+        missing_generation_settings: list[str] = []
+        successful_settings = successes.get(sample_id, set())
+        for setting in non_hfs_settings:
+            if setting not in successful_settings:
+                excluded_by_setting[dataset_type][setting] += 1
+                missing_generation_settings.append(setting)
+        if hfs_valid and not missing_generation_settings:
+            eligible_by_dataset[dataset_type].append(sample_id)
+
+    payload = {
+        "schema_version": SUPPORT_SET_SCHEMA_VERSION,
+        "storage_kind": "generation_support_set",
+        "generation_run_name": str(run_name or ""),
+        "generation_model": str(generation_model or ""),
+        "dataset_types": wanted,
+        "settings": list(SETTING_NAMES),
+        "eligible_sample_ids_by_dataset": eligible_by_dataset,
+        "candidate_counts_by_dataset": totals_by_dataset,
+        "eligible_counts_by_dataset": {
+            dataset_type: len(sample_ids) for dataset_type, sample_ids in eligible_by_dataset.items()
+        },
+        "excluded_counts_by_dataset": {
+            dataset_type: max(0, totals_by_dataset.get(dataset_type, 0) - len(eligible_by_dataset.get(dataset_type, [])))
+            for dataset_type in wanted
+        },
+        "excluded_counts_by_setting": excluded_by_setting,
+    }
+    output_dir = _support_manifest_dir(output_root, run_name=run_name, generation_model=generation_model)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output_path = output_dir / SUPPORT_SET_MANIFEST
+    output_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    return output_path
+
+
+def combined_support_ids(
+    *,
+    run_name: str,
+    support_root: Path | str = DEFAULT_SUPPORT_SET_ROOT,
+    augmented_root: Path | str = DEFAULT_AUGMENTED_CACHE_ROOT,
+) -> dict[str, set[str]]:
+    support_run_root = Path(support_root) / safe_name(run_name or "unknown_generation_run")
+    augmented_run_root = Path(augmented_root) / safe_name(run_name or "unknown_generation_run")
+    manifest_paths = sorted(support_run_root.glob(f"*/{SUPPORT_SET_MANIFEST}"))
+    if not manifest_paths:
+        raise FileNotFoundError(f"Missing support manifests under {support_run_root}")
+
+    support_models = {path.parent.name for path in manifest_paths}
+    augmented_models = {path.name for path in augmented_run_root.iterdir() if path.is_dir()} if augmented_run_root.exists() else set()
+    if augmented_models and support_models != augmented_models:
+        missing_manifests = sorted(augmented_models - support_models)
+        if missing_manifests:
+            raise ValueError(
+                f"Support manifests are incomplete for run {run_name!r}; missing manifests for: {', '.join(missing_manifests)}"
+            )
+
+    manifests = [_load_support_manifest(path) for path in manifest_paths]
+    dataset_types = list(manifests[0].get("dataset_types") or [])
+    combined: dict[str, set[str]] = {}
+    for dataset_type in dataset_types:
+        shared = set(_eligible_support_ids(manifests[0]).get(dataset_type, set()))
+        for manifest in manifests[1:]:
+            shared.intersection_update(_eligible_support_ids(manifest).get(dataset_type, set()))
+        combined[dataset_type] = shared
+    return combined
+
+
 def _empty_augmented_dataset() -> Dataset:
     return Dataset.from_dict({column: [] for column in AUGMENTED_RECORD_COLUMNS})
 
@@ -387,7 +579,6 @@ def _record_from_setting_values(
     base: dict[str, Any],
     *,
     setting: str,
-    status: str,
     human_distractors: list[str],
     model_distractors: list[str],
     options_randomized: list[str],
@@ -402,7 +593,6 @@ def _record_from_setting_values(
         **base,
         "setting": setting,
         "generation_strategy": recipe.generation_strategy,
-        "status": status,
         "num_human": len(human_distractors),
         "num_model": len(model_distractors),
         "num_choices": len(options_randomized),
@@ -419,7 +609,6 @@ def _empty_setting_record(
     base: dict[str, Any],
     *,
     setting: str,
-    status: str,
     human_distractors: list[str] | None = None,
     model_distractors: list[str] | None = None,
     traces: dict[str, Any] | None = None,
@@ -431,7 +620,6 @@ def _empty_setting_record(
         **base,
         "setting": setting,
         "generation_strategy": recipe.generation_strategy,
-        "status": status,
         "num_human": len(selected_human),
         "num_model": len(selected_model),
         "num_choices": 0,
@@ -454,14 +642,12 @@ def _human_from_scratch_record(base: dict[str, Any]) -> dict[str, Any]:
         return _empty_setting_record(
             base,
             setting="human_from_scratch",
-            status="missing",
             human_distractors=selected_human,
         )
     randomized, correct = _shuffle_options(sample_id, "human_from_scratch", answer, selected_human)
     record = _record_from_setting_values(
         base,
         setting="human_from_scratch",
-        status="success",
         human_distractors=selected_human,
         model_distractors=[],
         options_randomized=randomized,
@@ -473,7 +659,6 @@ def _human_from_scratch_record(base: dict[str, Any]) -> dict[str, Any]:
     return _empty_setting_record(
         base,
         setting="human_from_scratch",
-        status="missing",
         human_distractors=selected_human,
     )
 
@@ -487,7 +672,6 @@ def _record_from_generation_payload(
     if setting == "human_from_scratch":
         return _human_from_scratch_record(base)
 
-    status = str(payload.get("status", "") or "")
     human = [str(item).strip() for item in list(payload.get("human_from_scratch") or []) if str(item).strip()]
     if setting == "model_from_scratch":
         human_distractors = []
@@ -505,7 +689,6 @@ def _record_from_generation_payload(
     record = _record_from_setting_values(
         base,
         setting=setting,
-        status="success",
         human_distractors=human_distractors,
         model_distractors=model_distractors,
         options_randomized=list(payload.get(f"{setting}_options_randomized") or []),
@@ -517,7 +700,6 @@ def _record_from_generation_payload(
     return _empty_setting_record(
         base,
         setting=setting,
-        status=status or "missing",
         human_distractors=human_distractors,
         model_distractors=model_distractors,
         traces=traces,
@@ -622,9 +804,6 @@ def _merge_generation_payload(target: dict[str, Any], payload: dict[str, Any]) -
                 "category": payload.get("category", ""),
             }
         )
-    payload_status = str(payload.get("status", "") or "")
-    if payload_status:
-        merged["status"] = payload_status
     merged.setdefault("traces", {})
     for setting in SETTING_NAMES:
         generated_values = list(payload.get(setting) or [])
@@ -722,7 +901,7 @@ def materialize_augmented_dataset(
         dataset_type = row["dataset_type"]
         for setting in SETTING_NAMES:
             if generated_row is None:
-                record = _empty_setting_record(base, setting=setting, status="missing")
+                record = _empty_setting_record(base, setting=setting)
             else:
                 record = _record_from_generation_payload(base, generated_row, setting=setting)
             records[dataset_type][setting].append(record)
@@ -757,7 +936,7 @@ def ensure_augmented_dataset(
         generation_log_dir=generation_log_dir,
         output_path=out,
         dataset_types=dataset_types,
-        include_missing_rows=False,
+        include_missing_rows=True,
     )
 
 
@@ -943,7 +1122,6 @@ def _fallback_augmented_record(
     record = _record_from_setting_values(
         base,
         setting=setting,
-        status="evaluated",
         human_distractors=human,
         model_distractors=model,
         options_randomized=choices,
@@ -952,12 +1130,13 @@ def _fallback_augmented_record(
     )
     if record is not None:
         return record
-    return _empty_setting_record(base, setting=setting, status="evaluated", human_distractors=human, model_distractors=model)
+    return _empty_setting_record(base, setting=setting, human_distractors=human, model_distractors=model)
 
 
 def _empty_evaluation_payload(*, row_index: int) -> dict[str, Any]:
     return {
         "evaluation_status": "missing",
+        "evaluation_used_random_fallback": False,
         "evaluation_is_correct": None,
         "evaluation_score": None,
         "evaluation_prediction": "",
@@ -974,6 +1153,50 @@ def _evaluated_base_record(augmented_row: dict[str, Any]) -> tuple[dict[str, Any
     raw_row_index = augmented_row.get("row_index", -1)
     row_index = -1 if raw_row_index is None else int(raw_row_index)
     return base_record, row_index
+
+
+def _evaluation_prediction_is_usable(augmented_row: dict[str, Any], evaluation_payload: dict[str, Any] | None) -> bool:
+    if evaluation_payload is None:
+        return False
+    prediction = str(evaluation_payload.get("evaluation_prediction", "") or "").strip().upper()
+    options = list(augmented_row.get("options_randomized") or [])
+    if not prediction:
+        return False
+    if not options:
+        return prediction in CHOICE_LABELS
+    return prediction in CHOICE_LABELS[: len(options)]
+
+
+def _with_random_fallback(
+    augmented_row: dict[str, Any],
+    evaluation_payload: dict[str, Any] | None,
+    *,
+    eval_model: str,
+    mode: str,
+) -> dict[str, Any]:
+    payload = dict(evaluation_payload) if evaluation_payload is not None else _empty_evaluation_payload(
+        row_index=int(augmented_row.get("row_index", -1) or -1)
+    )
+    if _evaluation_prediction_is_usable(augmented_row, payload):
+        payload["evaluation_used_random_fallback"] = bool(payload.get("evaluation_used_random_fallback", False))
+        return payload
+
+    options = list(augmented_row.get("options_randomized") or [])
+    prediction = _deterministic_fallback_prediction(
+        sample_id=str(augmented_row.get("sample_id", "") or ""),
+        setting=str(augmented_row.get("setting", "") or ""),
+        eval_model=str(eval_model or ""),
+        mode=str(mode or ""),
+        dataset_type=str(augmented_row.get("dataset_type", "") or ""),
+        choice_count=len(options),
+    )
+    gold = str(augmented_row.get("correct_answer_letter", "") or "")
+    payload["evaluation_used_random_fallback"] = True
+    payload["evaluation_prediction"] = prediction
+    payload["evaluation_prediction_type"] = "random_fallback"
+    payload["evaluation_is_correct"] = bool(prediction) and prediction == gold
+    payload["evaluation_score"] = 1.0 if payload["evaluation_is_correct"] else 0.0
+    return payload
 
 
 def _evaluated_record(augmented_row: dict[str, Any], evaluation_payload: dict[str, Any] | None) -> dict[str, Any]:
@@ -1101,6 +1324,8 @@ def _group_evaluated_records(
     modes: list[str],
     group_observed: dict[str, dict[str, dict[str, dict[str, Any]]]],
     augmented_cache: dict[tuple[str, str, str], dict[str, dict[str, Any]]],
+    support_sample_ids: dict[str, set[str]] | None,
+    evaluation_model: str,
 ) -> dict[str, dict[str, dict[str, list[dict[str, Any]]]]]:
     group_records: dict[str, dict[str, dict[str, list[dict[str, Any]]]]] = {
         dataset_type: {setting: {mode: [] for mode in modes} for setting in settings}
@@ -1108,22 +1333,44 @@ def _group_evaluated_records(
     }
     for dataset_type in dataset_types:
         dataset_observed = group_observed.get(dataset_type, {})
+        eligible_ids = None if support_sample_ids is None else set(support_sample_ids.get(dataset_type, set()))
         for setting in settings:
             setting_observed = dataset_observed.get(setting, {})
             augmented_rows = _augmented_record_lookup(augmented_path, dataset_type, setting, augmented_cache)
             seen_sample_ids = set()
             for sample_id, augmented_row in augmented_rows.items():
+                if eligible_ids is not None and sample_id not in eligible_ids:
+                    continue
                 seen_sample_ids.add(sample_id)
                 for mode in modes:
                     group_records[dataset_type][setting][mode].append(
-                        _evaluated_record(augmented_row, setting_observed.get(mode, {}).get(sample_id))
+                        _evaluated_record(
+                            augmented_row,
+                            _with_random_fallback(
+                                augmented_row,
+                                setting_observed.get(mode, {}).get(sample_id),
+                                eval_model=evaluation_model,
+                                mode=mode,
+                            ),
+                        )
                     )
             for mode in modes:
                 for sample_id, payload in setting_observed.get(mode, {}).items():
+                    if eligible_ids is not None and sample_id not in eligible_ids:
+                        continue
                     if sample_id in seen_sample_ids:
                         continue
+                    fallback = _fallback_evaluated_record(sample_id, dataset_type, setting, payload)
                     group_records[dataset_type][setting][mode].append(
-                        _fallback_evaluated_record(sample_id, dataset_type, setting, payload)
+                        _evaluated_record(
+                            fallback,
+                            _with_random_fallback(
+                                fallback,
+                                payload,
+                                eval_model=evaluation_model,
+                                mode=mode,
+                            ),
+                        )
                     )
     return group_records
 
@@ -1133,6 +1380,7 @@ def materialize_evaluated_datasets(
     output_root: Path | str = DEFAULT_COLLECTED_DATASET_ROOT,
     *,
     augmented_root: Path | str = DEFAULT_AUGMENTED_CACHE_ROOT,
+    support_root: Path | str = DEFAULT_SUPPORT_SET_ROOT,
     expected_dataset_types: list[str] | None = None,
     expected_settings: list[str] | None = None,
     expected_modes: list[str] | None = None,
@@ -1178,6 +1426,14 @@ def materialize_evaluated_datasets(
     for group_key, meta in group_meta.items():
         generation_run_name, generation_model, evaluation_model = group_key
         augmented_path = Path(meta["augmented_path"])
+        augmented_scope_root = augmented_root_path
+        if explicit_augmented_store and len(augmented_path.parents) >= 2:
+            augmented_scope_root = augmented_path.parents[1]
+        support_sample_ids = combined_support_ids(
+            run_name=generation_run_name,
+            support_root=support_root,
+            augmented_root=augmented_scope_root,
+        )
         dataset_types, settings, modes = _group_record_dimensions(
             meta,
             wanted_dataset_types=wanted_dataset_types,
@@ -1193,6 +1449,8 @@ def materialize_evaluated_datasets(
             modes=modes,
             group_observed=observed_by_group.get(group_key, {}),
             augmented_cache=augmented_cache,
+            support_sample_ids=support_sample_ids,
+            evaluation_model=evaluation_model,
         )
 
         output_path = _evaluated_group_root(
@@ -1225,6 +1483,7 @@ def build_evaluation_dataset(
     setting: str,
     mode: str,
     dataset_types: list[str] | None = None,
+    support_sample_ids: dict[str, set[str]] | None = None,
     question_start: int = 0,
     limit: int | None = None,
     shard_count: int = 1,
@@ -1244,15 +1503,18 @@ def build_evaluation_dataset(
     question_end = question_start + limit if limit is not None else None
 
     for dataset_type in wanted:
+        eligible_ids = None if support_sample_ids is None else set(support_sample_ids.get(dataset_type, set()))
         split = _load_setting_dataset(root, dataset_type, setting)
         for row in split:
             payload = dict(row)
+            sample_id = str(payload.get("sample_id") or "")
+            if eligible_ids is not None and sample_id not in eligible_ids:
+                continue
             original_row_index = int(payload.get("row_index", -1))
             if original_row_index < question_start:
                 continue
             if question_end is not None and original_row_index >= question_end:
                 continue
-            sample_id = str(payload.get("sample_id") or "")
             options = list(payload.get("options_randomized") or [])
             correct_letter = str(payload.get("correct_answer_letter", "") or "")
             if not options or correct_letter not in CHOICE_LABELS[: len(options)]:

@@ -60,10 +60,6 @@
       "dtype": "string",
       "_type": "Value"
     },
-    "status": {
-      "dtype": "string",
-      "_type": "Value"
-    },
     "num_human": {
       "dtype": "int64",
       "_type": "Value"
@@ -152,6 +148,10 @@
     },
     "evaluation_log_path": {
       "dtype": "string",
+      "_type": "Value"
+    },
+    "evaluation_used_random_fallback": {
+      "dtype": "bool",
       "_type": "Value"
     }
   },

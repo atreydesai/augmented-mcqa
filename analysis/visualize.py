@@ -10,8 +10,6 @@ from typing import Iterable
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import pyarrow as pa
-import pyarrow.ipc as ipc
 from datasets import load_from_disk
 from matplotlib.patches import Rectangle
 
@@ -84,11 +82,9 @@ COMPLETENESS_LEGEND = (
     f"Hatched bars = partial coverage (>= {COMPLETE_MISSING_SAMPLE_THRESHOLD} missing), "
     "gray bars = missing result"
 )
-PREDICTION_TYPE_ORDER = ["G", "H", "M", "?"]
+PREDICTION_TYPE_ORDER = ["G", "H", "M", "?", "random_fallback"]
 PREDICTION_LETTER_ORDER = list(CHOICE_LABELS)
-HIDDEN_EVAL_MODEL_IDENTITIES = {
-}
-SHARED_SUPPORT_COLUMNS = ["eval_model", "mode", "dataset", "setting", "sample_id"]
+HIDDEN_EVAL_MODEL_IDENTITIES = {}
 
 
 def _display_generator(generator: str) -> str:
@@ -224,7 +220,7 @@ def _iter_evaluated_groups(root: Path | str) -> Iterable[tuple[Path, dict[str, o
 
 
 def _evaluated_row_frame(root: Path | str) -> pd.DataFrame:
-    rows: list[dict[str, object]] = []
+    frames: list[pd.DataFrame] = []
     for group_root, manifest in _iter_evaluated_groups(root):
         generator = str(manifest.get("generation_model", "") or "")
         generation_run_name = str(manifest.get("generation_run_name", "") or "")
@@ -242,61 +238,20 @@ def _evaluated_row_frame(root: Path | str) -> pd.DataFrame:
                     if not dataset_path.exists():
                         continue
                     dataset = load_from_disk(str(dataset_path))
-                    for row in dataset:
-                        payload = dict(row)
-                        payload.update(
-                            {
-                                "generator": generator,
-                                "generator_key": generator_key,
-                                "generation_run_name": generation_run_name,
-                                "eval_model": eval_model,
-                                "mode": mode,
-                                "dataset": dataset_type,
-                                "setting": setting,
-                            }
-                        )
-                        rows.append(payload)
-    return pd.DataFrame(rows)
-
-
-def _shared_generator_support(row_df: pd.DataFrame) -> pd.DataFrame:
-    if row_df.empty:
-        return pd.DataFrame(columns=SHARED_SUPPORT_COLUMNS)
-    observed = row_df[row_df["evaluation_status"].fillna("missing") != "missing"][
-        ["generator_key", *SHARED_SUPPORT_COLUMNS]
-    ].drop_duplicates()
-    if observed.empty:
-        return pd.DataFrame(columns=SHARED_SUPPORT_COLUMNS)
-    required = (
-        observed.groupby(SHARED_SUPPORT_COLUMNS[:-1], sort=False, observed=True)["generator_key"]
-        .nunique()
-        .rename("required_generators")
-        .reset_index()
-    )
-    sample_counts = (
-        observed.groupby(SHARED_SUPPORT_COLUMNS, sort=False, observed=True)["generator_key"]
-        .nunique()
-        .rename("present_generators")
-        .reset_index()
-    )
-    eligible = sample_counts.merge(required, on=SHARED_SUPPORT_COLUMNS[:-1], how="inner")
-    return eligible[eligible["present_generators"] == eligible["required_generators"]][SHARED_SUPPORT_COLUMNS].copy()
-
-
-def _filter_frame_to_shared_generator_support(df: pd.DataFrame, eligible: pd.DataFrame) -> pd.DataFrame:
-    if df.empty:
-        return df.copy()
-    if eligible.empty:
-        return df.iloc[0:0].copy()
-    join_columns = [column for column in SHARED_SUPPORT_COLUMNS if column in df.columns]
-    if "sample_id" not in join_columns:
-        return df.copy()
-    return df.merge(eligible[join_columns].drop_duplicates(), on=join_columns, how="inner")
-
-
-def _filter_rows_to_shared_generator_support(row_df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
-    eligible = _shared_generator_support(row_df)
-    return _filter_frame_to_shared_generator_support(row_df, eligible), eligible
+                    frame = dataset.to_pandas()
+                    if frame.empty:
+                        continue
+                    frame["generator"] = generator
+                    frame["generator_key"] = generator_key
+                    frame["generation_run_name"] = generation_run_name
+                    frame["eval_model"] = eval_model
+                    frame["mode"] = mode
+                    frame["dataset"] = dataset_type
+                    frame["setting"] = setting
+                    frames.append(frame)
+    if not frames:
+        return pd.DataFrame()
+    return pd.concat(frames, ignore_index=True)
 
 
 def _empty_results_frame() -> pd.DataFrame:
@@ -369,9 +324,10 @@ def _add_missing_eval_model_rows(summary_df: pd.DataFrame) -> pd.DataFrame:
     return pd.concat([summary_df, pd.DataFrame(rows)], ignore_index=True)
 
 
-def collect_results_summary(results_root: Path | str) -> pd.DataFrame:
+def collect_results_summary(
+    results_root: Path | str,
+) -> pd.DataFrame:
     row_df = _evaluated_row_frame(results_root)
-    row_df, _eligible = _filter_rows_to_shared_generator_support(row_df)
     return _collect_results_summary_from_rows(row_df)
 
 
@@ -380,6 +336,7 @@ def _collect_results_summary_from_rows(row_df: pd.DataFrame) -> pd.DataFrame:
         return _empty_results_frame()
 
     row_df["evaluation_status"] = row_df["evaluation_status"].fillna("missing")
+    row_df["evaluation_prediction"] = row_df["evaluation_prediction"].fillna("").astype(str)
     row_df["evaluation_is_correct"] = row_df["evaluation_is_correct"].fillna(False)
 
     summary_rows: list[dict[str, object]] = []
@@ -389,7 +346,7 @@ def _collect_results_summary_from_rows(row_df: pd.DataFrame) -> pd.DataFrame:
     )
     for (generator_key, generator, generation_run_name, eval_model, mode, dataset, setting), group in grouped:
         expected_total = int(len(group))
-        observed = group[group["evaluation_status"] != "missing"]
+        observed = group[group["evaluation_prediction"].str.strip() != ""]
         observed_total = int(len(observed))
         correct = int(observed["evaluation_is_correct"].astype(bool).sum())
         accuracy = (correct / observed_total) if observed_total else 0.0
@@ -436,15 +393,15 @@ def _collect_results_summary_from_rows(row_df: pd.DataFrame) -> pd.DataFrame:
     return summary_df
 
 
-def load_analysis_frames(results_root: Path | str) -> tuple[pd.DataFrame, pd.DataFrame]:
+def load_analysis_frames(
+    results_root: Path | str,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     row_df = _evaluated_row_frame(results_root)
-    row_df, _eligible = _filter_rows_to_shared_generator_support(row_df)
     summary_df = _collect_results_summary_from_rows(row_df)
     return row_df, summary_df
 
 
-def _load_distribution_frames(results_root: Path | str) -> pd.DataFrame:
-    frames: list[pd.DataFrame] = []
+def _distribution_frame_from_rows(row_df: pd.DataFrame) -> pd.DataFrame:
     needed_columns = [
         "sample_id",
         "evaluation_status",
@@ -452,38 +409,22 @@ def _load_distribution_frames(results_root: Path | str) -> pd.DataFrame:
         "evaluation_prediction_type",
         "correct_answer_letter",
     ]
-    for manifest_path in sorted(Path(results_root).rglob(EVALUATED_STORE_MANIFEST)):
-        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-        group_root = manifest_path.parent
-        generator = str(manifest.get("generation_model", "") or "")
-        generation_run_name = str(manifest.get("generation_run_name", "") or "")
-        generator_key = _generator_label(generator, generation_run_name)
-        eval_model = str(manifest.get("evaluation_model", "") or "")
-        if _is_hidden_eval_model(eval_model):
-            continue
-        for dataset in list(manifest.get("dataset_types") or []):
-            for setting in list(manifest.get("settings") or []):
-                for mode in list(manifest.get("modes") or []):
-                    arrow_path = group_root / dataset / setting / mode / "data-00000-of-00001.arrow"
-                    if not arrow_path.exists():
-                        continue
-                    with pa.memory_map(str(arrow_path), "r") as source:
-                        table = ipc.RecordBatchStreamReader(source).read_all().select(needed_columns)
-                    df = table.to_pandas()
-                    df["generator"] = generator
-                    df["generator_key"] = generator_key
-                    df["generation_run_name"] = generation_run_name
-                    df["eval_model"] = eval_model
-                    df["mode"] = mode
-                    df["dataset"] = dataset
-                    df["setting"] = setting
-                    frames.append(df)
-    if not frames:
+    metadata_columns = [
+        "generator",
+        "generator_key",
+        "generation_run_name",
+        "eval_model",
+        "mode",
+        "dataset",
+        "setting",
+    ]
+    available_columns = [column for column in needed_columns + metadata_columns if column in row_df.columns]
+    if not available_columns:
         return pd.DataFrame(
             columns=needed_columns
             + ["generator", "generator_key", "generation_run_name", "eval_model", "mode", "dataset", "setting"]
         )
-    return pd.concat(frames, ignore_index=True)
+    return row_df[available_columns].copy()
 
 
 def write_results_summary_table(
@@ -492,7 +433,11 @@ def write_results_summary_table(
     *,
     summary_df: pd.DataFrame | None = None,
 ) -> pd.DataFrame:
-    df = collect_results_summary(results_root) if summary_df is None else summary_df.copy()
+    df = (
+        collect_results_summary(results_root)
+        if summary_df is None
+        else summary_df.copy()
+    )
     out = Path(output_csv)
     out.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(out, index=False)
@@ -531,7 +476,7 @@ def _correctness_map(
         & (row_df["mode"] == mode)
         & (row_df["dataset"] == dataset)
         & (row_df["setting"] == setting)
-        & (row_df["evaluation_status"] != "missing")
+        & (row_df["evaluation_prediction"].fillna("").astype(str).str.strip() != "")
     ]
     out: dict[int, bool] = {}
     for _, row in subset.iterrows():
@@ -734,7 +679,7 @@ def _write_failure_tables(
     tables_dir.mkdir(parents=True, exist_ok=True)
     outputs: list[Path] = []
     failed = row_df[
-        (row_df["evaluation_status"] != "missing")
+        (row_df["evaluation_prediction"].fillna("").astype(str).str.strip() != "")
         & (~row_df["evaluation_is_correct"].fillna(False).astype(bool))
     ].copy()
     failed.sort_values(
@@ -783,7 +728,7 @@ def _plot_distribution(
     all_rows = row_df.copy()
     filtered = row_df.copy()
     if only_observed:
-        filtered = filtered[filtered["evaluation_status"] != "missing"].copy()
+        filtered = filtered[filtered["evaluation_prediction"].fillna("").astype(str).str.strip() != ""].copy()
     if filtered.empty:
         return outputs
     filtered[column] = filtered[column].fillna("").astype(str)
@@ -954,8 +899,7 @@ def plot_pairwise_accuracy(
 ) -> list[Path]:
     if row_df is None or summary_df is None:
         row_df, summary_df = load_analysis_frames(results_root)
-    distribution_row_df = _load_distribution_frames(results_root)
-    distribution_row_df = _filter_frame_to_shared_generator_support(distribution_row_df, _shared_generator_support(row_df))
+    distribution_row_df = _distribution_frame_from_rows(row_df)
     out_dir = Path(output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     if summary_df.empty:

@@ -590,7 +590,7 @@ def test_submit_evaluate_cluster_writes_setting_mode_chunk_tasks_when_generation
     assert len(manifest["finalizers"]) == 1
     finalizer = manifest["finalizers"][0]
     assert finalizer["kind"] == "materialize_collected_evaluation_run"
-    assert finalizer["argv"][:2] == ["collect-evaluated", "--run-name"]
+    assert finalizer["argv"][:2] == ["build-collected-dataset", "--run-name"]
     assert finalizer["argv"].count("--collection-spec") == 2
     assert {task["resource_class"] for task in manifest["tasks"]} == {"local", "api"}
     assert {task["setting"] for task in manifest["tasks"]} == {"model_from_scratch"}
@@ -894,6 +894,11 @@ def test_submit_evaluate_cluster_allows_failed_generation_prerequisite_when_rows
     monkeypatch.setattr(app_main, "ensure_augmented_dataset", lambda **kwargs: kwargs["output_path"])
     monkeypatch.setattr(
         app_main,
+        "_combined_support_ids_for_run",
+        lambda **kwargs: {"arc_challenge": {"arc_challenge:arc-1"}},
+    )
+    monkeypatch.setattr(
+        app_main,
         "build_evaluation_dataset",
         lambda *args, **kwargs: MemoryDataset(
             [Sample(input="Q1", choices=["A", "B"], target="A", id="arc_challenge:arc-1")]
@@ -954,6 +959,11 @@ def test_submit_evaluate_cluster_skips_failed_generation_chunk_when_no_rows_rema
 
     monkeypatch.setattr(app_main, "_current_stage_state", fake_state)
     monkeypatch.setattr(app_main, "ensure_augmented_dataset", lambda **kwargs: kwargs["output_path"])
+    monkeypatch.setattr(
+        app_main,
+        "_combined_support_ids_for_run",
+        lambda **kwargs: {"arc_challenge": {"arc_challenge:arc-1"}},
+    )
     monkeypatch.setattr(app_main, "build_evaluation_dataset", lambda *args, **kwargs: MemoryDataset([]))
 
     rc = app_main.main(
@@ -1011,6 +1021,11 @@ def test_submit_evaluate_cluster_accepts_explicit_augmented_dataset_without_gene
 
     monkeypatch.setattr(app_main, "_current_stage_state", fake_state)
     monkeypatch.setattr(app_main, "ensure_augmented_dataset", fail_ensure)
+    monkeypatch.setattr(
+        app_main,
+        "_combined_support_ids_for_run",
+        lambda **kwargs: {"arc_challenge": {"arc_challenge:arc-1"}},
+    )
     monkeypatch.setattr(
         app_main,
         "build_evaluation_dataset",

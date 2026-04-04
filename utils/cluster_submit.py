@@ -8,7 +8,12 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
-from utils.constants import DEFAULT_AUGMENTED_CACHE_ROOT, DEFAULT_COLLECTED_DATASET_ROOT, DEFAULT_EVALUATION_LOG_ROOT
+from utils.constants import (
+    DEFAULT_AUGMENTED_CACHE_ROOT,
+    DEFAULT_COLLECTED_DATASET_ROOT,
+    DEFAULT_EVALUATION_LOG_ROOT,
+    DEFAULT_SUPPORT_SET_ROOT,
+)
 from utils.modeling import safe_name
 from utils.scheduler_state import iso_now
 
@@ -454,13 +459,15 @@ def render_manifest(
             if not dependency_refs:
                 continue
             argv = [
-                "materialize-store",
+                "build-augmented-dataset",
                 "--run-name",
                 run_name,
                 "--model",
                 model,
                 "--processed-dataset",
                 str(representative_task.argv[representative_task.argv.index("--processed-dataset") + 1]),
+                "--support-root",
+                str(DEFAULT_SUPPORT_SET_ROOT),
             ]
             finalizers.append(
                 _finalizer_record(
@@ -527,11 +534,13 @@ def render_manifest(
                     )
                 )
             argv = [
-                "collect-evaluated",
+                "build-collected-dataset",
                 "--run-name",
                 run_name,
                 "--collected-root",
                 collected_root,
+                "--support-root",
+                str(DEFAULT_SUPPORT_SET_ROOT),
                 "--scheduler-output-dir",
                 str(paths.run_dir),
             ]

@@ -64,59 +64,69 @@ def _scorer():
 
 
 def _write_eval_log(root: Path):
-    eval(
-        Task(
-            name="eval_hfs_full",
-            dataset=MemoryDataset(
-                [
-                    Sample(
-                        input="Which resource is renewable?",
-                        choices=["coal", "trees"],
-                        target="B",
-                        id=SAMPLE_ID,
-                        metadata={
-                            "sample_id": SAMPLE_ID,
-                            "dataset_type": "arc_challenge",
-                            "row_index": 0,
-                            "question": "Which resource is renewable?",
-                            "category": "science",
-                            "setting": "human_from_scratch",
-                            "mode": "full_question",
-                            "gold_answer": "trees",
-                            "gold_index": 1,
-                            "selected_human_distractors": ["coal"],
-                            "selected_model_distractors": [],
-                            "human_option_indices": [0],
-                            "model_option_indices": [],
-                            "evaluation": {
-                                "prompt": "Answer the MCQ.",
-                                "raw_output": '{"answer": "B"}',
-                                "prediction": "B",
+    xdg_data_home = root.parent / ".xdg"
+    xdg_data_home.mkdir(parents=True, exist_ok=True)
+    original_xdg_data_home = os.environ.get("XDG_DATA_HOME")
+    os.environ["XDG_DATA_HOME"] = str(xdg_data_home)
+    try:
+        eval(
+            Task(
+                name="eval_hfs_full",
+                dataset=MemoryDataset(
+                    [
+                        Sample(
+                            input="Which resource is renewable?",
+                            choices=["coal", "trees"],
+                            target="B",
+                            id=SAMPLE_ID,
+                            metadata={
+                                "sample_id": SAMPLE_ID,
+                                "dataset_type": "arc_challenge",
+                                "row_index": 0,
+                                "question": "Which resource is renewable?",
+                                "category": "science",
+                                "setting": "human_from_scratch",
+                                "mode": "full_question",
+                                "gold_answer": "trees",
+                                "gold_index": 1,
+                                "selected_human_distractors": ["coal"],
+                                "selected_model_distractors": [],
+                                "human_option_indices": [0],
+                                "model_option_indices": [],
+                                "evaluation": {
+                                    "prompt": "Answer the MCQ.",
+                                    "raw_output": '{"answer": "B"}',
+                                    "prediction": "B",
+                                },
                             },
-                        },
-                    )
-                ]
+                        )
+                    ]
+                ),
+                solver=_solver(),
+                scorer=_scorer(),
+                metadata={
+                    "kind": "evaluation",
+                    "generation_run_name": GEN_RUN_NAME,
+                    "generation_model": GEN_MODEL,
+                    "evaluation_model": EVAL_MODEL,
+                    "setting": "human_from_scratch",
+                    "mode": "full_question",
+                    "question_start": 0,
+                    "question_end": 1,
+                    "shard_count": 1,
+                    "shard_index": 0,
+                    "shard_strategy": "contiguous",
+                    "slice_ref": "slice-0",
+                },
             ),
-            solver=_solver(),
-            scorer=_scorer(),
-            metadata={
-                "kind": "evaluation",
-                "generation_run_name": GEN_RUN_NAME,
-                "generation_model": GEN_MODEL,
-                "evaluation_model": EVAL_MODEL,
-                "setting": "human_from_scratch",
-                "mode": "full_question",
-                "question_start": 0,
-                "question_end": 1,
-                "shard_count": 1,
-                "shard_index": 0,
-                "shard_strategy": "contiguous",
-                "slice_ref": "slice-0",
-            },
-        ),
-        log_dir=str(root),
-        display="none",
-    )
+            log_dir=str(root),
+            display="none",
+        )
+    finally:
+        if original_xdg_data_home is None:
+            os.environ.pop("XDG_DATA_HOME", None)
+        else:
+            os.environ["XDG_DATA_HOME"] = original_xdg_data_home
 
 
 def _write_augmented_predecessor(root: Path):
@@ -134,7 +144,6 @@ def _write_augmented_predecessor(root: Path):
         "choices_human": ["coal"],
         "setting": "human_from_scratch",
         "generation_strategy": "human_from_scratch",
-        "status": "success",
         "num_human": 1,
         "num_model": 0,
         "num_choices": 2,
@@ -163,14 +172,47 @@ def _write_augmented_predecessor(root: Path):
     Dataset.from_list([row]).save_to_disk(str(store_path))
 
 
+def _write_support_manifest(root: Path, *, sample_ids: list[str] | None = None):
+    manifest_root = root / safe_name(GEN_RUN_NAME) / safe_name(GEN_MODEL)
+    manifest_root.mkdir(parents=True, exist_ok=True)
+    (manifest_root / "support_manifest.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "augmented_mcqa_support_set_v1",
+                "storage_kind": "generation_support_set",
+                "generation_run_name": GEN_RUN_NAME,
+                "generation_model": GEN_MODEL,
+                "dataset_types": ["arc_challenge"],
+                "settings": ["human_from_scratch", "model_from_scratch", "augment_human", "augment_model", "augment_ablation"],
+                "eligible_sample_ids_by_dataset": {"arc_challenge": list(sample_ids or [SAMPLE_ID])},
+                "candidate_counts_by_dataset": {"arc_challenge": 1},
+                "eligible_counts_by_dataset": {"arc_challenge": len(sample_ids or [SAMPLE_ID])},
+                "excluded_counts_by_dataset": {"arc_challenge": 0},
+                "excluded_counts_by_setting": {
+                    "arc_challenge": {
+                        "human_from_scratch": 0,
+                        "model_from_scratch": 0,
+                        "augment_human": 0,
+                        "augment_model": 0,
+                        "augment_ablation": 0,
+                    }
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+
 def test_materialize_evaluated_datasets_preserves_augmented_columns_and_adds_eval_fields(tmp_path):
     eval_root = tmp_path / "inspect"
     augmented_root = tmp_path / "augmented"
+    support_root = tmp_path / "support_sets"
     output_root = tmp_path / "evaluated"
     _write_eval_log(eval_root)
     _write_augmented_predecessor(augmented_root)
+    _write_support_manifest(support_root)
 
-    outputs = materialize_evaluated_datasets(eval_root, output_root, augmented_root=augmented_root)
+    outputs = materialize_evaluated_datasets(eval_root, output_root, augmented_root=augmented_root, support_root=support_root)
     assert len(outputs) == 1
 
     dataset_path = (
@@ -191,8 +233,8 @@ def test_materialize_evaluated_datasets_preserves_augmented_columns_and_adds_eva
     for column in EVALUATED_RECORD_COLUMNS:
         assert column in row
 
-    assert row["status"] == "success"
     assert row["traces"] == {"source": "augmented"}
+    assert row["evaluation_used_random_fallback"] is False
     assert row["evaluation_is_correct"] is True
     assert row["evaluation_prediction"] == "B"
     assert row["evaluation_prompt"] == "Answer the MCQ."
@@ -203,10 +245,17 @@ def test_materialize_evaluated_datasets_preserves_augmented_columns_and_adds_eva
 
 def test_materialize_evaluated_datasets_falls_back_when_augmented_row_is_missing(tmp_path):
     eval_root = tmp_path / "inspect"
+    support_root = tmp_path / "support_sets"
     output_root = tmp_path / "evaluated"
     _write_eval_log(eval_root)
+    _write_support_manifest(support_root)
 
-    outputs = materialize_evaluated_datasets(eval_root, output_root, augmented_root=tmp_path / "augmented")
+    outputs = materialize_evaluated_datasets(
+        eval_root,
+        output_root,
+        augmented_root=tmp_path / "augmented",
+        support_root=support_root,
+    )
     assert len(outputs) == 1
 
     dataset_path = (
@@ -223,7 +272,7 @@ def test_materialize_evaluated_datasets_falls_back_when_augmented_row_is_missing
     row = dict(rows[0])
 
     assert row["sample_id"] == SAMPLE_ID
-    assert row["status"] == "evaluated"
+    assert row["evaluation_used_random_fallback"] is False
     assert row["evaluation_is_correct"] is True
     assert row["evaluation_prediction"] == "B"
 
@@ -231,13 +280,16 @@ def test_materialize_evaluated_datasets_falls_back_when_augmented_row_is_missing
 def test_materialize_evaluated_datasets_can_write_missing_rows_without_eval_logs(tmp_path):
     eval_root = tmp_path / "inspect"
     augmented_root = tmp_path / "augmented"
+    support_root = tmp_path / "support_sets"
     output_root = tmp_path / "collected"
     _write_augmented_predecessor(augmented_root)
+    _write_support_manifest(support_root)
 
     outputs = materialize_evaluated_datasets(
         eval_root,
         output_root,
         augmented_root=augmented_root / safe_name(GEN_RUN_NAME) / safe_name(GEN_MODEL),
+        support_root=support_root,
         expected_dataset_types=["arc_challenge"],
         expected_settings=["human_from_scratch"],
         expected_modes=["full_question"],
@@ -262,12 +314,15 @@ def test_materialize_evaluated_datasets_can_write_missing_rows_without_eval_logs
 
     assert row["sample_id"] == SAMPLE_ID
     assert row["evaluation_status"] == "missing"
+    assert row["evaluation_used_random_fallback"] is True
+    assert row["evaluation_prediction"] in {"A", "B"}
     assert row["evaluation_log_path"] == ""
 
 
 def test_materialize_evaluated_datasets_does_not_return_unrelated_group_from_shared_output_root(tmp_path):
     eval_root = tmp_path / "inspect"
     augmented_root = tmp_path / "augmented"
+    support_root = tmp_path / "support_sets"
     output_root = tmp_path / "collected"
     unrelated_group = output_root / "other-run" / "other-model" / "other-eval"
     unrelated_group.mkdir(parents=True, exist_ok=True)
@@ -275,8 +330,9 @@ def test_materialize_evaluated_datasets_does_not_return_unrelated_group_from_sha
     os.utime(unrelated_group / "evaluated_manifest.json", (4_000_000_000, 4_000_000_000))
     _write_eval_log(eval_root)
     _write_augmented_predecessor(augmented_root)
+    _write_support_manifest(support_root)
 
-    outputs = materialize_evaluated_datasets(eval_root, output_root, augmented_root=augmented_root)
+    outputs = materialize_evaluated_datasets(eval_root, output_root, augmented_root=augmented_root, support_root=support_root)
 
     assert outputs == [output_root / safe_name(GEN_RUN_NAME) / safe_name(GEN_MODEL) / safe_name(EVAL_MODEL)]
 
@@ -302,8 +358,10 @@ def test_run_analyze_requires_existing_collected_root(tmp_path):
 
 def test_materialize_evaluated_datasets_prefers_augmented_eval_score_when_multiple_scores(tmp_path, monkeypatch):
     augmented_root = tmp_path / "augmented"
+    support_root = tmp_path / "support_sets"
     output_root = tmp_path / "evaluated"
     _write_augmented_predecessor(augmented_root)
+    _write_support_manifest(support_root)
 
     payload = {
         "status": "success",
@@ -369,7 +427,12 @@ def test_materialize_evaluated_datasets_prefers_augmented_eval_score_when_multip
         lambda *args, **kwargs: [(tmp_path / "sample.eval", payload)],
     )
 
-    outputs = materialize_evaluated_datasets(tmp_path / "inspect", output_root, augmented_root=augmented_root)
+    outputs = materialize_evaluated_datasets(
+        tmp_path / "inspect",
+        output_root,
+        augmented_root=augmented_root,
+        support_root=support_root,
+    )
 
     assert len(outputs) == 1
     dataset_path = (
@@ -392,13 +455,15 @@ def test_materialize_evaluated_datasets_prefers_augmented_eval_score_when_multip
 def test_run_collect_evaluated_writes_collected_state(tmp_path):
     eval_root = tmp_path / "inspect"
     augmented_root = tmp_path / "augmented"
+    support_root = tmp_path / "support_sets"
     collected_root = tmp_path / "collected"
     _write_eval_log(eval_root)
     _write_augmented_predecessor(augmented_root)
+    _write_support_manifest(support_root)
 
     rc = app_main.main(
         [
-            "collect-evaluated",
+            "build-collected-dataset",
             "--run-name",
             "eval-run",
             "--generator-run-name",
@@ -413,6 +478,8 @@ def test_run_collect_evaluated_writes_collected_state(tmp_path):
             str(augmented_root / safe_name(GEN_RUN_NAME) / safe_name(GEN_MODEL)),
             "--collected-root",
             str(collected_root),
+            "--support-root",
+            str(support_root),
             "--dataset-types",
             "arc_challenge",
             "--settings",
@@ -437,15 +504,18 @@ def test_run_collect_evaluated_writes_collected_state(tmp_path):
 def test_materialize_collected_evaluation_writes_local_planned_state(tmp_path):
     eval_root = tmp_path / "inspect"
     augmented_root = tmp_path / "augmented"
+    support_root = tmp_path / "support_sets"
     collected_root = tmp_path / "collected"
     _write_eval_log(eval_root)
     _write_augmented_predecessor(augmented_root)
+    _write_support_manifest(support_root)
 
     outputs = app_main._materialize_collected_evaluation(
         run_name="eval-run",
         evaluation_log_root=eval_root,
         collected_root=collected_root,
         augmented_dataset=augmented_root,
+        support_root=support_root,
         generation_run_name=GEN_RUN_NAME,
         generation_model=GEN_MODEL,
         evaluation_model=EVAL_MODEL,
@@ -495,6 +565,21 @@ def test_run_evaluate_materializes_collected_dataset(tmp_path, monkeypatch):
         app_main,
         "_resolved_generation_artifacts",
         lambda **kwargs: (GEN_MODEL, tmp_path / "generation-logs", augmented_root),
+    )
+    monkeypatch.setattr(
+        app_main,
+        "_combined_support_ids_for_run",
+        lambda **kwargs: {"arc_challenge": {SAMPLE_ID}},
+    )
+    monkeypatch.setattr(
+        app_main,
+        "_combined_support_ids_for_run",
+        lambda **kwargs: {"arc_challenge": {SAMPLE_ID}},
+    )
+    monkeypatch.setattr(
+        app_main,
+        "_combined_support_ids_for_run",
+        lambda **kwargs: {"arc_challenge": {SAMPLE_ID}},
     )
     monkeypatch.setattr(
         app_main,
@@ -552,6 +637,8 @@ def test_run_evaluate_materializes_collected_dataset(tmp_path, monkeypatch):
         limit=1,
         run_name="eval-run",
         collected_root=str(collected_root),
+        support_root=str(tmp_path / "support_sets"),
+        collect_evaluated=True,
     )
 
     assert app_main._run_evaluate(args) == 0
@@ -578,6 +665,11 @@ def test_run_evaluate_still_materializes_collected_dataset_when_incomplete(tmp_p
         app_main,
         "_resolved_generation_artifacts",
         lambda **kwargs: (GEN_MODEL, tmp_path / "generation-logs", augmented_root),
+    )
+    monkeypatch.setattr(
+        app_main,
+        "_combined_support_ids_for_run",
+        lambda **kwargs: {"arc_challenge": {SAMPLE_ID}},
     )
     monkeypatch.setattr(
         app_main,
@@ -635,6 +727,8 @@ def test_run_evaluate_still_materializes_collected_dataset_when_incomplete(tmp_p
         limit=1,
         run_name="eval-run",
         collected_root=str(collected_root),
+        support_root=str(tmp_path / "support_sets"),
+        collect_evaluated=True,
     )
 
     assert app_main._run_evaluate(args) == 1
@@ -651,6 +745,11 @@ def test_run_evaluate_with_explicit_augmented_dataset_does_not_rematerialize_sto
         raise AssertionError("explicit augmented datasets should not be rematerialized")
 
     monkeypatch.setattr(app_main, "ensure_augmented_dataset", fail_ensure)
+    monkeypatch.setattr(
+        app_main,
+        "_combined_support_ids_for_run",
+        lambda **kwargs: {"arc_challenge": {SAMPLE_ID}},
+    )
     monkeypatch.setattr(
         app_main,
         "inspect_eval",
@@ -706,6 +805,8 @@ def test_run_evaluate_with_explicit_augmented_dataset_does_not_rematerialize_sto
         limit=1,
         run_name="eval-run",
         collected_root=str(collected_root),
+        support_root=str(tmp_path / "support_sets"),
+        collect_evaluated=False,
     )
 
     assert app_main._run_evaluate(args) == 0

@@ -25,6 +25,7 @@ def _evaluated_row(
     correct: bool | None,
     prediction: str = "",
     prediction_type: str = "",
+    used_random_fallback: bool = False,
 ) -> dict[str, object]:
     row = {
         "id": sample_id,
@@ -40,7 +41,6 @@ def _evaluated_row(
         "choices_human": ["wrong"],
         "setting": setting,
         "generation_strategy": setting,
-        "status": "success",
         "num_human": 1,
         "num_model": 0,
         "num_choices": 2,
@@ -51,6 +51,7 @@ def _evaluated_row(
         "correct_answer_letter": "B",
         "traces": {"source": "augmented"},
         "evaluation_status": status,
+        "evaluation_used_random_fallback": used_random_fallback,
         "evaluation_is_correct": correct,
         "evaluation_score": None if correct is None else float(correct),
         "evaluation_prediction": prediction,
@@ -155,7 +156,7 @@ def test_collect_results_summary_reads_materialized_evaluated_datasets(tmp_path)
     assert SETTING_RANDOM_BASELINES["human_from_scratch"] == 1.0 / SETTING_SPECS["human_from_scratch"]["num_choices"]
 
 
-def test_collect_results_summary_marks_partial_and_missing_rows(tmp_path):
+def test_collect_results_summary_counts_random_fallback_predictions_as_observed(tmp_path):
     root = tmp_path / "evaluated"
     _write_evaluated_group(
         root,
@@ -206,7 +207,10 @@ def test_collect_results_summary_marks_partial_and_missing_rows(tmp_path):
                     dataset_type="arc_challenge",
                     setting="human_from_scratch",
                     status="missing",
-                    correct=None,
+                    correct=False,
+                    prediction="A",
+                    prediction_type="random_fallback",
+                    used_random_fallback=True,
                 ),
             ]
         },
@@ -224,17 +228,19 @@ def test_collect_results_summary_marks_partial_and_missing_rows(tmp_path):
     assert int(complete_row["observed_total"]) == 2
     assert int(complete_row["expected_total"]) == 2
 
-    partial_row = rows.loc[EVAL_MODEL_B]
-    assert partial_row["status"] == "partial"
-    assert int(partial_row["observed_total"]) == 1
-    assert int(partial_row["expected_total"]) == 2
-    assert int(partial_row["missing_samples"]) == 1
-    assert abs(float(partial_row["coverage_fraction"]) - 0.5) < 1e-9
+    filtered_row = rows.loc[EVAL_MODEL_B]
+    assert filtered_row["status"] == "complete"
+    assert int(filtered_row["observed_total"]) == 2
+    assert int(filtered_row["expected_total"]) == 2
+    assert int(filtered_row["missing_samples"]) == 0
+    assert abs(float(filtered_row["coverage_fraction"]) - 1.0) < 1e-9
 
     missing_row = rows.loc["vllm/meta-llama/Llama-3.1-8B-Instruct"]
     assert missing_row["status"] == "missing"
     assert int(missing_row["observed_total"]) == 0
     assert int(missing_row["expected_total"]) == 2
+
+    assert "partial" not in set(rows["status"])
 
 
 def test_plot_pairwise_accuracy_writes_pairwise_distribution_and_failure_outputs(tmp_path):
@@ -296,3 +302,123 @@ def test_plot_pairwise_accuracy_writes_pairwise_distribution_and_failure_outputs
     assert "augmented_mcqa_missing_questions.csv" in output_names
     assert any(name.startswith("prediction_type_distribution_") and name.endswith(".png") for name in output_names)
     assert any(name.startswith("prediction_distribution_") and name.endswith(".png") for name in output_names)
+
+
+def test_collect_results_summary_does_not_filter_shared_support_downstream(tmp_path):
+    root = tmp_path / "evaluated"
+    generator_a_rows = {
+        ("arc_challenge", "human_from_scratch", "full_question"): [
+            _evaluated_row(
+                sample_id="arc:0",
+                row_index=0,
+                dataset_type="arc_challenge",
+                setting="human_from_scratch",
+                status="success",
+                correct=True,
+                prediction="B",
+                prediction_type="G",
+            ),
+            _evaluated_row(
+                sample_id="arc:1",
+                row_index=1,
+                dataset_type="arc_challenge",
+                setting="human_from_scratch",
+                status="success",
+                correct=True,
+                prediction="B",
+                prediction_type="G",
+            ),
+        ],
+        ("arc_challenge", "model_from_scratch", "full_question"): [
+            _evaluated_row(
+                sample_id="arc:0",
+                row_index=0,
+                dataset_type="arc_challenge",
+                setting="model_from_scratch",
+                status="success",
+                correct=True,
+                prediction="B",
+                prediction_type="G",
+            ),
+            _evaluated_row(
+                sample_id="arc:1",
+                row_index=1,
+                dataset_type="arc_challenge",
+                setting="model_from_scratch",
+                status="success",
+                correct=False,
+                prediction="A",
+                prediction_type="M",
+            ),
+        ],
+    }
+    generator_b_rows = {
+        ("arc_challenge", "human_from_scratch", "full_question"): [
+            _evaluated_row(
+                sample_id="arc:0",
+                row_index=0,
+                dataset_type="arc_challenge",
+                setting="human_from_scratch",
+                status="success",
+                correct=True,
+                prediction="B",
+                prediction_type="G",
+            ),
+            _evaluated_row(
+                sample_id="arc:1",
+                row_index=1,
+                dataset_type="arc_challenge",
+                setting="human_from_scratch",
+                status="success",
+                correct=True,
+                prediction="B",
+                prediction_type="G",
+            ),
+        ],
+        ("arc_challenge", "model_from_scratch", "full_question"): [
+            _evaluated_row(
+                sample_id="arc:0",
+                row_index=0,
+                dataset_type="arc_challenge",
+                setting="model_from_scratch",
+                status="success",
+                correct=True,
+                prediction="B",
+                prediction_type="G",
+            ),
+            _evaluated_row(
+                sample_id="arc:1",
+                row_index=1,
+                dataset_type="arc_challenge",
+                setting="model_from_scratch",
+                status="missing",
+                correct=None,
+            ),
+        ],
+    }
+
+    _write_evaluated_group(
+        root,
+        gen_run="run_a",
+        gen_model="google/gemini-3.1-pro-preview",
+        eval_model=EVAL_MODEL_A,
+        rows_by_split=generator_a_rows,
+    )
+    _write_evaluated_group(
+        root,
+        gen_run="run_b",
+        gen_model="openai/gpt-5.2-2025-12-11",
+        eval_model=EVAL_MODEL_A,
+        rows_by_split=generator_b_rows,
+    )
+
+    df = collect_results_summary(root)
+    subset = df[
+        (df["eval_model"] == EVAL_MODEL_A)
+        & (df["dataset"] == "arc_challenge")
+        & (df["mode"] == "full_question")
+        & (df["setting"].isin({"human_from_scratch", "model_from_scratch"}))
+    ]
+
+    assert set(subset["expected_total"]) == {2}
+    assert set(subset["observed_total"]) == {1, 2}

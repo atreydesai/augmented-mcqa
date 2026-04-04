@@ -98,8 +98,8 @@ def test_supported_main_subcommands_match_the_inspect_first_cli():
     subparser_action = next(action for action in parser._actions if getattr(action, "choices", None))
     assert set(subparser_action.choices) == {
         "prepare-data",
-        "materialize-store",
-        "collect-evaluated",
+        "build-augmented-dataset",
+        "build-collected-dataset",
         "generate",
         "evaluate",
         "analyze",
@@ -109,7 +109,7 @@ def test_supported_main_subcommands_match_the_inspect_first_cli():
     }
 
 
-def test_materialize_store_remains_callable_via_main_parser(monkeypatch):
+def test_build_augmented_dataset_remains_callable_via_main_parser(monkeypatch):
     captured = {}
 
     def fake_run_materialize_store(args):
@@ -119,7 +119,7 @@ def test_materialize_store_remains_callable_via_main_parser(monkeypatch):
 
     monkeypatch.setattr(app_main, "_run_materialize_store", fake_run_materialize_store)
 
-    rc = app_main.main(["materialize-store", "--run-name", "gen", "--model", "Qwen/Qwen3-4B-Instruct-2507"])
+    rc = app_main.main(["build-augmented-dataset", "--run-name", "gen", "--model", "Qwen/Qwen3-4B-Instruct-2507"])
 
     assert rc == 0
     assert captured == {

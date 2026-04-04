@@ -10,7 +10,9 @@ from config import ACTIVE_DATASET_TYPES
 from data.store import (
     _load_dataset_dict,
     build_evaluation_dataset,
+    build_generation_support_manifest,
     build_generation_dataset,
+    combined_support_ids,
     ensure_augmented_dataset,
     materialize_evaluated_datasets,
 )
@@ -32,6 +34,7 @@ from utils.constants import (
     DEFAULT_LOCAL_EVALUATION_MODELS,
     DEFAULT_LOCAL_GENERATION_MODELS,
     DEFAULT_PROCESSED_DATASET,
+    DEFAULT_SUPPORT_SET_ROOT,
     COLLECTED_STATE_FILENAME,
     EVALUATED_STORE_MANIFEST,
     SETTING_NAMES,
@@ -178,6 +181,10 @@ def _augmented_cache_dir(root: Path, run_name: str, model: str) -> Path:
     return _run_model_dir(root, run_name, model)
 
 
+def _support_manifest_dir(root: Path, run_name: str, model: str) -> Path:
+    return _run_model_dir(root, run_name, model)
+
+
 def _evaluation_log_dir(root: Path, run_name: str, generator_run: str, generator_model: str, eval_model: str) -> Path:
     return root / safe_name(run_name) / safe_name(generator_run) / safe_name(generator_model) / safe_name(eval_model)
 
@@ -302,6 +309,19 @@ def _resolved_generation_artifacts(
             "Omit --augmented-dataset to derive and materialize the cache automatically."
         )
     return resolved_model, log_dir, cache_dir
+
+
+def _combined_support_ids_for_run(
+    *,
+    run_name: str,
+    support_root: Path | str,
+    cache_root: Path | str,
+) -> dict[str, set[str]]:
+    return combined_support_ids(
+        run_name=run_name,
+        support_root=Path(support_root),
+        augmented_root=Path(cache_root),
+    )
 
 
 def _current_stage_state(*, stage: str, run_name: str, output_dir: str | None = None) -> dict[str, object]:
@@ -590,6 +610,7 @@ def _build_evaluation_cluster_tasks(args: argparse.Namespace) -> tuple[list[Clus
     )
     evaluation_counts: dict[tuple[str, str, str, int, int], int] = {}
     augmented_cache_dir: Path | None = explicit_augmented_dataset
+    support_sample_ids: dict[str, set[str]] | None = None
 
     def runnable_evaluation_sample_count(
         *,
@@ -599,7 +620,7 @@ def _build_evaluation_cluster_tasks(args: argparse.Namespace) -> tuple[list[Clus
         question_start: int,
         question_end: int,
     ) -> int:
-        nonlocal augmented_cache_dir
+        nonlocal augmented_cache_dir, support_sample_ids
         key = (dataset_type, setting, mode, question_start, question_end)
         if key not in evaluation_counts:
             if augmented_cache_dir is None:
@@ -607,11 +628,18 @@ def _build_evaluation_cluster_tasks(args: argparse.Namespace) -> tuple[list[Clus
                     ensure=True,
                     **generation_artifact_base,
                 )
+            if support_sample_ids is None:
+                support_sample_ids = _combined_support_ids_for_run(
+                    run_name=args.generator_run_name,
+                    support_root=Path(args.support_root),
+                    cache_root=Path(str(generation_artifact_base["cache_root"])),
+                )
             dataset = build_evaluation_dataset(
                 augmented_cache_dir,
                 setting=setting,
                 mode=mode,
                 dataset_types=[dataset_type],
+                support_sample_ids=support_sample_ids,
                 question_start=question_start,
                 limit=question_end - question_start,
                 shard_count=1,
@@ -713,6 +741,7 @@ def _build_evaluation_cluster_tasks(args: argparse.Namespace) -> tuple[list[Clus
                         ]
                         if explicit_augmented_dataset is not None:
                             argv.extend(["--augmented-dataset", str(explicit_augmented_dataset)])
+                        argv.extend(["--support-root", str(args.support_root)])
                         argv.append("--skip-collect-evaluated")
                         argv.extend(_runtime_argv(args))
                         tasks.append(
@@ -988,6 +1017,7 @@ def _materialize_collected_evaluation(
     evaluation_log_root: Path | str,
     collected_root: Path | str,
     augmented_dataset: Path | str,
+    support_root: Path | str,
     generation_run_name: str,
     generation_model: str,
     evaluation_model: str,
@@ -1001,6 +1031,7 @@ def _materialize_collected_evaluation(
         evaluation_log_root=evaluation_log_root,
         output_root=collected_root,
         augmented_root=augmented_dataset,
+        support_root=support_root,
         expected_dataset_types=dataset_types,
         expected_settings=settings,
         expected_modes=modes,
@@ -1105,6 +1136,14 @@ def _run_generate(args: argparse.Namespace) -> int:
             dataset_types=dataset_types,
             rebuild=args.rebuild_cache,
         )
+        build_generation_support_manifest(
+            processed_dataset_path=Path(args.processed_dataset),
+            generation_log_dir=log_dir,
+            run_name=args.run_name,
+            generation_model=generation_model,
+            output_root=Path(args.support_root),
+            dataset_types=dataset_types,
+        )
         print(f"Augmented dataset cache: {cache_dir}")
     return 0
 
@@ -1141,8 +1180,14 @@ def _run_evaluate(args: argparse.Namespace) -> int:
         generation_model,
         eval_model,
     )
+    support_sample_ids = _combined_support_ids_for_run(
+        run_name=args.generator_run_name,
+        support_root=Path(args.support_root),
+        cache_root=Path(args.cache_root),
+    )
     tasks = build_evaluation_tasks(
         augmented_dataset_path=cache_dir,
+        support_sample_ids=support_sample_ids,
         dataset_types=dataset_types,
         settings=settings,
         modes=modes,
@@ -1183,6 +1228,7 @@ def _run_evaluate(args: argparse.Namespace) -> int:
             evaluation_log_root=log_dir,
             collected_root=Path(args.collected_root),
             augmented_dataset=cache_dir,
+            support_root=Path(args.support_root),
             generation_run_name=args.generator_run_name,
             generation_model=generation_model,
             evaluation_model=eval_model,
@@ -1210,7 +1256,11 @@ def _run_analyze(args: argparse.Namespace) -> int:
 
     row_df, summary_df = load_analysis_frames(analysis_root)
     if args.table_output:
-        df = write_results_summary_table(analysis_root, args.table_output, summary_df=summary_df)
+        df = write_results_summary_table(
+            analysis_root,
+            args.table_output,
+            summary_df=summary_df,
+        )
         print(f"Wrote {len(df)} summary rows to {args.table_output}")
     outputs = plot_pairwise_accuracy(
         results_root=analysis_root,
@@ -1237,6 +1287,7 @@ def _run_collect_evaluated(args: argparse.Namespace) -> int:
                 evaluation_log_root=Path(spec["evaluation_log_root"]),
                 collected_root=Path(args.collected_root),
                 augmented_dataset=Path(spec["augmented_dataset"]),
+                support_root=Path(args.support_root),
                 generation_run_name=str(spec["generator_run_name"]),
                 generation_model=str(spec["generator_model"]),
                 evaluation_model=str(spec["evaluation_model"]),
@@ -1252,6 +1303,7 @@ def _run_collect_evaluated(args: argparse.Namespace) -> int:
             evaluation_log_root=Path(args.evaluation_log_root),
             collected_root=Path(args.collected_root),
             augmented_dataset=Path(args.augmented_dataset),
+            support_root=Path(args.support_root),
             generation_run_name=args.generator_run_name,
             generation_model=args.generator_model,
             evaluation_model=args.model,
@@ -1282,19 +1334,29 @@ def _run_materialize_store(args: argparse.Namespace) -> int:
         if args.output_path
         else _augmented_cache_dir(Path(args.cache_root), args.run_name, raw_model)
     )
+    dataset_types = _select_values(
+        args.dataset_types,
+        default=args.default_dataset_types,
+        allowed=list(ACTIVE_DATASET_TYPES),
+        label="dataset types",
+    )
     ensure_augmented_dataset(
         processed_dataset_path=Path(args.processed_dataset),
         generation_log_dir=log_dir,
         output_path=output_path,
-        dataset_types=_select_values(
-            args.dataset_types,
-            default=args.default_dataset_types,
-            allowed=list(ACTIVE_DATASET_TYPES),
-            label="dataset types",
-        ),
+        dataset_types=dataset_types,
         rebuild=args.rebuild_cache,
     )
+    support_path = build_generation_support_manifest(
+        processed_dataset_path=Path(args.processed_dataset),
+        generation_log_dir=log_dir,
+        run_name=args.run_name,
+        generation_model=raw_model,
+        output_root=Path(args.support_root),
+        dataset_types=dataset_types,
+    )
     print(output_path)
+    print(support_path)
     return 0
 
 
@@ -1303,9 +1365,9 @@ def _add_materialize_store_parser(
     formatter,
 ) -> argparse.ArgumentParser:
     parser = sub.add_parser(
-        "materialize-store",
-        prog="main.py materialize-store",
-        description="Materialize the setting-scoped augmented store for one generation run/model directly from Inspect generation logs.",
+        "build-augmented-dataset",
+        prog="main.py build-augmented-dataset",
+        description="Build the setting-scoped augmented dataset for one generation run/model directly from Inspect generation logs.",
         formatter_class=formatter,
     )
     parser.add_argument(
@@ -1339,6 +1401,11 @@ def _add_materialize_store_parser(
         help="Advanced override: root directory where augmented caches are stored.",
     )
     parser.add_argument(
+        "--support-root",
+        default=str(DEFAULT_SUPPORT_SET_ROOT),
+        help="Advanced override: root directory where generation support manifests should be written.",
+    )
+    parser.add_argument(
         "--output-path",
         default=None,
         help="Advanced override: exact output path for the rebuilt augmented cache.",
@@ -1363,9 +1430,9 @@ def _add_collect_evaluated_parser(
     formatter,
 ) -> argparse.ArgumentParser:
     parser = sub.add_parser(
-        "collect-evaluated",
-        prog="main.py collect-evaluated",
-        description="Materialize collected evaluation datasets directly from evaluation logs.",
+        "build-collected-dataset",
+        prog="main.py build-collected-dataset",
+        description="Build collected evaluation datasets directly from evaluation logs.",
         formatter_class=formatter,
     )
     parser.add_argument("--run-name", required=True)
@@ -1378,6 +1445,11 @@ def _add_collect_evaluated_parser(
         "--collected-root",
         default=str(DEFAULT_COLLECTED_DATASET_ROOT),
         help="Root directory where collected evaluation datasets should be written.",
+    )
+    parser.add_argument(
+        "--support-root",
+        default=str(DEFAULT_SUPPORT_SET_ROOT),
+        help="Advanced override: root directory where generation support manifests are stored.",
     )
     parser.add_argument(
         "--scheduler-output-dir",
@@ -1643,6 +1715,7 @@ def _add_generate_parser(sub: argparse._SubParsersAction[argparse.ArgumentParser
     generate.add_argument("--limit", type=int, default=None, help="Advanced/debug option: optional per-dataset cap on the number of samples to generate.")
     generate.add_argument("--log-root", default=str(DEFAULT_GENERATION_LOG_ROOT), help="Advanced override: root directory for Inspect generation logs.")
     generate.add_argument("--cache-root", default=str(DEFAULT_AUGMENTED_CACHE_ROOT), help="Advanced override: root directory where derived augmented dataset caches should be stored.")
+    generate.add_argument("--support-root", default=str(DEFAULT_SUPPORT_SET_ROOT), help="Advanced override: root directory where generation support manifests are stored.")
     generate.add_argument("--augmented-dataset", default=None, help="Advanced override: exact output path for the setting-scoped augmented store produced from generation logs.")
     generate.add_argument("--materialize-cache", action="store_true", help="Rebuild the setting-scoped augmented store immediately after generation completes.")
     generate.add_argument("--rebuild-cache", action="store_true", help="Advanced override: force regeneration of the augmented cache even if it already exists.")
@@ -1670,6 +1743,7 @@ def _add_evaluate_parser(sub: argparse._SubParsersAction[argparse.ArgumentParser
     evaluate.add_argument("--processed-dataset", default=str(DEFAULT_PROCESSED_DATASET), help="Processed dataset source used only when deriving and materializing the augmented store automatically from generation logs.")
     evaluate.add_argument("--augmented-dataset", default=None, help="Advanced override: exact read-only augmented store path to evaluate instead of deriving one from generation artifacts.")
     evaluate.add_argument("--cache-root", default=str(DEFAULT_AUGMENTED_CACHE_ROOT), help="Advanced override: root directory where augmented dataset caches are stored.")
+    evaluate.add_argument("--support-root", default=str(DEFAULT_SUPPORT_SET_ROOT), help="Advanced override: root directory where generation support manifests are stored.")
     evaluate.add_argument("--dataset-types", default=None, help="Optional subset: comma-separated subset of dataset splits to evaluate.")
     evaluate.add_argument("--question-start", type=int, default=0, help="Advanced/debug option: zero-based per-dataset starting row for evaluation.")
     evaluate.add_argument("--settings", default=None, help="Advanced subset override: comma-separated subset of Augmented MCQA settings to evaluate.")
@@ -1720,11 +1794,11 @@ def _add_analyze_parser(sub: argparse._SubParsersAction[argparse.ArgumentParser]
 def _add_export_parser(sub: argparse._SubParsersAction[argparse.ArgumentParser], formatter) -> argparse.ArgumentParser:
     export = sub.add_parser(
         "export",
-        help="Export a setting-scoped augmented store to benchmarker JSONL files.",
-        description="Export an explicit setting-scoped augmented store into benchmarker-compatible JSONL files.",
+        help="Export an augmented store or collected group root to benchmarker JSONL files.",
+        description="Export a setting-scoped augmented store, or a collected evaluated group root, into benchmarker-compatible JSONL files.",
         formatter_class=formatter,
     )
-    export.add_argument("--input", required=True, help="Exact setting-scoped augmented store root to export, usually under datasets/augmented/<run>/<model>.")
+    export.add_argument("--input", required=True, help="Exact augmented store root, or exact collected group root, to export.")
     export.add_argument("--output-root", default="datasets/benchmarker_items", help="Situational output override: root directory where benchmarker JSONL outputs should be written.")
     export.set_defaults(handler=_run_export)
     return export
@@ -1761,6 +1835,7 @@ def _add_submit_evaluate_cluster_parser(sub: argparse._SubParsersAction[argparse
     parser.add_argument("--settings", default=None, help="Comma-separated subset of Augmented MCQA settings to schedule.")
     parser.add_argument("--modes", default=None, help="Comma-separated subset of evaluation modes to schedule.")
     parser.add_argument("--augmented-dataset", default=None, help="Advanced override: exact setting-scoped augmented store path to schedule directly instead of deriving one from generation logs.")
+    parser.add_argument("--support-root", default=str(DEFAULT_SUPPORT_SET_ROOT), help="Advanced override: root directory where generation support manifests are stored.")
     parser.add_argument("--collected-root", default=str(DEFAULT_COLLECTED_DATASET_ROOT), help="Root directory where collected evaluation datasets should be refreshed after cluster evaluation completes.")
     add_cluster_submit_flags(parser)
     add_runtime_flags(parser)

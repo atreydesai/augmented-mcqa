@@ -4,7 +4,13 @@ import pytest
 from datasets import Dataset, DatasetDict, load_from_disk
 
 from data.benchmarker_export import export_benchmarker_items
-from utils.constants import AUGMENTED_STORE_MANIFEST, AUGMENTED_STORE_SCHEMA_VERSION, SETTING_NAMES
+from utils.constants import (
+    AUGMENTED_STORE_MANIFEST,
+    AUGMENTED_STORE_SCHEMA_VERSION,
+    EVALUATED_STORE_MANIFEST,
+    EVALUATED_STORE_SCHEMA_VERSION,
+    SETTING_NAMES,
+)
 
 
 def _choices(prefix: str, count: int) -> list[str]:
@@ -100,6 +106,37 @@ def _read_jsonl(path):
         for line in path.read_text(encoding="utf-8").splitlines()
         if line.strip()
     ]
+
+
+def _write_collected_group(
+    root,
+    *,
+    generation_run_name: str,
+    generation_model: str,
+    evaluation_model: str,
+    rows_by_setting: dict[str, list[dict[str, object]]],
+):
+    root.mkdir(parents=True, exist_ok=True)
+    (root / EVALUATED_STORE_MANIFEST).write_text(
+        json.dumps(
+            {
+                "schema_version": EVALUATED_STORE_SCHEMA_VERSION,
+                "storage_kind": "evaluated_setting_mode_records",
+                "dataset_types": ["arc_challenge"],
+                "settings": list(SETTING_NAMES),
+                "modes": ["full_question"],
+                "generation_run_name": generation_run_name,
+                "generation_model": generation_model,
+                "evaluation_model": evaluation_model,
+                "source_results_root": "",
+                "collection_state_file": "collected_state.json",
+            }
+        ),
+        encoding="utf-8",
+    )
+    for setting in SETTING_NAMES:
+        rows = rows_by_setting.get(setting, [])
+        Dataset.from_list(rows).save_to_disk(str(root / "arc_challenge" / setting / "full_question"))
 
 
 def test_export_benchmarker_items_end_to_end(tmp_path):
@@ -265,3 +302,134 @@ def test_exported_jsonl_lines_have_only_expected_keys(tmp_path):
         rows = _read_jsonl(path)
         for row in rows:
             assert set(row.keys()) == {"question", "choices", "answer"}
+
+
+def test_export_benchmarker_items_from_collected_serializes_rows_without_shared_support_filter(tmp_path):
+    collected_root = tmp_path / "collected"
+
+    common_row = {
+        "id": "arc-1",
+        "sample_id": "arc_challenge:arc-1",
+        "question": "ARC question 1",
+        "options": ["arc a", "arc b", "arc c", "arc d"],
+        "answer_index": 2,
+        "answer": "arc c",
+        "choices_human": ["h1", "h2", "h3"],
+        "options_randomized": ["arc c", "h1", "h2", "h3"],
+        "correct_answer_letter": "A",
+        "evaluation_status": "success",
+    }
+    source_only_row = {
+        "id": "arc-2",
+        "sample_id": "arc_challenge:arc-2",
+        "question": "ARC question 2",
+        "options": ["d1", "d2", "d3", "d4"],
+        "answer_index": 1,
+        "answer": "d2",
+        "choices_human": ["x1", "x2", "x3"],
+        "options_randomized": ["d2", "x1", "x2", "x3"],
+        "correct_answer_letter": "A",
+        "evaluation_status": "success",
+    }
+
+    source_group = collected_root / "run_a" / "gen_a" / "eval_a"
+    peer_group = collected_root / "run_b" / "gen_b" / "eval_a"
+    source_rows = {setting: [dict(common_row), dict(source_only_row)] for setting in SETTING_NAMES}
+    peer_rows = {setting: [dict(common_row)] for setting in SETTING_NAMES}
+
+    _write_collected_group(
+        source_group,
+        generation_run_name="run_a",
+        generation_model="gen_a",
+        evaluation_model="eval_a",
+        rows_by_setting=source_rows,
+    )
+    _write_collected_group(
+        peer_group,
+        generation_run_name="run_b",
+        generation_model="gen_b",
+        evaluation_model="eval_a",
+        rows_by_setting=peer_rows,
+    )
+
+    summary_path = export_benchmarker_items(source_group, tmp_path / "out")
+    export_dir = summary_path.parent
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+
+    assert export_dir.name == "run_a__gen_a"
+    assert len(_read_jsonl(export_dir / "arc_challenge" / "original.jsonl")) == 2
+    assert len(_read_jsonl(export_dir / "arc_challenge" / "augment_model.jsonl")) == 2
+    assert summary["source_kind"] == "evaluated"
+    assert summary["files"]["arc_challenge"]["augment_model"]["rows_written"] == 2
+    assert summary["files"]["arc_challenge"]["augment_model"]["skipped_row_count"] == 0
+
+
+def test_export_benchmarker_items_from_collected_only_skips_rows_that_are_structurally_invalid(tmp_path):
+    collected_root = tmp_path / "collected"
+
+    common_row = {
+        "id": "arc-1",
+        "sample_id": "arc_challenge:arc-1",
+        "question": "ARC question 1",
+        "options": ["arc a", "arc b", "arc c", "arc d"],
+        "answer_index": 2,
+        "answer": "arc c",
+        "choices_human": ["h1", "h2", "h3"],
+        "options_randomized": ["arc c", "h1", "h2", "h3"],
+        "correct_answer_letter": "A",
+        "evaluation_status": "success",
+    }
+    bad_setting_row = {
+        "id": "arc-2",
+        "sample_id": "arc_challenge:arc-2",
+        "question": "ARC question 2",
+        "options": ["b1", "b2", "b3", "b4"],
+        "answer_index": 0,
+        "answer": "b1",
+        "choices_human": ["x1", "x2", "x3"],
+        "options_randomized": ["b1", "x1", "x2", "x3"],
+        "correct_answer_letter": "A",
+        "evaluation_status": "success",
+    }
+
+    source_group = collected_root / "run_a" / "gen_a" / "eval_a"
+    peer_group = collected_root / "run_b" / "gen_b" / "eval_a"
+
+    source_rows = {setting: [dict(common_row), dict(bad_setting_row)] for setting in SETTING_NAMES}
+    source_rows["augment_model"] = [
+        dict(common_row),
+        {
+            **dict(bad_setting_row),
+            "options_randomized": [],
+            "correct_answer_letter": "",
+        },
+    ]
+    peer_rows = {setting: [dict(common_row), dict(bad_setting_row)] for setting in SETTING_NAMES}
+
+    _write_collected_group(
+        source_group,
+        generation_run_name="run_a",
+        generation_model="gen_a",
+        evaluation_model="eval_a",
+        rows_by_setting=source_rows,
+    )
+    _write_collected_group(
+        peer_group,
+        generation_run_name="run_b",
+        generation_model="gen_b",
+        evaluation_model="eval_a",
+        rows_by_setting=peer_rows,
+    )
+
+    summary_path = export_benchmarker_items(source_group, tmp_path / "out")
+    export_dir = summary_path.parent
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+
+    assert len(_read_jsonl(export_dir / "arc_challenge" / "original.jsonl")) == 2
+    assert len(_read_jsonl(export_dir / "arc_challenge" / "human_from_scratch.jsonl")) == 2
+    assert len(_read_jsonl(export_dir / "arc_challenge" / "model_from_scratch.jsonl")) == 2
+    assert len(_read_jsonl(export_dir / "arc_challenge" / "augment_human.jsonl")) == 2
+    assert len(_read_jsonl(export_dir / "arc_challenge" / "augment_model.jsonl")) == 1
+    assert len(_read_jsonl(export_dir / "arc_challenge" / "augment_ablation.jsonl")) == 2
+    assert summary["files"]["arc_challenge"]["original"]["skipped_row_count"] == 0
+    assert summary["files"]["arc_challenge"]["augment_model"]["skipped_row_count"] == 1

@@ -210,9 +210,13 @@ Example:
 uv run python main.py prepare-data
 ```
 
-### `materialize-store`
+### `build-augmented-dataset`
 
 Rebuild one augmented dataset store from generation logs for a specific run and model.
+
+Note:
+- this command now also writes generation-support metadata under `datasets/support_sets/...`
+- cluster and local evaluation use that metadata automatically to define the shared benchmark subset before evaluation runs
 
 Use this when:
 - generation logs already exist but the augmented store is missing or stale
@@ -222,14 +226,18 @@ Use this when:
 Example:
 
 ```bash
-uv run python main.py materialize-store \
+uv run python main.py build-augmented-dataset \
   --run-name gen_gpt52_v2 \
   --model gpt-5.2-2025-12-11
 ```
 
-### `collect-evaluated`
+### `build-collected-dataset`
 
 Materialize collected evaluation datasets from evaluation logs. In normal scheduled runs this now happens once at the end of the run; this command remains useful for manual recovery or ad hoc refreshes.
+
+Note:
+- this command trusts the precomputed generation-support subset
+- if an evaluation output is missing or unusable, collection keeps the row and fills a deterministic random fallback prediction while preserving the underlying eval status/raw output
 
 Use this when:
 - evaluation logs already exist but `datasets/collected/...` needs to be rebuilt
@@ -239,7 +247,7 @@ Use this when:
 Example:
 
 ```bash
-uv run python main.py collect-evaluated \
+uv run python main.py build-collected-dataset \
   --run-name eval_qwen4b_on_gen_gpt52_v2 \
   --generator-run-name gen_gpt52_v2 \
   --generator-model gpt-5.2-2025-12-11 \
