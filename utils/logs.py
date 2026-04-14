@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import struct
 import zipfile
 from pathlib import Path
 from typing import Any, Iterator
@@ -166,7 +167,7 @@ def read_log_summary(path: Path | str) -> dict[str, Any] | None:
         return summary
     try:
         return _normalize_log_summary_from_object(read_log(log_path))
-    except (AttributeError, KeyError, OSError, TypeError, ValueError):
+    except (AttributeError, KeyError, OSError, TypeError, ValueError, struct.error):
         return None
 
 
@@ -206,7 +207,7 @@ def read_log_payload(path: Path | str) -> dict[str, Any] | None:
         return payload
     try:
         return _read_log_payload_from_object(read_log(log_path))
-    except (AttributeError, KeyError, OSError, TypeError, ValueError):
+    except (AttributeError, KeyError, OSError, TypeError, ValueError, struct.error):
         return None
 
 

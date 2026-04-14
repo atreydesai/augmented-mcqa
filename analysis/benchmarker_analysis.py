@@ -38,7 +38,7 @@ from utils.constants import (
     SETTING_NAMES,
     SETTING_SPECS,
 )
-from utils.logs import iter_eval_logs
+from utils.logs import find_eval_logs, read_log_payload
 from utils.modeling import resolve_model_name, safe_name
 
 
@@ -315,11 +315,23 @@ def load_evaluation_samples(
     eval_models: list[str],
 ) -> pd.DataFrame:
     rows: list[dict[str, object]] = []
-    for log_path, log in iter_eval_logs(results_root, kind="evaluation"):
-        log_meta = dict(getattr(log.eval, "metadata", {}) or {})
+    run_filter = safe_name(generator_run_name) if generator_run_name else None
+    model_filter = safe_name(resolve_model_name(generator_model)) if generator_model else None
+    for log_path in find_eval_logs(results_root):
+        log_path_str = str(log_path)
+        if run_filter and f"/{run_filter}/" not in log_path_str:
+            continue
+        if model_filter and f"/{model_filter}/" not in log_path_str:
+            continue
+        log = read_log_payload(log_path)
+        if log is None:
+            continue
+        log_meta = dict(log.get("metadata", {}) or {})
+        if log_meta.get("kind") != "evaluation":
+            continue
         generation_model = str(log_meta.get("generation_model", ""))
         logged_generation_run_name = str(log_meta.get("generation_run_name", ""))
-        evaluation_model = str(log_meta.get("evaluation_model") or log.eval.model)
+        evaluation_model = str(log_meta.get("evaluation_model") or "")
         if not _model_matches(generator_model, generation_model):
             continue
         if generator_run_name and logged_generation_run_name != str(generator_run_name):
@@ -327,8 +339,8 @@ def load_evaluation_samples(
         if eval_models and not any(_model_matches(model, evaluation_model) for model in eval_models):
             continue
 
-        for sample in getattr(log, "samples", []):
-            scores = dict(getattr(sample, "scores", None) or {})
+        for sample in list(log.get("summaries", []) or []):
+            scores = dict(sample.get("scores", {}) or {})
             if not scores:
                 continue
             score = scores.get("augmented_mcqa_eval")
@@ -336,7 +348,7 @@ def load_evaluation_samples(
                 score = next(iter(scores.values()))
             if score is None:
                 continue
-            score_meta = dict(getattr(score, "metadata", {}) or {})
+            score_meta = dict(score.get("metadata", {}) or {})
             dataset = str(score_meta.get("dataset_type", ""))
             setting = str(score_meta.get("setting") or log_meta.get("setting", ""))
             mode = str(score_meta.get("mode") or log_meta.get("mode", ""))
@@ -351,13 +363,13 @@ def load_evaluation_samples(
                     "dataset": dataset,
                     "setting": setting,
                     "mode": mode,
-                    "sample_id": str(score_meta.get("sample_id") or sample.id),
+                    "sample_id": str(score_meta.get("sample_id") or sample.get("id", "")),
                     "question_idx": int(score_meta.get("question_idx", -1)),
                     "category": str(score_meta.get("category", "")),
                     "prediction": str(score_meta.get("prediction", "") or "").strip().upper(),
                     "prediction_type": str(score_meta.get("prediction_type", "?")),
                     "gold_answer_letter": str(score_meta.get("gold_answer_letter", "") or "").strip().upper(),
-                    "is_correct": bool(getattr(score, "value", False)),
+                    "is_correct": bool(score.get("value", False)),
                 }
             )
 
@@ -1222,7 +1234,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--results-root", default=str(DEFAULT_EVALUATION_LOG_ROOT))
     parser.add_argument("--augmented-dataset", default=None)
     parser.add_argument("--cache-root", default=str(DEFAULT_AUGMENTED_CACHE_ROOT))
-    parser.add_argument("--output-dir", default="analysis/figures/benchmarker")
+    parser.add_argument("--output-dir", default="results/benchmarker_analysis")
     parser.add_argument("--generator-model", default=None)
     parser.add_argument("--generator-run-name", default=None)
     parser.add_argument("--eval-models", default=None, help="Comma-separated list of eval models to include")

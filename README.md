@@ -7,6 +7,7 @@ Minimal pipeline for:
 - evaluating models against them
 - exporting benchmarker items
 - analyzing collected evaluation datasets
+- fitting many-facet IRT models over collected evaluations
 
 Run everything with `uv`:
 
@@ -18,6 +19,7 @@ uv run python main.py --help
 
 ```text
 prepare-data -> generate -> evaluate -> analyze
+                           \-> analyze-irt
                            \-> export
 ```
 
@@ -26,6 +28,7 @@ The important artifacts are:
 - processed dataset: `datasets/processed/unified_processed_v3`
 - augmented store: `datasets/augmented/<generation_run>/<generation_model>/`
 - collected dataset: `datasets/collected/<generation_run>/<generation_model>/<evaluation_model>/`
+- IRT outputs: `results/augmented_mcqa_irt/`
 
 ## Quick Start
 
@@ -90,6 +93,14 @@ Analyze from collected data:
 ```bash
 uv run python main.py analyze \
   --collected-root datasets/collected/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_Qwen_Qwen3-4B-Instruct-2507
+```
+
+Fit many-facet IRT models across collected evaluation folders:
+
+```bash
+uv run python main.py analyze-irt \
+  --collected-root datasets/collected \
+  --output-dir results/augmented_mcqa_irt
 ```
 
 Export benchmarker items from the augmented store:
@@ -170,6 +181,8 @@ That folder includes both:
 - the `collected_state.json` needed to understand missing, planned, failed, or partial slices
 
 You do not need to send separate `.eval` logs just to rerun analysis.
+
+For IRT analysis, share the common collected root that contains every generator/evaluator folder you want in the same model. The IRT command discovers `evaluated_manifest.json` files recursively under that root and fits from the materialized collected datasets, not from `.eval` logs.
 
 ## Validation
 
@@ -314,6 +327,41 @@ Example:
 uv run python main.py analyze \
   --collected-root datasets/collected/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_Qwen_Qwen3-4B-Instruct-2507
 ```
+
+### `analyze-irt`
+
+Fit fixed-guessing many-facet IRT models from collected evaluation datasets.
+
+Use this when:
+- you have collected results for multiple generator or evaluator models
+- you want estimates for item difficulty, setting difficulty, generator ability, and evaluator severity
+- you want model-based diagnostics such as item anomaly plots and residual summaries
+
+By default this command analyzes `full_question` rows. Pass `--modes full_question,choices_only` when you want both modes included. Filter with comma-separated `--generators`, `--evaluators`, `--datasets`, or `--settings` values when you want a smaller identified design. Each included facet must have enough overlap for the model to be identified.
+
+Example:
+
+```bash
+uv run python main.py analyze-irt \
+  --collected-root datasets/collected \
+  --output-dir results/augmented_mcqa_irt \
+  --modes full_question
+```
+
+Typical outputs include:
+- `tables/setting_difficulty.csv`
+- `tables/evaluator_severity.csv`
+- `tables/generator_ability.csv`
+- `tables/item_difficulty.csv`
+- `tables/residual_summary.csv`
+- `figures/setting_difficulty_forest.png`
+- `figures/evaluator_severity_forest.png`
+- `figures/item_anomalies.png`
+- `fit_summary.json`
+
+### Benchmarker Writing-Flaw Analysis
+
+`analysis/benchmarker_analysis.py` joins benchmarker writing-flaw outputs, evaluation logs, and augmented rows. It writes figures to `results/benchmarker_analysis` by default. It reads Inspect `.eval` archives through the tolerant log-payload helpers, so corrupt or partial archives are skipped instead of stopping the run. Use `--generator-run-name`, `--generator-model`, and `--eval-models` to restrict the log scan when `results/inspect/evaluation` contains multiple sweeps.
 
 ### `export`
 

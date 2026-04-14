@@ -1277,6 +1277,12 @@ def _run_analyze(args: argparse.Namespace) -> int:
     return 0
 
 
+def _run_analyze_irt(args: argparse.Namespace) -> int:
+    from analysis.irt import run_cli
+
+    return run_cli(args)
+
+
 def _run_collect_evaluated(args: argparse.Namespace) -> int:
     outputs: list[Path] = []
     if args.collection_spec:
@@ -1791,6 +1797,28 @@ def _add_analyze_parser(sub: argparse._SubParsersAction[argparse.ArgumentParser]
     return analyze
 
 
+def _add_analyze_irt_parser(sub: argparse._SubParsersAction[argparse.ArgumentParser], formatter) -> argparse.ArgumentParser:
+    analyze = sub.add_parser(
+        "analyze-irt",
+        help="Fit many-facet IRT models over collected Augmented MCQA evaluations.",
+        description="Run fixed-guessing many-facet IRT analysis directly from collected evaluation datasets.",
+        formatter_class=formatter,
+    )
+    analyze.add_argument("--collected-root", default=str(DEFAULT_COLLECTED_DATASET_ROOT), help="Root directory or specific collected dataset folder to analyze.")
+    analyze.add_argument("--output-dir", default="results/augmented_mcqa_irt", help="Directory where IRT tables, plots, and summary JSON should be written.")
+    analyze.add_argument("--generators", default=None, help="Optional comma-separated subset of generator model names to include.")
+    analyze.add_argument("--evaluators", default=None, help="Optional comma-separated subset of evaluator model names to include.")
+    analyze.add_argument("--datasets", default=None, help="Optional comma-separated subset of dataset names to include.")
+    analyze.add_argument("--settings", default=None, help="Optional comma-separated subset of settings to include.")
+    analyze.add_argument("--modes", default=None, help="Optional comma-separated subset of modes to include.")
+    analyze.add_argument("--maxiter", type=int, default=2000, help="Maximum optimizer iterations per fitted model.")
+    analyze.add_argument("--maxfun", type=int, default=50000, help="Maximum objective evaluations per fitted model.")
+    analyze.add_argument("--gtol", type=float, default=1e-5, help="Gradient tolerance for the L-BFGS-B optimizer.")
+    analyze.add_argument("--item-prior-sd", type=float, default=3.0, help="Weak Gaussian prior standard deviation for item difficulties; set <=0 to disable.")
+    analyze.set_defaults(handler=_run_analyze_irt)
+    return analyze
+
+
 def _add_export_parser(sub: argparse._SubParsersAction[argparse.ArgumentParser], formatter) -> argparse.ArgumentParser:
     export = sub.add_parser(
         "export",
@@ -1858,6 +1886,7 @@ def build_parser() -> argparse.ArgumentParser:
     _add_generate_parser(sub, formatter)
     _add_evaluate_parser(sub, formatter)
     _add_analyze_parser(sub, formatter)
+    _add_analyze_irt_parser(sub, formatter)
     _add_export_parser(sub, formatter)
     _add_submit_generate_cluster_parser(sub, formatter)
     _add_submit_evaluate_cluster_parser(sub, formatter)
