@@ -5,7 +5,7 @@ description = "Augmented MCQA generation and evaluation tooling"
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
 dependencies = [
-    "anthropic>=0.80.0",
+    "anthropic==0.71.0",
     "datasets>=4.5.0",
     "google-genai>=1.63.0",
     "huggingface-hub>=0.34.0",
@@ -24,10 +24,8 @@ dependencies = [
 ]
 
 [tool.uv]
+cache-dir = "/fs/nexus-scratch/adesai10/uv-cache"
 environments = ["sys_platform == 'linux' and platform_machine == 'x86_64'"]
-override-dependencies = [
-    "anthropic>=0.80.0",
-]
 
 [tool.uv.sources]
-vllm = { url = "https://wheels.vllm.ai/nightly/vllm-1.0.0.dev-cp38-abi3-manylinux1_x86_64.whl" }
+vllm = { path = "/fs/nexus-scratch/adesai10/wheels/vllm-0.11.2.dev453+g653591d5e-cp38-abi3-manylinux1_x86_64.whl" }

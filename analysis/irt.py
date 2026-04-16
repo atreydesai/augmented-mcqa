@@ -1,4 +1,4 @@
-"""Many-facet IRT analysis for collected Augmented MCQA evaluations."""
+"""Fit a simple decomposed 3PL IRT model over cached MCQA evaluations."""
 
 from __future__ import annotations
 
@@ -6,7 +6,6 @@ import json
 import math
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable
 
 import matplotlib
 
@@ -16,58 +15,166 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from datasets import load_from_disk
+from matplotlib.offsetbox import AnnotationBbox, OffsetImage
 from scipy.optimize import minimize
 from scipy.sparse import csr_matrix
 
-from utils.constants import EVALUATED_STORE_MANIFEST, MODE_CHOICES, SETTING_NAMES, SETTING_SPECS
+from utils.constants import EVALUATED_STORE_MANIFEST, SETTING_NAMES, SETTING_SPECS
 
 
-DEFAULT_REFERENCE_SETTING = "human_from_scratch"
-DEFAULT_REFERENCE_EVALUATOR = "vllm/nvidia/NVIDIA-Nemotron-Nano-9B-v2"
+IRT_SCALING = 1.702
+EPS = 1e-8
 DEFAULT_OUTPUT_DIR = Path("results/augmented_mcqa_irt")
-DEFAULT_ITEM_FIT_LIMIT = 50
-DEFAULT_ITEM_PRIOR_SD = 3.0
-SETTING_RANDOM_BASELINES = {
-    setting: 1.0 / int(spec["num_choices"]) for setting, spec in SETTING_SPECS.items()
+DEFAULT_BENCHMARKER_JSONL = Path("results/atrey_writing_flaw_rows_gpt.jsonl")
+LOGO_DIR = Path(__file__).parent / "assets" / "logos"
+DEFAULT_REFERENCE_TEST_TAKER = "vllm/nvidia/NVIDIA-Nemotron-Nano-9B-v2"
+DEFAULT_REFERENCE_SETTING = "human_from_scratch"
+TOP_N_ITEMS = 20
+DATASET_ORDER = ["arc_challenge", "mmlu_pro", "gpqa"]
+MODEL_ORDER = [
+    ("openai/gpt-5.2-2025-12-11", "GPT"),
+    ("google/gemini-3.1-pro-preview", "Gemini"),
+    ("together/Qwen/Qwen3.5-397B-A17B", "Qwen"),
+]
+HUMAN_COLOR = "#0072B2"
+MODEL_COLOR = "#D55E00"
+ABLATION_COLOR = "#CC79A7"
+MISSING_COLOR = "#F2F2F2"
+MODEL_HATCHES = {
+    "openai/gpt-5.2-2025-12-11": "",
+    "google/gemini-3.1-pro-preview": "//",
+    "together/Qwen/Qwen3.5-397B-A17B": "xx",
 }
-SETTING_DISPLAY = {
+MODEL_LOGOS = {
+    "GPT Ablation": LOGO_DIR / "chatgpt_logo.png",
+    "Gemini Ablation": LOGO_DIR / "google_gemini_icon.png",
+    "Qwen Ablation": LOGO_DIR / "qwen_logo.png",
+}
+MODEL_LOGO_ZOOM = {
+    "GPT": 0.045,
+    "Gemini": 0.055,
+    "Qwen": 0.07,
+    "GPT Ablation": 0.045,
+    "Gemini Ablation": 0.055,
+    "Qwen Ablation": 0.07,
+}
+
+STEM_PRIOR_SD = 3.0
+ITEM_NOISE_PRIOR_SD = 1.0
+LOG_DISCRIMINATION_PRIOR_SD = 0.75
+GUESSING_PRIOR_SD = 1.0
+
+SETTING_GUESSING = {name: 1.0 / int(spec["num_choices"]) for name, spec in SETTING_SPECS.items()}
+SETTING_LABELS = {
     "human_from_scratch": "Human From Scratch",
     "model_from_scratch": "Model From Scratch",
     "augment_human": "Augment Human",
     "augment_model": "Augment Model",
     "augment_ablation": "Augment Ablation",
 }
-EVALUATOR_DISPLAY = {
+SETTING_SHORT_LABELS = {
+    "human_from_scratch": "HFS",
+    "model_from_scratch": "MFS",
+    "augment_human": "AH",
+    "augment_model": "AM",
+    "augment_ablation": "AA",
+}
+TEST_TAKER_LABELS = {
     "vllm/Qwen/Qwen3-4B-Instruct-2507": "Qwen3-4B",
+    "vllm/Qwen/Qwen3-14B": "Qwen3-14B",
     "vllm/allenai/Olmo-3-7B-Instruct": "Olmo-3-7B",
     "vllm/meta-llama/Llama-3.1-8B-Instruct": "Llama-3.1-8B",
+    "vllm/meta-llama/Llama-3.2-3B-Instruct": "Llama-3.2-3B",
     "vllm/nvidia/NVIDIA-Nemotron-Nano-9B-v2": "Nemotron-9B",
 }
+GENERATOR_LABEL_PARTS = [
+    ("gpt-5.2", "gpt-5.2"),
+    ("gemini-3.1-pro", "gemini-3.1-pro"),
+    ("Qwen3.5-397B-A17B", "Qwen3.5-397B"),
+]
 
 
-def _csv_list(raw: str | None) -> list[str] | None:
+@dataclass(frozen=True)
+class Block:
+    name: str
+    levels: tuple[str, ...]
+    reference: str | None
+    start: int
+    size: int
+
+    @property
+    def stop(self) -> int:
+        return self.start + self.size
+
+    @property
+    def free_levels(self) -> tuple[str, ...]:
+        return self.levels if self.reference is None else tuple(x for x in self.levels if x != self.reference)
+
+
+@dataclass(frozen=True)
+class Design:
+    frame: pd.DataFrame
+    X_theta: csr_matrix
+    X_difficulty: csr_matrix
+    y: np.ndarray
+    blocks: dict[str, Block]
+    item_index: np.ndarray
+    guessing_center: np.ndarray
+    n_params: int
+
+
+@dataclass(frozen=True)
+class Fit:
+    design: Design
+    beta: np.ndarray
+    success: bool
+    message: str
+    iterations: int
+    objective: float
+    log_likelihood: float
+    aic: float
+    bic: float
+    fitted_frame: pd.DataFrame
+
+
+def csv_values(raw: str | None) -> list[str] | None:
     if raw is None:
         return None
     values = [part.strip() for part in raw.split(",") if part.strip()]
     return values or None
 
 
-def _safe_name(value: str) -> str:
+def safe_name(value: str) -> str:
     return str(value).replace("/", "_").replace("\\", "_").replace(" ", "_")
 
 
-def _display_setting(value: str) -> str:
-    return SETTING_DISPLAY.get(str(value), str(value))
+def generator_label(value: str) -> str:
+    raw = str(value)
+    for needle, label in GENERATOR_LABEL_PARTS:
+        if needle in raw:
+            return label
+    return raw
 
 
-def _display_evaluator(value: str) -> str:
-    return EVALUATOR_DISPLAY.get(str(value), str(value))
+def levels(series: pd.Series, order: list[str] | None = None) -> list[str]:
+    values = sorted(series.astype(str).unique())
+    if order is None:
+        return values
+    rank = {value: idx for idx, value in enumerate(order)}
+    return sorted(values, key=lambda value: (rank.get(value, len(rank)), value))
 
 
-def _iter_group_roots(root: Path | str) -> Iterable[tuple[Path, dict[str, object]]]:
-    for manifest_path in sorted(Path(root).rglob(EVALUATED_STORE_MANIFEST)):
-        payload = json.loads(manifest_path.read_text(encoding="utf-8"))
-        yield manifest_path.parent, payload
+def reference(values: list[str], preferred: str | None) -> str:
+    return preferred if preferred in values else values[0]
+
+
+def sigmoid(x: np.ndarray) -> np.ndarray:
+    return 1.0 / (1.0 + np.exp(-np.clip(x, -40.0, 40.0)))
+
+
+def logit(p: np.ndarray) -> np.ndarray:
+    p = np.clip(p, EPS, 1.0 - EPS)
+    return np.log(p / (1.0 - p))
 
 
 def load_irt_frame(
@@ -80,594 +187,853 @@ def load_irt_frame(
     modes: list[str] | None = None,
 ) -> pd.DataFrame:
     generator_filter = set(generators or [])
-    evaluator_filter = set(evaluators or [])
+    test_taker_filter = set(evaluators or [])
     dataset_filter = set(datasets or [])
     setting_filter = set(settings or [])
     mode_filter = set(modes or ["full_question"])
     frames: list[pd.DataFrame] = []
 
-    for group_root, manifest in _iter_group_roots(root):
-        generator = str(manifest.get("generation_model", "") or "")
-        evaluator = str(manifest.get("evaluation_model", "") or "")
+    for manifest_path in sorted(Path(root).rglob(EVALUATED_STORE_MANIFEST)):
+        group_root = manifest_path.parent
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        generator = str(manifest.get("generation_model", ""))
+        test_taker = str(manifest.get("evaluation_model", ""))
         if generator_filter and generator not in generator_filter:
             continue
-        if evaluator_filter and evaluator not in evaluator_filter:
+        if test_taker_filter and test_taker not in test_taker_filter:
             continue
-        manifest_datasets = list(manifest.get("dataset_types") or [])
-        manifest_settings = list(manifest.get("settings") or [])
-        manifest_modes = list(manifest.get("modes") or [])
-        for dataset in manifest_datasets:
+
+        for dataset in manifest.get("dataset_types", []):
             if dataset_filter and dataset not in dataset_filter:
                 continue
-            for setting in manifest_settings:
+            for setting in manifest.get("settings", []):
                 if setting_filter and setting not in setting_filter:
                     continue
-                for mode in manifest_modes:
+                for mode in manifest.get("modes", []):
                     if mode_filter and mode not in mode_filter:
                         continue
-                    dataset_path = group_root / dataset / setting / mode
-                    if not dataset_path.exists():
+                    path = group_root / dataset / setting / mode
+                    if not path.exists():
                         continue
-                    frame = load_from_disk(str(dataset_path)).to_pandas()
-                    if frame.empty:
+                    data = load_from_disk(str(path)).to_pandas()
+                    if data.empty:
                         continue
-                    frame = frame[
+                    data = data[
                         [
                             "sample_id",
                             "question",
-                            "dataset_type",
                             "evaluation_prediction",
                             "evaluation_is_correct",
-                            "evaluation_status",
                             "num_choices",
                             "setting",
                         ]
                     ].copy()
-                    frame["generator"] = generator
-                    frame["evaluator"] = evaluator
-                    frame["dataset"] = dataset
-                    frame["mode"] = mode
-                    frames.append(frame)
+                    data["dataset"] = dataset
+                    data["generator"] = generator
+                    data["test_taker"] = test_taker
+                    data["mode"] = mode
+                    frames.append(data)
 
     if not frames:
         return pd.DataFrame()
 
-    df = pd.concat(frames, ignore_index=True)
-    df["evaluation_prediction"] = df["evaluation_prediction"].fillna("").astype(str)
-    df = df[df["evaluation_prediction"].str.strip() != ""].copy()
-    if df.empty:
-        return df
-    df["correct"] = df["evaluation_is_correct"].fillna(False).astype(bool).astype(int)
-    df["choice_count"] = df["num_choices"].astype(int)
-    df["guessing"] = df["setting"].map(SETTING_RANDOM_BASELINES).astype(float)
-    df["choice_group"] = np.where(df["choice_count"] <= 4, "4-choice", "10-choice")
-    df["item_id"] = df["sample_id"].astype(str)
-    df["obs_id"] = np.arange(len(df), dtype=int)
-    duplicate_cols = ["generator", "evaluator", "item_id", "setting"]
-    if df.duplicated(duplicate_cols).any():
-        dupes = int(df.duplicated(duplicate_cols).sum())
-        raise ValueError(f"Found {dupes} duplicated evaluator judgments across {duplicate_cols}.")
-    return df.reset_index(drop=True)
+    frame = pd.concat(frames, ignore_index=True)
+    frame = frame[frame["evaluation_prediction"].fillna("").astype(str).str.strip() != ""].copy()
+    frame["correct"] = frame["evaluation_is_correct"].fillna(False).astype(bool).astype(float)
+    frame["choice_count"] = frame["num_choices"].astype(int)
+    frame["choice_group"] = np.where(frame["choice_count"] <= 4, "4-choice", "10-choice")
+    frame["stem_id"] = frame["dataset"].astype(str) + "::" + frame["sample_id"].astype(str)
+    frame["item_id"] = (
+        frame["dataset"].astype(str)
+        + "::"
+        + frame["sample_id"].astype(str)
+        + "::"
+        + frame["generator"].astype(str)
+        + "::"
+        + frame["setting"].astype(str)
+    )
+    frame["guessing"] = frame["setting"].map(SETTING_GUESSING).astype(float)
+    frame["obs_id"] = np.arange(len(frame))
+    return frame.reset_index(drop=True)
 
 
-@dataclass(frozen=True)
-class ParamBlock:
-    name: str
-    levels: tuple[str, ...]
-    reference: str
-    start: int
-
-    @property
-    def free_levels(self) -> tuple[str, ...]:
-        return tuple(level for level in self.levels if level != self.reference)
-
-
-@dataclass(frozen=True)
-class IRTDesign:
-    frame: pd.DataFrame
-    X: csr_matrix
-    y: np.ndarray
-    c: np.ndarray
-    blocks: dict[str, ParamBlock]
-    interaction: bool
-    param_count: int
-    item_reference: str
-    item_column_indices: np.ndarray
-    facet_column_indices: np.ndarray
-
-
-@dataclass
-class FitResult:
-    design: IRTDesign
-    beta: np.ndarray
-    objective: float
-    success: bool
-    message: str
-    iterations: int
-    hessian: np.ndarray
-    covariance: np.ndarray | None
-    standard_errors: np.ndarray | None
-    facet_covariance: np.ndarray | None
-    item_information_diag: np.ndarray | None
-    probabilities: np.ndarray
-    eta: np.ndarray
-    fitted_frame: pd.DataFrame
-    log_likelihood: float
-    aic: float
-    bic: float
-
-
-def _resolve_reference(levels: list[str], preferred: str | None) -> str:
-    if preferred and preferred in levels:
-        return preferred
-    return levels[0]
-
-
-def _ordered_levels(values: Iterable[str], preferred_order: Iterable[str] | None = None) -> list[str]:
-    raw = sorted({str(value) for value in values})
-    if preferred_order is None:
-        return raw
-    order = {value: idx for idx, value in enumerate(preferred_order)}
-    return sorted(raw, key=lambda value: (order.get(value, len(order)), value))
-
-
-def validate_identification(frame: pd.DataFrame) -> None:
-    pairs = [
-        ("generator", "evaluator"),
-        ("generator", "setting"),
-        ("evaluator", "setting"),
-    ]
-    for left, right in pairs:
-        if left not in frame.columns or right not in frame.columns:
+def add_block(rows: list[int], cols: list[int], vals: list[float], series: pd.Series, block: Block, sign: float) -> None:
+    offset = {level: block.start + idx for idx, level in enumerate(block.free_levels)}
+    for row, level in enumerate(series.astype(str)):
+        if level == block.reference:
             continue
-        if frame[left].nunique() < 2 or frame[right].nunique() < 2:
-            raise ValueError(
-                f"{left} and {right} must each have at least two levels after filtering; "
-                f"found {frame[left].nunique()} {left} level(s) and {frame[right].nunique()} {right} level(s)."
-            )
-        counts = frame.groupby(left, sort=False)[right].nunique()
-        bad = counts[counts < 2]
-        if not bad.empty:
-            level = str(bad.index[0])
-            raise ValueError(
-                f"{left.capitalize()} {level} co-occurs with only one {right} level; "
-                "effects are not separately identified."
-            )
-        reverse_counts = frame.groupby(right, sort=False)[left].nunique()
-        reverse_bad = reverse_counts[reverse_counts < 2]
-        if not reverse_bad.empty:
-            level = str(reverse_bad.index[0])
-            raise ValueError(
-                f"{right.capitalize()} {level} co-occurs with only one {left} level; "
-                "effects are not separately identified."
-            )
+        rows.append(row)
+        cols.append(offset[level])
+        vals.append(sign)
 
 
-def build_design(
-    frame: pd.DataFrame,
-    *,
-    reference_setting: str = DEFAULT_REFERENCE_SETTING,
-    reference_evaluator: str = DEFAULT_REFERENCE_EVALUATOR,
-    interaction: bool = False,
-) -> IRTDesign:
+def make_design(frame: pd.DataFrame) -> Design:
     if frame.empty:
-        raise ValueError("Cannot build an IRT design from an empty frame.")
-    work = frame.copy()
-    generator_levels = _ordered_levels(work["generator"])
-    item_levels = _ordered_levels(work["item_id"])
-    setting_levels = _ordered_levels(work["setting"], SETTING_NAMES)
-    evaluator_levels = _ordered_levels(work["evaluator"])
+        raise ValueError("No rows available for IRT.")
+    if frame["test_taker"].nunique() < 2:
+        raise ValueError("IRT needs at least two test-taker models.")
 
-    generator_ref = generator_levels[0]
-    item_ref = item_levels[0]
-    setting_ref = _resolve_reference(setting_levels, reference_setting)
-    evaluator_ref = _resolve_reference(evaluator_levels, reference_evaluator)
+    level_map = {
+        "theta": levels(frame["test_taker"]),
+        "dataset": levels(frame["dataset"]),
+        "stem": levels(frame["stem_id"]),
+        "generator": levels(frame["generator"]),
+        "setting": levels(frame["setting"], SETTING_NAMES),
+        "item_noise": levels(frame["item_id"]),
+        "log_discrimination": levels(frame["item_id"]),
+        "guessing": levels(frame["item_id"]),
+    }
+    refs = {
+        "theta": reference(level_map["theta"], DEFAULT_REFERENCE_TEST_TAKER),
+        "dataset": level_map["dataset"][0],
+        "stem": level_map["stem"][0],
+        "generator": level_map["generator"][0],
+        "setting": reference(level_map["setting"], DEFAULT_REFERENCE_SETTING),
+        "item_noise": None,
+        "log_discrimination": None,
+        "guessing": None,
+    }
 
-    blocks: dict[str, ParamBlock] = {}
+    blocks: dict[str, Block] = {}
     start = 0
-    for name, levels, reference in (
-        ("generator", tuple(generator_levels), generator_ref),
-        ("item", tuple(item_levels), item_ref),
-        ("setting", tuple(setting_levels), setting_ref),
-        ("evaluator", tuple(evaluator_levels), evaluator_ref),
-    ):
-        blocks[name] = ParamBlock(name=name, levels=levels, reference=reference, start=start)
-        start += max(0, len(levels) - 1)
-    if interaction:
-        blocks["evaluator_10choice"] = ParamBlock(
-            name="evaluator_10choice",
-            levels=tuple(evaluator_levels),
-            reference=evaluator_ref,
-            start=start,
-        )
-        start += max(0, len(evaluator_levels) - 1)
+    for name, vals in level_map.items():
+        size = len(vals) if refs[name] is None else len(vals) - 1
+        blocks[name] = Block(name, tuple(vals), refs[name], start, size)
+        start += size
 
-    rows: list[int] = []
-    cols: list[int] = []
-    vals: list[float] = []
+    theta_rows: list[int] = []
+    theta_cols: list[int] = []
+    theta_vals: list[float] = []
+    difficulty_rows: list[int] = []
+    difficulty_cols: list[int] = []
+    difficulty_vals: list[float] = []
 
-    def add_block(level_series: pd.Series, block_name: str, sign: float, mask: np.ndarray | None = None) -> None:
-        block = blocks[block_name]
-        index = {level: block.start + idx for idx, level in enumerate(block.free_levels)}
-        effective_mask = np.ones(len(work), dtype=bool) if mask is None else mask
-        for row_idx, level in enumerate(level_series.astype(str)):
-            if not effective_mask[row_idx] or level == block.reference:
-                continue
-            rows.append(row_idx)
-            cols.append(index[level])
-            vals.append(sign)
+    add_block(theta_rows, theta_cols, theta_vals, frame["test_taker"], blocks["theta"], 1.0)
+    add_block(difficulty_rows, difficulty_cols, difficulty_vals, frame["dataset"], blocks["dataset"], 1.0)
+    add_block(difficulty_rows, difficulty_cols, difficulty_vals, frame["stem_id"], blocks["stem"], 1.0)
+    add_block(difficulty_rows, difficulty_cols, difficulty_vals, frame["generator"], blocks["generator"], 1.0)
+    add_block(difficulty_rows, difficulty_cols, difficulty_vals, frame["setting"], blocks["setting"], 1.0)
+    add_block(difficulty_rows, difficulty_cols, difficulty_vals, frame["item_id"], blocks["item_noise"], 1.0)
 
-    add_block(work["generator"], "generator", +1.0)
-    add_block(work["item_id"], "item", -1.0)
-    add_block(work["setting"], "setting", -1.0)
-    add_block(work["evaluator"], "evaluator", -1.0)
-    if interaction:
-        add_block(
-            work["evaluator"],
-            "evaluator_10choice",
-            -1.0,
-            mask=(work["choice_group"] == "10-choice").to_numpy(),
-        )
-
-    X = csr_matrix((vals, (rows, cols)), shape=(len(work), start), dtype=float)
-    item_block = blocks["item"]
-    item_cols = np.arange(item_block.start, item_block.start + len(item_block.free_levels), dtype=int)
-    facet_cols = np.array([idx for idx in range(start) if idx not in set(item_cols.tolist())], dtype=int)
-    return IRTDesign(
-        frame=work,
-        X=X,
-        y=work["correct"].to_numpy(dtype=float),
-        c=work["guessing"].to_numpy(dtype=float),
+    shape = (len(frame), start)
+    item_lookup = {item: idx for idx, item in enumerate(level_map["item_noise"])}
+    item_index = frame["item_id"].map(item_lookup).to_numpy(dtype=int)
+    guessing_center = (
+        frame.drop_duplicates("item_id").set_index("item_id").loc[level_map["item_noise"], "guessing"].to_numpy(dtype=float)
+    )
+    return Design(
+        frame=frame,
+        X_theta=csr_matrix((theta_vals, (theta_rows, theta_cols)), shape=shape),
+        X_difficulty=csr_matrix((difficulty_vals, (difficulty_rows, difficulty_cols)), shape=shape),
+        y=frame["correct"].to_numpy(dtype=float),
         blocks=blocks,
-        interaction=interaction,
-        param_count=start,
-        item_reference=item_ref,
-        item_column_indices=item_cols,
-        facet_column_indices=facet_cols,
+        item_index=item_index,
+        guessing_center=logit(guessing_center),
+        n_params=start,
     )
 
 
-def _fit_objective(beta: np.ndarray, design: IRTDesign) -> tuple[float, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    eta = np.asarray(design.X @ beta).reshape(-1)
-    u = 1.0 / (1.0 + np.exp(-eta))
-    p = design.c + (1.0 - design.c) * u
-    p = np.clip(p, 1e-8, 1.0 - 1e-8)
+def block_slice(design: Design, name: str) -> slice:
+    block = design.blocks[name]
+    return slice(block.start, block.stop)
 
-    du = u * (1.0 - u)
-    d2u = du * (1.0 - 2.0 * u)
-    dp = (1.0 - design.c) * du
-    d2p = (1.0 - design.c) * d2u
 
+def irt_probability(beta: np.ndarray, design: Design) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    theta = np.asarray(design.X_theta @ beta).reshape(-1)
+    difficulty = np.asarray(design.X_difficulty @ beta).reshape(-1)
+    item_idx = design.item_index
+
+    alpha = beta[block_slice(design, "log_discrimination")][item_idx]
+    rho = beta[block_slice(design, "guessing")][item_idx]
+    a = np.exp(np.clip(alpha, -8.0, 8.0))
+    c = sigmoid(np.clip(rho, -12.0, 12.0))
+
+    eta = IRT_SCALING * a * (theta - difficulty)
+    u = sigmoid(eta)
+    p = np.clip(c + (1.0 - c) * u, EPS, 1.0 - EPS)
+    return theta, difficulty, a, c, eta, p
+
+
+def regularization(beta: np.ndarray, design: Design) -> tuple[float, np.ndarray]:
+    loss = 0.0
+    grad = np.zeros_like(beta)
+
+    for name, sd in (
+        ("stem", STEM_PRIOR_SD),
+        ("item_noise", ITEM_NOISE_PRIOR_SD),
+        ("log_discrimination", LOG_DISCRIMINATION_PRIOR_SD),
+    ):
+        slc = block_slice(design, name)
+        x = beta[slc]
+        loss += 0.5 * float(np.sum((x / sd) ** 2))
+        grad[slc] += x / (sd**2)
+
+    slc = block_slice(design, "guessing")
+    x = beta[slc] - design.guessing_center
+    loss += 0.5 * float(np.sum((x / GUESSING_PRIOR_SD) ** 2))
+    grad[slc] += x / (GUESSING_PRIOR_SD**2)
+    return loss, grad
+
+
+def objective_and_gradient(beta: np.ndarray, design: Design) -> tuple[float, np.ndarray]:
+    _, _, _, c, eta, p = irt_probability(beta, design)
     y = design.y
-    nll = -np.sum(y * np.log(p) + (1.0 - y) * np.log(1.0 - p))
-    dlog_dp = (y - p) / (p * (1.0 - p))
-    d2log_dp2 = -(y / (p**2)) - ((1.0 - y) / ((1.0 - p) ** 2))
-    grad_eta = -(dlog_dp * dp)
-    hess_eta = -(d2log_dp2 * (dp**2) + dlog_dp * d2p)
-    return nll, grad_eta, hess_eta, eta, p
+    nll = -float(np.sum(y * np.log(p) + (1.0 - y) * np.log(1.0 - p)))
+
+    u = np.clip((p - c) / np.clip(1.0 - c, EPS, None), EPS, 1.0 - EPS)
+    dloss_dp = (p - y) / (p * (1.0 - p))
+    dloss_deta = dloss_dp * (1.0 - c) * u * (1.0 - u)
+    alpha = beta[block_slice(design, "log_discrimination")][design.item_index]
+    a = np.exp(np.clip(alpha, -8.0, 8.0))
+
+    grad = np.asarray(design.X_theta.T @ (dloss_deta * IRT_SCALING * a)).reshape(-1)
+    grad -= np.asarray(design.X_difficulty.T @ (dloss_deta * IRT_SCALING * a)).reshape(-1)
+
+    grad[block_slice(design, "log_discrimination")] += np.bincount(
+        design.item_index,
+        weights=dloss_deta * eta,
+        minlength=design.blocks["log_discrimination"].size,
+    )
+    grad[block_slice(design, "guessing")] += np.bincount(
+        design.item_index,
+        weights=dloss_dp * (1.0 - u) * c * (1.0 - c),
+        minlength=design.blocks["guessing"].size,
+    )
+
+    penalty, penalty_grad = regularization(beta, design)
+    return nll + penalty, grad + penalty_grad
 
 
-def _objective_only(beta: np.ndarray, design: IRTDesign, item_prior_sd: float | None) -> float:
-    nll, _, _, _, _ = _fit_objective(beta, design)
-    if item_prior_sd is None or item_prior_sd <= 0.0 or len(design.item_column_indices) == 0:
-        return nll
-    item_beta = beta[design.item_column_indices]
-    variance = float(item_prior_sd) ** 2
-    return float(nll + 0.5 * np.sum((item_beta**2) / variance))
+def objective(beta: np.ndarray, design: Design) -> float:
+    return objective_and_gradient(beta, design)[0]
 
 
-def _gradient_only(beta: np.ndarray, design: IRTDesign, item_prior_sd: float | None) -> np.ndarray:
-    _, grad_eta, _, _, _ = _fit_objective(beta, design)
-    grad = np.asarray(design.X.T @ grad_eta).reshape(-1)
-    if item_prior_sd is not None and item_prior_sd > 0.0 and len(design.item_column_indices) > 0:
-        grad = grad.copy()
-        grad[design.item_column_indices] += beta[design.item_column_indices] / (float(item_prior_sd) ** 2)
-    return grad
+def gradient(beta: np.ndarray, design: Design) -> np.ndarray:
+    return objective_and_gradient(beta, design)[1]
 
 
-def _information_blocks(
-    beta: np.ndarray,
-    design: IRTDesign,
-    *,
-    item_prior_sd: float | None,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    _, _, hess_eta, _, _ = _fit_objective(beta, design)
-    facet_cols = design.facet_column_indices
-    item_cols = design.item_column_indices
-
-    X_f = design.X[:, facet_cols]
-    weighted_f = X_f.multiply(hess_eta[:, None])
-    h_ff = (X_f.T @ weighted_f).toarray()
-
-    if len(item_cols) == 0:
-        return 0.5 * (h_ff + h_ff.T), np.zeros((len(facet_cols), 0), dtype=float), np.zeros(0, dtype=float)
-
-    X_i = design.X[:, item_cols]
-    weighted_i = X_i.multiply(hess_eta[:, None])
-    h_fi = (X_f.T @ weighted_i).toarray()
-    h_ii_diag = np.asarray(weighted_i.multiply(X_i).sum(axis=0)).reshape(-1)
-    if item_prior_sd is not None and item_prior_sd > 0.0 and len(h_ii_diag) > 0:
-        h_ii_diag = h_ii_diag + (1.0 / (float(item_prior_sd) ** 2))
-    return 0.5 * (h_ff + h_ff.T), h_fi, h_ii_diag
-
-
-def _schur_facet_covariance(
-    h_ff: np.ndarray,
-    h_fi: np.ndarray,
-    h_ii_diag: np.ndarray,
-) -> tuple[np.ndarray | None, np.ndarray | None]:
-    if h_ff.size == 0:
-        return np.zeros((0, 0), dtype=float), np.zeros(0, dtype=float)
-    safe_diag = np.where(h_ii_diag > 1e-10, h_ii_diag, np.nan)
-    if h_fi.size == 0:
-        schur = h_ff
-    else:
-        reduced = h_fi * np.nan_to_num(1.0 / safe_diag, nan=0.0)[None, :]
-        schur = h_ff - reduced @ h_fi.T
-    try:
-        cov = np.linalg.pinv(schur)
-        se = np.sqrt(np.clip(np.diag(cov), 0.0, None))
-        return cov, se
-    except np.linalg.LinAlgError:
-        return None, None
+def initial_beta(design: Design) -> np.ndarray:
+    beta = np.zeros(design.n_params)
+    beta[block_slice(design, "guessing")] = design.guessing_center
+    return beta
 
 
 def fit_design(
-    design: IRTDesign,
+    design: Design,
     *,
     maxiter: int = 2000,
     maxfun: int = 50000,
     gtol: float = 1e-5,
     init_beta: np.ndarray | None = None,
-    item_prior_sd: float | None = DEFAULT_ITEM_PRIOR_SD,
-) -> FitResult:
-    beta0 = np.zeros(design.param_count, dtype=float) if init_beta is None else np.asarray(init_beta, dtype=float).copy()
+) -> Fit:
     result = minimize(
-        _objective_only,
-        beta0,
-        args=(design, item_prior_sd),
+        objective,
+        initial_beta(design) if init_beta is None else init_beta,
+        args=(design,),
         method="L-BFGS-B",
-        jac=_gradient_only,
-        options={"maxiter": int(maxiter), "maxfun": int(maxfun), "gtol": float(gtol)},
+        jac=gradient,
+        options={"maxiter": maxiter, "maxfun": maxfun, "gtol": gtol},
     )
-    nll, _, _, eta, probs = _fit_objective(result.x, design)
-    h_ff, h_fi, h_ii_diag = _information_blocks(result.x, design, item_prior_sd=item_prior_sd)
-    facet_covariance, facet_standard_errors = _schur_facet_covariance(h_ff, h_fi, h_ii_diag)
-    standard_errors = np.full(design.param_count, np.nan, dtype=float)
-    if len(design.item_column_indices) > 0:
-        item_se = np.sqrt(np.clip(np.where(h_ii_diag > 1e-10, 1.0 / h_ii_diag, np.nan), 0.0, None))
-        standard_errors[design.item_column_indices] = item_se
-    if facet_standard_errors is not None and len(design.facet_column_indices) > 0:
-        standard_errors[design.facet_column_indices] = facet_standard_errors
+    _, _, _, _, eta, p = irt_probability(result.x, design)
     fitted = design.frame.copy()
     fitted["eta"] = eta
-    fitted["probability"] = probs
-    fitted["residual"] = fitted["correct"].astype(float) - probs
-    fitted["variance"] = probs * (1.0 - probs)
-    log_likelihood = -float(nll)
-    aic = 2.0 * design.param_count - 2.0 * log_likelihood
-    bic = math.log(len(fitted)) * design.param_count - 2.0 * log_likelihood
-    return FitResult(
+    fitted["probability"] = p
+    fitted["residual"] = fitted["correct"] - p
+    fitted["variance"] = p * (1.0 - p)
+    log_likelihood = float(np.sum(design.y * np.log(p) + (1.0 - design.y) * np.log(1.0 - p)))
+    return Fit(
         design=design,
         beta=result.x,
-        objective=float(nll),
         success=bool(result.success),
         message=str(result.message),
-        iterations=int(getattr(result, "nit", 0) or 0),
-        hessian=h_ff,
-        covariance=None,
-        standard_errors=standard_errors,
-        facet_covariance=facet_covariance,
-        item_information_diag=h_ii_diag,
-        probabilities=probs,
-        eta=eta,
-        fitted_frame=fitted,
+        iterations=int(result.nit),
+        objective=float(result.fun),
         log_likelihood=log_likelihood,
-        aic=float(aic),
-        bic=float(bic),
+        aic=2.0 * design.n_params - 2.0 * log_likelihood,
+        bic=math.log(len(design.frame)) * design.n_params - 2.0 * log_likelihood,
+        fitted_frame=fitted,
     )
 
 
-def _block_frame(fit: FitResult, block_name: str) -> pd.DataFrame:
-    block = fit.design.blocks[block_name]
-    rows: list[dict[str, object]] = []
-    free_levels = list(block.free_levels)
-    for idx, level in enumerate(free_levels):
-        coef_index = block.start + idx
-        estimate = float(fit.beta[coef_index])
-        stderr = None if fit.standard_errors is None else float(fit.standard_errors[coef_index])
-        ci_low = None if stderr is None else estimate - 1.96 * stderr
-        ci_high = None if stderr is None else estimate + 1.96 * stderr
-        rows.append(
-            {
-                "block": block_name,
-                "level": level,
-                "reference": False,
-                "estimate": estimate,
-                "stderr": stderr,
-                "ci_low": ci_low,
-                "ci_high": ci_high,
-            }
-        )
-    rows.append(
-        {
-            "block": block_name,
-            "level": block.reference,
-            "reference": True,
-            "estimate": 0.0,
-            "stderr": 0.0,
-            "ci_low": 0.0,
-            "ci_high": 0.0,
-        }
-    )
+def coefficient_table(fit: Fit, name: str) -> pd.DataFrame:
+    block = fit.design.blocks[name]
+    rows = [
+        {"level": level, "estimate": float(fit.beta[block.start + idx]), "reference": False}
+        for idx, level in enumerate(block.free_levels)
+    ]
+    if block.reference is not None:
+        rows.append({"level": block.reference, "estimate": 0.0, "reference": True})
     return pd.DataFrame(rows)
 
 
-def setting_difficulty_frame(fit: FitResult) -> pd.DataFrame:
-    df = _block_frame(fit, "setting").copy()
-    df["setting"] = df["level"]
-    df["display"] = df["setting"].map(_display_setting)
-    df["is_reference"] = df["reference"]
-    return df.sort_values(["reference", "estimate"], ascending=[True, False]).reset_index(drop=True)
+def setting_difficulty_frame(fit: Fit) -> pd.DataFrame:
+    table = coefficient_table(fit, "setting")
+    table["setting"] = table["level"]
+    table["display"] = table["setting"].map(lambda x: SETTING_LABELS.get(x, x))
+    return table.sort_values("estimate", ascending=False).reset_index(drop=True)
 
 
-def evaluator_severity_frame(fit: FitResult) -> pd.DataFrame:
-    base = _block_frame(fit, "evaluator").copy()
-    base["evaluator"] = base["level"]
-    base["display"] = base["evaluator"].map(_display_evaluator)
-    base["is_reference"] = base["reference"]
-    return base.sort_values("estimate", ascending=False).reset_index(drop=True)
+def dataset_difficulty_frame(fit: Fit) -> pd.DataFrame:
+    table = coefficient_table(fit, "dataset")
+    table["dataset"] = table["level"]
+    return table.sort_values("estimate", ascending=False).reset_index(drop=True)
 
 
-def generator_ability_frame(fit: FitResult) -> pd.DataFrame:
-    df = _block_frame(fit, "generator").copy()
-    df["generator"] = df["level"]
-    mean_estimate = float(df["estimate"].mean())
-    df["estimate_centered"] = df["estimate"] - mean_estimate
-    if fit.standard_errors is not None:
-        centered_stderr = df["stderr"].fillna(0.0)
-        df["ci_low_centered"] = df["estimate_centered"] - 1.96 * centered_stderr
-        df["ci_high_centered"] = df["estimate_centered"] + 1.96 * centered_stderr
-    else:
-        df["ci_low_centered"] = np.nan
-        df["ci_high_centered"] = np.nan
-    return df.sort_values("estimate_centered", ascending=False).reset_index(drop=True)
+def generator_difficulty_frame(fit: Fit) -> pd.DataFrame:
+    table = coefficient_table(fit, "generator")
+    table["generator"] = table["level"]
+    table["display"] = table["generator"].map(generator_label)
+    return table.sort_values("estimate", ascending=False).reset_index(drop=True)
 
 
-def item_difficulty_frame(fit: FitResult) -> pd.DataFrame:
-    df = _block_frame(fit, "item").copy()
-    df["item_id"] = df["level"]
-    item_meta = (
-        fit.design.frame[["item_id", "question", "dataset"]]
-        .drop_duplicates("item_id")
-        .set_index("item_id")
-    )
-    df["question"] = df["item_id"].map(item_meta["question"])
-    df["dataset"] = df["item_id"].map(item_meta["dataset"])
-    return df.sort_values("estimate", ascending=False).reset_index(drop=True)
+def taker_ability_frame(fit: Fit) -> pd.DataFrame:
+    table = coefficient_table(fit, "theta")
+    table["test_taker"] = table["level"]
+    table["display"] = table["test_taker"].map(lambda x: TEST_TAKER_LABELS.get(x, x))
+    table["estimate_centered"] = table["estimate"] - table["estimate"].mean()
+    return table.sort_values("estimate_centered", ascending=False).reset_index(drop=True)
 
 
-def item_fit_frame(fit: FitResult) -> pd.DataFrame:
-    frame = fit.fitted_frame.copy()
-    grouped = frame.groupby("item_id", sort=False)
-    rows: list[dict[str, object]] = []
-    meta = frame[["item_id", "question", "dataset"]].drop_duplicates("item_id").set_index("item_id")
-    for item_id, group in grouped:
-        var = np.clip(group["variance"].to_numpy(dtype=float), 1e-8, None)
-        sq = (group["residual"].to_numpy(dtype=float) ** 2) / var
-        outfit = float(np.mean(sq))
-        infit = float(np.sum(group["residual"].to_numpy(dtype=float) ** 2) / np.sum(var))
+def stem_difficulty_frame(fit: Fit) -> pd.DataFrame:
+    table = coefficient_table(fit, "stem")
+    table["stem_id"] = table["level"]
+    meta = fit.design.frame.drop_duplicates("stem_id").set_index("stem_id")
+    table["dataset"] = table["stem_id"].map(meta["dataset"])
+    table["sample_id"] = table["stem_id"].map(meta["sample_id"])
+    table["question"] = table["stem_id"].map(meta["question"])
+    return table.sort_values("estimate", ascending=False).reset_index(drop=True)
+
+
+def item_parameters_frame(fit: Fit) -> pd.DataFrame:
+    frame = fit.design.frame.drop_duplicates("item_id").set_index("item_id")
+    item_ids = list(fit.design.blocks["item_noise"].levels)
+    alpha = fit.beta[block_slice(fit.design, "log_discrimination")]
+    rho = fit.beta[block_slice(fit.design, "guessing")]
+    pieces = {name: coefficient_table(fit, name).set_index("level")["estimate"] for name in ("dataset", "stem", "generator", "setting", "item_noise")}
+    rows = []
+
+    for idx, item_id in enumerate(item_ids):
+        row = frame.loc[item_id]
+        difficulty = (
+            float(pieces["dataset"].get(row["dataset"], 0.0))
+            + float(pieces["stem"].get(row["stem_id"], 0.0))
+            + float(pieces["generator"].get(row["generator"], 0.0))
+            + float(pieces["setting"].get(row["setting"], 0.0))
+            + float(pieces["item_noise"].get(item_id, 0.0))
+        )
+        rows.append(
+            {
+                "item_id": item_id,
+                "stem_id": row["stem_id"],
+                "dataset": row["dataset"],
+                "sample_id": row["sample_id"],
+                "generator": row["generator"],
+                "setting": row["setting"],
+                "choice_count": int(row["choice_count"]),
+                "question": row["question"],
+                "difficulty": difficulty,
+                "discrimination": float(np.exp(np.clip(alpha[idx], -8.0, 8.0))),
+                "guessing": float(sigmoid(np.array([np.clip(rho[idx], -12.0, 12.0)]))[0]),
+            }
+        )
+    return pd.DataFrame(rows).sort_values("difficulty", ascending=False).reset_index(drop=True)
+
+
+def item_fit_frame(fit: Fit) -> pd.DataFrame:
+    rows = []
+    meta = fit.design.frame.drop_duplicates("item_id").set_index("item_id")
+    for item_id, group in fit.fitted_frame.groupby("item_id", sort=False):
+        residual = group["residual"].to_numpy(dtype=float)
+        variance = np.clip(group["variance"].to_numpy(dtype=float), EPS, None)
+        outfit = float(np.mean((residual**2) / variance))
         rows.append(
             {
                 "item_id": item_id,
                 "dataset": meta.loc[item_id, "dataset"],
+                "sample_id": meta.loc[item_id, "sample_id"],
+                "generator": meta.loc[item_id, "generator"],
+                "setting": meta.loc[item_id, "setting"],
                 "question": meta.loc[item_id, "question"],
                 "n_obs": int(len(group)),
                 "outfit": outfit,
-                "infit": infit,
-                "underfit_flag": outfit > 1.5,
-                "overfit_flag": outfit < 0.7,
+                "infit": float(np.sum(residual**2) / np.sum(variance)),
             }
         )
     return pd.DataFrame(rows).sort_values("outfit", ascending=False).reset_index(drop=True)
 
 
-def residual_summary_frame(fit: FitResult) -> pd.DataFrame:
-    grouped = (
-        fit.fitted_frame
-        .groupby(["evaluator", "setting", "choice_group"], sort=False)
+def residual_summary_frame(fit: Fit) -> pd.DataFrame:
+    return (
+        fit.fitted_frame.groupby(["test_taker", "dataset", "generator", "setting", "choice_group"], sort=False)
         .agg(
             n_obs=("obs_id", "count"),
-            mean_residual=("residual", "mean"),
             mean_correct=("correct", "mean"),
             mean_predicted=("probability", "mean"),
+            mean_residual=("residual", "mean"),
         )
         .reset_index()
     )
-    grouped["display_evaluator"] = grouped["evaluator"].map(_display_evaluator)
-    grouped["display_setting"] = grouped["setting"].map(_display_setting)
-    return grouped
 
 
-def generator_setting_deltas(frame: pd.DataFrame, *, maxiter: int = 100) -> pd.DataFrame:
-    rows: list[pd.DataFrame] = []
-    for generator, subset in frame.groupby("generator", sort=False):
-        design = build_design(
-            subset,
-            reference_setting=DEFAULT_REFERENCE_SETTING,
-            reference_evaluator=DEFAULT_REFERENCE_EVALUATOR,
-            interaction=False,
-        )
-        fit = fit_design(design, maxiter=maxiter)
-        setting_df = setting_difficulty_frame(fit)
-        setting_df["generator"] = generator
-        rows.append(setting_df[["generator", "setting", "estimate", "stderr", "ci_low", "ci_high", "is_reference"]])
-    if not rows:
-        return pd.DataFrame()
-    return pd.concat(rows, ignore_index=True)
-
-
-def _plot_forest(df: pd.DataFrame, *, estimate_col: str, low_col: str, high_col: str, label_col: str, title: str, output_path: Path) -> Path:
-    plot_df = df.copy()
-    plot_df = plot_df.sort_values(estimate_col, ascending=True).reset_index(drop=True)
-    fig_height = max(3.5, 0.45 * len(plot_df))
-    fig, ax = plt.subplots(figsize=(8, fig_height))
-    y = np.arange(len(plot_df))
-    estimates = plot_df[estimate_col].to_numpy(dtype=float)
-    lows = plot_df[low_col].fillna(plot_df[estimate_col]).to_numpy(dtype=float)
-    highs = plot_df[high_col].fillna(plot_df[estimate_col]).to_numpy(dtype=float)
-    ax.axvline(0.0, color="black", linewidth=1.0, linestyle="--")
-    ax.errorbar(
-        estimates,
-        y,
-        xerr=np.vstack((estimates - lows, highs - estimates)),
-        fmt="o",
-        color="#1f77b4",
-        ecolor="#1f77b4",
-        capsize=3,
+def raw_generator_setting_frame(frame: pd.DataFrame) -> pd.DataFrame:
+    return (
+        frame.groupby(["generator", "setting"], sort=False)
+        .agg(n_obs=("obs_id", "count"), mean_correct=("correct", "mean"))
+        .reset_index()
     )
-    ax.set_yticks(y)
-    ax.set_yticklabels(plot_df[label_col].astype(str))
-    ax.set_title(title)
-    ax.set_xlabel("Logit Estimate")
-    fig.tight_layout()
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(output_path, dpi=200, bbox_inches="tight")
-    plt.close(fig)
-    return output_path
 
 
-def _plot_item_anomalies(item_df: pd.DataFrame, fit_df: pd.DataFrame, output_path: Path) -> Path:
-    merged = item_df.merge(fit_df, on=["item_id", "dataset", "question"], how="inner")
-    fig, ax = plt.subplots(figsize=(8, 6))
-    ax.scatter(merged["estimate"], merged["outfit"], alpha=0.4, s=18, color="#4c78a8")
-    ax.axhline(1.5, color="#e45756", linestyle="--", linewidth=1.0)
-    ax.axhline(0.7, color="#72b7b2", linestyle="--", linewidth=1.0)
-    ax.set_xlabel("Item Difficulty")
-    ax.set_ylabel("Outfit")
-    ax.set_title("Item Difficulty vs Outfit")
-    fig.tight_layout()
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(output_path, dpi=200, bbox_inches="tight")
-    plt.close(fig)
-    return output_path
+def irt_quality_summary_frame(items: pd.DataFrame) -> pd.DataFrame:
+    summary = (
+        items.groupby(["dataset", "setting"], sort=False)
+        .agg(
+            n_items=("item_id", "count"),
+            difficulty=("difficulty", "mean"),
+            difficulty_sd=("difficulty", "std"),
+            discrimination=("discrimination", "mean"),
+            discrimination_sd=("discrimination", "std"),
+        )
+        .reset_index()
+    )
+    summary["difficulty_se"] = summary["difficulty_sd"].fillna(0.0) / np.sqrt(summary["n_items"].clip(lower=1))
+    summary["discrimination_se"] = summary["discrimination_sd"].fillna(0.0) / np.sqrt(summary["n_items"].clip(lower=1))
+    return summary
 
 
-def _write_csv(df: pd.DataFrame, path: Path) -> Path:
+def benchmarker_validity_frame(path: Path = DEFAULT_BENCHMARKER_JSONL) -> pd.DataFrame:
+    if not path.exists():
+        return pd.DataFrame(columns=["dataset", "setting", "n_questions", "mean_flaws", "mean_flaws_se"])
+    from analysis.benchmarker_analysis import load_writing_flaw_data
+
+    flaw_df, _ = load_writing_flaw_data(path)
+    flaw_df = flaw_df.rename(columns={"config": "setting"}).copy()
+    grouped = (
+        flaw_df.groupby(["dataset", "setting"], observed=True)
+        .agg(
+            n_questions=("n_flaws", "count"),
+            mean_flaws=("n_flaws", "mean"),
+            flaws_sd=("n_flaws", "std"),
+        )
+        .reset_index()
+    )
+    grouped["mean_flaws_se"] = grouped["flaws_sd"].fillna(0.0) / np.sqrt(grouped["n_questions"].clip(lower=1))
+    return grouped.drop(columns=["flaws_sd"])
+
+
+def combined_quality_frame(irt_summary: pd.DataFrame, validity: pd.DataFrame) -> pd.DataFrame:
+    merged = irt_summary.merge(validity, on=["dataset", "setting"], how="left")
+    merged["mean_flaws"] = merged["mean_flaws"].astype(float)
+    merged["mean_flaws_se"] = merged["mean_flaws_se"].fillna(0.0).astype(float)
+    return merged
+
+
+def mean_se(values: pd.Series) -> tuple[float, float]:
+    clean = pd.Series(values).dropna().astype(float)
+    if clean.empty:
+        return float("nan"), float("nan")
+    if len(clean) == 1:
+        return float(clean.iloc[0]), 0.0
+    return float(clean.mean()), float(clean.std(ddof=1) / np.sqrt(len(clean)))
+
+
+def final_grouped_quality_frame(items: pd.DataFrame, validity: pd.DataFrame) -> pd.DataFrame:
+    rows = []
+    validity_lookup = validity.set_index(["dataset", "setting"]) if not validity.empty else pd.DataFrame()
+
+    def add_row(dataset: str, section: str, label: str, setting: str, source: str, generator: str | None, validity_setting: str | None) -> None:
+        subset = items[(items["dataset"] == dataset) & (items["setting"] == setting)]
+        if generator is not None:
+            subset = subset[subset["generator"] == generator]
+        difficulty, difficulty_se = mean_se(subset["difficulty"])
+        discrimination, discrimination_se = mean_se(subset["discrimination"])
+        mean_flaws = float("nan")
+        mean_flaws_se = float("nan")
+        validity_available = False
+        if validity_setting and not validity_lookup.empty and (dataset, validity_setting) in validity_lookup.index:
+            row = validity_lookup.loc[(dataset, validity_setting)]
+            mean_flaws = float(row["mean_flaws"])
+            mean_flaws_se = float(row["mean_flaws_se"])
+            validity_available = True
+        rows.append(
+            {
+                "dataset": dataset,
+                "section": section,
+                "label": label,
+                "setting": setting,
+                "source": source,
+                "generator": generator or "",
+                "n_items": int(len(subset)),
+                "difficulty": difficulty,
+                "difficulty_se": difficulty_se,
+                "discrimination": discrimination,
+                "discrimination_se": discrimination_se,
+                "mean_flaws": mean_flaws,
+                "mean_flaws_se": mean_flaws_se,
+                "validity_available": validity_available,
+            }
+        )
+
+    for dataset in sorted(items["dataset"].unique(), key=dataset_sort_key):
+        add_row(dataset, "From Scratch", "Human", "human_from_scratch", "Human", None, "human_from_scratch")
+        for generator, label in MODEL_ORDER:
+            add_row(dataset, "From Scratch", label, "model_from_scratch", "Model", generator, "model_from_scratch" if label == "GPT" else None)
+        add_row(dataset, "Augmentation", "Human", "augment_human", "Human", None, "augment_human")
+        for generator, label in MODEL_ORDER:
+            add_row(dataset, "Augmentation", label, "augment_model", "Model", generator, "augment_model" if label == "GPT" else None)
+    return pd.DataFrame(rows)
+
+
+def final_ablation_quality_frame(items: pd.DataFrame, validity: pd.DataFrame) -> pd.DataFrame:
+    rows = []
+    validity_lookup = validity.set_index(["dataset", "setting"]) if not validity.empty else pd.DataFrame()
+
+    def add_row(dataset: str, label: str, setting: str, source: str, generator: str | None, validity_setting: str | None) -> None:
+        subset = items[(items["dataset"] == dataset) & (items["setting"] == setting)]
+        if generator is not None:
+            subset = subset[subset["generator"] == generator]
+        difficulty, difficulty_se = mean_se(subset["difficulty"])
+        discrimination, discrimination_se = mean_se(subset["discrimination"])
+        mean_flaws = float("nan")
+        mean_flaws_se = float("nan")
+        validity_available = False
+        if validity_setting and not validity_lookup.empty and (dataset, validity_setting) in validity_lookup.index:
+            row = validity_lookup.loc[(dataset, validity_setting)]
+            mean_flaws = float(row["mean_flaws"])
+            mean_flaws_se = float(row["mean_flaws_se"])
+            validity_available = True
+        rows.append(
+            {
+                "dataset": dataset,
+                "label": label,
+                "setting": setting,
+                "source": source,
+                "generator": generator or "",
+                "n_items": int(len(subset)),
+                "difficulty": difficulty,
+                "difficulty_se": difficulty_se,
+                "discrimination": discrimination,
+                "discrimination_se": discrimination_se,
+                "mean_flaws": mean_flaws,
+                "mean_flaws_se": mean_flaws_se,
+                "validity_available": validity_available,
+            }
+        )
+
+    for dataset in sorted(items["dataset"].unique(), key=dataset_sort_key):
+        add_row(dataset, "Augment Human", "augment_human", "Human", None, "augment_human")
+        add_row(dataset, "Augment Model", "augment_model", "Model", None, "augment_model")
+        for generator, label in MODEL_ORDER:
+            add_row(dataset, f"{label} Ablation", "augment_ablation", "Ablation", generator, "augment_ablation" if label == "GPT" else None)
+    return pd.DataFrame(rows)
+
+
+def write_csv(frame: pd.DataFrame, path: Path) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
-    df.to_csv(path, index=False)
+    frame.to_csv(path, index=False)
     return path
 
 
-def _selected_values(raw: str | None, allowed: Iterable[str] | None = None) -> list[str] | None:
-    values = _csv_list(raw)
-    if values is None or allowed is None:
-        return values
-    allowed_set = set(allowed)
-    invalid = [value for value in values if value not in allowed_set]
-    if invalid:
-        raise ValueError(f"Unsupported values: {', '.join(invalid)}")
-    return values
+def bar_style(row: pd.Series) -> dict[str, object]:
+    if str(row.get("source")) == "Human":
+        return {"color": HUMAN_COLOR, "hatch": "", "edgecolor": "black"}
+    if str(row.get("source")) == "Ablation":
+        return {"color": ABLATION_COLOR, "hatch": "", "edgecolor": "black"}
+    return {
+        "color": MODEL_COLOR,
+        "hatch": MODEL_HATCHES.get(str(row.get("generator", "")), ""),
+        "edgecolor": "black",
+    }
+
+
+def draw_final_bar(ax: plt.Axes, x: float, value: float, err: float, row: pd.Series, *, missing: bool) -> None:
+    if missing or not np.isfinite(value):
+        ax.bar(
+            x,
+            0.0,
+            width=0.18,
+            color=MISSING_COLOR,
+            edgecolor="#666666",
+            linewidth=0.7,
+            hatch="//",
+        )
+        ax.text(x, 0.5, "to be filled in", ha="center", va="center", rotation=90, fontsize=7, transform=ax.get_xaxis_transform())
+        return
+    style = bar_style(row)
+    ax.bar(
+        x,
+        value,
+        yerr=err if np.isfinite(err) else None,
+        width=0.18,
+        capsize=3,
+        alpha=0.9,
+        linewidth=0.6,
+        error_kw={"elinewidth": 1.0},
+        **style,
+    )
+
+
+def add_logo_tick(ax: plt.Axes, x: float, path: Path, *, zoom: float = 0.055) -> None:
+    if not path.exists():
+        return
+    image = plt.imread(path)
+    artist = AnnotationBbox(
+        OffsetImage(image, zoom=zoom),
+        (x, -0.17),
+        xycoords=("data", "axes fraction"),
+        frameon=False,
+        box_alignment=(0.5, 0.5),
+        pad=0.0,
+        clip_on=False,
+    )
+    ax.add_artist(artist)
+
+
+def plot_final_grouped_quality(summary: pd.DataFrame, path: Path) -> Path:
+    datasets = sorted(summary["dataset"].unique(), key=dataset_sort_key)
+    metrics = [
+        ("difficulty", "difficulty_se", "IRT Difficulty\n(higher = harder)"),
+        ("discrimination", "discrimination_se", "IRT Discrimination\n(higher = separates better)"),
+        ("mean_flaws", "mean_flaws_se", "BenchMarker Flaws\n(lower = more valid)"),
+    ]
+    fig, axes = plt.subplots(len(metrics), len(datasets), figsize=(5.6 * len(datasets), 10.2), squeeze=False)
+
+    section_gap = 0.35
+    section_centers = {"From Scratch": 0.0, "Augmentation": 1.15}
+    offsets = np.array([-0.27, -0.09, 0.09, 0.27])
+    labels = ["Human", "GPT", "Gemini", "Qwen"]
+    for col, dataset in enumerate(datasets):
+        dataset_df = summary[summary["dataset"] == dataset].copy()
+        for row_idx, (metric, err_col, ylabel) in enumerate(metrics):
+            ax = axes[row_idx][col]
+            plotted_values = []
+            for section in ["From Scratch", "Augmentation"]:
+                group = dataset_df[dataset_df["section"] == section].set_index("label")
+                for offset, label in zip(offsets, labels, strict=True):
+                    if label not in group.index:
+                        continue
+                    record = group.loc[label]
+                    x = section_centers[section] + offset
+                    missing = metric == "mean_flaws" and not bool(record.get("validity_available", False))
+                    value = float(record[metric]) if pd.notna(record[metric]) else float("nan")
+                    err = float(record[err_col]) if pd.notna(record[err_col]) else 0.0
+                    draw_final_bar(ax, x, value, err, record, missing=missing)
+                    if not missing and np.isfinite(value):
+                        plotted_values.append(value + (err if np.isfinite(err) else 0.0))
+
+            ax.set_title(str(dataset) if row_idx == 0 else "")
+            ax.set_xticks([section_centers["From Scratch"], section_centers["Augmentation"]])
+            if row_idx == len(metrics) - 1:
+                ax.set_xticklabels(["From Scratch", "Augmentation"], rotation=0)
+                for section in ["From Scratch", "Augmentation"]:
+                    for offset, label in zip(offsets[1:], labels[1:], strict=True):
+                        logo_key = f"{label} Ablation"
+                        add_logo_tick(
+                            ax,
+                            section_centers[section] + float(offset),
+                            MODEL_LOGOS[logo_key],
+                            zoom=MODEL_LOGO_ZOOM[logo_key],
+                        )
+            else:
+                ax.set_xticklabels([])
+            ax.set_ylabel(ylabel if col == 0 else "")
+            ax.grid(axis="y", alpha=0.2)
+            ax.spines["top"].set_visible(False)
+            ax.spines["right"].set_visible(False)
+            if metric == "discrimination":
+                ymax = max(plotted_values) * 1.08 if plotted_values else 1.2
+                ax.set_ylim(0.9, max(ymax, 1.05))
+            elif plotted_values:
+                ymin = min(0.0, min(plotted_values) * 1.05)
+                ymax = max(plotted_values) * 1.1 if max(plotted_values) > 0 else 1.0
+                ax.set_ylim(ymin, ymax)
+            ax.axvline((section_centers["From Scratch"] + section_centers["Augmentation"]) / 2, color="#777777", linewidth=0.6, alpha=0.35)
+
+    handles = [
+        plt.Rectangle((0, 0), 1, 1, facecolor=HUMAN_COLOR, edgecolor="black", label="Human source"),
+        plt.Rectangle((0, 0), 1, 1, facecolor=MODEL_COLOR, edgecolor="black", label="Model source / GPT"),
+        plt.Rectangle((0, 0), 1, 1, facecolor=MODEL_COLOR, edgecolor="black", hatch="//", label="Model source / Gemini"),
+        plt.Rectangle((0, 0), 1, 1, facecolor=MODEL_COLOR, edgecolor="black", hatch="xx", label="Model source / Qwen"),
+        plt.Rectangle((0, 0), 1, 1, facecolor=MISSING_COLOR, edgecolor="#666666", hatch="//", label="BenchMarker pending"),
+    ]
+    fig.suptitle("Question Quality: Human vs Model-Generated MCQs")
+    fig.legend(handles=handles, loc="lower center", ncols=5, frameon=False)
+    fig.subplots_adjust(top=0.9, bottom=0.13, hspace=0.42, wspace=0.24)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(path, dpi=200, bbox_inches="tight")
+    plt.close(fig)
+    return path
+
+
+def plot_final_ablation_quality(summary: pd.DataFrame, path: Path) -> Path:
+    datasets = sorted(summary["dataset"].unique(), key=dataset_sort_key)
+    metrics = [
+        ("difficulty", "difficulty_se", "IRT Difficulty\n(higher = harder)"),
+        ("discrimination", "discrimination_se", "IRT Discrimination\n(higher = separates better)"),
+        ("mean_flaws", "mean_flaws_se", "BenchMarker Flaws\n(lower = more valid)"),
+    ]
+    fig, axes = plt.subplots(len(metrics), len(datasets), figsize=(4.6 * len(datasets), 9.6), squeeze=False)
+    for col, dataset in enumerate(datasets):
+        dataset_df = summary[summary["dataset"] == dataset].set_index("label")
+        for row_idx, (metric, err_col, ylabel) in enumerate(metrics):
+            ax = axes[row_idx][col]
+            plotted = []
+            labels = ["Augment Human", "Augment Model", "GPT Ablation", "Gemini Ablation", "Qwen Ablation"]
+            x_positions = np.array([-0.36, -0.18, 0.0, 0.18, 0.36])
+            for x, label in zip(x_positions, labels, strict=True):
+                record = dataset_df.loc[label]
+                value = float(record[metric]) if pd.notna(record[metric]) else float("nan")
+                err = float(record[err_col]) if pd.notna(record[err_col]) else 0.0
+                missing = not np.isfinite(value) or (metric == "mean_flaws" and not bool(record.get("validity_available", False)))
+                draw_final_bar(ax, float(x), value, err, record, missing=missing)
+                if not missing:
+                    plotted.append(value + err)
+            ax.set_title(str(dataset) if row_idx == 0 else "")
+            ax.set_xlim(-0.64, 0.64)
+            ax.set_xticks(x_positions)
+            ax.set_xticklabels(["Aug.\nHuman", "Aug.\nModel", "", "", ""])
+            for x, label in zip(x_positions[2:], labels[2:], strict=True):
+                add_logo_tick(ax, float(x), MODEL_LOGOS[label], zoom=MODEL_LOGO_ZOOM[label])
+            ax.set_ylabel(ylabel if col == 0 else "")
+            ax.grid(axis="y", alpha=0.2)
+            ax.spines["top"].set_visible(False)
+            ax.spines["right"].set_visible(False)
+            if metric == "discrimination":
+                ymax = max(plotted) * 1.08 if plotted else 1.05
+                ax.set_ylim(0.9, max(ymax, 1.05))
+            elif plotted:
+                ax.set_ylim(min(0.0, min(plotted) * 1.05), max(plotted) * 1.1 if max(plotted) > 0 else 1.0)
+    handles = [
+        plt.Rectangle((0, 0), 1, 1, facecolor=HUMAN_COLOR, edgecolor="black", label="Augment human"),
+        plt.Rectangle((0, 0), 1, 1, facecolor=MODEL_COLOR, edgecolor="black", label="Augment model"),
+        plt.Rectangle((0, 0), 1, 1, facecolor=ABLATION_COLOR, edgecolor="black", label="One-step ablation"),
+        plt.Rectangle((0, 0), 1, 1, facecolor=MISSING_COLOR, edgecolor="#666666", hatch="//", label="BenchMarker pending"),
+    ]
+    fig.suptitle("Ablation Comparison")
+    fig.legend(handles=handles, loc="lower center", ncols=4, frameon=False)
+    fig.subplots_adjust(top=0.9, bottom=0.18, hspace=0.42, wspace=0.24)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(path, dpi=200, bbox_inches="tight")
+    plt.close(fig)
+    return path
+
+
+def dataset_sort_key(dataset: str) -> tuple[int, str]:
+    value = str(dataset)
+    return (DATASET_ORDER.index(value), value) if value in DATASET_ORDER else (len(DATASET_ORDER), value)
+
+
+def setting_sort_key(setting: str) -> tuple[int, str]:
+    value = str(setting)
+    return (SETTING_NAMES.index(value), value) if value in SETTING_NAMES else (len(SETTING_NAMES), value)
+
+
+def plot_irt_quality(summary: pd.DataFrame, path: Path) -> Path:
+    settings = list(SETTING_NAMES)
+    plot = summary[summary["setting"].isin(settings)].copy()
+    datasets = sorted(plot["dataset"].unique(), key=dataset_sort_key)
+    active_settings = [setting for setting in settings if setting in set(plot["setting"])]
+    colors = [plt.get_cmap("tab10")(idx % 10) for idx in range(len(active_settings))]
+
+    fig, axes = plt.subplots(3, len(datasets), figsize=(5.3 * len(datasets), 10.0), squeeze=False)
+    for col, dataset in enumerate(datasets):
+        dataset_df = plot[plot["dataset"] == dataset].set_index("setting")
+        x = np.arange(len(active_settings))
+        labels = [SETTING_SHORT_LABELS.get(setting, setting) for setting in active_settings]
+
+        for row, (metric, err_col, ylabel) in enumerate(
+            [
+                ("difficulty", "difficulty_se", "IRT Difficulty\n(higher = harder)"),
+                ("discrimination", "discrimination_se", "IRT Discrimination\n(higher = separates better)"),
+                ("mean_flaws", "mean_flaws_se", "BenchMarker Flaws\n(lower = more valid)"),
+            ]
+        ):
+            ax = axes[row][col]
+            values = np.array([float(dataset_df.loc[setting, metric]) if setting in dataset_df.index else np.nan for setting in active_settings])
+            errors = np.array([float(dataset_df.loc[setting, err_col]) if setting in dataset_df.index else 0.0 for setting in active_settings])
+            bars = ax.bar(
+                x,
+                np.nan_to_num(values, nan=0.0),
+                yerr=np.nan_to_num(errors, nan=0.0),
+                capsize=3,
+                color=colors,
+                alpha=0.88,
+                edgecolor="black",
+                linewidth=0.5,
+            )
+            for idx, value in enumerate(values):
+                if np.isnan(value):
+                    bars[idx].set_color("#d9d9d9")
+                    bars[idx].set_hatch("//")
+                    ax.text(x[idx], 0.02, "missing", ha="center", va="bottom", rotation=90, fontsize=7)
+
+            ax.set_title(str(dataset) if row == 0 else "")
+            ax.set_xticks(x)
+            ax.set_xticklabels(labels, rotation=28, ha="right")
+            ax.set_ylabel(ylabel if col == 0 else "")
+            ax.grid(axis="y", alpha=0.2)
+            ax.spines["top"].set_visible(False)
+            ax.spines["right"].set_visible(False)
+            if metric == "discrimination":
+                ymax = max(float(np.nanmax(values + errors)) * 1.08, 0.6)
+                ax.set_ylim(0.9, ymax)
+
+    fig.suptitle("Question Quality by Generation Setting")
+    fig.subplots_adjust(top=0.92, bottom=0.1, hspace=0.42, wspace=0.22)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(path, dpi=200, bbox_inches="tight")
+    plt.close(fig)
+    return path
+
+
+def plot_ranked_bars(frame: pd.DataFrame, label_col: str, estimate_col: str, title: str, xlabel: str, path: Path) -> Path:
+    plot = frame.sort_values(estimate_col, ascending=True).reset_index(drop=True)
+    y = np.arange(len(plot))
+    values = plot[estimate_col].to_numpy(dtype=float)
+    colors = [plt.get_cmap("tab10")(idx % 10) for idx in range(len(plot))]
+
+    fig, ax = plt.subplots(figsize=(8.2, max(3.4, 0.5 * len(plot))))
+    ax.barh(y, values, color=colors, edgecolor="black", linewidth=0.5, alpha=0.88)
+    ax.axvline(0.0, color="#333333", linestyle="--", linewidth=1.0, alpha=0.65)
+    ax.set_yticks(y)
+    ax.set_yticklabels(plot[label_col].astype(str))
+    ax.set_xlabel(xlabel)
+    ax.set_title(title)
+    ax.grid(axis="x", alpha=0.2)
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+
+    span = max(float(values.max() - values.min()), 1.0)
+    pad = 0.03 * span
+    rank_order = plot[estimate_col].rank(method="first", ascending=False).astype(int)
+    for idx, (value, rank) in enumerate(zip(values, rank_order, strict=True)):
+        ha = "left" if value >= 0 else "right"
+        x = value + pad if value >= 0 else value - pad
+        ax.text(x, idx, f"#{rank}", ha=ha, va="center", fontsize=8)
+
+    fig.tight_layout()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(path, dpi=200, bbox_inches="tight")
+    plt.close(fig)
+    return path
+
+
+def plot_item_fit(items: pd.DataFrame, fit: pd.DataFrame, path: Path) -> Path:
+    merged = items.merge(fit, on=["item_id", "dataset", "sample_id", "generator", "setting", "question"])
+    fig, ax = plt.subplots(figsize=(8.2, 6.0))
+    ax.scatter(merged["difficulty"], merged["outfit"], s=11, alpha=0.34, color="#1f77b4", edgecolors="none")
+    ax.axhline(1.5, color="#e45756", linestyle="--", linewidth=1)
+    ax.axhline(0.7, color="#72b7b2", linestyle="--", linewidth=1)
+    ax.set_xlabel("relative instantiated item difficulty")
+    ax.set_ylabel("outfit")
+    ax.set_title("Item fit vs relative difficulty")
+    ax.grid(alpha=0.2)
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    fig.tight_layout()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(path, dpi=200, bbox_inches="tight")
+    plt.close(fig)
+    return path
 
 
 def run_irt_analysis(
@@ -682,162 +1048,131 @@ def run_irt_analysis(
     maxiter: int = 2000,
     maxfun: int = 50000,
     gtol: float = 1e-5,
-    item_prior_sd: float | None = DEFAULT_ITEM_PRIOR_SD,
+    item_prior_sd: float | None = None,
 ) -> list[Path]:
+    del item_prior_sd
     frame = load_irt_frame(
         collected_root,
         generators=generators,
         evaluators=evaluators,
         datasets=datasets,
         settings=settings,
-        modes=modes,
+        modes=modes or ["full_question"],
     )
-    if frame.empty:
-        raise ValueError("No observed evaluator judgments found under the selected collected root.")
-    validate_identification(frame)
+    design = make_design(frame)
+    fit = fit_design(design, maxiter=maxiter, maxfun=maxfun, gtol=gtol)
+    if not fit.success:
+        fit = fit_design(design, maxiter=maxiter, maxfun=maxfun, gtol=gtol, init_beta=fit.beta)
 
-    additive_design = build_design(frame, interaction=False)
-    additive_fit = fit_design(
-        additive_design,
-        maxiter=maxiter,
-        maxfun=maxfun,
-        gtol=gtol,
-        item_prior_sd=item_prior_sd,
-    )
-    if not additive_fit.success:
-        additive_fit = fit_design(
-            additive_design,
-            maxiter=maxiter,
-            maxfun=maxfun,
-            gtol=gtol,
-            init_beta=additive_fit.beta,
-            item_prior_sd=item_prior_sd,
-        )
+    root = Path(output_dir)
+    tables = root / "tables"
+    figures = root / "figures"
 
-    output_root = Path(output_dir)
-    tables_dir = output_root / "tables"
-    figures_dir = output_root / "figures"
-
-    setting_df = setting_difficulty_frame(additive_fit)
-    evaluator_df = evaluator_severity_frame(additive_fit)
-    generator_df = generator_ability_frame(additive_fit)
-    item_df = item_difficulty_frame(additive_fit)
-    item_fit_df = item_fit_frame(additive_fit)
-    residual_df = residual_summary_frame(additive_fit)
-    generator_setting_df = generator_setting_deltas(frame, maxiter=maxiter)
+    setting = setting_difficulty_frame(fit)
+    dataset = dataset_difficulty_frame(fit)
+    generator = generator_difficulty_frame(fit)
+    test_taker = taker_ability_frame(fit)
+    stems = stem_difficulty_frame(fit)
+    items = item_parameters_frame(fit)
+    item_fit = item_fit_frame(fit)
+    quality = irt_quality_summary_frame(items)
+    validity = benchmarker_validity_frame()
+    combined_quality = combined_quality_frame(quality, validity)
+    final_quality = final_grouped_quality_frame(items, validity)
+    ablation_quality = final_ablation_quality_frame(items, validity)
+    final_figures = figures / "final_figures"
 
     outputs = [
-        _write_csv(setting_df, tables_dir / "setting_difficulty.csv"),
-        _write_csv(evaluator_df, tables_dir / "evaluator_severity.csv"),
-        _write_csv(generator_df, tables_dir / "generator_ability.csv"),
-        _write_csv(item_df, tables_dir / "item_difficulty.csv"),
-        _write_csv(item_fit_df, tables_dir / "item_fit.csv"),
-        _write_csv(residual_df, tables_dir / "residual_summary.csv"),
-        _write_csv(generator_setting_df, tables_dir / "generator_setting_deltas.csv"),
+        write_csv(setting, tables / "setting_difficulty.csv"),
+        write_csv(dataset, tables / "dataset_difficulty.csv"),
+        write_csv(generator, tables / "generator_difficulty.csv"),
+        write_csv(test_taker, tables / "test_taker_ability.csv"),
+        write_csv(stems, tables / "stem_difficulty.csv"),
+        write_csv(items, tables / "instantiated_item_parameters.csv"),
+        write_csv(item_fit, tables / "item_fit.csv"),
+        write_csv(quality, tables / "irt_quality_by_dataset_setting.csv"),
+        write_csv(validity, tables / "benchmarker_validity_by_dataset_setting.csv"),
+        write_csv(combined_quality, tables / "question_quality_by_dataset_setting.csv"),
+        write_csv(final_quality, tables / "final_grouped_question_quality.csv"),
+        write_csv(ablation_quality, tables / "final_ablation_question_quality.csv"),
+        write_csv(residual_summary_frame(fit), tables / "residual_summary.csv"),
+        write_csv(raw_generator_setting_frame(frame), tables / "generator_setting_raw_accuracy.csv"),
+        write_csv(items.head(TOP_N_ITEMS), tables / "hardest_instantiated_items.csv"),
+        write_csv(items.tail(TOP_N_ITEMS), tables / "easiest_instantiated_items.csv"),
+        write_csv(stems.head(TOP_N_ITEMS), tables / "hardest_stems.csv"),
+        write_csv(stems.tail(TOP_N_ITEMS), tables / "easiest_stems.csv"),
+        write_csv(item_fit.head(TOP_N_ITEMS), tables / "highest_outfit_items.csv"),
+        write_csv(item_fit.tail(TOP_N_ITEMS), tables / "lowest_outfit_items.csv"),
+        plot_ranked_bars(setting, "display", "estimate", "Setting difficulty ranking", "relative IRT difficulty (higher = harder)", figures / "setting_difficulty.png"),
+        plot_ranked_bars(dataset, "dataset", "estimate", "Dataset difficulty ranking", "relative IRT difficulty (higher = harder)", figures / "dataset_difficulty.png"),
+        plot_ranked_bars(generator, "display", "estimate", "Generator difficulty ranking", "relative IRT difficulty (higher = harder)", figures / "generator_difficulty.png"),
+        plot_ranked_bars(test_taker, "display", "estimate_centered", "Test-taker ability ranking", "relative IRT ability (higher = stronger)", figures / "test_taker_ability.png"),
+        plot_item_fit(items, item_fit, figures / "item_fit.png"),
+        plot_irt_quality(combined_quality, figures / "question_quality_all_settings.png"),
+        plot_final_grouped_quality(final_quality, final_figures / "question_quality_grouped.png"),
+        plot_final_ablation_quality(ablation_quality, final_figures / "ablation_quality.png"),
     ]
-
-    outputs.extend(
-        [
-            _plot_forest(
-                setting_df.assign(label=setting_df["display"]),
-                estimate_col="estimate",
-                low_col="ci_low",
-                high_col="ci_high",
-                label_col="label",
-                title="Setting Difficulty",
-                output_path=figures_dir / "setting_difficulty_forest.png",
-            ),
-            _plot_forest(
-                generator_df.assign(label=generator_df["generator"]),
-                estimate_col="estimate_centered",
-                low_col="ci_low_centered",
-                high_col="ci_high_centered",
-                label_col="label",
-                title="Generator Model Ability",
-                output_path=figures_dir / "generator_ability_forest.png",
-            ),
-            _plot_forest(
-                evaluator_df.assign(label=evaluator_df["display"]),
-                estimate_col="estimate",
-                low_col="ci_low",
-                high_col="ci_high",
-                label_col="label",
-                title="Evaluator Severity",
-                output_path=figures_dir / "evaluator_severity_forest.png",
-            ),
-            _plot_item_anomalies(item_df, item_fit_df, figures_dir / "item_anomalies.png"),
-        ]
-    )
-
-    top_hard = item_df.head(DEFAULT_ITEM_FIT_LIMIT)
-    top_easy = item_df.tail(DEFAULT_ITEM_FIT_LIMIT)
-    top_underfit = item_fit_df.head(DEFAULT_ITEM_FIT_LIMIT)
-    top_overfit = item_fit_df.sort_values("outfit", ascending=True).head(DEFAULT_ITEM_FIT_LIMIT)
-    outputs.extend(
-        [
-            _write_csv(top_hard, tables_dir / "hardest_items.csv"),
-            _write_csv(top_easy, tables_dir / "easiest_items.csv"),
-            _write_csv(top_underfit, tables_dir / "highest_outfit_items.csv"),
-            _write_csv(top_overfit, tables_dir / "lowest_outfit_items.csv"),
-        ]
-    )
 
     summary = {
         "n_obs": int(len(frame)),
-        "n_items": int(frame["item_id"].nunique()),
-        "n_generators": int(frame["generator"].nunique()),
-        "n_evaluators": int(frame["evaluator"].nunique()),
-        "n_settings": int(frame["setting"].nunique()),
-        "n_modes": int(frame["mode"].nunique()),
-        "additive_model": {
-            "success": additive_fit.success,
-            "message": additive_fit.message,
-            "iterations": additive_fit.iterations,
-            "log_likelihood": additive_fit.log_likelihood,
-            "aic": additive_fit.aic,
-            "bic": additive_fit.bic,
+        "n_test_takers": int(frame["test_taker"].nunique()),
+        "n_stems": int(frame["stem_id"].nunique()),
+        "n_instantiated_items": int(frame["item_id"].nunique()),
+        "n_params": int(design.n_params),
+        "equation": "P(X_ij=1)=c_i+(1-c_i)*sigmoid(1.702*a_i*(theta_j-b_i)); b_i=dataset+stem+generator+setting+item_noise",
+        "fit": {
+            "success": fit.success,
+            "message": fit.message,
+            "iterations": fit.iterations,
+            "log_likelihood": fit.log_likelihood,
+            "aic": fit.aic,
+            "bic": fit.bic,
         },
-        "optimizer": {
-            "method": "L-BFGS-B",
-            "maxiter": int(maxiter),
-            "maxfun": int(maxfun),
-            "gtol": float(gtol),
-            "item_prior_sd": item_prior_sd,
+        "regularization": {
+            "stem_sd": STEM_PRIOR_SD,
+            "item_noise_sd": ITEM_NOISE_PRIOR_SD,
+            "log_discrimination_sd": LOG_DISCRIMINATION_PRIOR_SD,
+            "guessing_logit_sd": GUESSING_PRIOR_SD,
+            "guessing_center": "logit(1 / num_choices)",
         },
-        "reference_levels": {
-            "setting": additive_fit.design.blocks["setting"].reference,
-            "evaluator": additive_fit.design.blocks["evaluator"].reference,
-            "item": additive_fit.design.item_reference,
-            "generator": additive_fit.design.blocks["generator"].reference,
-        },
+        "quality_figure": {"benchmarker_jsonl": str(DEFAULT_BENCHMARKER_JSONL)},
+        "references": {name: block.reference for name, block in design.blocks.items() if block.reference is not None},
         "filters": {
             "generators": generators or [],
-            "evaluators": evaluators or [],
+            "test_takers": evaluators or [],
             "datasets": datasets or [],
             "settings": settings or [],
             "modes": modes or ["full_question"],
         },
     }
-    summary_path = output_root / "fit_summary.json"
+    summary_path = root / "fit_summary.json"
     summary_path.parent.mkdir(parents=True, exist_ok=True)
     summary_path.write_text(json.dumps(summary, indent=2), encoding="utf-8")
     outputs.append(summary_path)
     return outputs
 
 
+def selected_values(raw: str | None, allowed: list[str] | None = None) -> list[str] | None:
+    values = csv_values(raw)
+    if values is None or allowed is None:
+        return values
+    bad = [value for value in values if value not in set(allowed)]
+    if bad:
+        raise ValueError(f"Unsupported values: {', '.join(bad)}")
+    return values
+
+
 def run_cli(args) -> int:
     outputs = run_irt_analysis(
         collected_root=Path(args.collected_root),
         output_dir=Path(args.output_dir),
-        generators=_selected_values(args.generators),
-        evaluators=_selected_values(args.evaluators),
-        datasets=_selected_values(args.datasets),
-        settings=_selected_values(args.settings, SETTING_NAMES),
-        modes=_selected_values(args.modes, MODE_CHOICES),
+        generators=selected_values(args.generators),
+        evaluators=selected_values(args.evaluators),
+        datasets=selected_values(args.datasets),
+        settings=selected_values(args.settings, SETTING_NAMES),
         maxiter=int(args.maxiter),
         maxfun=int(args.maxfun),
         gtol=float(args.gtol),
-        item_prior_sd=None if float(args.item_prior_sd) <= 0.0 else float(args.item_prior_sd),
     )
     for output in outputs:
         print(output)

@@ -1,0 +1,114 @@
+---------------------------------------------------------                                              
+augmented_mcqa_eval_augment_ablation_full_question (600 samples): vllm/meta-llama/Llama-3.2-3B-Instruct
+max_tokens: 2048, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)
+---------------------------------------------------------                                              
+                                                                                                       
+Steps:  10/600   1% | Samples:   1/600 | mean:  n/a | vllm:  0/10 | HTTP retries: 0
+Steps:  18/600   3% | Samples:  12/600 | mean: 0.30 | vllm:  1/10 | HTTP retries: 0
+Steps:  23/600   3% | Samples:  23/600 | mean: 0.38 | vllm:  7/10 | HTTP retries: 0
+Steps:  33/600   5% | Samples:  30/600 | mean: 0.32 | vllm:  3/10 | HTTP retries: 0
+Steps:  41/600   6% | Samples:  39/600 | mean: 0.34 | vllm:  5/10 | HTTP retries: 0
+Steps:  49/600   8% | Samples:  47/600 | mean: 0.36 | vllm:  5/10 | HTTP retries: 0
+Steps:  57/600   9% | Samples:  55/600 | mean: 0.35 | vllm:  5/10 | HTTP retries: 0
+Steps:  65/600  10% | Samples:  63/600 | mean: 0.35 | vllm:  5/10 | HTTP retries: 0
+Steps:  73/600  12% | Samples:  70/600 | mean: 0.38 | vllm:  4/10 | HTTP retries: 0
+Steps:  80/600  13% | Samples:  79/600 | mean: 0.39 | vllm:  6/10 | HTTP retries: 0
+Steps:  87/600  14% | Samples:  85/600 | mean: 0.42 | vllm:  5/10 | HTTP retries: 1
+Steps:  95/600  15% | Samples:  92/600 | mean: 0.41 | vllm:  4/10 | HTTP retries: 1
+Steps: 102/600  17% | Samples: 100/600 | mean: 0.41 | vllm:  5/10 | HTTP retries: 1
+Steps: 110/600  18% | Samples: 108/600 | mean: 0.41 | vllm:  5/10 | HTTP retries: 1
+Steps: 117/600  19% | Samples: 115/600 | mean: 0.43 | vllm:  5/10 | HTTP retries: 1
+Steps: 126/600  21% | Samples: 123/600 | mean: 0.41 | vllm:  4/10 | HTTP retries: 1
+Steps: 133/600  22% | Samples: 131/600 | mean: 0.42 | vllm:  4/10 | HTTP retries: 1
+Steps: 141/600  23% | Samples: 139/600 | mean: 0.40 | vllm:  5/10 | HTTP retries: 1
+Steps: 149/600  24% | Samples: 147/600 | mean: 0.38 | vllm:  5/10 | HTTP retries: 1
+Steps: 157/600  26% | Samples: 155/600 | mean: 0.37 | vllm:  5/10 | HTTP retries: 1
+Steps: 164/600  27% | Samples: 162/600 | mean: 0.36 | vllm:  5/10 | HTTP retries: 1
+Steps: 171/600  28% | Samples: 169/600 | mean: 0.35 | vllm:  5/10 | HTTP retries: 1
+Steps: 178/600  29% | Samples: 176/600 | mean: 0.33 | vllm:  5/10 | HTTP retries: 1
+Steps: 185/600  30% | Samples: 182/600 | mean: 0.33 | vllm:  4/10 | HTTP retries: 1
+Steps: 191/600  31% | Samples: 189/600 | mean: 0.32 | vllm:  5/10 | HTTP retries: 1
+Steps: 198/600  33% | Samples: 196/600 | mean: 0.32 | vllm:  5/10 | HTTP retries: 1
+Steps: 205/600  34% | Samples: 203/600 | mean: 0.32 | vllm:  5/10 | HTTP retries: 1
+Steps: 211/600  35% | Samples: 209/600 | mean: 0.31 | vllm:  4/10 | HTTP retries: 1
+Steps: 218/600  36% | Samples: 216/600 | mean: 0.31 | vllm:  5/10 | HTTP retries: 1
+Steps: 224/600  37% | Samples: 222/600 | mean: 0.30 | vllm:  5/10 | HTTP retries: 1
+Steps: 230/600  38% | Samples: 228/600 | mean: 0.30 | vllm:  5/10 | HTTP retries: 1
+Steps: 236/600  39% | Samples: 234/600 | mean: 0.30 | vllm:  5/10 | HTTP retries: 1
+Steps: 242/600  40% | Samples: 240/600 | mean: 0.30 | vllm:  4/10 | HTTP retries: 1
+Steps: 249/600  41% | Samples: 247/600 | mean: 0.29 | vllm:  5/10 | HTTP retries: 1
+Steps: 255/600  42% | Samples: 253/600 | mean: 0.30 | vllm:  5/10 | HTTP retries: 1
+Steps: 261/600  43% | Samples: 259/600 | mean: 0.29 | vllm:  5/10 | HTTP retries: 1
+Steps: 267/600  44% | Samples: 265/600 | mean: 0.29 | vllm:  5/10 | HTTP retries: 1
+Steps: 273/600  45% | Samples: 271/600 | mean: 0.29 | vllm:  3/10 | HTTP retries: 1
+Steps: 279/600  46% | Samples: 277/600 | mean: 0.29 | vllm:  5/10 | HTTP retries: 1
+Steps: 284/600  47% | Samples: 282/600 | mean: 0.29 | vllm:  5/10 | HTTP retries: 1
+Steps: 289/600  48% | Samples: 287/600 | mean: 0.29 | vllm:  5/10 | HTTP retries: 1
+Steps: 295/600  49% | Samples: 293/600 | mean: 0.28 | vllm:  5/10 | HTTP retries: 1
+Steps: 301/600  50% | Samples: 299/600 | mean: 0.28 | vllm:  4/10 | HTTP retries: 1
+Steps: 308/600  51% | Samples: 306/600 | mean: 0.28 | vllm:  5/10 | HTTP retries: 1
+Steps: 314/600  52% | Samples: 312/600 | mean: 0.28 | vllm:  5/10 | HTTP retries: 1
+Steps: 320/600  53% | Samples: 318/600 | mean: 0.28 | vllm:  5/10 | HTTP retries: 1
+Steps: 326/600  54% | Samples: 324/600 | mean: 0.27 | vllm:  5/10 | HTTP retries: 1
+Steps: 332/600  55% | Samples: 330/600 | mean: 0.27 | vllm:  4/10 | HTTP retries: 1
+Steps: 340/600  56% | Samples: 338/600 | mean: 0.26 | vllm:  5/10 | HTTP retries: 1
+Steps: 347/600  57% | Samples: 345/600 | mean: 0.27 | vllm:  5/10 | HTTP retries: 1
+Steps: 353/600  58% | Samples: 351/600 | mean: 0.27 | vllm:  4/10 | HTTP retries: 1
+Steps: 359/600  59% | Samples: 357/600 | mean: 0.27 | vllm:  5/10 | HTTP retries: 1
+Steps: 366/600  61% | Samples: 363/600 | mean: 0.27 | vllm:  4/10 | HTTP retries: 1
+Steps: 371/600  61% | Samples: 369/600 | mean: 0.27 | vllm:  5/10 | HTTP retries: 1
+Steps: 377/600  62% | Samples: 375/600 | mean: 0.26 | vllm:  5/10 | HTTP retries: 1
+Steps: 383/600  63% | Samples: 380/600 | mean: 0.26 | vllm:  5/10 | HTTP retries: 1
+Steps: 388/600  64% | Samples: 386/600 | mean: 0.26 | vllm:  5/10 | HTTP retries: 1
+Steps: 395/600  65% | Samples: 392/600 | mean: 0.26 | vllm:  4/10 | HTTP retries: 1
+Steps: 400/600  66% | Samples: 398/600 | mean: 0.27 | vllm:  5/10 | HTTP retries: 1
+Steps: 407/600  67% | Samples: 404/600 | mean: 0.27 | vllm:  5/10 | HTTP retries: 1
+Steps: 411/600  68% | Samples: 409/600 | mean: 0.27 | vllm:  5/10 | HTTP retries: 3
+Steps: 416/600  69% | Samples: 414/600 | mean: 0.27 | vllm:  5/10 | HTTP retries: 3
+Steps: 426/600  71% | Samples: 420/600 | mean: 0.27 | vllm:  1/10 | HTTP retries: 3
+Steps: 429/600  71% | Samples: 428/600 | mean: 0.27 | vllm:  8/10 | HTTP retries: 3
+Steps: 439/600  73% | Samples: 431/600 | mean: 0.27 | vllm:  1/10 | HTTP retries: 4
+Steps: 442/600  73% | Samples: 441/600 | mean: 0.27 | vllm:  6/10 | HTTP retries: 4
+Steps: 448/600  74% | Samples: 445/600 | mean: 0.27 | vllm:  4/10 | HTTP retries: 4
+Steps: 454/600  75% | Samples: 452/600 | mean: 0.27 | vllm:  5/10 | HTTP retries: 4
+Steps: 459/600  76% | Samples: 458/600 | mean: 0.27 | vllm:  6/10 | HTTP retries: 5
+Steps: 466/600  77% | Samples: 462/600 | mean: 0.27 | vllm:  3/10 | HTTP retries: 5
+Steps: 471/600  78% | Samples: 469/600 | mean: 0.27 | vllm:  6/10 | HTTP retries: 5
+Steps: 476/600  79% | Samples: 474/600 | mean: 0.27 | vllm:  1/10 | HTTP retries: 5
+Steps: 482/600  80% | Samples: 479/600 | mean: 0.27 | vllm:  4/10 | HTTP retries: 5
+Steps: 487/600  81% | Samples: 486/600 | mean: 0.27 | vllm:  7/10 | HTTP retries: 6
+Steps: 493/600  82% | Samples: 490/600 | mean: 0.27 | vllm:  3/10 | HTTP retries: 6
+Steps: 498/600  83% | Samples: 497/600 | mean: 0.27 | vllm:  6/10 | HTTP retries: 7
+Steps: 504/600  84% | Samples: 502/600 | mean: 0.27 | vllm:  5/10 | HTTP retries: 7
+Steps: 511/600  85% | Samples: 507/600 | mean: 0.27 | vllm:  4/10 | HTTP retries: 7
+Steps: 514/600  85% | Samples: 514/600 | mean: 0.26 | vllm:  7/10 | HTTP retries: 7
+Steps: 521/600  86% | Samples: 518/600 | mean: 0.26 | vllm:  2/10 | HTTP retries: 7
+Steps: 526/600  87% | Samples: 525/600 | mean: 0.27 | vllm:  6/10 | HTTP retries: 7
+Steps: 534/600  89% | Samples: 531/600 | mean: 0.27 | vllm:  2/10 | HTTP retries: 7
+Steps: 540/600  90% | Samples: 538/600 | mean: 0.27 | vllm:  4/10 | HTTP retries: 7
+Steps: 551/600  91% | Samples: 543/600 | mean: 0.27 | vllm:  1/10 | HTTP retries: 7
+Steps: 553/600  92% | Samples: 553/600 | mean: 0.28 | vllm:  9/10 | HTTP retries: 8
+Steps: 561/600  93% | Samples: 556/600 | mean: 0.28 | vllm:  2/10 | HTTP retries: 8
+Steps: 565/600  94% | Samples: 564/600 | mean: 0.28 | vllm:  8/10 | HTTP retries: 8
+Steps: 573/600  95% | Samples: 567/600 | mean: 0.28 | vllm:  2/10 | HTTP retries: 8
+Steps: 576/600  96% | Samples: 576/600 | mean: 0.28 | vllm:  7/10 | HTTP retries: 8
+Steps: 583/600  97% | Samples: 581/600 | mean: 0.28 | vllm:  5/10 | HTTP retries: 8
+Steps: 590/600  98% | Samples: 587/600 | mean: 0.28 | vllm:  4/10 | HTTP retries: 8
+Steps: 597/600  99% | Samples: 595/600 | mean: 0.28 | vllm:  3/10 | HTTP retries: 9
+Steps: 600/600 100% | Samples: 600/600 | mean: 0.28 | vllm:  0/10 | HTTP retries: 9
+
+---------------------------------------------------------                                                                                     
+augmented_mcqa_eval_augment_ablation_full_question (600 samples): vllm/meta-llama/Llama-3.2-3B-Instruct                                       
+max_tokens: 2048, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)                                       
+                                                                                                                                              
+total time:                                                             0:09:08                                                               
+vllm/meta-llama/Llama-3.2-3B-Instruct                                   209,995 tokens [I: 205,583, O: 4,412]                                 
+augmented_mcqa_eval                                                                                                                           
+mean                 0.280                                                                                                                    
+stderr               0.018                                                                                                                    
+Log:                                                                                                                                          
+results/inspect/evaluation/eval_new_local_models_on_gemini_from_scratch_testing/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vll…
+---------------------------------------------------------                                                                                     
+                                                                                                                                              
+Evaluation logs: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/eval_new_local_models_on_gemini_from_scratch_testing/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_meta-llama_Llama-3.2-3B-Instruct
+Running: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/python3 main.py evaluate --model vllm/meta-llama/Llama-3.2-3B-Instruct --run-name eval_new_local_models_on_gemini_from_scratch_testing --generator-run-name gemini_from_scratch_testing --generator-model google/gemini-3.1-pro-preview --processed-dataset datasets/processed/unified_processed_v3 --dataset-types mmlu_pro --settings augment_ablation --modes full_question --question-start 0 --limit 999 --augmented-dataset datasets/augmented/gemini_from_scratch_testing/google_gemini-3.1-pro-preview --support-root /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/support_sets --skip-collect-evaluated --max-tokens 2048 --reasoning-effort medium --retry-on-error 2

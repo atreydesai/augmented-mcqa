@@ -20,7 +20,7 @@ load_dotenv()
 PROJECT_ROOT = Path(__file__).parent.parent
 DATASETS_DIR = Path(os.getenv("DATASETS_DIR", PROJECT_ROOT / "datasets"))
 RESULTS_DIR = Path(os.getenv("RESULTS_DIR", PROJECT_ROOT / "results"))
-MODEL_CACHE_DIR = Path(os.getenv("MODEL_CACHE_DIR", "/fs/nexus-scratch/adesai10/hub"))
+MODEL_CACHE_DIR = Path(os.getenv("MODEL_CACHE_DIR", "/fs/clip-scratch/adesai10/hub"))
 
 def _is_writable_dir(path: Path) -> bool:
     return path.is_dir() and os.access(path, os.W_OK | os.X_OK)
@@ -66,11 +66,7 @@ _hf_home_env = os.getenv("HF_HOME")
 if _hf_home_env:
     HF_HOME = Path(_hf_home_env)
 else:
-    default_hf_home = Path(MODEL_CACHE_DIR)
-    if str(default_hf_home).startswith("/fs"):
-        HF_HOME = PROJECT_ROOT / ".hf_cache"
-    else:
-        HF_HOME = default_hf_home
+    HF_HOME = Path(MODEL_CACHE_DIR)
 HF_HOME = _ensure_writable_dir(HF_HOME, PROJECT_ROOT / ".hf_cache", "HF_HOME")
 os.environ["HF_HOME"] = str(HF_HOME)
 os.environ["HUGGINGFACE_HUB_CACHE"] = str(HF_HOME)

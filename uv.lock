@@ -8,9 +8,6 @@ supported-markers = [
     "platform_machine == 'x86_64' and sys_platform == 'linux'",
 ]
 
-[manifest]
-overrides = [{ name = "anthropic", specifier = ">=0.80.0" }]
-
 [[package]]
 name = "aioboto3"
 version = "15.5.0"
@@ -126,7 +123,7 @@ wheels = [
 
 [[package]]
 name = "anthropic"
-version = "0.88.0"
+version = "0.71.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
@@ -138,9 +135,9 @@ dependencies = [
     { name = "sniffio", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
     { name = "typing-extensions", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/86/68/565f13059c0a6a6fd5f96f306f2a0fb478a0e1174ec18a4df16b5fac9379/anthropic-0.88.0.tar.gz", hash = "sha256:f4c7f6863d08c869913516f08d658fe53caaf8bcc4fbea3218df343d2a876c58", size = 596654, upload-time = "2026-04-01T19:59:05.287Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/82/4f/70682b068d897841f43223df82d96ec1d617435a8b759c4a2d901a50158b/anthropic-0.71.0.tar.gz", hash = "sha256:eb8e6fa86d049061b3ef26eb4cbae0174ebbff21affa6de7b3098da857d8de6a", size = 489102, upload-time = "2025-10-16T15:54:40.08Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ad/ac/68f646998160c9f2e6f9353a31dd87292ef02b915b455aaf70a52a059a75/anthropic-0.88.0-py3-none-any.whl", hash = "sha256:71898b32332bc75d9739bc10095288d40a29605da6d00da2fe832b1aa036552f", size = 478338, upload-time = "2026-04-01T19:59:03.832Z" },
+    { url = "https://files.pythonhosted.org/packages/5d/77/073e8ac488f335aec7001952825275582fb8f433737e90f24eeef9d878f6/anthropic-0.71.0-py3-none-any.whl", hash = "sha256:85c5015fcdbdc728390f11b17642a65a4365d03b12b799b18b6cc57e71fdb327", size = 355035, upload-time = "2025-10-16T15:54:38.238Z" },
 ]
 
 [[package]]
@@ -212,7 +209,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "anthropic", specifier = ">=0.80.0" },
+    { name = "anthropic", specifier = "==0.71.0" },
     { name = "datasets", specifier = ">=4.5.0" },
     { name = "google-genai", specifier = ">=1.63.0" },
     { name = "huggingface-hub", specifier = ">=0.34.0" },
@@ -226,7 +223,7 @@ requires-dist = [
     { name = "scipy", specifier = ">=1.17.1" },
     { name = "seaborn", specifier = ">=0.13.2" },
     { name = "tqdm", specifier = ">=4.67.3" },
-    { name = "vllm", url = "https://wheels.vllm.ai/nightly/vllm-1.0.0.dev-cp38-abi3-manylinux1_x86_64.whl" },
+    { name = "vllm", path = "/fs/nexus-scratch/adesai10/wheels/vllm-0.11.2.dev453+g653591d5e-cp38-abi3-manylinux1_x86_64.whl" },
     { name = "wrapt", specifier = ">=1.17.3" },
 ]
 
@@ -2480,7 +2477,7 @@ wheels = [
 [[package]]
 name = "vllm"
 version = "0.11.2.dev453+g653591d5e"
-source = { url = "https://wheels.vllm.ai/nightly/vllm-1.0.0.dev-cp38-abi3-manylinux1_x86_64.whl" }
+source = { path = "/fs/nexus-scratch/adesai10/wheels/vllm-0.11.2.dev453+g653591d5e-cp38-abi3-manylinux1_x86_64.whl" }
 dependencies = [
     { name = "aiohttp", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
     { name = "anthropic", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
@@ -2541,7 +2538,7 @@ dependencies = [
     { name = "xgrammar", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
 ]
 wheels = [
-    { url = "https://wheels.vllm.ai/nightly/vllm-1.0.0.dev-cp38-abi3-manylinux1_x86_64.whl", hash = "sha256:31cb2d3bced620c0e3ee26403558de5ad8d223e8121b5a4bf1b11d15dfcafd73" },
+    { filename = "vllm-0.11.2.dev453+g653591d5e-cp38-abi3-manylinux1_x86_64.whl", hash = "sha256:b0675ac7ae69feb39e3de2a692db5a3e97623967fb56f8a6c3a8e824d462c7ee" },
 ]
 
 [package.metadata]

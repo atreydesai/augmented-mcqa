@@ -1800,8 +1800,8 @@ def _add_analyze_parser(sub: argparse._SubParsersAction[argparse.ArgumentParser]
 def _add_analyze_irt_parser(sub: argparse._SubParsersAction[argparse.ArgumentParser], formatter) -> argparse.ArgumentParser:
     analyze = sub.add_parser(
         "analyze-irt",
-        help="Fit many-facet IRT models over collected Augmented MCQA evaluations.",
-        description="Run fixed-guessing many-facet IRT analysis directly from collected evaluation datasets.",
+        help="Fit a decomposed 3PL IRT model over collected Augmented MCQA evaluations.",
+        description="Run the custom SciPy 3PL IRT analysis directly from collected full-question evaluation datasets.",
         formatter_class=formatter,
     )
     analyze.add_argument("--collected-root", default=str(DEFAULT_COLLECTED_DATASET_ROOT), help="Root directory or specific collected dataset folder to analyze.")
@@ -1810,11 +1810,11 @@ def _add_analyze_irt_parser(sub: argparse._SubParsersAction[argparse.ArgumentPar
     analyze.add_argument("--evaluators", default=None, help="Optional comma-separated subset of evaluator model names to include.")
     analyze.add_argument("--datasets", default=None, help="Optional comma-separated subset of dataset names to include.")
     analyze.add_argument("--settings", default=None, help="Optional comma-separated subset of settings to include.")
-    analyze.add_argument("--modes", default=None, help="Optional comma-separated subset of modes to include.")
+    analyze.add_argument("--modes", default=None, help=argparse.SUPPRESS)
     analyze.add_argument("--maxiter", type=int, default=2000, help="Maximum optimizer iterations per fitted model.")
     analyze.add_argument("--maxfun", type=int, default=50000, help="Maximum objective evaluations per fitted model.")
     analyze.add_argument("--gtol", type=float, default=1e-5, help="Gradient tolerance for the L-BFGS-B optimizer.")
-    analyze.add_argument("--item-prior-sd", type=float, default=3.0, help="Weak Gaussian prior standard deviation for item difficulties; set <=0 to disable.")
+    analyze.add_argument("--item-prior-sd", type=float, default=3.0, help=argparse.SUPPRESS)
     analyze.set_defaults(handler=_run_analyze_irt)
     return analyze
 

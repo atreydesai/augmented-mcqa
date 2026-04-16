@@ -64,6 +64,12 @@ def test_vllm_server_args_use_eval_friendly_defaults():
     assert vllm_server_args("gpt-5.2-2025-12-11") == {}
 
 
+def test_new_local_weight_aliases_resolve_to_vllm():
+    assert resolve_model_name("Qwen/Qwen3-14B") == "vllm/Qwen/Qwen3-14B"
+    assert resolve_model_name("meta-llama/Llama-3.2-3B-Instruct") == "vllm/meta-llama/Llama-3.2-3B-Instruct"
+    assert resolve_model_name("together/Qwen/Qwen3.5-9B") == "together/Qwen/Qwen3.5-9B"
+
+
 def test_reasoning_effort_is_disabled_for_together_qwen_models():
     assert reasoning_effort_for_model("Qwen/Qwen3.5-397B-A17B", "medium") is None
     assert reasoning_effort_for_model("together/Qwen/Qwen3.5-397B-A17B", "medium") is None
