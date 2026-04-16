@@ -51,12 +51,12 @@ MODEL_LOGOS = {
     "Qwen Ablation": LOGO_DIR / "qwen_logo.png",
 }
 MODEL_LOGO_ZOOM = {
-    "GPT": 0.045,
-    "Gemini": 0.055,
-    "Qwen": 0.07,
-    "GPT Ablation": 0.045,
-    "Gemini Ablation": 0.055,
-    "Qwen Ablation": 0.07,
+    "GPT": 0.057,
+    "Gemini": 0.070,
+    "Qwen": 0.090,
+    "GPT Ablation": 0.057,
+    "Gemini Ablation": 0.070,
+    "Qwen Ablation": 0.080,
 }
 
 STEM_PRIOR_SD = 3.0
@@ -721,7 +721,6 @@ def final_ablation_quality_frame(items: pd.DataFrame, validity: pd.DataFrame) ->
 
     for dataset in sorted(items["dataset"].unique(), key=dataset_sort_key):
         add_row(dataset, "Augment Human", "augment_human", "Human", None, "augment_human")
-        add_row(dataset, "Augment Model", "augment_model", "Model", None, "augment_model")
         for generator, label in MODEL_ORDER:
             add_row(dataset, f"{label} Ablation", "augment_ablation", "Ablation", generator, "augment_ablation" if label == "GPT" else None)
     return pd.DataFrame(rows)
@@ -772,13 +771,13 @@ def draw_final_bar(ax: plt.Axes, x: float, value: float, err: float, row: pd.Ser
     )
 
 
-def add_logo_tick(ax: plt.Axes, x: float, path: Path, *, zoom: float = 0.055) -> None:
+def add_logo_tick(ax: plt.Axes, x: float, path: Path, *, zoom: float = 0.055, y: float = -0.08) -> None:
     if not path.exists():
         return
     image = plt.imread(path)
     artist = AnnotationBbox(
         OffsetImage(image, zoom=zoom),
-        (x, -0.17),
+        (x, y),
         xycoords=("data", "axes fraction"),
         frameon=False,
         box_alignment=(0.5, 0.5),
@@ -788,12 +787,16 @@ def add_logo_tick(ax: plt.Axes, x: float, path: Path, *, zoom: float = 0.055) ->
     ax.add_artist(artist)
 
 
+def add_human_tick(ax: plt.Axes, x: float, y: float = -0.08) -> None:
+    add_logo_tick(ax, x, LOGO_DIR / "human_logo.png", zoom=0.14, y=y)
+
+
 def plot_final_grouped_quality(summary: pd.DataFrame, path: Path) -> Path:
     datasets = sorted(summary["dataset"].unique(), key=dataset_sort_key)
     metrics = [
         ("difficulty", "difficulty_se", "IRT Difficulty\n(higher = harder)"),
         ("discrimination", "discrimination_se", "IRT Discrimination\n(higher = separates better)"),
-        ("mean_flaws", "mean_flaws_se", "BenchMarker Flaws\n(lower = more valid)"),
+        ("mean_flaws", "mean_flaws_se", "Avg. Writing Flaws\n(lower = higher quality)"),
     ]
     fig, axes = plt.subplots(len(metrics), len(datasets), figsize=(5.6 * len(datasets), 10.2), squeeze=False)
 
@@ -822,19 +825,18 @@ def plot_final_grouped_quality(summary: pd.DataFrame, path: Path) -> Path:
 
             ax.set_title(str(dataset) if row_idx == 0 else "")
             ax.set_xticks([section_centers["From Scratch"], section_centers["Augmentation"]])
-            if row_idx == len(metrics) - 1:
-                ax.set_xticklabels(["From Scratch", "Augmentation"], rotation=0)
-                for section in ["From Scratch", "Augmentation"]:
-                    for offset, label in zip(offsets[1:], labels[1:], strict=True):
-                        logo_key = f"{label} Ablation"
-                        add_logo_tick(
-                            ax,
-                            section_centers[section] + float(offset),
-                            MODEL_LOGOS[logo_key],
-                            zoom=MODEL_LOGO_ZOOM[logo_key],
-                        )
-            else:
-                ax.set_xticklabels([])
+            ax.set_xticklabels(["From Scratch", "Augmentation"], rotation=0)
+            ax.tick_params(axis="x", pad=21, bottom=False)
+            for section in ["From Scratch", "Augmentation"]:
+                add_human_tick(ax, section_centers[section] + float(offsets[0]))
+                for offset, label in zip(offsets[1:], labels[1:], strict=True):
+                    logo_key = f"{label} Ablation"
+                    add_logo_tick(
+                        ax,
+                        section_centers[section] + float(offset),
+                        MODEL_LOGOS[logo_key],
+                        zoom=MODEL_LOGO_ZOOM[logo_key],
+                    )
             ax.set_ylabel(ylabel if col == 0 else "")
             ax.grid(axis="y", alpha=0.2)
             ax.spines["top"].set_visible(False)
@@ -857,7 +859,7 @@ def plot_final_grouped_quality(summary: pd.DataFrame, path: Path) -> Path:
     ]
     fig.suptitle("Question Quality: Human vs Model-Generated MCQs")
     fig.legend(handles=handles, loc="lower center", ncols=5, frameon=False)
-    fig.subplots_adjust(top=0.9, bottom=0.13, hspace=0.42, wspace=0.24)
+    fig.subplots_adjust(top=0.9, bottom=0.16, hspace=0.42, wspace=0.24)
     path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(path, dpi=200, bbox_inches="tight")
     plt.close(fig)
@@ -869,7 +871,7 @@ def plot_final_ablation_quality(summary: pd.DataFrame, path: Path) -> Path:
     metrics = [
         ("difficulty", "difficulty_se", "IRT Difficulty\n(higher = harder)"),
         ("discrimination", "discrimination_se", "IRT Discrimination\n(higher = separates better)"),
-        ("mean_flaws", "mean_flaws_se", "BenchMarker Flaws\n(lower = more valid)"),
+        ("mean_flaws", "mean_flaws_se", "Avg. Writing Flaws\n(lower = higher quality)"),
     ]
     fig, axes = plt.subplots(len(metrics), len(datasets), figsize=(4.6 * len(datasets), 9.6), squeeze=False)
     for col, dataset in enumerate(datasets):
@@ -877,8 +879,8 @@ def plot_final_ablation_quality(summary: pd.DataFrame, path: Path) -> Path:
         for row_idx, (metric, err_col, ylabel) in enumerate(metrics):
             ax = axes[row_idx][col]
             plotted = []
-            labels = ["Augment Human", "Augment Model", "GPT Ablation", "Gemini Ablation", "Qwen Ablation"]
-            x_positions = np.array([-0.36, -0.18, 0.0, 0.18, 0.36])
+            labels = ["Augment Human", "GPT Ablation", "Gemini Ablation", "Qwen Ablation"]
+            x_positions = np.array([-0.27, -0.09, 0.09, 0.27])
             for x, label in zip(x_positions, labels, strict=True):
                 record = dataset_df.loc[label]
                 value = float(record[metric]) if pd.notna(record[metric]) else float("nan")
@@ -890,8 +892,10 @@ def plot_final_ablation_quality(summary: pd.DataFrame, path: Path) -> Path:
             ax.set_title(str(dataset) if row_idx == 0 else "")
             ax.set_xlim(-0.64, 0.64)
             ax.set_xticks(x_positions)
-            ax.set_xticklabels(["Aug.\nHuman", "Aug.\nModel", "", "", ""])
-            for x, label in zip(x_positions[2:], labels[2:], strict=True):
+            ax.set_xticklabels(["", "", "", ""])
+            ax.tick_params(axis="x", bottom=False)
+            add_human_tick(ax, float(x_positions[0]))
+            for x, label in zip(x_positions[1:], labels[1:], strict=True):
                 add_logo_tick(ax, float(x), MODEL_LOGOS[label], zoom=MODEL_LOGO_ZOOM[label])
             ax.set_ylabel(ylabel if col == 0 else "")
             ax.grid(axis="y", alpha=0.2)
@@ -901,10 +905,13 @@ def plot_final_ablation_quality(summary: pd.DataFrame, path: Path) -> Path:
                 ymax = max(plotted) * 1.08 if plotted else 1.05
                 ax.set_ylim(0.9, max(ymax, 1.05))
             elif plotted:
-                ax.set_ylim(min(0.0, min(plotted) * 1.05), max(plotted) * 1.1 if max(plotted) > 0 else 1.0)
+                ymin = min(0.0, min(plotted) * 1.05)
+                if dataset == "arc_challenge" and metric == "difficulty" and ymin > -1.5:
+                    ymin = -1.5
+                ymax = max(plotted) * 1.1 if max(plotted) > 0 else 1.0
+                ax.set_ylim(ymin, ymax)
     handles = [
         plt.Rectangle((0, 0), 1, 1, facecolor=HUMAN_COLOR, edgecolor="black", label="Augment human"),
-        plt.Rectangle((0, 0), 1, 1, facecolor=MODEL_COLOR, edgecolor="black", label="Augment model"),
         plt.Rectangle((0, 0), 1, 1, facecolor=ABLATION_COLOR, edgecolor="black", label="One-step ablation"),
         plt.Rectangle((0, 0), 1, 1, facecolor=MISSING_COLOR, edgecolor="#666666", hatch="//", label="BenchMarker pending"),
     ]
@@ -944,7 +951,7 @@ def plot_irt_quality(summary: pd.DataFrame, path: Path) -> Path:
             [
                 ("difficulty", "difficulty_se", "IRT Difficulty\n(higher = harder)"),
                 ("discrimination", "discrimination_se", "IRT Discrimination\n(higher = separates better)"),
-                ("mean_flaws", "mean_flaws_se", "BenchMarker Flaws\n(lower = more valid)"),
+                ("mean_flaws", "mean_flaws_se", "Avg. Writing Flaws\n(lower = higher quality)"),
             ]
         ):
             ax = axes[row][col]
