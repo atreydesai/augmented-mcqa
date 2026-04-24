@@ -26,6 +26,3 @@ dependencies = [
 [tool.uv]
 cache-dir = "/fs/nexus-scratch/adesai10/uv-cache"
 environments = ["sys_platform == 'linux' and platform_machine == 'x86_64'"]
-
-[tool.uv.sources]
-vllm = { path = "/fs/nexus-scratch/adesai10/wheels/vllm-0.11.2.dev453+g653591d5e-cp38-abi3-manylinux1_x86_64.whl" }

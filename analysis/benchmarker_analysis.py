@@ -217,9 +217,12 @@ def _parse_rule_answers(raw: object) -> list[str]:
     return [str(parsed)]
 
 
-def load_writing_flaw_data(path: Path) -> tuple[pd.DataFrame, pd.DataFrame]:
+def load_writing_flaw_data(path: Path, generator_model: str | None = None) -> tuple[pd.DataFrame, pd.DataFrame]:
     rows: list[dict[str, object]] = []
     for obj in _iter_jsonl(path):
+        model = str(obj.get("model", ""))
+        if generator_model and model and model != "None" and not _model_matches(generator_model, model):
+            continue
         writing_flaw = dict(obj.get("writing_flaw", {}) or {})
         answers = _parse_rule_answers(writing_flaw.get("answer"))
         outcomes = [(item.strip().lower() == "pass") for item in answers[: len(RULES_ORDER)]]
@@ -227,6 +230,7 @@ def load_writing_flaw_data(path: Path) -> tuple[pd.DataFrame, pd.DataFrame]:
             {
                 "dataset": str(obj.get("dataset", "")),
                 "config": str(obj.get("config", "")),
+                "generator_model": model,
                 "question": str(obj.get("question", "")),
                 "flaw_value": float(writing_flaw.get("value", float("nan"))),
                 "n_flaws": sum(not passed for passed in outcomes),
@@ -245,7 +249,7 @@ def load_writing_flaw_data(path: Path) -> tuple[pd.DataFrame, pd.DataFrame]:
 
     rule_cols = [f"rule_{rule}" for rule in RULES_ORDER]
     df_long = df.melt(
-        id_vars=["dataset", "config", "question", "flaw_value"],
+        id_vars=["dataset", "config", "generator_model", "question", "flaw_value"],
         value_vars=rule_cols,
         var_name="rule_col",
         value_name="passed",
@@ -260,8 +264,8 @@ def _model_matches(filter_value: str | None, actual: str) -> bool:
     if not filter_value:
         return True
     normalized = resolve_model_name(filter_value)
-    actual = str(actual)
-    return actual == normalized or actual == filter_value or actual.endswith(f"/{filter_value}")
+    actual = str(actual).strip()
+    return actual == normalized or actual == filter_value or actual.endswith(f"/{filter_value}") or (actual in filter_value) or (actual in normalized)
 
 
 def _resolve_augmented_dataset_path(
@@ -562,7 +566,7 @@ def run_analysis(args: argparse.Namespace) -> int:
     )
 
     print("Loading writing flaw data ...")
-    flaw_df, flaw_long_df = load_writing_flaw_data(Path(args.writing_flaw_jsonl))
+    flaw_df, flaw_long_df = load_writing_flaw_data(Path(args.writing_flaw_jsonl), generator_model=args.generator_model)
     print(f"  Loaded {len(flaw_df):,} rows.")
 
     print("Loading evaluation logs ...")
@@ -1085,7 +1089,10 @@ def run_analysis(args: argparse.Namespace) -> int:
         for (dataset, config, sample_id), group in grouped:
             first = group.iloc[0]
             gold_letter = str(first["gold_answer_letter"])
-            options = list(first["options_randomized"])
+            val = first["options_randomized"]
+            if val is None or isinstance(val, float):
+                continue
+            options = list(val)
             chosen = {str(value).strip().upper() for value in group["prediction"].tolist() if str(value).strip().upper() in CHOICE_LABELS[: len(options)]}
             wrong_letters = [CHOICE_LABELS[i] for i in range(len(options)) if CHOICE_LABELS[i] != gold_letter]
             distractor_rows.append(

@@ -1,3 +1,5 @@
+import pytest
+
 import json
 
 import utils.modeling as modeling
@@ -50,6 +52,11 @@ def test_vllm_server_args_use_eval_friendly_defaults():
         "enforce_eager": True,
         "max_model_len": 8192,
     }
+    assert vllm_server_args("Qwen/Qwen3.5-35B-A3B-FP8") == {
+        "enforce_eager": True,
+        "max_model_len": 8192,
+        "quantization": "fp8",
+    }
     assert vllm_server_args("nvidia/NVIDIA-Nemotron-Nano-9B-v2") == {
         "enforce_eager": True,
         "max_model_len": 8192,
@@ -65,9 +72,29 @@ def test_vllm_server_args_use_eval_friendly_defaults():
 
 
 def test_new_local_weight_aliases_resolve_to_vllm():
+    assert resolve_model_name("Qwen/Qwen3.5-35B-A3B-FP8") == "vllm/Qwen/Qwen3.5-35B-A3B-FP8"
+    assert resolve_model_name("Qwen/Qwen3.5-9B") == "vllm/Qwen/Qwen3.5-9B"
+    assert resolve_model_name("google/gemma-4-E4B-it") == "vllm/google/gemma-4-E4B-it"
     assert resolve_model_name("Qwen/Qwen3-14B") == "vllm/Qwen/Qwen3-14B"
     assert resolve_model_name("meta-llama/Llama-3.2-3B-Instruct") == "vllm/meta-llama/Llama-3.2-3B-Instruct"
     assert resolve_model_name("together/Qwen/Qwen3.5-9B") == "together/Qwen/Qwen3.5-9B"
+
+
+@pytest.mark.parametrize(
+    ("model", "resolved", "extra_args"),
+    [
+        ("Qwen/Qwen3.5-35B-A3B-FP8", "vllm/Qwen/Qwen3.5-35B-A3B-FP8", {"quantization": "fp8"}),
+        ("Qwen/Qwen3.5-9B", "vllm/Qwen/Qwen3.5-9B", {}),
+        ("google/gemma-4-E4B-it", "vllm/google/gemma-4-E4B-it", {}),
+    ],
+)
+def test_new_local_model_smoke(model, resolved, extra_args):
+    assert resolve_model_name(model) == resolved
+    args = vllm_server_args(model)
+    assert args["enforce_eager"] is True
+    assert args["max_model_len"] == 8192
+    for key, value in extra_args.items():
+        assert args[key] == value
 
 
 def test_reasoning_effort_is_disabled_for_together_qwen_models():

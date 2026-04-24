@@ -14,6 +14,9 @@ MODELS=(
   "allenai/Olmo-3-7B-Instruct"
   "meta-llama/Llama-3.1-8B-Instruct"
   "nvidia/NVIDIA-Nemotron-Nano-9B-v2"
+  "Qwen/Qwen3.5-35B-A3B-FP8"
+  "Qwen/Qwen3.5-9B"
+  "google/gemma-4-E4B-it"
 )
 
 usage() {

@@ -20,6 +20,9 @@
     "guessing_logit_sd": 1.0,
     "guessing_center": "logit(1 / num_choices)"
   },
+  "quality_figure": {
+    "benchmarker_jsonl": "results/atrey_writing_flaw_rows_all.jsonl"
+  },
   "references": {
     "theta": "vllm/nvidia/NVIDIA-Nemotron-Nano-9B-v2",
     "dataset": "arc_challenge",

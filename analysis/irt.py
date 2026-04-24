@@ -25,7 +25,7 @@ from utils.constants import EVALUATED_STORE_MANIFEST, SETTING_NAMES, SETTING_SPE
 IRT_SCALING = 1.702
 EPS = 1e-8
 DEFAULT_OUTPUT_DIR = Path("results/augmented_mcqa_irt")
-DEFAULT_BENCHMARKER_JSONL = Path("results/atrey_writing_flaw_rows_gpt.jsonl")
+DEFAULT_BENCHMARKER_JSONL = Path("results/atrey_writing_flaw_rows_all.jsonl")
 LOGO_DIR = Path(__file__).parent / "assets" / "logos"
 DEFAULT_REFERENCE_TEST_TAKER = "vllm/nvidia/NVIDIA-Nemotron-Nano-9B-v2"
 DEFAULT_REFERENCE_SETTING = "human_from_scratch"
@@ -81,10 +81,13 @@ SETTING_SHORT_LABELS = {
 }
 TEST_TAKER_LABELS = {
     "vllm/Qwen/Qwen3-4B-Instruct-2507": "Qwen3-4B",
+    "vllm/Qwen/Qwen3.5-35B-A3B-FP8": "Qwen3.5-35B-FP8",
+    "vllm/Qwen/Qwen3.5-9B": "Qwen3.5-9B",
     "vllm/Qwen/Qwen3-14B": "Qwen3-14B",
     "vllm/allenai/Olmo-3-7B-Instruct": "Olmo-3-7B",
     "vllm/meta-llama/Llama-3.1-8B-Instruct": "Llama-3.1-8B",
     "vllm/meta-llama/Llama-3.2-3B-Instruct": "Llama-3.2-3B",
+    "vllm/google/gemma-4-E4B-it": "Gemma4-E4B-it",
     "vllm/nvidia/NVIDIA-Nemotron-Nano-9B-v2": "Nemotron-9B",
 }
 GENERATOR_LABEL_PARTS = [
@@ -607,8 +610,9 @@ def benchmarker_validity_frame(path: Path = DEFAULT_BENCHMARKER_JSONL) -> pd.Dat
 
     flaw_df, _ = load_writing_flaw_data(path)
     flaw_df = flaw_df.rename(columns={"config": "setting"}).copy()
+    flaw_df["generator"] = flaw_df["generator_model"].apply(lambda x: next((g for g, _ in MODEL_ORDER if x in g), x))
     grouped = (
-        flaw_df.groupby(["dataset", "setting"], observed=True)
+        flaw_df.groupby(["dataset", "setting", "generator"], observed=True)
         .agg(
             n_questions=("n_flaws", "count"),
             mean_flaws=("n_flaws", "mean"),
@@ -620,8 +624,46 @@ def benchmarker_validity_frame(path: Path = DEFAULT_BENCHMARKER_JSONL) -> pd.Dat
     return grouped.drop(columns=["flaws_sd"])
 
 
+def validity_setting_level_frame(validity: pd.DataFrame) -> pd.DataFrame:
+    if validity.empty:
+        return pd.DataFrame(columns=["dataset", "setting", "n_questions", "mean_flaws", "mean_flaws_se"])
+    if "generator" not in validity.columns:
+        return validity.copy()
+
+    rows: list[dict[str, float | int | str]] = []
+    for (dataset, setting), group in validity.groupby(["dataset", "setting"], observed=True, sort=False):
+        counts = group["n_questions"].fillna(0).astype(int).to_numpy(dtype=int)
+        means = group["mean_flaws"].astype(float).to_numpy(dtype=float)
+        ses = group["mean_flaws_se"].fillna(0.0).astype(float).to_numpy(dtype=float)
+        sds = ses * np.sqrt(np.clip(counts, 1, None))
+        total_n = int(np.sum(counts))
+        if total_n <= 0:
+            continue
+
+        pooled_mean = float(np.average(means, weights=np.clip(counts, 1, None)))
+        if total_n == 1:
+            pooled_se = 0.0
+        else:
+            ss_within = float(np.sum(np.maximum(counts - 1, 0) * (sds ** 2)))
+            ss_between = float(np.sum(counts * ((means - pooled_mean) ** 2)))
+            pooled_var = max((ss_within + ss_between) / max(total_n - 1, 1), 0.0)
+            pooled_se = math.sqrt(pooled_var / total_n)
+
+        rows.append(
+            {
+                "dataset": str(dataset),
+                "setting": str(setting),
+                "n_questions": total_n,
+                "mean_flaws": pooled_mean,
+                "mean_flaws_se": float(pooled_se),
+            }
+        )
+    return pd.DataFrame(rows)
+
+
 def combined_quality_frame(irt_summary: pd.DataFrame, validity: pd.DataFrame) -> pd.DataFrame:
-    merged = irt_summary.merge(validity, on=["dataset", "setting"], how="left")
+    validity_setting_level = validity_setting_level_frame(validity)
+    merged = irt_summary.merge(validity_setting_level, on=["dataset", "setting"], how="left")
     merged["mean_flaws"] = merged["mean_flaws"].astype(float)
     merged["mean_flaws_se"] = merged["mean_flaws_se"].fillna(0.0).astype(float)
     return merged
@@ -638,7 +680,8 @@ def mean_se(values: pd.Series) -> tuple[float, float]:
 
 def final_grouped_quality_frame(items: pd.DataFrame, validity: pd.DataFrame) -> pd.DataFrame:
     rows = []
-    validity_lookup = validity.set_index(["dataset", "setting"]) if not validity.empty else pd.DataFrame()
+    validity_lookup = validity.set_index(["dataset", "setting", "generator"]) if not validity.empty and "generator" in validity.columns else pd.DataFrame()
+    validity_setting_lookup = validity_setting_level_frame(validity).set_index(["dataset", "setting"])
 
     def add_row(dataset: str, section: str, label: str, setting: str, source: str, generator: str | None, validity_setting: str | None) -> None:
         subset = items[(items["dataset"] == dataset) & (items["setting"] == setting)]
@@ -649,11 +692,21 @@ def final_grouped_quality_frame(items: pd.DataFrame, validity: pd.DataFrame) -> 
         mean_flaws = float("nan")
         mean_flaws_se = float("nan")
         validity_available = False
-        if validity_setting and not validity_lookup.empty and (dataset, validity_setting) in validity_lookup.index:
-            row = validity_lookup.loc[(dataset, validity_setting)]
-            mean_flaws = float(row["mean_flaws"])
-            mean_flaws_se = float(row["mean_flaws_se"])
-            validity_available = True
+        if validity_setting:
+            row = None
+            if generator is None:
+                lookup_key = (dataset, validity_setting)
+                if lookup_key in validity_setting_lookup.index:
+                    row = validity_setting_lookup.loc[lookup_key]
+            elif not validity_lookup.empty:
+                lookup_key = (dataset, validity_setting, generator)
+                if lookup_key in validity_lookup.index:
+                    row = validity_lookup.loc[lookup_key]
+
+            if row is not None:
+                mean_flaws = float(row["mean_flaws"])
+                mean_flaws_se = float(row["mean_flaws_se"])
+                validity_available = True
         rows.append(
             {
                 "dataset": dataset,
@@ -676,16 +729,17 @@ def final_grouped_quality_frame(items: pd.DataFrame, validity: pd.DataFrame) -> 
     for dataset in sorted(items["dataset"].unique(), key=dataset_sort_key):
         add_row(dataset, "From Scratch", "Human", "human_from_scratch", "Human", None, "human_from_scratch")
         for generator, label in MODEL_ORDER:
-            add_row(dataset, "From Scratch", label, "model_from_scratch", "Model", generator, "model_from_scratch" if label == "GPT" else None)
+            add_row(dataset, "From Scratch", label, "model_from_scratch", "Model", generator, "model_from_scratch")
         add_row(dataset, "Augmentation", "Human", "augment_human", "Human", None, "augment_human")
         for generator, label in MODEL_ORDER:
-            add_row(dataset, "Augmentation", label, "augment_model", "Model", generator, "augment_model" if label == "GPT" else None)
+            add_row(dataset, "Augmentation", label, "augment_model", "Model", generator, "augment_model")
     return pd.DataFrame(rows)
 
 
 def final_ablation_quality_frame(items: pd.DataFrame, validity: pd.DataFrame) -> pd.DataFrame:
     rows = []
-    validity_lookup = validity.set_index(["dataset", "setting"]) if not validity.empty else pd.DataFrame()
+    validity_lookup = validity.set_index(["dataset", "setting", "generator"]) if not validity.empty and "generator" in validity.columns else pd.DataFrame()
+    validity_setting_lookup = validity_setting_level_frame(validity).set_index(["dataset", "setting"])
 
     def add_row(dataset: str, label: str, setting: str, source: str, generator: str | None, validity_setting: str | None) -> None:
         subset = items[(items["dataset"] == dataset) & (items["setting"] == setting)]
@@ -696,11 +750,21 @@ def final_ablation_quality_frame(items: pd.DataFrame, validity: pd.DataFrame) ->
         mean_flaws = float("nan")
         mean_flaws_se = float("nan")
         validity_available = False
-        if validity_setting and not validity_lookup.empty and (dataset, validity_setting) in validity_lookup.index:
-            row = validity_lookup.loc[(dataset, validity_setting)]
-            mean_flaws = float(row["mean_flaws"])
-            mean_flaws_se = float(row["mean_flaws_se"])
-            validity_available = True
+        if validity_setting:
+            row = None
+            if generator is None:
+                lookup_key = (dataset, validity_setting)
+                if lookup_key in validity_setting_lookup.index:
+                    row = validity_setting_lookup.loc[lookup_key]
+            elif not validity_lookup.empty:
+                lookup_key = (dataset, validity_setting, generator)
+                if lookup_key in validity_lookup.index:
+                    row = validity_lookup.loc[lookup_key]
+
+            if row is not None:
+                mean_flaws = float(row["mean_flaws"])
+                mean_flaws_se = float(row["mean_flaws_se"])
+                validity_available = True
         rows.append(
             {
                 "dataset": dataset,
@@ -722,7 +786,7 @@ def final_ablation_quality_frame(items: pd.DataFrame, validity: pd.DataFrame) ->
     for dataset in sorted(items["dataset"].unique(), key=dataset_sort_key):
         add_row(dataset, "Augment Human", "augment_human", "Human", None, "augment_human")
         for generator, label in MODEL_ORDER:
-            add_row(dataset, f"{label} Ablation", "augment_ablation", "Ablation", generator, "augment_ablation" if label == "GPT" else None)
+            add_row(dataset, f"{label} Ablation", "augment_ablation", "Ablation", generator, "augment_ablation")
     return pd.DataFrame(rows)
 
 
@@ -1184,3 +1248,26 @@ def run_cli(args) -> int:
     for output in outputs:
         print(output)
     return 0
+
+import argparse
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Fit IRT model")
+    parser.add_argument("--collected-root", default="results/inspect/evaluation")
+    parser.add_argument("--output-dir", default=DEFAULT_OUTPUT_DIR)
+    parser.add_argument("--generators", default=None)
+    parser.add_argument("--evaluators", default=None)
+    parser.add_argument("--datasets", default=None)
+    parser.add_argument("--settings", default=None)
+    parser.add_argument("--maxiter", type=int, default=2000)
+    parser.add_argument("--maxfun", type=int, default=50000)
+    parser.add_argument("--gtol", type=float, default=1e-5)
+    return parser
+
+def main(argv: list[str] | None = None) -> int:
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    return run_cli(args)
+
+if __name__ == "__main__":
+    raise SystemExit(main())

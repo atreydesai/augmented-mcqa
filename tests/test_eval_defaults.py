@@ -103,6 +103,7 @@ def test_supported_main_subcommands_match_the_inspect_first_cli():
         "generate",
         "evaluate",
         "analyze",
+        "analyze-irt",
         "export",
         "submit-generate-cluster",
         "submit-evaluate-cluster",

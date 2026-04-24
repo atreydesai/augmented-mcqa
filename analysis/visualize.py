@@ -47,10 +47,16 @@ GENERATOR_DISPLAY_ALIASES: list[tuple[str, str]] = [
 EVAL_MODEL_DISPLAY_LABELS: dict[str, str] = {
     "Qwen/Qwen3-4B-Instruct-2507": "Qwen3-4B",
     "vllm/Qwen/Qwen3-4B-Instruct-2507": "Qwen3-4B",
+    "Qwen/Qwen3.5-35B-A3B-FP8": "Qwen3.5-35B-FP8",
+    "vllm/Qwen/Qwen3.5-35B-A3B-FP8": "Qwen3.5-35B-FP8",
+    "Qwen/Qwen3.5-9B": "Qwen3.5-9B",
+    "vllm/Qwen/Qwen3.5-9B": "Qwen3.5-9B",
     "allenai/Olmo-3-7B-Instruct": "Olmo3-7B",
     "vllm/allenai/Olmo-3-7B-Instruct": "Olmo3-7B",
     "meta-llama/Llama-3.1-8B-Instruct": "Llama3.1-8B",
     "vllm/meta-llama/Llama-3.1-8B-Instruct": "Llama3.1-8B",
+    "google/gemma-4-E4B-it": "Gemma4-E4B-it",
+    "vllm/google/gemma-4-E4B-it": "Gemma4-E4B-it",
     "nvidia/NVIDIA-Nemotron-Nano-9B-v2": "Nemotron-Nano-9B",
     "vllm/nvidia/NVIDIA-Nemotron-Nano-9B-v2": "Nemotron-Nano-9B",
 }
