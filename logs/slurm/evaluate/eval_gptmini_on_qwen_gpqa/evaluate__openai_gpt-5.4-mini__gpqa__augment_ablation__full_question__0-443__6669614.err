@@ -1,0 +1,131 @@
+--- Logging error ---
+Traceback (most recent call last):
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/logging/__init__.py", line 1164, in emit
+    self.flush()
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/logging/__init__.py", line 1144, in flush
+    self.stream.flush()
+OSError: [Errno 116] Stale file handle
+Call stack:
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/main.py", line 5, in <module>
+    raise SystemExit(main())
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/cli/app.py", line 1900, in main
+    return int(args.handler(args))
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/cli/app.py", line 1223, in _run_evaluate
+    eval_logs = inspect_eval(tasks, model=eval_model, log_dir=log_dir, args=args)
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/cli/runtime.py", line 44, in inspect_eval
+    return run_eval(
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/inspect_ai/_eval/eval.py", line 302, in eval
+    return task_display().run_task_app(with_async_fs(run_task_app))
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/inspect_ai/_display/plain/display.py", line 50, in run_task_app
+    return anyio.run(main, backend=configured_async_backend())
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/anyio/_core/_eventloop.py", line 77, in run
+    return async_backend.run(func, args, {}, backend_options)
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 2358, in run
+    return runner.run(wrapper())
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/asyncio/base_events.py", line 674, in run_until_complete
+    self.run_forever()
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/asyncio/base_events.py", line 641, in run_forever
+    self._run_once()
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/asyncio/base_events.py", line 1987, in _run_once
+    handle._run()
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/asyncio/events.py", line 88, in _run
+    self._context.run(self._callback, *self._args)
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/inspect_ai/_eval/run.py", line 301, in run_task
+    result = await task_run(tasks[index])
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/inspect_ai/_eval/task/run.py", line 529, in task_run
+    eval_log = await logger.log_finish(
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/inspect_ai/_eval/task/log.py", line 333, in log_finish
+    log = await self.recorder.log_finish(
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/inspect_ai/log/_recorders/eval.py", line 211, in log_finish
+    await log.flush()
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/inspect_ai/log/_recorders/eval.py", line 610, in flush
+    with trace_action(logger, "Log Write", self._file):
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/contextlib.py", line 137, in __enter__
+    return next(self.gen)
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/inspect_ai/_util/trace.py", line 61, in trace_action
+    logger.log(
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/logging/__init__.py", line 1609, in log
+    self._log(level, msg, args, **kwargs)
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/logging/__init__.py", line 1684, in _log
+    self.handle(record)
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/logging/__init__.py", line 1700, in handle
+    self.callHandlers(record)
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/logging/__init__.py", line 1762, in callHandlers
+    hdlr.handle(record)
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/logging/__init__.py", line 1028, in handle
+    self.emit(record)
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/inspect_ai/_util/logger.py", line 102, in emit
+    self.trace_logger.emit(record)
+Message: 'Log Write: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/eval_gptmini_on_qwen_gpqa/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/openai_gpt-5.4-mini/2026-04-24T05-14-03-00-00_augmented-mcqa-eval-augment-ablation-full-question_D2P7CPEvfazTchaQ4xEdZK.eval (enter)'
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/logging/__init__.py", line 1164, in emit
+    self.flush()
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/logging/__init__.py", line 1144, in flush
+    self.stream.flush()
+OSError: [Errno 116] Stale file handle
+Call stack:
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/main.py", line 5, in <module>
+    raise SystemExit(main())
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/cli/app.py", line 1900, in main
+    return int(args.handler(args))
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/cli/app.py", line 1223, in _run_evaluate
+    eval_logs = inspect_eval(tasks, model=eval_model, log_dir=log_dir, args=args)
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/cli/runtime.py", line 44, in inspect_eval
+    return run_eval(
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/inspect_ai/_eval/eval.py", line 302, in eval
+    return task_display().run_task_app(with_async_fs(run_task_app))
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/inspect_ai/_display/plain/display.py", line 50, in run_task_app
+    return anyio.run(main, backend=configured_async_backend())
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/anyio/_core/_eventloop.py", line 77, in run
+    return async_backend.run(func, args, {}, backend_options)
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 2358, in run
+    return runner.run(wrapper())
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/asyncio/base_events.py", line 674, in run_until_complete
+    self.run_forever()
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/asyncio/base_events.py", line 641, in run_forever
+    self._run_once()
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/asyncio/base_events.py", line 1987, in _run_once
+    handle._run()
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/asyncio/events.py", line 88, in _run
+    self._context.run(self._callback, *self._args)
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/inspect_ai/_eval/run.py", line 301, in run_task
+    result = await task_run(tasks[index])
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/inspect_ai/_eval/task/run.py", line 529, in task_run
+    eval_log = await logger.log_finish(
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/inspect_ai/_eval/task/log.py", line 333, in log_finish
+    log = await self.recorder.log_finish(
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/inspect_ai/log/_recorders/eval.py", line 211, in log_finish
+    await log.flush()
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/inspect_ai/log/_recorders/eval.py", line 610, in flush
+    with trace_action(logger, "Log Write", self._file):
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/contextlib.py", line 144, in __exit__
+    next(self.gen)
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/inspect_ai/_util/trace.py", line 76, in trace_action
+    logger.log(
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/logging/__init__.py", line 1609, in log
+    self._log(level, msg, args, **kwargs)
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/logging/__init__.py", line 1684, in _log
+    self.handle(record)
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/logging/__init__.py", line 1700, in handle
+    self.callHandlers(record)
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/logging/__init__.py", line 1762, in callHandlers
+    hdlr.handle(record)
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/logging/__init__.py", line 1028, in handle
+    self.emit(record)
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/inspect_ai/_util/logger.py", line 102, in emit
+    self.trace_logger.emit(record)
+Message: 'Log Write: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/eval_gptmini_on_qwen_gpqa/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/openai_gpt-5.4-mini/2026-04-24T05-14-03-00-00_augmented-mcqa-eval-augment-ablation-full-question_D2P7CPEvfazTchaQ4xEdZK.eval (exit)'
+Arguments: ()
+Exception ignored in atexit callback: <function compress_trace_log.<locals>.compress at 0x7f180ed60540>
+Traceback (most recent call last):
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/inspect_ai/_util/trace.py", line 299, in compress
+    log_handler.close()
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/logging/__init__.py", line 1247, in close
+    stream.close()
+OSError: [Errno 116] Stale file handle

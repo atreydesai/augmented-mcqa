@@ -1,17 +1,17 @@
 {
-  "n_obs": 218070,
-  "n_test_takers": 6,
+  "n_obs": 231090,
+  "n_test_takers": 8,
   "n_stems": 2423,
   "n_instantiated_items": 36345,
-  "n_params": 111470,
+  "n_params": 111472,
   "equation": "P(X_ij=1)=c_i+(1-c_i)*sigmoid(1.702*a_i*(theta_j-b_i)); b_i=dataset+stem+generator+setting+item_noise",
   "fit": {
     "success": true,
     "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
-    "iterations": 1267,
-    "log_likelihood": -71123.16429185544,
-    "aic": 365186.3285837109,
-    "bic": 1512499.2615548435
+    "iterations": 1193,
+    "log_likelihood": -74751.35485338129,
+    "aic": 372446.7097067626,
+    "bic": 1526244.6153837761
   },
   "regularization": {
     "stem_sd": 3.0,

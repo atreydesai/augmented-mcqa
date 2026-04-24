@@ -89,6 +89,8 @@ TEST_TAKER_LABELS = {
     "vllm/meta-llama/Llama-3.2-3B-Instruct": "Llama-3.2-3B",
     "vllm/google/gemma-4-E4B-it": "Gemma4-E4B-it",
     "vllm/nvidia/NVIDIA-Nemotron-Nano-9B-v2": "Nemotron-9B",
+    "openai/gpt-5.4-mini": "GPT-5.4-mini",
+    "together/openai/gpt-oss-120b": "GPT-OSS-120B",
 }
 GENERATOR_LABEL_PARTS = [
     ("gpt-5.2", "gpt-5.2"),
