@@ -31,6 +31,11 @@ DEFAULT_REFERENCE_TEST_TAKER = "vllm/nvidia/NVIDIA-Nemotron-Nano-9B-v2"
 DEFAULT_REFERENCE_SETTING = "human_from_scratch"
 TOP_N_ITEMS = 20
 DATASET_ORDER = ["arc_challenge", "mmlu_pro", "gpqa"]
+DATASET_LABELS = {
+    "arc_challenge": "ARC Challenge",
+    "mmlu_pro": "MMLU",
+    "gpqa": "GPQA",
+}
 MODEL_ORDER = [
     ("openai/gpt-5.2-2025-12-11", "GPT"),
     ("google/gemini-3.1-pro-preview", "Gemini"),
@@ -46,6 +51,9 @@ MODEL_HATCHES = {
     "together/Qwen/Qwen3.5-397B-A17B": "xx",
 }
 MODEL_LOGOS = {
+    "GPT": LOGO_DIR / "chatgpt_logo.png",
+    "Gemini": LOGO_DIR / "google_gemini_icon.png",
+    "Qwen": LOGO_DIR / "qwen_logo.png",
     "GPT Ablation": LOGO_DIR / "chatgpt_logo.png",
     "Gemini Ablation": LOGO_DIR / "google_gemini_icon.png",
     "Qwen Ablation": LOGO_DIR / "qwen_logo.png",
@@ -197,6 +205,7 @@ def load_irt_frame(
     setting_filter = set(settings or [])
     mode_filter = set(modes or ["full_question"])
     frames: list[pd.DataFrame] = []
+    questions: dict[str, str] = {}
 
     for manifest_path in sorted(Path(root).rglob(EVALUATED_STORE_MANIFEST)):
         group_root = manifest_path.parent
@@ -220,13 +229,24 @@ def load_irt_frame(
                     path = group_root / dataset / setting / mode
                     if not path.exists():
                         continue
-                    data = load_from_disk(str(path)).to_pandas()
-                    if data.empty:
-                        continue
-                    data = data[
+                    data = load_from_disk(str(path)).select_columns(
                         [
                             "sample_id",
                             "question",
+                            "evaluation_prediction",
+                            "evaluation_is_correct",
+                            "num_choices",
+                            "setting",
+                        ]
+                    ).to_pandas()
+                    if data.empty:
+                        continue
+                    stem_ids = dataset + "::" + data["sample_id"].astype(str)
+                    question_frame = pd.DataFrame({"stem_id": stem_ids, "question": data["question"].astype(str)})
+                    questions.update(question_frame.drop_duplicates("stem_id").set_index("stem_id")["question"].to_dict())
+                    data = data[
+                        [
+                            "sample_id",
                             "evaluation_prediction",
                             "evaluation_is_correct",
                             "num_choices",
@@ -248,6 +268,7 @@ def load_irt_frame(
     frame["choice_count"] = frame["num_choices"].astype(int)
     frame["choice_group"] = np.where(frame["choice_count"] <= 4, "4-choice", "10-choice")
     frame["stem_id"] = frame["dataset"].astype(str) + "::" + frame["sample_id"].astype(str)
+    frame["question"] = frame["stem_id"].map(questions).fillna("")
     frame["item_id"] = (
         frame["dataset"].astype(str)
         + "::"
@@ -732,9 +753,6 @@ def final_grouped_quality_frame(items: pd.DataFrame, validity: pd.DataFrame) -> 
         add_row(dataset, "From Scratch", "Human", "human_from_scratch", "Human", None, "human_from_scratch")
         for generator, label in MODEL_ORDER:
             add_row(dataset, "From Scratch", label, "model_from_scratch", "Model", generator, "model_from_scratch")
-        add_row(dataset, "Augmentation", "Human", "augment_human", "Human", None, "augment_human")
-        for generator, label in MODEL_ORDER:
-            add_row(dataset, "Augmentation", label, "augment_model", "Model", generator, "augment_model")
     return pd.DataFrame(rows)
 
 
@@ -786,9 +804,12 @@ def final_ablation_quality_frame(items: pd.DataFrame, validity: pd.DataFrame) ->
         )
 
     for dataset in sorted(items["dataset"].unique(), key=dataset_sort_key):
-        add_row(dataset, "Augment Human", "augment_human", "Human", None, "augment_human")
         for generator, label in MODEL_ORDER:
-            add_row(dataset, f"{label} Ablation", "augment_ablation", "Ablation", generator, "augment_ablation")
+            add_row(dataset, f"{label} Augment Human", "augment_human", "Augment Human", generator, "augment_human")
+        for generator, label in MODEL_ORDER:
+            add_row(dataset, f"{label} Augment Model", "augment_model", "Augment Model", generator, "augment_model")
+        for generator, label in MODEL_ORDER:
+            add_row(dataset, f"{label} Augment Ablation", "augment_ablation", "Ablation", generator, "augment_ablation")
     return pd.DataFrame(rows)
 
 
@@ -801,8 +822,24 @@ def write_csv(frame: pd.DataFrame, path: Path) -> Path:
 def bar_style(row: pd.Series) -> dict[str, object]:
     if str(row.get("source")) == "Human":
         return {"color": HUMAN_COLOR, "hatch": "", "edgecolor": "black"}
+    if str(row.get("source")) == "Augment Human":
+        return {
+            "color": HUMAN_COLOR,
+            "hatch": MODEL_HATCHES.get(str(row.get("generator", "")), ""),
+            "edgecolor": "black",
+        }
+    if str(row.get("source")) == "Augment Model":
+        return {
+            "color": MODEL_COLOR,
+            "hatch": MODEL_HATCHES.get(str(row.get("generator", "")), ""),
+            "edgecolor": "black",
+        }
     if str(row.get("source")) == "Ablation":
-        return {"color": ABLATION_COLOR, "hatch": "", "edgecolor": "black"}
+        return {
+            "color": ABLATION_COLOR,
+            "hatch": MODEL_HATCHES.get(str(row.get("generator", "")), ""),
+            "edgecolor": "black",
+        }
     return {
         "color": MODEL_COLOR,
         "hatch": MODEL_HATCHES.get(str(row.get("generator", "")), ""),
@@ -810,12 +847,12 @@ def bar_style(row: pd.Series) -> dict[str, object]:
     }
 
 
-def draw_final_bar(ax: plt.Axes, x: float, value: float, err: float, row: pd.Series, *, missing: bool) -> None:
+def draw_final_bar(ax: plt.Axes, x: float, value: float, err: float, row: pd.Series, *, missing: bool, width: float = 0.18) -> None:
     if missing or not np.isfinite(value):
         ax.bar(
             x,
             0.0,
-            width=0.18,
+            width=width,
             color=MISSING_COLOR,
             edgecolor="#666666",
             linewidth=0.7,
@@ -828,7 +865,7 @@ def draw_final_bar(ax: plt.Axes, x: float, value: float, err: float, row: pd.Ser
         x,
         value,
         yerr=err if np.isfinite(err) else None,
-        width=0.18,
+        width=width,
         capsize=3,
         alpha=0.9,
         linewidth=0.6,
@@ -864,46 +901,46 @@ def plot_final_grouped_quality(summary: pd.DataFrame, path: Path) -> Path:
         ("discrimination", "discrimination_se", "IRT Discrimination\n(higher = separates better)"),
         ("mean_flaws", "mean_flaws_se", "Avg. Writing Flaws\n(lower = higher quality)"),
     ]
-    fig, axes = plt.subplots(len(metrics), len(datasets), figsize=(5.6 * len(datasets), 10.2), squeeze=False)
+    fig, axes = plt.subplots(len(metrics), len(datasets), figsize=(4.6 * len(datasets), 10.2), squeeze=False)
 
-    section_gap = 0.35
-    section_centers = {"From Scratch": 0.0, "Augmentation": 1.15}
+    section_center = 0.0
     offsets = np.array([-0.27, -0.09, 0.09, 0.27])
     labels = ["Human", "GPT", "Gemini", "Qwen"]
     for col, dataset in enumerate(datasets):
-        dataset_df = summary[summary["dataset"] == dataset].copy()
+        dataset_df = summary[(summary["dataset"] == dataset) & (summary["section"] == "From Scratch")].copy()
         for row_idx, (metric, err_col, ylabel) in enumerate(metrics):
             ax = axes[row_idx][col]
             plotted_values = []
-            for section in ["From Scratch", "Augmentation"]:
-                group = dataset_df[dataset_df["section"] == section].set_index("label")
-                for offset, label in zip(offsets, labels, strict=True):
-                    if label not in group.index:
-                        continue
-                    record = group.loc[label]
-                    x = section_centers[section] + offset
-                    missing = metric == "mean_flaws" and not bool(record.get("validity_available", False))
-                    value = float(record[metric]) if pd.notna(record[metric]) else float("nan")
-                    err = float(record[err_col]) if pd.notna(record[err_col]) else 0.0
-                    draw_final_bar(ax, x, value, err, record, missing=missing)
-                    if not missing and np.isfinite(value):
-                        plotted_values.append(value + (err if np.isfinite(err) else 0.0))
+            plotted_bounds = []
+            group = dataset_df.set_index("label")
+            for offset, label in zip(offsets, labels, strict=True):
+                if label not in group.index:
+                    continue
+                record = group.loc[label]
+                x = section_center + offset
+                missing = metric == "mean_flaws" and not bool(record.get("validity_available", False))
+                value = float(record[metric]) if pd.notna(record[metric]) else float("nan")
+                err = float(record[err_col]) if pd.notna(record[err_col]) else 0.0
+                draw_final_bar(ax, x, value, err, record, missing=missing)
+                if not missing and np.isfinite(value):
+                    finite_err = err if np.isfinite(err) else 0.0
+                    plotted_values.append(value + finite_err)
+                    plotted_bounds.append((value - finite_err, value + finite_err))
 
-            ax.set_title(str(dataset) if row_idx == 0 else "")
-            ax.set_xticks([section_centers["From Scratch"], section_centers["Augmentation"]])
-            ax.set_xticklabels(["From Scratch", "Augmentation"], rotation=0)
+            ax.set_title(DATASET_LABELS.get(str(dataset), str(dataset)) if row_idx == 0 else "")
+            ax.set_xlim(-0.43, 0.43)
+            ax.set_xticks([section_center])
+            ax.set_xticklabels(["From Scratch"], rotation=0)
             ax.tick_params(axis="x", pad=21, bottom=False)
-            for section in ["From Scratch", "Augmentation"]:
-                add_human_tick(ax, section_centers[section] + float(offsets[0]))
-                for offset, label in zip(offsets[1:], labels[1:], strict=True):
-                    logo_key = f"{label} Ablation"
-                    add_logo_tick(
-                        ax,
-                        section_centers[section] + float(offset),
-                        MODEL_LOGOS[logo_key],
-                        zoom=MODEL_LOGO_ZOOM[logo_key],
-                    )
-            ax.set_ylabel(ylabel if col == 0 else "")
+            add_human_tick(ax, section_center + float(offsets[0]))
+            for offset, label in zip(offsets[1:], labels[1:], strict=True):
+                add_logo_tick(
+                    ax,
+                    section_center + float(offset),
+                    MODEL_LOGOS[label],
+                    zoom=MODEL_LOGO_ZOOM[label],
+                )
+            ax.set_ylabel(ylabel if col == 0 else "", fontsize=14)
             ax.grid(axis="y", alpha=0.2)
             ax.spines["top"].set_visible(False)
             ax.spines["right"].set_visible(False)
@@ -913,21 +950,22 @@ def plot_final_grouped_quality(summary: pd.DataFrame, path: Path) -> Path:
             elif plotted_values:
                 ymin = min(0.0, min(plotted_values) * 1.05)
                 ymax = max(plotted_values) * 1.1 if max(plotted_values) > 0 else 1.0
+                if dataset == "mmlu_pro" and metric == "difficulty" and plotted_bounds:
+                    lows, _ = zip(*plotted_bounds, strict=True)
+                    ymin = min(ymin, min(lows) * 1.1)
                 ax.set_ylim(ymin, ymax)
-            ax.axvline((section_centers["From Scratch"] + section_centers["Augmentation"]) / 2, color="#777777", linewidth=0.6, alpha=0.35)
 
     handles = [
         plt.Rectangle((0, 0), 1, 1, facecolor=HUMAN_COLOR, edgecolor="black", label="Human source"),
         plt.Rectangle((0, 0), 1, 1, facecolor=MODEL_COLOR, edgecolor="black", label="Model source / GPT"),
         plt.Rectangle((0, 0), 1, 1, facecolor=MODEL_COLOR, edgecolor="black", hatch="//", label="Model source / Gemini"),
         plt.Rectangle((0, 0), 1, 1, facecolor=MODEL_COLOR, edgecolor="black", hatch="xx", label="Model source / Qwen"),
-        plt.Rectangle((0, 0), 1, 1, facecolor=MISSING_COLOR, edgecolor="#666666", hatch="//", label="BenchMarker pending"),
     ]
-    fig.suptitle("Question Quality: Human vs Model-Generated MCQs")
-    fig.legend(handles=handles, loc="lower center", ncols=5, frameon=False)
-    fig.subplots_adjust(top=0.9, bottom=0.16, hspace=0.42, wspace=0.24)
+    fig.legend(handles=handles, loc="lower center", bbox_to_anchor=(0.5, 0.035), ncols=4, frameon=False)
+    fig.subplots_adjust(top=0.96, bottom=0.115, hspace=0.34, wspace=0.20)
     path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(path, dpi=200, bbox_inches="tight")
+    fig.savefig(path.with_suffix(".tiff"), dpi=600, bbox_inches="tight")
     plt.close(fig)
     return path
 
@@ -939,31 +977,48 @@ def plot_final_ablation_quality(summary: pd.DataFrame, path: Path) -> Path:
         ("discrimination", "discrimination_se", "IRT Discrimination\n(higher = separates better)"),
         ("mean_flaws", "mean_flaws_se", "Avg. Writing Flaws\n(lower = higher quality)"),
     ]
-    fig, axes = plt.subplots(len(metrics), len(datasets), figsize=(4.6 * len(datasets), 9.6), squeeze=False)
+    fig, axes = plt.subplots(len(metrics), len(datasets), figsize=(5.8 * len(datasets), 9.8), squeeze=False)
+    sections = [
+        ("Augment Human", "Augment Human"),
+        ("Augment Model", "Augment Model"),
+        ("Ablation", "Augment Ablation"),
+    ]
+    section_centers = np.array([-0.72, 0.0, 0.72])
+    model_offsets = np.array([-0.16, 0.0, 0.16])
+    model_labels = [label for _, label in MODEL_ORDER]
     for col, dataset in enumerate(datasets):
         dataset_df = summary[summary["dataset"] == dataset].set_index("label")
         for row_idx, (metric, err_col, ylabel) in enumerate(metrics):
             ax = axes[row_idx][col]
             plotted = []
-            labels = ["Augment Human", "GPT Ablation", "Gemini Ablation", "Qwen Ablation"]
-            x_positions = np.array([-0.27, -0.09, 0.09, 0.27])
-            for x, label in zip(x_positions, labels, strict=True):
-                record = dataset_df.loc[label]
-                value = float(record[metric]) if pd.notna(record[metric]) else float("nan")
-                err = float(record[err_col]) if pd.notna(record[err_col]) else 0.0
-                missing = not np.isfinite(value) or (metric == "mean_flaws" and not bool(record.get("validity_available", False)))
-                draw_final_bar(ax, float(x), value, err, record, missing=missing)
-                if not missing:
-                    plotted.append(value + err)
-            ax.set_title(str(dataset) if row_idx == 0 else "")
-            ax.set_xlim(-0.64, 0.64)
-            ax.set_xticks(x_positions)
-            ax.set_xticklabels(["", "", "", ""])
-            ax.tick_params(axis="x", bottom=False)
-            add_human_tick(ax, float(x_positions[0]))
-            for x, label in zip(x_positions[1:], labels[1:], strict=True):
-                add_logo_tick(ax, float(x), MODEL_LOGOS[label], zoom=MODEL_LOGO_ZOOM[label])
-            ax.set_ylabel(ylabel if col == 0 else "")
+            plotted_bounds = []
+            for section_center, (source, setting_label) in zip(section_centers, sections, strict=True):
+                for model_offset, model_label in zip(model_offsets, model_labels, strict=True):
+                    label = f"{model_label} {setting_label}"
+                    record = dataset_df.loc[label]
+                    x = float(section_center + model_offset)
+                    value = float(record[metric]) if pd.notna(record[metric]) else float("nan")
+                    err = float(record[err_col]) if pd.notna(record[err_col]) else 0.0
+                    missing = not np.isfinite(value) or (metric == "mean_flaws" and not bool(record.get("validity_available", False)))
+                    draw_final_bar(ax, x, value, err, record, missing=missing, width=0.12)
+                    if not missing:
+                        finite_err = err if np.isfinite(err) else 0.0
+                        plotted.append(value + finite_err)
+                        plotted_bounds.append((value - finite_err, value + finite_err))
+            ax.set_title(DATASET_LABELS.get(str(dataset), str(dataset)) if row_idx == 0 else "")
+            ax.set_xlim(-1.08, 1.08)
+            ax.set_xticks(section_centers)
+            ax.set_xticklabels(["Augment\nhuman", "Augment\nmodel", "Augment\nablation"], rotation=0)
+            ax.tick_params(axis="x", pad=21, bottom=False)
+            for section_center in section_centers:
+                for model_offset, model_label in zip(model_offsets, model_labels, strict=True):
+                    add_logo_tick(
+                        ax,
+                        float(section_center + model_offset),
+                        MODEL_LOGOS[model_label],
+                        zoom=MODEL_LOGO_ZOOM[model_label],
+                    )
+            ax.set_ylabel(ylabel if col == 0 else "", fontsize=14)
             ax.grid(axis="y", alpha=0.2)
             ax.spines["top"].set_visible(False)
             ax.spines["right"].set_visible(False)
@@ -975,17 +1030,23 @@ def plot_final_ablation_quality(summary: pd.DataFrame, path: Path) -> Path:
                 if dataset == "arc_challenge" and metric == "difficulty" and ymin > -1.5:
                     ymin = -1.5
                 ymax = max(plotted) * 1.1 if max(plotted) > 0 else 1.0
+                if dataset == "mmlu_pro" and metric == "difficulty" and plotted_bounds:
+                    lows, _ = zip(*plotted_bounds, strict=True)
+                    ymin = min(ymin, min(lows) * 1.1)
                 ax.set_ylim(ymin, ymax)
     handles = [
         plt.Rectangle((0, 0), 1, 1, facecolor=HUMAN_COLOR, edgecolor="black", label="Augment human"),
-        plt.Rectangle((0, 0), 1, 1, facecolor=ABLATION_COLOR, edgecolor="black", label="One-step ablation"),
-        plt.Rectangle((0, 0), 1, 1, facecolor=MISSING_COLOR, edgecolor="#666666", hatch="//", label="BenchMarker pending"),
+        plt.Rectangle((0, 0), 1, 1, facecolor=MODEL_COLOR, edgecolor="black", label="Augment model"),
+        plt.Rectangle((0, 0), 1, 1, facecolor=ABLATION_COLOR, edgecolor="black", label="Augment ablation"),
+        plt.Rectangle((0, 0), 1, 1, facecolor="white", edgecolor="black", label="GPT"),
+        plt.Rectangle((0, 0), 1, 1, facecolor="white", edgecolor="black", hatch="//", label="Gemini"),
+        plt.Rectangle((0, 0), 1, 1, facecolor="white", edgecolor="black", hatch="xx", label="Qwen"),
     ]
-    fig.suptitle("Ablation Comparison")
-    fig.legend(handles=handles, loc="lower center", ncols=4, frameon=False)
-    fig.subplots_adjust(top=0.9, bottom=0.18, hspace=0.42, wspace=0.24)
+    fig.legend(handles=handles, loc="lower center", bbox_to_anchor=(0.5, 0.035), ncols=6, frameon=False)
+    fig.subplots_adjust(top=0.96, bottom=0.13, hspace=0.34, wspace=0.22)
     path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(path, dpi=200, bbox_inches="tight")
+    fig.savefig(path.with_suffix(".tiff"), dpi=600, bbox_inches="tight")
     plt.close(fig)
     return path
 

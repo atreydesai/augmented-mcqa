@@ -1,0 +1,22 @@
+{
+  "schema_version": "evaluated_mcqa_setting_mode_records_v1",
+  "storage_kind": "evaluated_setting_mode_records",
+  "dataset_types": [
+    "gpqa"
+  ],
+  "settings": [
+    "human_from_scratch",
+    "model_from_scratch",
+    "augment_human",
+    "augment_model",
+    "augment_ablation"
+  ],
+  "modes": [
+    "full_question"
+  ],
+  "generation_run_name": "together_from_scratch_testing",
+  "generation_model": "together/Qwen/Qwen3.5-397B-A17B",
+  "evaluation_model": "openai/gpt-5.4-mini",
+  "source_results_root": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/eval_gptmini_xhigh_on_qwen_gpqa_full_question/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/openai_gpt-5.4-mini",
+  "collection_state_file": "collected_state.json"
+}
