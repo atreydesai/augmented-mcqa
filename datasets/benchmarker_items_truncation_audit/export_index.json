@@ -1,0 +1,62 @@
+{
+  "output_root": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/benchmarker_items_truncation_audit",
+  "ellipsis_definition": "old tracked question field contains literal ASCII '...'.",
+  "exports": [
+    {
+      "generator_model": "google_gemini-3.1-pro-preview",
+      "dataset": "mmlu_pro",
+      "subset": "question_mismatches",
+      "sample_id_count": 151,
+      "output_directory": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/benchmarker_items_truncation_audit/google_gemini-3.1-pro-preview__mmlu_pro__question_mismatches"
+    },
+    {
+      "generator_model": "google_gemini-3.1-pro-preview",
+      "dataset": "mmlu_pro",
+      "subset": "ellipsis_questions",
+      "sample_id_count": 152,
+      "output_directory": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/benchmarker_items_truncation_audit/google_gemini-3.1-pro-preview__mmlu_pro__ellipsis_questions"
+    },
+    {
+      "generator_model": "google_gemini-3.1-pro-preview",
+      "dataset": "gpqa",
+      "subset": "question_mismatches",
+      "sample_id_count": 228,
+      "output_directory": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/benchmarker_items_truncation_audit/google_gemini-3.1-pro-preview__gpqa__question_mismatches"
+    },
+    {
+      "generator_model": "google_gemini-3.1-pro-preview",
+      "dataset": "gpqa",
+      "subset": "ellipsis_questions",
+      "sample_id_count": 22,
+      "output_directory": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/benchmarker_items_truncation_audit/google_gemini-3.1-pro-preview__gpqa__ellipsis_questions"
+    },
+    {
+      "generator_model": "together_Qwen_Qwen3.5-397B-A17B",
+      "dataset": "mmlu_pro",
+      "subset": "question_mismatches",
+      "sample_id_count": 151,
+      "output_directory": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/benchmarker_items_truncation_audit/together_Qwen_Qwen3.5-397B-A17B__mmlu_pro__question_mismatches"
+    },
+    {
+      "generator_model": "together_Qwen_Qwen3.5-397B-A17B",
+      "dataset": "mmlu_pro",
+      "subset": "ellipsis_questions",
+      "sample_id_count": 152,
+      "output_directory": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/benchmarker_items_truncation_audit/together_Qwen_Qwen3.5-397B-A17B__mmlu_pro__ellipsis_questions"
+    },
+    {
+      "generator_model": "together_Qwen_Qwen3.5-397B-A17B",
+      "dataset": "gpqa",
+      "subset": "question_mismatches",
+      "sample_id_count": 228,
+      "output_directory": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/benchmarker_items_truncation_audit/together_Qwen_Qwen3.5-397B-A17B__gpqa__question_mismatches"
+    },
+    {
+      "generator_model": "together_Qwen_Qwen3.5-397B-A17B",
+      "dataset": "gpqa",
+      "subset": "ellipsis_questions",
+      "sample_id_count": 22,
+      "output_directory": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/benchmarker_items_truncation_audit/together_Qwen_Qwen3.5-397B-A17B__gpqa__ellipsis_questions"
+    }
+  ]
+}

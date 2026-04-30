@@ -277,6 +277,84 @@ def test_materialize_evaluated_datasets_falls_back_when_augmented_row_is_missing
     assert row["evaluation_prediction"] == "B"
 
 
+def test_materialize_evaluated_fallback_prefers_full_input_over_truncated_metadata_question(tmp_path, monkeypatch):
+    support_root = tmp_path / "support_sets"
+    output_root = tmp_path / "evaluated"
+    _write_support_manifest(support_root)
+    full_question = "This question continues with the important final clause asking what the court should decide."
+    truncated_question = "This question continues with..."
+    payload = {
+        "status": "success",
+        "metadata": {
+            "kind": "evaluation",
+            "generation_run_name": GEN_RUN_NAME,
+            "generation_model": GEN_MODEL,
+            "evaluation_model": EVAL_MODEL,
+            "setting": "human_from_scratch",
+            "mode": "full_question",
+        },
+        "summaries": [
+            {
+                "id": SAMPLE_ID,
+                "input": full_question,
+                "choices": ["coal", "trees"],
+                "target": "B",
+                "metadata": {
+                    "sample_id": SAMPLE_ID,
+                    "dataset_type": "arc_challenge",
+                    "row_index": 0,
+                    "question": truncated_question,
+                    "gold_answer": "trees",
+                    "choices_human": ["coal"],
+                },
+                "scores": {
+                    "augmented_mcqa_eval": {
+                        "value": 1.0,
+                        "metadata": {
+                            "sample_id": SAMPLE_ID,
+                            "dataset_type": "arc_challenge",
+                            "question_idx": 0,
+                            "setting": "human_from_scratch",
+                            "mode": "full_question",
+                            "prediction": "B",
+                            "gold_answer_letter": "B",
+                            "gold_index": 1,
+                            "selected_human_distractors": ["coal"],
+                            "selected_model_distractors": [],
+                            "status": "success",
+                        },
+                    }
+                },
+            }
+        ],
+    }
+    monkeypatch.setattr(
+        "data.store.iter_log_payloads",
+        lambda *args, **kwargs: [(tmp_path / "sample.eval", payload)],
+    )
+
+    outputs = materialize_evaluated_datasets(
+        tmp_path / "inspect",
+        output_root,
+        augmented_root=tmp_path / "augmented",
+        support_root=support_root,
+    )
+
+    assert len(outputs) == 1
+    dataset_path = (
+        output_root
+        / safe_name(GEN_RUN_NAME)
+        / safe_name(GEN_MODEL)
+        / safe_name(EVAL_MODEL)
+        / "arc_challenge"
+        / "human_from_scratch"
+        / "full_question"
+    )
+    rows = list(load_from_disk(str(dataset_path)))
+    assert len(rows) == 1
+    assert rows[0]["question"] == full_question
+
+
 def test_materialize_evaluated_datasets_can_write_missing_rows_without_eval_logs(tmp_path):
     eval_root = tmp_path / "inspect"
     augmented_root = tmp_path / "augmented"

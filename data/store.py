@@ -1111,7 +1111,9 @@ def _fallback_augmented_record(
             "dataset_type": str(score_meta.get("dataset_type") or sample_meta.get("dataset_type") or ""),
             "row_index": question_idx,
             "sample_id": sample_id,
-            "question": str(sample_meta.get("question") or getattr(sample, "input", "") or ""),
+            # Inspect summaries may shorten metadata strings with literal "...".
+            # The sample input preserves the full rendered question.
+            "question": str(getattr(sample, "input", "") or sample_meta.get("question") or ""),
             "answer": answer_text,
             "category": str(score_meta.get("category") or sample_meta.get("category") or ""),
             "options": choices,
@@ -1201,16 +1203,33 @@ def _with_random_fallback(
 
 def _evaluated_record(augmented_row: dict[str, Any], evaluation_payload: dict[str, Any] | None) -> dict[str, Any]:
     base_record, row_index = _evaluated_base_record(augmented_row)
+    public_evaluation_payload = {
+        key: value
+        for key, value in dict(evaluation_payload or {}).items()
+        if not str(key).startswith("_")
+    }
     return {
         **base_record,
-        **(dict(evaluation_payload) if evaluation_payload is not None else _empty_evaluation_payload(row_index=row_index)),
+        **(public_evaluation_payload if evaluation_payload is not None else _empty_evaluation_payload(row_index=row_index)),
     }
 
 
 def _fallback_evaluated_record(sample_id: str, dataset_type: str, setting: str, evaluation_payload: dict[str, Any]) -> dict[str, Any]:
+    sample_meta = dict(evaluation_payload.get("_sample_metadata") or {})
+    sample_meta.setdefault("sample_id", sample_id)
+    sample_meta.setdefault("dataset_type", dataset_type)
     fallback = _fallback_augmented_record(
-        sample=type("SampleProxy", (), {"id": sample_id, "input": "", "choices": []})(),
-        sample_meta={"sample_id": sample_id, "dataset_type": dataset_type},
+        sample=type(
+            "SampleProxy",
+            (),
+            {
+                "id": sample_id,
+                "input": str(evaluation_payload.get("_sample_input", "") or ""),
+                "choices": list(evaluation_payload.get("_sample_choices") or []),
+                "target": str(evaluation_payload.get("_sample_target", "") or ""),
+            },
+        )(),
+        sample_meta=sample_meta,
         score_meta={"dataset_type": dataset_type, "question_idx": evaluation_payload["evaluation_question_idx"]},
         setting=setting,
     )
@@ -1277,6 +1296,10 @@ def _collect_observed_evaluation_groups(
             if not isinstance(evaluation_meta, dict):
                 evaluation_meta = {}
             mode_observed[sample_id] = {
+                "_sample_input": str(sample.get("input", "") or ""),
+                "_sample_choices": list(sample.get("choices", []) or []),
+                "_sample_target": str(sample.get("target", "") or ""),
+                "_sample_metadata": sample_meta,
                 "evaluation_is_correct": bool(score_value) if score_value is not None else False,
                 "evaluation_score": score_value,
                 "evaluation_prediction": str(score_meta.get("prediction") or evaluation_meta.get("prediction") or ""),
