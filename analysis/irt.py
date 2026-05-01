@@ -233,6 +233,8 @@ def load_irt_frame(
                         [
                             "sample_id",
                             "question",
+                            "evaluation_status",
+                            "evaluation_used_random_fallback",
                             "evaluation_prediction",
                             "evaluation_is_correct",
                             "num_choices",
@@ -247,6 +249,8 @@ def load_irt_frame(
                     data = data[
                         [
                             "sample_id",
+                            "evaluation_status",
+                            "evaluation_used_random_fallback",
                             "evaluation_prediction",
                             "evaluation_is_correct",
                             "num_choices",
@@ -263,6 +267,8 @@ def load_irt_frame(
         return pd.DataFrame()
 
     frame = pd.concat(frames, ignore_index=True)
+    frame = frame[frame["evaluation_status"].fillna("").astype(str) == "success"].copy()
+    frame = frame[~frame["evaluation_used_random_fallback"].fillna(False).astype(bool)].copy()
     frame = frame[frame["evaluation_prediction"].fillna("").astype(str).str.strip() != ""].copy()
     frame["correct"] = frame["evaluation_is_correct"].fillna(False).astype(bool).astype(float)
     frame["choice_count"] = frame["num_choices"].astype(int)
@@ -965,7 +971,8 @@ def plot_final_grouped_quality(summary: pd.DataFrame, path: Path) -> Path:
     fig.subplots_adjust(top=0.96, bottom=0.115, hspace=0.34, wspace=0.20)
     path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(path, dpi=200, bbox_inches="tight")
-    fig.savefig(path.with_suffix(".tiff"), dpi=600, bbox_inches="tight")
+    # TIFF export disabled; PNG figures are sufficient for this analysis bundle.
+    # fig.savefig(path.with_suffix(".tiff"), dpi=600, bbox_inches="tight")
     plt.close(fig)
     return path
 
@@ -1046,7 +1053,8 @@ def plot_final_ablation_quality(summary: pd.DataFrame, path: Path) -> Path:
     fig.subplots_adjust(top=0.96, bottom=0.13, hspace=0.34, wspace=0.22)
     path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(path, dpi=200, bbox_inches="tight")
-    fig.savefig(path.with_suffix(".tiff"), dpi=600, bbox_inches="tight")
+    # TIFF export disabled; PNG figures are sufficient for this analysis bundle.
+    # fig.savefig(path.with_suffix(".tiff"), dpi=600, bbox_inches="tight")
     plt.close(fig)
     return path
 

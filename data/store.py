@@ -71,6 +71,63 @@ EVALUATED_RECORD_COLUMNS = AUGMENTED_RECORD_COLUMNS + (
     "evaluation_log_path",
 )
 
+# Inspect redacts metadata fields that exceed ~1 k characters by replacing them
+# with this literal string.  If the value was stored as a list, the characters
+# get split into individual list elements – a silent, hard-to-detect corruption.
+# We detect this pattern explicitly and raise immediately so it is never persisted.
+_INSPECT_REDACTION_MARKER: str = "Key removed from summary (> 1k)"
+_INSPECT_REDACTION_CHARS: frozenset[str] = frozenset(_INSPECT_REDACTION_MARKER)
+
+
+def _is_redaction_string(items: list[str]) -> bool:
+    """Return True if *items* looks like the Inspect redaction sentinel split char-by-char."""
+    if not items:
+        return False
+    joined = "".join(items)
+    return joined == _INSPECT_REDACTION_MARKER
+
+
+def _raise_if_redacted(items: list[str], *, field: str, sample_id: str = "") -> None:
+    """Raise ValueError if *items* is the Inspect char-split redaction string.
+
+    Call this on every distractor list before writing to the augmented store.
+    This converts a previously silent data-corruption bug into an immediate,
+    actionable error.
+    """
+    if _is_redaction_string(items):
+        loc = f" for sample {sample_id!r}" if sample_id else ""
+        raise ValueError(
+            f"Inspect metadata redaction detected in field {field!r}{loc}: "
+            f"the value is the sentinel string {_INSPECT_REDACTION_MARKER!r} "
+            "split character-by-character into a list.  "
+            "Re-read the distractor from the full sample JSON (not the summary) "
+            "or re-run generation for this row."
+        )
+
+
+def _string_list(value: Any) -> list[str]:
+    """Coerce *value* to a list of non-empty strings.
+
+    Raises ValueError if the result is the Inspect metadata-redaction sentinel
+    split character-by-character.  This catches corrupt generation payloads
+    before they are written to the augmented store.
+    """
+    if value is None or isinstance(value, str):
+        return []
+    try:
+        items = list(value)
+    except TypeError:
+        return []
+    result = [str(item).strip() for item in items if str(item).strip()]
+    if _is_redaction_string(result):
+        raise ValueError(
+            f"Inspect metadata redaction detected: the list value is the sentinel "
+            f"{_INSPECT_REDACTION_MARKER!r} split character-by-character.  "
+            "This usually means the generation log summary was truncated.  "
+            "Re-read from the full sample JSON or re-run generation."
+        )
+    return result
+
 
 def _latest_mtime(path: Path, *, suffix: str | None = None) -> float | None:
     if not path.exists():
@@ -394,12 +451,12 @@ def _eligible_support_ids(payload: dict[str, Any]) -> dict[str, set[str]]:
 
 def _setting_record_is_usable(record: dict[str, Any], *, setting: str) -> bool:
     recipe = get_setting_recipe(setting)
-    options = [str(option) for option in list(record.get("options_randomized") or []) if str(option)]
+    options = _string_list(record.get("options_randomized"))
     correct_letter = str(record.get("correct_answer_letter", "") or "")
     if len(options) != recipe.num_choices or correct_letter not in CHOICE_LABELS[: len(options)]:
         return False
-    human = [str(item).strip() for item in list(record.get("human_distractors") or []) if str(item).strip()]
-    model = [str(item).strip() for item in list(record.get("model_distractors") or []) if str(item).strip()]
+    human = _string_list(record.get("human_distractors"))
+    model = _string_list(record.get("model_distractors"))
     return len(human) == recipe.num_human and len(model) == recipe.num_model
 
 
@@ -448,7 +505,7 @@ def build_generation_support_manifest(
 ) -> Path:
     wanted = _selected_values(dataset_types, list(ACTIVE_DATASET_TYPES))
     rows = iter_processed_rows(processed_dataset_path, dataset_types=wanted)
-    successes = _generation_successes(generation_log_dir)
+    generated_payloads = _generation_payloads(generation_log_dir)
     non_hfs_settings = [setting for setting in SETTING_NAMES if setting != "human_from_scratch"]
     eligible_by_dataset: dict[str, list[str]] = {dataset_type: [] for dataset_type in wanted}
     totals_by_dataset = {dataset_type: 0 for dataset_type in wanted}
@@ -464,9 +521,12 @@ def build_generation_support_manifest(
         if not hfs_valid:
             excluded_by_setting[dataset_type]["human_from_scratch"] += 1
         missing_generation_settings: list[str] = []
-        successful_settings = successes.get(sample_id, set())
+        generated_row = generated_payloads.get(sample_id)
         for setting in non_hfs_settings:
-            if setting not in successful_settings:
+            record = None
+            if generated_row is not None:
+                record = _record_from_generation_payload(_base_record(row), generated_row, setting=setting)
+            if record is None or not _setting_record_is_usable(record, setting=setting):
                 excluded_by_setting[dataset_type][setting] += 1
                 missing_generation_settings.append(setting)
         if hfs_valid and not missing_generation_settings:
@@ -587,6 +647,10 @@ def _record_from_setting_values(
 ) -> dict[str, Any] | None:
     if not options_randomized or correct_answer_letter not in CHOICE_LABELS[: len(options_randomized)]:
         return None
+    sample_id = str(base.get("sample_id", "") or "")
+    # Guard: reject redaction-sentinel values before they reach disk.
+    _raise_if_redacted(human_distractors, field="human_distractors", sample_id=sample_id)
+    _raise_if_redacted(model_distractors, field="model_distractors", sample_id=sample_id)
     recipe = get_setting_recipe(setting)
     distractors = [*human_distractors, *model_distractors]
     return {
@@ -672,26 +736,26 @@ def _record_from_generation_payload(
     if setting == "human_from_scratch":
         return _human_from_scratch_record(base)
 
-    human = [str(item).strip() for item in list(payload.get("human_from_scratch") or []) if str(item).strip()]
+    human = _string_list(payload.get("human_from_scratch"))
     if setting == "model_from_scratch":
         human_distractors = []
-        model_distractors = [str(item).strip() for item in list(payload.get("model_from_scratch") or []) if str(item).strip()]
+        model_distractors = _string_list(payload.get("model_from_scratch"))
     elif setting == "augment_human":
         human_distractors = human
-        model_distractors = [str(item).strip() for item in list(payload.get("augment_human") or []) if str(item).strip()]
+        model_distractors = _string_list(payload.get("augment_human"))
     elif setting == "augment_model":
         human_distractors = []
-        model_distractors = [str(item).strip() for item in list(payload.get("augment_model") or []) if str(item).strip()]
+        model_distractors = _string_list(payload.get("augment_model"))
     else:
         human_distractors = []
-        model_distractors = [str(item).strip() for item in list(payload.get("augment_ablation") or []) if str(item).strip()]
+        model_distractors = _string_list(payload.get("augment_ablation"))
     traces = dict((payload.get("traces") or {}).get(setting, {}) or {})
     record = _record_from_setting_values(
         base,
         setting=setting,
         human_distractors=human_distractors,
         model_distractors=model_distractors,
-        options_randomized=list(payload.get(f"{setting}_options_randomized") or []),
+        options_randomized=_string_list(payload.get(f"{setting}_options_randomized")),
         correct_answer_letter=str(payload.get(f"{setting}_correct_answer_letter", "") or ""),
         traces=traces,
     )
@@ -1038,6 +1102,33 @@ def _write_evaluated_store(
     return output_path
 
 
+def _existing_evaluated_rows(path: Path) -> list[dict[str, Any]]:
+    if not path.exists():
+        return []
+    return [dict(row) for row in load_from_disk(str(path))]
+
+
+def _preserve_existing_unobserved_slices(
+    *,
+    output_path: Path,
+    records: dict[str, dict[str, dict[str, list[dict[str, Any]]]]],
+    group_observed: dict[str, dict[str, dict[str, dict[str, Any]]]],
+) -> None:
+    """Keep prior collected slices when a partial log root does not contain them."""
+    if not output_path.exists():
+        return
+    for dataset_type, dataset_records in records.items():
+        dataset_observed = group_observed.get(dataset_type, {})
+        for setting, setting_records in dataset_records.items():
+            setting_observed = dataset_observed.get(setting, {})
+            for mode in list(setting_records):
+                if setting_observed.get(mode):
+                    continue
+                existing_rows = _existing_evaluated_rows(_evaluated_store_path(output_path, dataset_type, setting, mode))
+                if existing_rows:
+                    setting_records[mode] = existing_rows
+
+
 def _evaluation_score_value(score: Any) -> float | None:
     value = score.get("value") if isinstance(score, dict) else getattr(score, "value", None)
     if value is None:
@@ -1077,7 +1168,7 @@ def _fallback_augmented_record(
     raw_question_idx = score_meta.get("question_idx", sample_meta.get("row_index", -1))
     question_idx = -1 if raw_question_idx is None else int(raw_question_idx)
     answer_index = score_meta.get("gold_index", sample_meta.get("gold_index"))
-    choices = list(getattr(sample, "choices", []) or [])
+    choices = _string_list(getattr(sample, "choices", []))
     if answer_index is not None:
         try:
             answer_index_int = int(answer_index)
@@ -1088,22 +1179,8 @@ def _fallback_augmented_record(
     answer_text = str(sample_meta.get("gold_answer", "") or "")
     if not answer_text and answer_index_int is not None and 0 <= answer_index_int < len(choices):
         answer_text = str(choices[answer_index_int])
-    human = [
-        str(item)
-        for item in list(
-            score_meta.get("selected_human_distractors")
-            or sample_meta.get("selected_human_distractors")
-            or []
-        )
-    ]
-    model = [
-        str(item)
-        for item in list(
-            score_meta.get("selected_model_distractors")
-            or sample_meta.get("selected_model_distractors")
-            or []
-        )
-    ]
+    human = _string_list(score_meta.get("selected_human_distractors") or sample_meta.get("selected_human_distractors"))
+    model = _string_list(score_meta.get("selected_model_distractors") or sample_meta.get("selected_model_distractors"))
     base = _base_record(
         {
             "id": sample_id,
@@ -1118,7 +1195,7 @@ def _fallback_augmented_record(
             "category": str(score_meta.get("category") or sample_meta.get("category") or ""),
             "options": choices,
             "answer_index": answer_index_int,
-            "choices_human": list(sample_meta.get("choices_human") or human),
+            "choices_human": _string_list(sample_meta.get("choices_human")) or human,
         }
     )
     record = _record_from_setting_values(
@@ -1448,6 +1525,12 @@ def materialize_evaluated_datasets(
     outputs: list[Path] = []
     for group_key, meta in group_meta.items():
         generation_run_name, generation_model, evaluation_model = group_key
+        output_path = _evaluated_group_root(
+            output_root_path,
+            generation_run_name=generation_run_name,
+            generation_model=generation_model,
+            evaluation_model=evaluation_model,
+        )
         augmented_path = Path(meta["augmented_path"])
         augmented_scope_root = augmented_root_path
         if explicit_augmented_store and len(augmented_path.parents) >= 2:
@@ -1475,12 +1558,10 @@ def materialize_evaluated_datasets(
             support_sample_ids=support_sample_ids,
             evaluation_model=evaluation_model,
         )
-
-        output_path = _evaluated_group_root(
-            output_root_path,
-            generation_run_name=generation_run_name,
-            generation_model=generation_model,
-            evaluation_model=evaluation_model,
+        _preserve_existing_unobserved_slices(
+            output_path=output_path,
+            records=group_records,
+            group_observed=observed_by_group.get(group_key, {}),
         )
         output_path.parent.mkdir(parents=True, exist_ok=True)
         outputs.append(

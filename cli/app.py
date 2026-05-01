@@ -1539,7 +1539,7 @@ def add_runtime_flags(command: argparse.ArgumentParser) -> None:
     command.add_argument(
         "--max-tokens",
         type=int,
-        default=2048,
+        default=32768,
         help="Advanced tuning: maximum tokens requested from the model for each generation or evaluation call.",
     )
     command.add_argument(

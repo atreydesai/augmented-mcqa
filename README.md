@@ -269,6 +269,29 @@ uv run python main.py build-collected-dataset \
   --augmented-dataset datasets/augmented/gen_gpt52_v2/openai_gpt-5.2-2025-12-11
 ```
 
+### Support Sets
+
+Support sets live under `datasets/support_sets/<generation-run>/<generation-model>/support_manifest.json`.
+
+They store only the `sample_id`s that are eligible for downstream evaluation, plus counts by dataset. They do not store question text, answer text, choices, randomized options, generations, or evaluator outputs. If canonical question text changes, repair the augmented and collected datasets; the support manifest only needs to change when eligibility changes.
+
+Use support sets when:
+- comparing generator models on the same question IDs
+- rebuilding collected datasets from existing evaluation logs
+- launching evaluation jobs after generation has been materialized
+
+The normal flow is:
+
+```bash
+uv run python main.py build-augmented-dataset \
+  --run-name gen_gpt52_v2 \
+  --model gpt-5.2-2025-12-11
+```
+
+That command writes the support manifest automatically. Evaluation and collection commands use `--support-root datasets/support_sets` by default, so you usually do not need to pass it explicitly. Pass `--support-root` only when reading or writing support manifests in a non-default location.
+
+Before rerunning evaluation or collection for a generation run, make sure every generator model in that run has a support manifest. The evaluation pipeline intersects the manifests for the run so all generator models are evaluated on the same supported sample IDs.
+
 ### `generate`
 
 Run generation locally for one model over one or more dataset types and strategies.

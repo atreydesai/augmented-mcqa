@@ -38,6 +38,7 @@ def test_main_parser_evaluate_defaults_use_inspect_first_shape():
     assert Path(args.log_root).parts[-2:] == ("inspect", "evaluation")
     assert args.shard_count == 1
     assert args.collect_evaluated is True
+    assert args.max_tokens == 32768
 
 
 def test_main_parser_submit_generate_cluster_defaults_use_local_cluster_shape():
@@ -73,6 +74,7 @@ def test_main_parser_submit_evaluate_cluster_defaults_use_local_cluster_shape():
     assert args.gpu_type == "rtxa6000"
     assert args.submit is True
     assert args.augmented_dataset is None
+    assert args.max_tokens == 32768
 
 
 def test_main_parser_export_requires_explicit_input():

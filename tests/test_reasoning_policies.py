@@ -50,22 +50,22 @@ def test_registered_resolved_ids_are_valid_inputs(tmp_path, monkeypatch):
 def test_vllm_server_args_use_eval_friendly_defaults():
     assert vllm_server_args("Qwen/Qwen3-4B-Instruct-2507") == {
         "enforce_eager": True,
-        "max_model_len": 8192,
+        "max_model_len": 65536,
     }
     assert vllm_server_args("Qwen/Qwen3.5-35B-A3B-FP8") == {
         "enforce_eager": True,
-        "max_model_len": 8192,
+        "max_model_len": 65536,
         "quantization": "fp8",
     }
     assert vllm_server_args("nvidia/NVIDIA-Nemotron-Nano-9B-v2") == {
         "enforce_eager": True,
-        "max_model_len": 8192,
+        "max_model_len": 65536,
         "trust_remote_code": True,
         "mamba_ssm_cache_dtype": "float32",
     }
     assert vllm_server_args("allenai/Olmo-3-7B-Instruct") == {
         "enforce_eager": True,
-        "max_model_len": 8192,
+        "max_model_len": 65536,
         "trust_remote_code": True,
     }
     assert vllm_server_args("gpt-5.2-2025-12-11") == {}
@@ -92,7 +92,7 @@ def test_new_local_model_smoke(model, resolved, extra_args):
     assert resolve_model_name(model) == resolved
     args = vllm_server_args(model)
     assert args["enforce_eager"] is True
-    assert args["max_model_len"] == 8192
+    assert args["max_model_len"] == 65536
     for key, value in extra_args.items():
         assert args[key] == value
 

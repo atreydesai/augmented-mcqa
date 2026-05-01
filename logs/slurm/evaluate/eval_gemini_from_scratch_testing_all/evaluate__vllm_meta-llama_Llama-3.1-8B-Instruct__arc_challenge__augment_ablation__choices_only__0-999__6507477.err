@@ -1,63 +1,0 @@
-Saving the dataset (0/1 shards):   0%|                                                                              | 0/1000 [00:00<?, ? examples/s]Saving the dataset (1/1 shards): 100%|████████████████████████████████████████████████████████████████| 1000/1000 [00:00<00:00, 28017.50 examples/s]Saving the dataset (1/1 shards): 100%|████████████████████████████████████████████████████████████████| 1000/1000 [00:00<00:00, 27843.97 examples/s]
-Saving the dataset (0/1 shards):   0%|                                                                              | 0/1000 [00:00<?, ? examples/s]Saving the dataset (1/1 shards): 100%|████████████████████████████████████████████████████████████████| 1000/1000 [00:00<00:00, 29673.39 examples/s]Saving the dataset (1/1 shards): 100%|████████████████████████████████████████████████████████████████| 1000/1000 [00:00<00:00, 29503.69 examples/s]
-Traceback (most recent call last):
-  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/main.py", line 5, in <module>
-    raise SystemExit(main())
-                     ^^^^^^
-  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/cli/app.py", line 1796, in main
-    return int(args.handler(args))
-               ^^^^^^^^^^^^^^^^^^
-  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/cli/app.py", line 1181, in _run_evaluate
-    collected_outputs = _materialize_collected_evaluation(
-                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/cli/app.py", line 1011, in _materialize_collected_evaluation
-    state = _evaluation_collection_state(
-            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/cli/app.py", line 843, in _evaluation_collection_state
-    attempts = collect_slice_attempts(evaluation_log_root, kind="evaluation")
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/utils/scheduler_state.py", line 165, in collect_slice_attempts
-    for log_path, log_summary in iter_log_summaries(log_dir, kind=kind):
-  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/utils/logs.py", line 226, in iter_log_summaries
-    summary = read_log_summary(log_path)
-              ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/utils/logs.py", line 168, in read_log_summary
-    return _normalize_log_summary_from_object(read_log(log_path))
-                                              ^^^^^^^^^^^^^^^^^^
-  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/utils/logs.py", line 19, in read_log
-    return read_eval_log(str(path))
-           ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib64/python3.12/site-packages/inspect_ai/log/_file.py", line 281, in read_eval_log
-    return run_coroutine(
-           ^^^^^^^^^^^^^^
-  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib64/python3.12/site-packages/inspect_ai/_util/_async.py", line 140, in run_coroutine
-    result = asyncio.run(_run_with_async_filesystem())
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib64/python3.12/asyncio/runners.py", line 195, in run
-    return runner.run(main)
-           ^^^^^^^^^^^^^^^^
-  File "/usr/lib64/python3.12/asyncio/runners.py", line 118, in run
-    return self._loop.run_until_complete(task)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib64/python3.12/asyncio/base_events.py", line 691, in run_until_complete
-    return future.result()
-           ^^^^^^^^^^^^^^^
-  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib64/python3.12/site-packages/inspect_ai/_util/_async.py", line 121, in _run_with_async_filesystem
-    return await coroutine
-           ^^^^^^^^^^^^^^^
-  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib64/python3.12/site-packages/inspect_ai/log/_file.py", line 339, in read_eval_log_async
-    log = await recorder_type.read_log(log_file, header_only)
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib64/python3.12/site-packages/inspect_ai/log/_recorders/eval.py", line 250, in read_log
-    log = await _read_log(reader, cd.entries, location, header_only)
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib64/python3.12/site-packages/inspect_ai/log/_recorders/eval.py", line 673, in _read_log
-    data = await _read_member_json(reader, entry.filename)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib64/python3.12/site-packages/inspect_ai/log/_recorders/eval.py", line 718, in _read_member_json
-    return json.loads(await reader.read_member_fully(member))
-                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib64/python3.12/site-packages/inspect_ai/_util/async_zip.py", line 433, in read_member_fully
-    _, _, _, _, _, _, _, _, _, name_len, extra_len = struct.unpack_from(
-                                                     ^^^^^^^^^^^^^^^^^^^
-struct.error: unpack_from requires a buffer of at least 30 bytes for unpacking 30 bytes at offset 0 (actual buffer size is 0)

@@ -22,7 +22,7 @@ NO_REASONING_EFFORT_MODEL_IDS = (
     "together/Qwen/Qwen3.5-397B-A17B",
     "together/Qwen/Qwen3.5-9B",
 )
-VLLM_STARTUP_MAX_MODEL_LEN = 8192
+VLLM_STARTUP_MAX_MODEL_LEN = 65536
 VLLM_STARTUP_SERVER_ARGS = {
     "enforce_eager": True,
     "max_model_len": VLLM_STARTUP_MAX_MODEL_LEN,
