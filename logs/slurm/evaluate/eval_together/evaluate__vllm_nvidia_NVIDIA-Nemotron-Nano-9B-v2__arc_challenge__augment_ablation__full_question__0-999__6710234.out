@@ -1,0 +1,133 @@
+---------------------------------------------------------                                               
+augmented_mcqa_eval_augment_ablation_full_question (987 samples): vllm/nvidia/NVIDIA-Nemotron-Nano-9B-v2
+max_tokens: 32768, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)
+---------------------------------------------------------                                               
+                                                                                                        
+Steps:  10/987   1% | Samples:   1/987 | mean:  n/a | vllm:  0/10 | HTTP retries: 0
+Steps:  15/987   1% | Samples:  13/987 | mean: 0.83 | vllm:  4/10 | HTTP retries: 0
+Steps:  24/987   2% | Samples:  23/987 | mean: 0.82 | vllm:  5/10 | HTTP retries: 0
+Steps:  33/987   3% | Samples:  30/987 | mean: 0.75 | vllm:  4/10 | HTTP retries: 0
+Steps:  40/987   4% | Samples:  38/987 | mean: 0.81 | vllm:  5/10 | HTTP retries: 0
+Steps:  45/987   4% | Samples:  44/987 | mean: 0.81 | vllm:  5/10 | HTTP retries: 0
+Steps:  52/987   5% | Samples:  50/987 | mean: 0.82 | vllm:  7/10 | HTTP retries: 1
+Steps:  58/987   5% | Samples:  58/987 | mean: 0.79 | vllm:  5/10 | HTTP retries: 1
+Steps:  67/987   6% | Samples:  66/987 | mean: 0.78 | vllm:  6/10 | HTTP retries: 2
+Steps:  74/987   7% | Samples:  73/987 | mean: 0.78 | vllm:  3/10 | HTTP retries: 2
+Steps:  85/987   8% | Samples:  82/987 | mean: 0.80 | vllm:  5/10 | HTTP retries: 2
+Steps:  93/987   9% | Samples:  91/987 | mean: 0.76 | vllm:  5/10 | HTTP retries: 2
+Steps: 102/987  10% | Samples:  99/987 | mean: 0.78 | vllm:  5/10 | HTTP retries: 2
+Steps: 109/987  11% | Samples: 108/987 | mean: 0.79 | vllm:  5/10 | HTTP retries: 2
+Steps: 116/987  11% | Samples: 115/987 | mean: 0.79 | vllm:  6/10 | HTTP retries: 2
+Steps: 124/987  12% | Samples: 123/987 | mean: 0.80 | vllm:  6/10 | HTTP retries: 2
+Steps: 132/987  13% | Samples: 131/987 | mean: 0.79 | vllm:  5/10 | HTTP retries: 2
+Steps: 142/987  14% | Samples: 139/987 | mean: 0.79 | vllm:  4/10 | HTTP retries: 2
+Steps: 150/987  15% | Samples: 147/987 | mean: 0.79 | vllm:  4/10 | HTTP retries: 2
+Steps: 158/987  16% | Samples: 157/987 | mean: 0.78 | vllm:  7/10 | HTTP retries: 2
+Steps: 165/987  16% | Samples: 164/987 | mean: 0.77 | vllm:  4/10 | HTTP retries: 2
+Steps: 175/987  17% | Samples: 172/987 | mean: 0.78 | vllm:  4/10 | HTTP retries: 2
+Steps: 182/987  18% | Samples: 179/987 | mean: 0.78 | vllm:  5/10 | HTTP retries: 2
+Steps: 187/987  18% | Samples: 186/987 | mean: 0.78 | vllm:  5/10 | HTTP retries: 2
+Steps: 195/987  19% | Samples: 193/987 | mean: 0.77 | vllm:  5/10 | HTTP retries: 2
+Steps: 202/987  20% | Samples: 200/987 | mean: 0.78 | vllm:  3/10 | HTTP retries: 2
+Steps: 210/987  21% | Samples: 207/987 | mean: 0.78 | vllm:  5/10 | HTTP retries: 2
+Steps: 216/987  21% | Samples: 214/987 | mean: 0.79 | vllm:  5/10 | HTTP retries: 2
+Steps: 222/987  22% | Samples: 221/987 | mean: 0.79 | vllm:  3/10 | HTTP retries: 2
+Steps: 231/987  23% | Samples: 230/987 | mean: 0.79 | vllm:  6/10 | HTTP retries: 2
+Steps: 240/987  24% | Samples: 237/987 | mean: 0.77 | vllm:  5/10 | HTTP retries: 2
+Steps: 247/987  25% | Samples: 244/987 | mean: 0.78 | vllm:  5/10 | HTTP retries: 2
+Steps: 253/987  25% | Samples: 250/987 | mean: 0.77 | vllm:  3/10 | HTTP retries: 2
+Steps: 259/987  26% | Samples: 258/987 | mean: 0.77 | vllm:  6/10 | HTTP retries: 2
+Steps: 267/987  27% | Samples: 265/987 | mean: 0.77 | vllm:  6/10 | HTTP retries: 3
+Steps: 272/987  27% | Samples: 270/987 | mean: 0.78 | vllm:  3/10 | HTTP retries: 3
+Steps: 279/987  28% | Samples: 278/987 | mean: 0.78 | vllm:  6/10 | HTTP retries: 3
+Steps: 287/987  29% | Samples: 285/987 | mean: 0.78 | vllm:  6/10 | HTTP retries: 3
+Steps: 296/987  29% | Samples: 290/987 | mean: 0.78 | vllm:  2/10 | HTTP retries: 3
+Steps: 301/987  30% | Samples: 300/987 | mean: 0.78 | vllm:  7/10 | HTTP retries: 4
+Steps: 310/987  31% | Samples: 304/987 | mean: 0.78 | vllm:  1/10 | HTTP retries: 4
+Steps: 314/987  31% | Samples: 314/987 | mean: 0.78 | vllm:  8/10 | HTTP retries: 4
+Steps: 318/987  32% | Samples: 317/987 | mean: 0.78 | vllm:  1/10 | HTTP retries: 4
+Steps: 327/987  33% | Samples: 327/987 | mean: 0.78 | vllm:  6/10 | HTTP retries: 5
+Steps: 335/987  33% | Samples: 331/987 | mean: 0.78 | vllm:  2/10 | HTTP retries: 5
+Steps: 341/987  34% | Samples: 340/987 | mean: 0.78 | vllm:  6/10 | HTTP retries: 6
+Steps: 345/987  34% | Samples: 345/987 | mean: 0.77 | vllm:  2/10 | HTTP retries: 6
+Steps: 355/987  35% | Samples: 353/987 | mean: 0.76 | vllm:  5/10 | HTTP retries: 6
+Steps: 366/987  37% | Samples: 358/987 | mean: 0.77 | vllm:  0/10 | HTTP retries: 6
+Steps: 378/987  38% | Samples: 369/987 | mean: 0.76 | vllm:  0/10 | HTTP retries: 6
+Steps: 388/987  39% | Samples: 379/987 | mean: 0.77 | vllm:  0/10 | HTTP retries: 7
+Steps: 390/987  39% | Samples: 390/987 | mean: 0.77 | vllm:  9/10 | HTTP retries: 7
+Steps: 400/987  40% | Samples: 394/987 | mean: 0.77 | vllm:  1/10 | HTTP retries: 7
+Steps: 411/987  41% | Samples: 402/987 | mean: 0.78 | vllm:  0/10 | HTTP retries: 7
+Steps: 421/987  42% | Samples: 412/987 | mean: 0.78 | vllm:  0/10 | HTTP retries: 8
+Steps: 431/987  43% | Samples: 422/987 | mean: 0.78 | vllm:  0/10 | HTTP retries: 8
+Steps: 441/987  44% | Samples: 432/987 | mean: 0.78 | vllm:  0/10 | HTTP retries: 9
+Steps: 451/987  45% | Samples: 442/987 | mean: 0.78 | vllm:  0/10 | HTTP retries: 10
+Steps: 461/987  46% | Samples: 452/987 | mean: 0.78 | vllm:  0/10 | HTTP retries: 11
+Steps: 471/987  47% | Samples: 462/987 | mean: 0.78 | vllm:  0/10 | HTTP retries: 12
+Steps: 481/987  48% | Samples: 472/987 | mean: 0.79 | vllm:  0/10 | HTTP retries: 12
+Steps: 491/987  49% | Samples: 482/987 | mean: 0.79 | vllm:  0/10 | HTTP retries: 13
+Steps: 501/987  50% | Samples: 492/987 | mean: 0.79 | vllm:  0/10 | HTTP retries: 13
+Steps: 511/987  51% | Samples: 502/987 | mean: 0.79 | vllm:  0/10 | HTTP retries: 14
+Steps: 521/987  52% | Samples: 512/987 | mean: 0.79 | vllm:  0/10 | HTTP retries: 15
+Steps: 531/987  53% | Samples: 522/987 | mean: 0.79 | vllm:  0/10 | HTTP retries: 15
+Steps: 541/987  54% | Samples: 532/987 | mean: 0.79 | vllm:  0/10 | HTTP retries: 16
+Steps: 551/987  55% | Samples: 542/987 | mean: 0.79 | vllm:  0/10 | HTTP retries: 17
+Steps: 561/987  56% | Samples: 552/987 | mean: 0.79 | vllm:  0/10 | HTTP retries: 18
+Steps: 571/987  57% | Samples: 562/987 | mean: 0.80 | vllm:  0/10 | HTTP retries: 19
+Steps: 581/987  58% | Samples: 572/987 | mean: 0.79 | vllm:  0/10 | HTTP retries: 19
+Steps: 591/987  59% | Samples: 582/987 | mean: 0.80 | vllm:  0/10 | HTTP retries: 20
+Steps: 601/987  60% | Samples: 592/987 | mean: 0.80 | vllm:  0/10 | HTTP retries: 20
+Steps: 611/987  61% | Samples: 602/987 | mean: 0.80 | vllm:  0/10 | HTTP retries: 21
+Steps: 621/987  62% | Samples: 612/987 | mean: 0.79 | vllm:  0/10 | HTTP retries: 21
+Steps: 631/987  63% | Samples: 622/987 | mean: 0.79 | vllm:  0/10 | HTTP retries: 21
+Steps: 641/987  64% | Samples: 632/987 | mean: 0.79 | vllm:  0/10 | HTTP retries: 22
+Steps: 651/987  65% | Samples: 642/987 | mean: 0.79 | vllm:  0/10 | HTTP retries: 22
+Steps: 661/987  66% | Samples: 652/987 | mean: 0.79 | vllm:  0/10 | HTTP retries: 22
+Steps: 671/987  67% | Samples: 662/987 | mean: 0.79 | vllm:  0/10 | HTTP retries: 22
+Steps: 681/987  68% | Samples: 672/987 | mean: 0.79 | vllm:  0/10 | HTTP retries: 23
+Steps: 691/987  70% | Samples: 682/987 | mean: 0.79 | vllm:  0/10 | HTTP retries: 23
+Steps: 701/987  71% | Samples: 692/987 | mean: 0.79 | vllm:  0/10 | HTTP retries: 23
+Steps: 711/987  72% | Samples: 702/987 | mean: 0.79 | vllm:  0/10 | HTTP retries: 24
+Steps: 721/987  73% | Samples: 712/987 | mean: 0.79 | vllm:  0/10 | HTTP retries: 24
+Steps: 731/987  74% | Samples: 722/987 | mean: 0.79 | vllm:  0/10 | HTTP retries: 24
+Steps: 741/987  75% | Samples: 732/987 | mean: 0.79 | vllm:  0/10 | HTTP retries: 24
+Steps: 751/987  76% | Samples: 742/987 | mean: 0.79 | vllm:  0/10 | HTTP retries: 24
+Steps: 761/987  77% | Samples: 752/987 | mean: 0.79 | vllm:  0/10 | HTTP retries: 24
+Steps: 771/987  78% | Samples: 762/987 | mean: 0.79 | vllm:  0/10 | HTTP retries: 24
+Steps: 781/987  79% | Samples: 772/987 | mean: 0.79 | vllm:  0/10 | HTTP retries: 24
+Steps: 791/987  80% | Samples: 782/987 | mean: 0.78 | vllm:  0/10 | HTTP retries: 24
+Steps: 801/987  81% | Samples: 792/987 | mean: 0.78 | vllm:  0/10 | HTTP retries: 24
+Steps: 811/987  82% | Samples: 802/987 | mean: 0.78 | vllm:  0/10 | HTTP retries: 24
+Steps: 821/987  83% | Samples: 812/987 | mean: 0.78 | vllm:  0/10 | HTTP retries: 24
+Steps: 831/987  84% | Samples: 822/987 | mean: 0.78 | vllm:  0/10 | HTTP retries: 24
+Steps: 841/987  85% | Samples: 832/987 | mean: 0.78 | vllm:  0/10 | HTTP retries: 24
+Steps: 851/987  86% | Samples: 842/987 | mean: 0.78 | vllm:  0/10 | HTTP retries: 24
+Steps: 861/987  87% | Samples: 852/987 | mean: 0.78 | vllm:  0/10 | HTTP retries: 24
+Steps: 871/987  88% | Samples: 862/987 | mean: 0.78 | vllm:  0/10 | HTTP retries: 24
+Steps: 881/987  89% | Samples: 872/987 | mean: 0.78 | vllm:  0/10 | HTTP retries: 24
+Steps: 891/987  90% | Samples: 882/987 | mean: 0.77 | vllm:  0/10 | HTTP retries: 24
+Steps: 901/987  91% | Samples: 892/987 | mean: 0.78 | vllm:  0/10 | HTTP retries: 24
+Steps: 911/987  92% | Samples: 902/987 | mean: 0.78 | vllm:  0/10 | HTTP retries: 24
+Steps: 921/987  93% | Samples: 912/987 | mean: 0.77 | vllm:  0/10 | HTTP retries: 24
+Steps: 931/987  94% | Samples: 922/987 | mean: 0.77 | vllm:  0/10 | HTTP retries: 24
+Steps: 941/987  95% | Samples: 932/987 | mean: 0.77 | vllm:  0/10 | HTTP retries: 24
+Steps: 951/987  96% | Samples: 942/987 | mean: 0.77 | vllm:  0/10 | HTTP retries: 24
+Steps: 961/987  97% | Samples: 952/987 | mean: 0.77 | vllm:  0/10 | HTTP retries: 24
+Steps: 971/987  98% | Samples: 962/987 | mean: 0.77 | vllm:  0/10 | HTTP retries: 24
+Steps: 981/987  99% | Samples: 972/987 | mean: 0.77 | vllm:  0/10 | HTTP retries: 24
+Steps: 987/987 100% | Samples: 982/987 | mean: 0.77 | vllm:  0/10 | HTTP retries: 24
+
+---------------------------------------------------------                                                                                                                         
+augmented_mcqa_eval_augment_ablation_full_question (987 samples): vllm/nvidia/NVIDIA-Nemotron-Nano-9B-v2                                                                          
+max_tokens: 32768, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)                                                                          
+                                                                                                                                                                                  
+total time:                                                                              0:16:47                                                                                  
+vllm/nvidia/NVIDIA-Nemotron-Nano-9B-v2                                                   257,602 tokens [I: 246,901, O: 10,701]                                                   
+augmented_mcqa_eval                                                                                                                                                               
+mean                 0.774                                                                                                                                                        
+stderr               0.013                                                                                                                                                        
+Log:                                                                                                                                                                              
+results/inspect/evaluation/eval_together/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-04-30T23-39-24-00-00_augmented…
+---------------------------------------------------------                                                                                                                         
+                                                                                                                                                                                  
+Evaluation logs: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/eval_together/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2
+Running: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/python main.py evaluate --model vllm/nvidia/NVIDIA-Nemotron-Nano-9B-v2 --run-name eval_together --generator-run-name together_from_scratch_testing --generator-model together/Qwen/Qwen3.5-397B-A17B --processed-dataset /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/processed/unified_processed_v3 --dataset-types arc_challenge --settings augment_ablation --modes full_question --question-start 0 --limit 1000 --augmented-dataset datasets/augmented/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B --support-root datasets/support_sets --skip-collect-evaluated --max-tokens 32768 --reasoning-effort medium --retry-on-error 2
