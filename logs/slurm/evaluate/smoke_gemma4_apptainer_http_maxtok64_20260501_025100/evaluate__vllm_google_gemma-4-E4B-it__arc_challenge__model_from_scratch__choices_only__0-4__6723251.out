@@ -1,0 +1,27 @@
+---------------------------------------------------------                       
+augmented_mcqa_eval_model_from_scratch_choices_only (5 samples):                
+vllm/google/gemma-4-E4B-it                                                      
+max_connections: 1, max_tokens: 64, reasoning_effort: medium, fail_on_error:    
+False, retry_on_error: 1, dataset: (samples)                                    
+---------------------------------------------------------                       
+                                                                                
+Steps:   3/5  60% | Samples:   3/  5 | mean: 0.50 | vllm:  0/ 1 | HTTP retries: 0
+Steps:   5/5 100% | Samples:   5/  5 | mean: 0.80 | vllm:  0/ 1 | HTTP retries: 0
+
+---------------------------------------------------------                       
+augmented_mcqa_eval_model_from_scratch_choices_only (5 samples):                
+vllm/google/gemma-4-E4B-it                                                      
+max_connections: 1, max_tokens: 64, reasoning_effort: medium, fail_on_error:    
+False, retry_on_error: 1, dataset: (samples)                                    
+                                                                                
+total time:                              0:00:08                                
+vllm/google/gemma-4-E4B-it               851 tokens [I: 786, O: 65]             
+augmented_mcqa_eval                                                             
+mean                 0.800                                                      
+stderr               0.200                                                      
+Log:                                                                            
+results/inspect/evaluation/smoke_gemma4_apptainer_http_maxtok64_20260501_025100…
+---------------------------------------------------------                       
+                                                                                
+Evaluation logs: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/smoke_gemma4_apptainer_http_maxtok64_20260501_025100/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_google_gemma-4-E4B-it
+Running: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/python main.py evaluate --model vllm/google/gemma-4-E4B-it --run-name smoke_gemma4_apptainer_http_maxtok64_20260501_025100 --generator-run-name together_from_scratch_testing --generator-model together/Qwen/Qwen3.5-397B-A17B --processed-dataset /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/processed/unified_processed_v3 --dataset-types arc_challenge --settings model_from_scratch --modes choices_only --question-start 0 --limit 5 --augmented-dataset datasets/augmented/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B --support-root datasets/support_sets --skip-collect-evaluated --model-base-url http://clip06.umiacs.umd.edu:8000/v1 --max-connections 1 --max-tokens 64 --reasoning-effort medium --retry-on-error 1

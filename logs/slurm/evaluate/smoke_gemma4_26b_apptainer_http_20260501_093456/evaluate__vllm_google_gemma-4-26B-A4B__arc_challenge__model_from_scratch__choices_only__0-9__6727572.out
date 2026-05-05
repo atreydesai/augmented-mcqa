@@ -1,0 +1,734 @@
+---------------------------------------------------------                       
+augmented_mcqa_eval_model_from_scratch_choices_only (10 samples):               
+vllm/google/gemma-4-26B-A4B                                                     
+max_connections: 1, max_tokens: 64, reasoning_effort: medium, fail_on_error:    
+False, retry_on_error: 1, dataset: (samples)                                    
+---------------------------------------------------------                       
+                                                                                
+[05/01/26 09:35:28] WARNING  Sample error (id:                        run.py:765
+                             arc_challenge:Mercury_7175875, epoch:              
+                             1): RuntimeError('\nRequest:\n{\n                  
+                             "messages": [\n    {\n      "role":                
+                             "user",\n      "content": "Answer the              
+                             following multiple choice question just            
+                             by using the choices and without access            
+                             to the question. Use any strategy                  
+                             possible to come up with the correct               
+                             answer.\\n\\n<choices>\\nA. The                    
+                             planet\'s gravitational force will                 
+                             increase.\\nB. Planetary days will                 
+                             become shorter.\\nC. Planetary days will           
+                             become longer.\\nD. Planetary years will           
+                             become                                             
+                             shorter.\\n</choices>\\n\\n<format>\\nRe           
+                             turn your output as valid JSON with the            
+                             key \\"answer\\" which is one of A, B,             
+                             C, D.\\n{\\n  \\"answer\\": \\"A\\" |              
+                             \\"B\\" | \\"C\\" | \\"D\\"\\n}\\nDo not           
+                             include anything else.\\n</format>"\n              
+                             }\n  ],\n  "tools": null,\n                        
+                             "tool_choice": null,\n  "extra_headers":           
+                             {\n    "x-irid":                                   
+                             "fYJbF6rqQn6oR2Kj43CkRk"\n  },\n                   
+                             "model": "google/gemma-4-26B-A4B",\n               
+                             "max_tokens": 64,\n  "reasoning_effort":           
+                             "medium"\n}\n\nBadRequestError("Error              
+                             code: 400 - {\'error\': {\'message\':              
+                             \'As of transformers v4.44, default chat           
+                             template is no longer allowed, so you              
+                             must provide a chat template if the                
+                             tokenizer does not define one.\',                  
+                             \'type\': \'BadRequestError\',                     
+                             \'param\': None, \'code\': 400}}")')).             
+                             Sample will be retried.                            
+[05/01/26 09:35:29] WARNING  Sample error (id:                        run.py:765
+                             arc_challenge:Mercury_SC_409171, epoch:            
+                             1): RuntimeError('\nRequest:\n{\n                  
+                             "messages": [\n    {\n      "role":                
+                             "user",\n      "content": "Answer the              
+                             following multiple choice question just            
+                             by using the choices and without access            
+                             to the question. Use any strategy                  
+                             possible to come up with the correct               
+                             answer.\\n\\n<choices>\\nA. building               
+                             heights will increase\\nB. buildings               
+                             will be made safer\\nC. earthquakes will           
+                             be prevented\\nD. construction costs               
+                             will                                               
+                             decrease\\n</choices>\\n\\n<format>\\nRe           
+                             turn your output as valid JSON with the            
+                             key \\"answer\\" which is one of A, B,             
+                             C, D.\\n{\\n  \\"answer\\": \\"A\\" |              
+                             \\"B\\" | \\"C\\" | \\"D\\"\\n}\\nDo not           
+                             include anything else.\\n</format>"\n              
+                             }\n  ],\n  "tools": null,\n                        
+                             "tool_choice": null,\n  "extra_headers":           
+                             {\n    "x-irid":                                   
+                             "Kivs97peYe3ZY8xcfCgLoM"\n  },\n                   
+                             "model": "google/gemma-4-26B-A4B",\n               
+                             "max_tokens": 64,\n  "reasoning_effort":           
+                             "medium"\n}\n\nBadRequestError("Error              
+                             code: 400 - {\'error\': {\'message\':              
+                             \'As of transformers v4.44, default chat           
+                             template is no longer allowed, so you              
+                             must provide a chat template if the                
+                             tokenizer does not define one.\',                  
+                             \'type\': \'BadRequestError\',                     
+                             \'param\': None, \'code\': 400}}")')).             
+                             Sample will be retried.                            
+[05/01/26 09:35:30] WARNING  Sample error (id:                        run.py:765
+                             arc_challenge:Mercury_SC_408547, epoch:            
+                             1): RuntimeError('\nRequest:\n{\n                  
+                             "messages": [\n    {\n      "role":                
+                             "user",\n      "content": "Answer the              
+                             following multiple choice question just            
+                             by using the choices and without access            
+                             to the question. Use any strategy                  
+                             possible to come up with the correct               
+                             answer.\\n\\n<choices>\\nA. Carbon                 
+                             dioxide enters the leaves through the              
+                             stomata.\\nB. Water is absorbed by the             
+                             roots and transported to the                       
+                             leaves.\\nC. The plant converts carbon             
+                             dioxide and water into glucose.\\nD.               
+                             Chlorophyll in the leaf captures light             
+                             energy.\\n</choices>\\n\\n<format>\\nRet           
+                             urn your output as valid JSON with the             
+                             key \\"answer\\" which is one of A, B,             
+                             C, D.\\n{\\n  \\"answer\\": \\"A\\" |              
+                             \\"B\\" | \\"C\\" | \\"D\\"\\n}\\nDo not           
+                             include anything else.\\n</format>"\n              
+                             }\n  ],\n  "tools": null,\n                        
+                             "tool_choice": null,\n  "extra_headers":           
+                             {\n    "x-irid":                                   
+                             "cwkE4NCEGqEkJxQSeDMAFU"\n  },\n                   
+                             "model": "google/gemma-4-26B-A4B",\n               
+                             "max_tokens": 64,\n  "reasoning_effort":           
+                             "medium"\n}\n\nBadRequestError("Error              
+                             code: 400 - {\'error\': {\'message\':              
+                             \'As of transformers v4.44, default chat           
+                             template is no longer allowed, so you              
+                             must provide a chat template if the                
+                             tokenizer does not define one.\',                  
+                             \'type\': \'BadRequestError\',                     
+                             \'param\': None, \'code\': 400}}")')).             
+                             Sample will be retried.                            
+[05/01/26 09:35:31] WARNING  Sample error (id:                        run.py:765
+                             arc_challenge:Mercury_407327, epoch: 1):           
+                             RuntimeError('\nRequest:\n{\n                      
+                             "messages": [\n    {\n      "role":                
+                             "user",\n      "content": "Answer the              
+                             following multiple choice question just            
+                             by using the choices and without access            
+                             to the question. Use any strategy                  
+                             possible to come up with the correct               
+                             answer.\\n\\n<choices>\\nA. the                    
+                             experimental hypothesis\\nB. the                   
+                             controlled (constant) variable\\nC. the            
+                             independent (manipulated) variable\\nD.            
+                             the dependent (responding)                         
+                             variable\\n</choices>\\n\\n<format>\\nRe           
+                             turn your output as valid JSON with the            
+                             key \\"answer\\" which is one of A, B,             
+                             C, D.\\n{\\n  \\"answer\\": \\"A\\" |              
+                             \\"B\\" | \\"C\\" | \\"D\\"\\n}\\nDo not           
+                             include anything else.\\n</format>"\n              
+                             }\n  ],\n  "tools": null,\n                        
+                             "tool_choice": null,\n  "extra_headers":           
+                             {\n    "x-irid":                                   
+                             "HM98hAqSewpVXAm9L5MP9D"\n  },\n                   
+                             "model": "google/gemma-4-26B-A4B",\n               
+                             "max_tokens": 64,\n  "reasoning_effort":           
+                             "medium"\n}\n\nBadRequestError("Error              
+                             code: 400 - {\'error\': {\'message\':              
+                             \'As of transformers v4.44, default chat           
+                             template is no longer allowed, so you              
+                             must provide a chat template if the                
+                             tokenizer does not define one.\',                  
+                             \'type\': \'BadRequestError\',                     
+                             \'param\': None, \'code\': 400}}")')).             
+                             Sample will be retried.                            
+[05/01/26 09:35:32] WARNING  Sample error (id:                        run.py:765
+                             arc_challenge:MCAS_2006_9_44, epoch: 1):           
+                             RuntimeError('\nRequest:\n{\n                      
+                             "messages": [\n    {\n      "role":                
+                             "user",\n      "content": "Answer the              
+                             following multiple choice question just            
+                             by using the choices and without access            
+                             to the question. Use any strategy                  
+                             possible to come up with the correct               
+                             answer.\\n\\n<choices>\\nA. They have              
+                             each gained one-quarter of their maximum           
+                             kinetic energy.\\nB. They have each                
+                             gained one-half of their maximum                   
+                             velocity.\\nC. They have each gained               
+                             one-half of their maximum kinetic                  
+                             energy.\\nD. The 5.0 kg object has                 
+                             gained a larger fraction of its maximum            
+                             kinetic energy than the 1.0 kg                     
+                             object.\\n</choices>\\n\\n<format>\\nRet           
+                             urn your output as valid JSON with the             
+                             key \\"answer\\" which is one of A, B,             
+                             C, D.\\n{\\n  \\"answer\\": \\"A\\" |              
+                             \\"B\\" | \\"C\\" | \\"D\\"\\n}\\nDo not           
+                             include anything else.\\n</format>"\n              
+                             }\n  ],\n  "tools": null,\n                        
+                             "tool_choice": null,\n  "extra_headers":           
+                             {\n    "x-irid":                                   
+                             "5AQ7mbcd5CGFMynXudqoFh"\n  },\n                   
+                             "model": "google/gemma-4-26B-A4B",\n               
+                             "max_tokens": 64,\n  "reasoning_effort":           
+                             "medium"\n}\n\nBadRequestError("Error              
+                             code: 400 - {\'error\': {\'message\':              
+                             \'As of transformers v4.44, default chat           
+                             template is no longer allowed, so you              
+                             must provide a chat template if the                
+                             tokenizer does not define one.\',                  
+                             \'type\': \'BadRequestError\',                     
+                             \'param\': None, \'code\': 400}}")')).             
+                             Sample will be retried.                            
+[05/01/26 09:35:34] WARNING  Sample error (id:                        run.py:765
+                             arc_challenge:Mercury_7270393, epoch:              
+                             1): RuntimeError('\nRequest:\n{\n                  
+                             "messages": [\n    {\n      "role":                
+                             "user",\n      "content": "Answer the              
+                             following multiple choice question just            
+                             by using the choices and without access            
+                             to the question. Use any strategy                  
+                             possible to come up with the correct               
+                             answer.\\n\\n<choices>\\nA. a                      
+                             non-infectious, autoimmune disease\\nB.            
+                             an infectious, viral disease\\nC. a                
+                             non-infectious, genetic disease\\nD. an            
+                             infectious, cell-cycle                             
+                             disease\\n</choices>\\n\\n<format>\\nRet           
+                             urn your output as valid JSON with the             
+                             key \\"answer\\" which is one of A, B,             
+                             C, D.\\n{\\n  \\"answer\\": \\"A\\" |              
+                             \\"B\\" | \\"C\\" | \\"D\\"\\n}\\nDo not           
+                             include anything else.\\n</format>"\n              
+                             }\n  ],\n  "tools": null,\n                        
+                             "tool_choice": null,\n  "extra_headers":           
+                             {\n    "x-irid":                                   
+                             "T7dZRmeVCkBrLFiuYujNQL"\n  },\n                   
+                             "model": "google/gemma-4-26B-A4B",\n               
+                             "max_tokens": 64,\n  "reasoning_effort":           
+                             "medium"\n}\n\nBadRequestError("Error              
+                             code: 400 - {\'error\': {\'message\':              
+                             \'As of transformers v4.44, default chat           
+                             template is no longer allowed, so you              
+                             must provide a chat template if the                
+                             tokenizer does not define one.\',                  
+                             \'type\': \'BadRequestError\',                     
+                             \'param\': None, \'code\': 400}}")')).             
+                             Sample will be retried.                            
+[05/01/26 09:35:35] WARNING  Sample error (id:                        run.py:765
+                             arc_challenge:MCAS_2014_5_7, epoch: 1):            
+                             RuntimeError('\nRequest:\n{\n                      
+                             "messages": [\n    {\n      "role":                
+                             "user",\n      "content": "Answer the              
+                             following multiple choice question just            
+                             by using the choices and without access            
+                             to the question. Use any strategy                  
+                             possible to come up with the correct               
+                             answer.\\n\\n<choices>\\nA. to regulate            
+                             the temperature of the rock piles by               
+                             adding insulation\\nB. to bury the seeds           
+                             so they will grow into plants during the           
+                             next season\\nC. to gather bedding                 
+                             material for constructing a nest inside            
+                             the rock piles\\nD. to store food that             
+                             will be eaten over the winter                      
+                             months\\n</choices>\\n\\n<format>\\nRetu           
+                             rn your output as valid JSON with the              
+                             key \\"answer\\" which is one of A, B,             
+                             C, D.\\n{\\n  \\"answer\\": \\"A\\" |              
+                             \\"B\\" | \\"C\\" | \\"D\\"\\n}\\nDo not           
+                             include anything else.\\n</format>"\n              
+                             }\n  ],\n  "tools": null,\n                        
+                             "tool_choice": null,\n  "extra_headers":           
+                             {\n    "x-irid":                                   
+                             "Zkqp8WiVt7gWJJgEcFYa58"\n  },\n                   
+                             "model": "google/gemma-4-26B-A4B",\n               
+                             "max_tokens": 64,\n  "reasoning_effort":           
+                             "medium"\n}\n\nBadRequestError("Error              
+                             code: 400 - {\'error\': {\'message\':              
+                             \'As of transformers v4.44, default chat           
+                             template is no longer allowed, so you              
+                             must provide a chat template if the                
+                             tokenizer does not define one.\',                  
+                             \'type\': \'BadRequestError\',                     
+                             \'param\': None, \'code\': 400}}")')).             
+                             Sample will be retried.                            
+[05/01/26 09:35:36] WARNING  Sample error (id:                        run.py:765
+                             arc_challenge:Mercury_7086660, epoch:              
+                             1): RuntimeError('\nRequest:\n{\n                  
+                             "messages": [\n    {\n      "role":                
+                             "user",\n      "content": "Answer the              
+                             following multiple choice question just            
+                             by using the choices and without access            
+                             to the question. Use any strategy                  
+                             possible to come up with the correct               
+                             answer.\\n\\n<choices>\\nA. The climate            
+                             in the area was once tropical.\\nB. The            
+                             area was once submerged under an                   
+                             ocean.\\nC. The climate in the area has            
+                             always been cold.\\nD. The trees were              
+                             transported to the area by                         
+                             glaciers.\\n</choices>\\n\\n<format>\\nR           
+                             eturn your output as valid JSON with the           
+                             key \\"answer\\" which is one of A, B,             
+                             C, D.\\n{\\n  \\"answer\\": \\"A\\" |              
+                             \\"B\\" | \\"C\\" | \\"D\\"\\n}\\nDo not           
+                             include anything else.\\n</format>"\n              
+                             }\n  ],\n  "tools": null,\n                        
+                             "tool_choice": null,\n  "extra_headers":           
+                             {\n    "x-irid":                                   
+                             "oEHGLQVNBKXHkXz3YyYNuq"\n  },\n                   
+                             "model": "google/gemma-4-26B-A4B",\n               
+                             "max_tokens": 64,\n  "reasoning_effort":           
+                             "medium"\n}\n\nBadRequestError("Error              
+                             code: 400 - {\'error\': {\'message\':              
+                             \'As of transformers v4.44, default chat           
+                             template is no longer allowed, so you              
+                             must provide a chat template if the                
+                             tokenizer does not define one.\',                  
+                             \'type\': \'BadRequestError\',                     
+                             \'param\': None, \'code\': 400}}")')).             
+                             Sample will be retried.                            
+[05/01/26 09:35:37] WARNING  Sample error (id:                        run.py:765
+                             arc_challenge:Mercury_7168805, epoch:              
+                             1): RuntimeError('\nRequest:\n{\n                  
+                             "messages": [\n    {\n      "role":                
+                             "user",\n      "content": "Answer the              
+                             following multiple choice question just            
+                             by using the choices and without access            
+                             to the question. Use any strategy                  
+                             possible to come up with the correct               
+                             answer.\\n\\n<choices>\\nA. Populations            
+                             of mice and rats would decrease.\\nB.              
+                             Populations of mice and rats would                 
+                             increase.\\nC. The population of                   
+                             chickens would decrease.\\nD. The growth           
+                             of native plants and grasses would                 
+                             increase.\\n</choices>\\n\\n<format>\\nR           
+                             eturn your output as valid JSON with the           
+                             key \\"answer\\" which is one of A, B,             
+                             C, D.\\n{\\n  \\"answer\\": \\"A\\" |              
+                             \\"B\\" | \\"C\\" | \\"D\\"\\n}\\nDo not           
+                             include anything else.\\n</format>"\n              
+                             }\n  ],\n  "tools": null,\n                        
+                             "tool_choice": null,\n  "extra_headers":           
+                             {\n    "x-irid":                                   
+                             "bqxt3pVRf5xHC7tbcAMXEz"\n  },\n                   
+                             "model": "google/gemma-4-26B-A4B",\n               
+                             "max_tokens": 64,\n  "reasoning_effort":           
+                             "medium"\n}\n\nBadRequestError("Error              
+                             code: 400 - {\'error\': {\'message\':              
+                             \'As of transformers v4.44, default chat           
+                             template is no longer allowed, so you              
+                             must provide a chat template if the                
+                             tokenizer does not define one.\',                  
+                             \'type\': \'BadRequestError\',                     
+                             \'param\': None, \'code\': 400}}")')).             
+                             Sample will be retried.                            
+[05/01/26 09:35:38] WARNING  Sample error (id:                        run.py:765
+                             arc_challenge:MCAS_2003_8_11, epoch: 1):           
+                             RuntimeError('\nRequest:\n{\n                      
+                             "messages": [\n    {\n      "role":                
+                             "user",\n      "content": "Answer the              
+                             following multiple choice question just            
+                             by using the choices and without access            
+                             to the question. Use any strategy                  
+                             possible to come up with the correct               
+                             answer.\\n\\n<choices>\\nA. the                    
+                             proton\\nB. the molecule\\nC. the                  
+                             atom\\nD. the                                      
+                             electron\\n</choices>\\n\\n<format>\\nRe           
+                             turn your output as valid JSON with the            
+                             key \\"answer\\" which is one of A, B,             
+                             C, D.\\n{\\n  \\"answer\\": \\"A\\" |              
+                             \\"B\\" | \\"C\\" | \\"D\\"\\n}\\nDo not           
+                             include anything else.\\n</format>"\n              
+                             }\n  ],\n  "tools": null,\n                        
+                             "tool_choice": null,\n  "extra_headers":           
+                             {\n    "x-irid":                                   
+                             "iH2gMjKtbXSEkw4RpAsCQY"\n  },\n                   
+                             "model": "google/gemma-4-26B-A4B",\n               
+                             "max_tokens": 64,\n  "reasoning_effort":           
+                             "medium"\n}\n\nBadRequestError("Error              
+                             code: 400 - {\'error\': {\'message\':              
+                             \'As of transformers v4.44, default chat           
+                             template is no longer allowed, so you              
+                             must provide a chat template if the                
+                             tokenizer does not define one.\',                  
+                             \'type\': \'BadRequestError\',                     
+                             \'param\': None, \'code\': 400}}")')).             
+                             Sample will be retried.                            
+[05/01/26 09:35:39] WARNING  Sample error (id:                        run.py:765
+                             arc_challenge:Mercury_7175875, epoch:              
+                             1): RuntimeError('\nRequest:\n{\n                  
+                             "messages": [\n    {\n      "role":                
+                             "user",\n      "content": "Answer the              
+                             following multiple choice question just            
+                             by using the choices and without access            
+                             to the question. Use any strategy                  
+                             possible to come up with the correct               
+                             answer.\\n\\n<choices>\\nA. The                    
+                             planet\'s gravitational force will                 
+                             increase.\\nB. Planetary days will                 
+                             become shorter.\\nC. Planetary days will           
+                             become longer.\\nD. Planetary years will           
+                             become                                             
+                             shorter.\\n</choices>\\n\\n<format>\\nRe           
+                             turn your output as valid JSON with the            
+                             key \\"answer\\" which is one of A, B,             
+                             C, D.\\n{\\n  \\"answer\\": \\"A\\" |              
+                             \\"B\\" | \\"C\\" | \\"D\\"\\n}\\nDo not           
+                             include anything else.\\n</format>"\n              
+                             }\n  ],\n  "tools": null,\n                        
+                             "tool_choice": null,\n  "extra_headers":           
+                             {\n    "x-irid":                                   
+                             "NVnuWAL9pLCxSLWwRJmmai"\n  },\n                   
+                             "model": "google/gemma-4-26B-A4B",\n               
+                             "max_tokens": 64,\n  "reasoning_effort":           
+                             "medium"\n}\n\nBadRequestError("Error              
+                             code: 400 - {\'error\': {\'message\':              
+                             \'As of transformers v4.44, default chat           
+                             template is no longer allowed, so you              
+                             must provide a chat template if the                
+                             tokenizer does not define one.\',                  
+                             \'type\': \'BadRequestError\',                     
+                             \'param\': None, \'code\': 400}}")'))              
+[05/01/26 09:35:41] WARNING  Sample error (id:                        run.py:765
+                             arc_challenge:Mercury_SC_409171, epoch:            
+                             1): RuntimeError('\nRequest:\n{\n                  
+                             "messages": [\n    {\n      "role":                
+                             "user",\n      "content": "Answer the              
+                             following multiple choice question just            
+                             by using the choices and without access            
+                             to the question. Use any strategy                  
+                             possible to come up with the correct               
+                             answer.\\n\\n<choices>\\nA. building               
+                             heights will increase\\nB. buildings               
+                             will be made safer\\nC. earthquakes will           
+                             be prevented\\nD. construction costs               
+                             will                                               
+                             decrease\\n</choices>\\n\\n<format>\\nRe           
+                             turn your output as valid JSON with the            
+                             key \\"answer\\" which is one of A, B,             
+                             C, D.\\n{\\n  \\"answer\\": \\"A\\" |              
+                             \\"B\\" | \\"C\\" | \\"D\\"\\n}\\nDo not           
+                             include anything else.\\n</format>"\n              
+                             }\n  ],\n  "tools": null,\n                        
+                             "tool_choice": null,\n  "extra_headers":           
+                             {\n    "x-irid":                                   
+                             "ae7XbmmAk5UXQVskWGuDP3"\n  },\n                   
+                             "model": "google/gemma-4-26B-A4B",\n               
+                             "max_tokens": 64,\n  "reasoning_effort":           
+                             "medium"\n}\n\nBadRequestError("Error              
+                             code: 400 - {\'error\': {\'message\':              
+                             \'As of transformers v4.44, default chat           
+                             template is no longer allowed, so you              
+                             must provide a chat template if the                
+                             tokenizer does not define one.\',                  
+                             \'type\': \'BadRequestError\',                     
+                             \'param\': None, \'code\': 400}}")'))              
+[05/01/26 09:35:42] WARNING  Sample error (id:                        run.py:765
+                             arc_challenge:Mercury_SC_408547, epoch:            
+                             1): RuntimeError('\nRequest:\n{\n                  
+                             "messages": [\n    {\n      "role":                
+                             "user",\n      "content": "Answer the              
+                             following multiple choice question just            
+                             by using the choices and without access            
+                             to the question. Use any strategy                  
+                             possible to come up with the correct               
+                             answer.\\n\\n<choices>\\nA. Carbon                 
+                             dioxide enters the leaves through the              
+                             stomata.\\nB. Water is absorbed by the             
+                             roots and transported to the                       
+                             leaves.\\nC. The plant converts carbon             
+                             dioxide and water into glucose.\\nD.               
+                             Chlorophyll in the leaf captures light             
+                             energy.\\n</choices>\\n\\n<format>\\nRet           
+                             urn your output as valid JSON with the             
+                             key \\"answer\\" which is one of A, B,             
+                             C, D.\\n{\\n  \\"answer\\": \\"A\\" |              
+                             \\"B\\" | \\"C\\" | \\"D\\"\\n}\\nDo not           
+                             include anything else.\\n</format>"\n              
+                             }\n  ],\n  "tools": null,\n                        
+                             "tool_choice": null,\n  "extra_headers":           
+                             {\n    "x-irid":                                   
+                             "bGjLcvzZjWHxwZHhFZb9Lh"\n  },\n                   
+                             "model": "google/gemma-4-26B-A4B",\n               
+                             "max_tokens": 64,\n  "reasoning_effort":           
+                             "medium"\n}\n\nBadRequestError("Error              
+                             code: 400 - {\'error\': {\'message\':              
+                             \'As of transformers v4.44, default chat           
+                             template is no longer allowed, so you              
+                             must provide a chat template if the                
+                             tokenizer does not define one.\',                  
+                             \'type\': \'BadRequestError\',                     
+                             \'param\': None, \'code\': 400}}")'))              
+[05/01/26 09:35:43] WARNING  Sample error (id:                        run.py:765
+                             arc_challenge:Mercury_407327, epoch: 1):           
+                             RuntimeError('\nRequest:\n{\n                      
+                             "messages": [\n    {\n      "role":                
+                             "user",\n      "content": "Answer the              
+                             following multiple choice question just            
+                             by using the choices and without access            
+                             to the question. Use any strategy                  
+                             possible to come up with the correct               
+                             answer.\\n\\n<choices>\\nA. the                    
+                             experimental hypothesis\\nB. the                   
+                             controlled (constant) variable\\nC. the            
+                             independent (manipulated) variable\\nD.            
+                             the dependent (responding)                         
+                             variable\\n</choices>\\n\\n<format>\\nRe           
+                             turn your output as valid JSON with the            
+                             key \\"answer\\" which is one of A, B,             
+                             C, D.\\n{\\n  \\"answer\\": \\"A\\" |              
+                             \\"B\\" | \\"C\\" | \\"D\\"\\n}\\nDo not           
+                             include anything else.\\n</format>"\n              
+                             }\n  ],\n  "tools": null,\n                        
+                             "tool_choice": null,\n  "extra_headers":           
+                             {\n    "x-irid":                                   
+                             "iqxxKYpYGw6PmjDhh8NhVb"\n  },\n                   
+                             "model": "google/gemma-4-26B-A4B",\n               
+                             "max_tokens": 64,\n  "reasoning_effort":           
+                             "medium"\n}\n\nBadRequestError("Error              
+                             code: 400 - {\'error\': {\'message\':              
+                             \'As of transformers v4.44, default chat           
+                             template is no longer allowed, so you              
+                             must provide a chat template if the                
+                             tokenizer does not define one.\',                  
+                             \'type\': \'BadRequestError\',                     
+                             \'param\': None, \'code\': 400}}")'))              
+[05/01/26 09:35:44] WARNING  Sample error (id:                        run.py:765
+                             arc_challenge:MCAS_2006_9_44, epoch: 1):           
+                             RuntimeError('\nRequest:\n{\n                      
+                             "messages": [\n    {\n      "role":                
+                             "user",\n      "content": "Answer the              
+                             following multiple choice question just            
+                             by using the choices and without access            
+                             to the question. Use any strategy                  
+                             possible to come up with the correct               
+                             answer.\\n\\n<choices>\\nA. They have              
+                             each gained one-quarter of their maximum           
+                             kinetic energy.\\nB. They have each                
+                             gained one-half of their maximum                   
+                             velocity.\\nC. They have each gained               
+                             one-half of their maximum kinetic                  
+                             energy.\\nD. The 5.0 kg object has                 
+                             gained a larger fraction of its maximum            
+                             kinetic energy than the 1.0 kg                     
+                             object.\\n</choices>\\n\\n<format>\\nRet           
+                             urn your output as valid JSON with the             
+                             key \\"answer\\" which is one of A, B,             
+                             C, D.\\n{\\n  \\"answer\\": \\"A\\" |              
+                             \\"B\\" | \\"C\\" | \\"D\\"\\n}\\nDo not           
+                             include anything else.\\n</format>"\n              
+                             }\n  ],\n  "tools": null,\n                        
+                             "tool_choice": null,\n  "extra_headers":           
+                             {\n    "x-irid":                                   
+                             "RMCvopkEDfq9oSCjhmVnXg"\n  },\n                   
+                             "model": "google/gemma-4-26B-A4B",\n               
+                             "max_tokens": 64,\n  "reasoning_effort":           
+                             "medium"\n}\n\nBadRequestError("Error              
+                             code: 400 - {\'error\': {\'message\':              
+                             \'As of transformers v4.44, default chat           
+                             template is no longer allowed, so you              
+                             must provide a chat template if the                
+                             tokenizer does not define one.\',                  
+                             \'type\': \'BadRequestError\',                     
+                             \'param\': None, \'code\': 400}}")'))              
+[05/01/26 09:35:45] WARNING  Sample error (id:                        run.py:765
+                             arc_challenge:Mercury_7270393, epoch:              
+                             1): RuntimeError('\nRequest:\n{\n                  
+                             "messages": [\n    {\n      "role":                
+                             "user",\n      "content": "Answer the              
+                             following multiple choice question just            
+                             by using the choices and without access            
+                             to the question. Use any strategy                  
+                             possible to come up with the correct               
+                             answer.\\n\\n<choices>\\nA. a                      
+                             non-infectious, autoimmune disease\\nB.            
+                             an infectious, viral disease\\nC. a                
+                             non-infectious, genetic disease\\nD. an            
+                             infectious, cell-cycle                             
+                             disease\\n</choices>\\n\\n<format>\\nRet           
+                             urn your output as valid JSON with the             
+                             key \\"answer\\" which is one of A, B,             
+                             C, D.\\n{\\n  \\"answer\\": \\"A\\" |              
+                             \\"B\\" | \\"C\\" | \\"D\\"\\n}\\nDo not           
+                             include anything else.\\n</format>"\n              
+                             }\n  ],\n  "tools": null,\n                        
+                             "tool_choice": null,\n  "extra_headers":           
+                             {\n    "x-irid":                                   
+                             "YdUsTaneZFtiyANM5ZFkEy"\n  },\n                   
+                             "model": "google/gemma-4-26B-A4B",\n               
+                             "max_tokens": 64,\n  "reasoning_effort":           
+                             "medium"\n}\n\nBadRequestError("Error              
+                             code: 400 - {\'error\': {\'message\':              
+                             \'As of transformers v4.44, default chat           
+                             template is no longer allowed, so you              
+                             must provide a chat template if the                
+                             tokenizer does not define one.\',                  
+                             \'type\': \'BadRequestError\',                     
+                             \'param\': None, \'code\': 400}}")'))              
+[05/01/26 09:35:47] WARNING  Sample error (id:                        run.py:765
+                             arc_challenge:MCAS_2014_5_7, epoch: 1):            
+                             RuntimeError('\nRequest:\n{\n                      
+                             "messages": [\n    {\n      "role":                
+                             "user",\n      "content": "Answer the              
+                             following multiple choice question just            
+                             by using the choices and without access            
+                             to the question. Use any strategy                  
+                             possible to come up with the correct               
+                             answer.\\n\\n<choices>\\nA. to regulate            
+                             the temperature of the rock piles by               
+                             adding insulation\\nB. to bury the seeds           
+                             so they will grow into plants during the           
+                             next season\\nC. to gather bedding                 
+                             material for constructing a nest inside            
+                             the rock piles\\nD. to store food that             
+                             will be eaten over the winter                      
+                             months\\n</choices>\\n\\n<format>\\nRetu           
+                             rn your output as valid JSON with the              
+                             key \\"answer\\" which is one of A, B,             
+                             C, D.\\n{\\n  \\"answer\\": \\"A\\" |              
+                             \\"B\\" | \\"C\\" | \\"D\\"\\n}\\nDo not           
+                             include anything else.\\n</format>"\n              
+                             }\n  ],\n  "tools": null,\n                        
+                             "tool_choice": null,\n  "extra_headers":           
+                             {\n    "x-irid":                                   
+                             "CtSVBHK6M6vBoEwuDi8AM4"\n  },\n                   
+                             "model": "google/gemma-4-26B-A4B",\n               
+                             "max_tokens": 64,\n  "reasoning_effort":           
+                             "medium"\n}\n\nBadRequestError("Error              
+                             code: 400 - {\'error\': {\'message\':              
+                             \'As of transformers v4.44, default chat           
+                             template is no longer allowed, so you              
+                             must provide a chat template if the                
+                             tokenizer does not define one.\',                  
+                             \'type\': \'BadRequestError\',                     
+                             \'param\': None, \'code\': 400}}")'))              
+[05/01/26 09:35:48] WARNING  Sample error (id:                        run.py:765
+                             arc_challenge:Mercury_7086660, epoch:              
+                             1): RuntimeError('\nRequest:\n{\n                  
+                             "messages": [\n    {\n      "role":                
+                             "user",\n      "content": "Answer the              
+                             following multiple choice question just            
+                             by using the choices and without access            
+                             to the question. Use any strategy                  
+                             possible to come up with the correct               
+                             answer.\\n\\n<choices>\\nA. The climate            
+                             in the area was once tropical.\\nB. The            
+                             area was once submerged under an                   
+                             ocean.\\nC. The climate in the area has            
+                             always been cold.\\nD. The trees were              
+                             transported to the area by                         
+                             glaciers.\\n</choices>\\n\\n<format>\\nR           
+                             eturn your output as valid JSON with the           
+                             key \\"answer\\" which is one of A, B,             
+                             C, D.\\n{\\n  \\"answer\\": \\"A\\" |              
+                             \\"B\\" | \\"C\\" | \\"D\\"\\n}\\nDo not           
+                             include anything else.\\n</format>"\n              
+                             }\n  ],\n  "tools": null,\n                        
+                             "tool_choice": null,\n  "extra_headers":           
+                             {\n    "x-irid":                                   
+                             "3CpQa8chV2JWJ7E4B7XZ4d"\n  },\n                   
+                             "model": "google/gemma-4-26B-A4B",\n               
+                             "max_tokens": 64,\n  "reasoning_effort":           
+                             "medium"\n}\n\nBadRequestError("Error              
+                             code: 400 - {\'error\': {\'message\':              
+                             \'As of transformers v4.44, default chat           
+                             template is no longer allowed, so you              
+                             must provide a chat template if the                
+                             tokenizer does not define one.\',                  
+                             \'type\': \'BadRequestError\',                     
+                             \'param\': None, \'code\': 400}}")'))              
+[05/01/26 09:35:49] WARNING  Sample error (id:                        run.py:765
+                             arc_challenge:Mercury_7168805, epoch:              
+                             1): RuntimeError('\nRequest:\n{\n                  
+                             "messages": [\n    {\n      "role":                
+                             "user",\n      "content": "Answer the              
+                             following multiple choice question just            
+                             by using the choices and without access            
+                             to the question. Use any strategy                  
+                             possible to come up with the correct               
+                             answer.\\n\\n<choices>\\nA. Populations            
+                             of mice and rats would decrease.\\nB.              
+                             Populations of mice and rats would                 
+                             increase.\\nC. The population of                   
+                             chickens would decrease.\\nD. The growth           
+                             of native plants and grasses would                 
+                             increase.\\n</choices>\\n\\n<format>\\nR           
+                             eturn your output as valid JSON with the           
+                             key \\"answer\\" which is one of A, B,             
+                             C, D.\\n{\\n  \\"answer\\": \\"A\\" |              
+                             \\"B\\" | \\"C\\" | \\"D\\"\\n}\\nDo not           
+                             include anything else.\\n</format>"\n              
+                             }\n  ],\n  "tools": null,\n                        
+                             "tool_choice": null,\n  "extra_headers":           
+                             {\n    "x-irid":                                   
+                             "JAF3cgsrva9mh3HXHqRDjs"\n  },\n                   
+                             "model": "google/gemma-4-26B-A4B",\n               
+                             "max_tokens": 64,\n  "reasoning_effort":           
+                             "medium"\n}\n\nBadRequestError("Error              
+                             code: 400 - {\'error\': {\'message\':              
+                             \'As of transformers v4.44, default chat           
+                             template is no longer allowed, so you              
+                             must provide a chat template if the                
+                             tokenizer does not define one.\',                  
+                             \'type\': \'BadRequestError\',                     
+                             \'param\': None, \'code\': 400}}")'))              
+[05/01/26 09:35:50] WARNING  Sample error (id:                        run.py:765
+                             arc_challenge:MCAS_2003_8_11, epoch: 1):           
+                             RuntimeError('\nRequest:\n{\n                      
+                             "messages": [\n    {\n      "role":                
+                             "user",\n      "content": "Answer the              
+                             following multiple choice question just            
+                             by using the choices and without access            
+                             to the question. Use any strategy                  
+                             possible to come up with the correct               
+                             answer.\\n\\n<choices>\\nA. the                    
+                             proton\\nB. the molecule\\nC. the                  
+                             atom\\nD. the                                      
+                             electron\\n</choices>\\n\\n<format>\\nRe           
+                             turn your output as valid JSON with the            
+                             key \\"answer\\" which is one of A, B,             
+                             C, D.\\n{\\n  \\"answer\\": \\"A\\" |              
+                             \\"B\\" | \\"C\\" | \\"D\\"\\n}\\nDo not           
+                             include anything else.\\n</format>"\n              
+                             }\n  ],\n  "tools": null,\n                        
+                             "tool_choice": null,\n  "extra_headers":           
+                             {\n    "x-irid":                                   
+                             "PHZ5kEBxPXV5feXYDbQUHs"\n  },\n                   
+                             "model": "google/gemma-4-26B-A4B",\n               
+                             "max_tokens": 64,\n  "reasoning_effort":           
+                             "medium"\n}\n\nBadRequestError("Error              
+                             code: 400 - {\'error\': {\'message\':              
+                             \'As of transformers v4.44, default chat           
+                             template is no longer allowed, so you              
+                             must provide a chat template if the                
+                             tokenizer does not define one.\',                  
+                             \'type\': \'BadRequestError\',                     
+                             \'param\': None, \'code\': 400}}")'))              
+Steps:  10/10 100% | Samples:   0/ 10 | mean:  n/a | vllm:  0/ 1 | HTTP retries: 0
+
+---------------------------------------------------------                       
+augmented_mcqa_eval_model_from_scratch_choices_only (10 samples):               
+vllm/google/gemma-4-26B-A4B                                                     
+max_connections: 1, max_tokens: 64, reasoning_effort: medium, fail_on_error:    
+False, retry_on_error: 1, dataset: (samples)                                    
+                                                                                
+total time:                                   0:00:26                           
+                                                                                
+WARNING: 10 of 10 executed samples (100%) had errors and were not scored.       
+Log:                                                                            
+results/inspect/evaluation/smoke_gemma4_26b_apptainer_http_20260501_093456/toge…
+---------------------------------------------------------                       
+                                                                                
+Evaluation logs: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/smoke_gemma4_26b_apptainer_http_20260501_093456/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_google_gemma-4-26B-A4B
+Running: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/python main.py evaluate --model vllm/google/gemma-4-26B-A4B --run-name smoke_gemma4_26b_apptainer_http_20260501_093456 --generator-run-name together_from_scratch_testing --generator-model together/Qwen/Qwen3.5-397B-A17B --processed-dataset /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/datasets/processed/unified_processed_v3 --dataset-types arc_challenge --settings model_from_scratch --modes choices_only --question-start 0 --limit 10 --augmented-dataset datasets/augmented/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B --support-root datasets/support_sets --skip-collect-evaluated --model-base-url http://clip06.umiacs.umd.edu:8000/v1 --max-connections 1 --max-tokens 64 --reasoning-effort medium --retry-on-error 1

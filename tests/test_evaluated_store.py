@@ -641,24 +641,12 @@ def test_run_evaluate_materializes_collected_dataset(tmp_path, monkeypatch):
 
     monkeypatch.setattr(
         app_main,
-        "_resolved_generation_artifacts",
-        lambda **kwargs: (GEN_MODEL, tmp_path / "generation-logs", augmented_root),
+        "_generator_config",
+        lambda alias: {"run_name": GEN_RUN_NAME, "model": GEN_MODEL, "path": str(augmented_root)},
     )
-    monkeypatch.setattr(
-        app_main,
-        "_combined_support_ids_for_run",
-        lambda **kwargs: {"arc_challenge": {SAMPLE_ID}},
-    )
-    monkeypatch.setattr(
-        app_main,
-        "_combined_support_ids_for_run",
-        lambda **kwargs: {"arc_challenge": {SAMPLE_ID}},
-    )
-    monkeypatch.setattr(
-        app_main,
-        "_combined_support_ids_for_run",
-        lambda **kwargs: {"arc_challenge": {SAMPLE_ID}},
-    )
+    monkeypatch.setattr(app_main, "_load_augmented_dataset_types", lambda path: ["arc_challenge"])
+    monkeypatch.setattr(app_main, "DEFAULT_EVALUATION_LOG_ROOT", log_root)
+    monkeypatch.setattr(app_main, "DEFAULT_COLLECTED_DATASET_ROOT", collected_root)
     monkeypatch.setattr(
         app_main,
         "inspect_eval",
@@ -698,6 +686,7 @@ def test_run_evaluate_materializes_collected_dataset(tmp_path, monkeypatch):
         modes="full_question",
         model=EVAL_MODEL,
         backend=None,
+        generator="gpt",
         processed_dataset=str(tmp_path / "processed"),
         generator_run_name=GEN_RUN_NAME,
         generator_model=GEN_MODEL,
@@ -724,6 +713,7 @@ def test_run_evaluate_materializes_collected_dataset(tmp_path, monkeypatch):
     assert observed["evaluation_log_root"] == log_root / safe_name("eval-run") / safe_name(GEN_RUN_NAME) / safe_name(GEN_MODEL) / safe_name(EVAL_MODEL)
     assert observed["collected_root"] == collected_root
     assert observed["augmented_dataset"] == augmented_root
+    assert observed["support_root"] is None
     assert observed["generation_run_name"] == GEN_RUN_NAME
     assert observed["generation_model"] == GEN_MODEL
     assert observed["evaluation_model"] == EVAL_MODEL
@@ -741,14 +731,12 @@ def test_run_evaluate_still_materializes_collected_dataset_when_incomplete(tmp_p
 
     monkeypatch.setattr(
         app_main,
-        "_resolved_generation_artifacts",
-        lambda **kwargs: (GEN_MODEL, tmp_path / "generation-logs", augmented_root),
+        "_generator_config",
+        lambda alias: {"run_name": GEN_RUN_NAME, "model": GEN_MODEL, "path": str(augmented_root)},
     )
-    monkeypatch.setattr(
-        app_main,
-        "_combined_support_ids_for_run",
-        lambda **kwargs: {"arc_challenge": {SAMPLE_ID}},
-    )
+    monkeypatch.setattr(app_main, "_load_augmented_dataset_types", lambda path: ["arc_challenge"])
+    monkeypatch.setattr(app_main, "DEFAULT_EVALUATION_LOG_ROOT", log_root)
+    monkeypatch.setattr(app_main, "DEFAULT_COLLECTED_DATASET_ROOT", collected_root)
     monkeypatch.setattr(
         app_main,
         "inspect_eval",
@@ -788,6 +776,7 @@ def test_run_evaluate_still_materializes_collected_dataset_when_incomplete(tmp_p
         modes="full_question",
         model=EVAL_MODEL,
         backend=None,
+        generator="gpt",
         processed_dataset=str(tmp_path / "processed"),
         generator_run_name=GEN_RUN_NAME,
         generator_model=GEN_MODEL,
@@ -819,15 +808,14 @@ def test_run_evaluate_with_explicit_augmented_dataset_does_not_rematerialize_sto
     augmented_root.mkdir(parents=True, exist_ok=True)
     log_root = tmp_path / "logs"
 
-    def fail_ensure(**kwargs):
-        raise AssertionError("explicit augmented datasets should not be rematerialized")
-
-    monkeypatch.setattr(app_main, "ensure_augmented_dataset", fail_ensure)
     monkeypatch.setattr(
         app_main,
-        "_combined_support_ids_for_run",
-        lambda **kwargs: {"arc_challenge": {SAMPLE_ID}},
+        "_generator_config",
+        lambda alias: {"run_name": GEN_RUN_NAME, "model": GEN_MODEL, "path": str(augmented_root)},
     )
+    monkeypatch.setattr(app_main, "_load_augmented_dataset_types", lambda path: ["arc_challenge"])
+    monkeypatch.setattr(app_main, "DEFAULT_EVALUATION_LOG_ROOT", log_root)
+    monkeypatch.setattr(app_main, "DEFAULT_COLLECTED_DATASET_ROOT", collected_root)
     monkeypatch.setattr(
         app_main,
         "inspect_eval",
@@ -866,6 +854,7 @@ def test_run_evaluate_with_explicit_augmented_dataset_does_not_rematerialize_sto
         modes="full_question",
         model=EVAL_MODEL,
         backend=None,
+        generator="gpt",
         processed_dataset=str(tmp_path / "processed"),
         generator_run_name=GEN_RUN_NAME,
         generator_model=GEN_MODEL,

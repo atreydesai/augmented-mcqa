@@ -449,6 +449,109 @@ def _eligible_support_ids(payload: dict[str, Any]) -> dict[str, set[str]]:
     }
 
 
+def _support_payload_from_augmented_store(
+    augmented_path: Path | str,
+    *,
+    run_name: str,
+    generation_model: str,
+) -> dict[str, Any]:
+    root = _normalize_augmented_root(augmented_path)
+    manifest = _load_augmented_manifest(root)
+    wanted = list(manifest.get("dataset_types") or [])
+    settings = [str(setting) for setting in list(manifest.get("settings") or SETTING_NAMES) if str(setting) in SETTING_NAMES]
+    eligible_by_dataset: dict[str, list[str]] = {}
+    totals_by_dataset: dict[str, int] = {}
+    excluded_by_setting: dict[str, dict[str, int]] = {
+        dataset_type: {setting: 0 for setting in settings} for dataset_type in wanted
+    }
+
+    for dataset_type in wanted:
+        rows_by_setting: dict[str, dict[str, dict[str, Any]]] = {}
+        sample_order: list[str] = []
+        for setting in settings:
+            setting_rows: dict[str, dict[str, Any]] = {}
+            for row in _load_setting_dataset(root, dataset_type, setting):
+                payload = dict(row)
+                sample_id = str(payload.get("sample_id") or "")
+                if not sample_id:
+                    continue
+                setting_rows[sample_id] = payload
+                if setting == settings[0]:
+                    sample_order.append(sample_id)
+            rows_by_setting[setting] = setting_rows
+
+        totals_by_dataset[dataset_type] = len(sample_order)
+        eligible: list[str] = []
+        for sample_id in sample_order:
+            all_settings_usable = True
+            for setting in settings:
+                record = rows_by_setting.get(setting, {}).get(sample_id)
+                if record is None or not _setting_record_is_usable(record, setting=setting):
+                    excluded_by_setting[dataset_type][setting] += 1
+                    all_settings_usable = False
+            if all_settings_usable:
+                eligible.append(sample_id)
+        eligible_by_dataset[dataset_type] = eligible
+
+    return {
+        "schema_version": SUPPORT_SET_SCHEMA_VERSION,
+        "storage_kind": "generation_support_set",
+        "generation_run_name": str(run_name or ""),
+        "generation_model": str(generation_model or ""),
+        "dataset_types": wanted,
+        "settings": settings,
+        "eligible_sample_ids_by_dataset": eligible_by_dataset,
+        "candidate_counts_by_dataset": totals_by_dataset,
+        "eligible_counts_by_dataset": {
+            dataset_type: len(sample_ids) for dataset_type, sample_ids in eligible_by_dataset.items()
+        },
+        "excluded_counts_by_dataset": {
+            dataset_type: max(0, totals_by_dataset.get(dataset_type, 0) - len(eligible_by_dataset.get(dataset_type, [])))
+            for dataset_type in wanted
+        },
+        "excluded_counts_by_setting": excluded_by_setting,
+        "support_source": "augmented_store",
+    }
+
+
+def _support_manifest_is_current(payload: dict[str, Any], expected: dict[str, Any]) -> bool:
+    if list(payload.get("dataset_types") or []) != list(expected.get("dataset_types") or []):
+        return False
+    if list(payload.get("settings") or []) != list(expected.get("settings") or []):
+        return False
+    if dict(payload.get("eligible_counts_by_dataset") or {}) != dict(expected.get("eligible_counts_by_dataset") or {}):
+        return False
+    if dict(payload.get("excluded_counts_by_setting") or {}) != dict(expected.get("excluded_counts_by_setting") or {}):
+        return False
+    return _eligible_support_ids(payload) == _eligible_support_ids(expected)
+
+
+def _write_support_manifest(path: Path, payload: dict[str, Any]) -> Path:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    return path
+
+
+def _load_or_refresh_support_manifest(path: Path, *, run_name: str, augmented_run_root: Path) -> dict[str, Any]:
+    payload = _load_support_manifest(path)
+    augmented_path = augmented_run_root / path.parent.name
+    if not augmented_path.exists():
+        return payload
+    augmented_manifest = _load_augmented_manifest(augmented_path)
+    if set(augmented_manifest.get("settings") or []) != set(SETTING_NAMES):
+        return payload
+
+    expected = _support_payload_from_augmented_store(
+        augmented_path,
+        run_name=run_name,
+        generation_model=str(payload.get("generation_model") or path.parent.name),
+    )
+    if not _support_manifest_is_current(payload, expected):
+        _write_support_manifest(path, expected)
+        return expected
+    return payload
+
+
 def _setting_record_is_usable(record: dict[str, Any], *, setting: str) -> bool:
     recipe = get_setting_recipe(setting)
     options = _string_list(record.get("options_randomized"))
@@ -502,7 +605,18 @@ def build_generation_support_manifest(
     generation_model: str,
     output_root: Path | str = DEFAULT_SUPPORT_SET_ROOT,
     dataset_types: list[str] | None = None,
+    augmented_dataset_path: Path | str | None = None,
 ) -> Path:
+    output_dir = _support_manifest_dir(output_root, run_name=run_name, generation_model=generation_model)
+    output_path = output_dir / SUPPORT_SET_MANIFEST
+    if augmented_dataset_path is not None:
+        payload = _support_payload_from_augmented_store(
+            augmented_dataset_path,
+            run_name=run_name,
+            generation_model=generation_model,
+        )
+        return _write_support_manifest(output_path, payload)
+
     wanted = _selected_values(dataset_types, list(ACTIVE_DATASET_TYPES))
     rows = iter_processed_rows(processed_dataset_path, dataset_types=wanted)
     generated_payloads = _generation_payloads(generation_log_dir)
@@ -550,11 +664,7 @@ def build_generation_support_manifest(
         },
         "excluded_counts_by_setting": excluded_by_setting,
     }
-    output_dir = _support_manifest_dir(output_root, run_name=run_name, generation_model=generation_model)
-    output_dir.mkdir(parents=True, exist_ok=True)
-    output_path = output_dir / SUPPORT_SET_MANIFEST
-    output_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
-    return output_path
+    return _write_support_manifest(output_path, payload)
 
 
 def combined_support_ids(
@@ -578,7 +688,10 @@ def combined_support_ids(
                 f"Support manifests are incomplete for run {run_name!r}; missing manifests for: {', '.join(missing_manifests)}"
             )
 
-    manifests = [_load_support_manifest(path) for path in manifest_paths]
+    manifests = [
+        _load_or_refresh_support_manifest(path, run_name=run_name, augmented_run_root=augmented_run_root)
+        for path in manifest_paths
+    ]
     dataset_types = list(manifests[0].get("dataset_types") or [])
     combined: dict[str, set[str]] = {}
     for dataset_type in dataset_types:
@@ -1480,7 +1593,7 @@ def materialize_evaluated_datasets(
     output_root: Path | str = DEFAULT_COLLECTED_DATASET_ROOT,
     *,
     augmented_root: Path | str = DEFAULT_AUGMENTED_CACHE_ROOT,
-    support_root: Path | str = DEFAULT_SUPPORT_SET_ROOT,
+    support_root: Path | str | None = DEFAULT_SUPPORT_SET_ROOT,
     expected_dataset_types: list[str] | None = None,
     expected_settings: list[str] | None = None,
     expected_modes: list[str] | None = None,
@@ -1535,11 +1648,13 @@ def materialize_evaluated_datasets(
         augmented_scope_root = augmented_root_path
         if explicit_augmented_store and len(augmented_path.parents) >= 2:
             augmented_scope_root = augmented_path.parents[1]
-        support_sample_ids = combined_support_ids(
-            run_name=generation_run_name,
-            support_root=support_root,
-            augmented_root=augmented_scope_root,
-        )
+        support_sample_ids = None
+        if support_root is not None and not explicit_augmented_store:
+            support_sample_ids = combined_support_ids(
+                run_name=generation_run_name,
+                support_root=support_root,
+                augmented_root=augmented_scope_root,
+            )
         dataset_types, settings, modes = _group_record_dimensions(
             meta,
             wanted_dataset_types=wanted_dataset_types,

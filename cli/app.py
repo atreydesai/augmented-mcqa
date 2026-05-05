@@ -59,6 +59,29 @@ from utils.scheduler_state import (
 
 prepare_data = None
 DEFAULT_DATASET_TYPES = list(ACTIVE_DATASET_TYPES)
+DEFAULT_STRICT_AUGMENTED_ROOT = Path("datasets/augmented_filtered/strict")
+GENERATOR_ALIASES = {
+    "gemini": {
+        "run_name": "gemini_from_scratch_testing",
+        "model": "google/gemini-3.1-pro-preview",
+        "path": DEFAULT_STRICT_AUGMENTED_ROOT / "gemini",
+    },
+    "gpt": {
+        "run_name": "gen_gpt52_v2",
+        "model": "openai/gpt-5.2-2025-12-11",
+        "path": DEFAULT_STRICT_AUGMENTED_ROOT / "gpt",
+    },
+    "gpt52": {
+        "run_name": "gen_gpt52_v2",
+        "model": "openai/gpt-5.2-2025-12-11",
+        "path": DEFAULT_STRICT_AUGMENTED_ROOT / "gpt",
+    },
+    "qwen": {
+        "run_name": "together_from_scratch_testing",
+        "model": "together/Qwen/Qwen3.5-397B-A17B",
+        "path": DEFAULT_STRICT_AUGMENTED_ROOT / "qwen",
+    },
+}
 
 
 def _csv_list(raw: str | None, *, default: list[str]) -> list[str]:
@@ -79,6 +102,31 @@ def _select_values(
     if invalid:
         raise ValueError(f"Unsupported {label}: " + ", ".join(invalid))
     return values
+
+
+def _generator_config(alias: str) -> dict[str, object]:
+    key = str(alias or "").strip().lower()
+    if key not in GENERATOR_ALIASES:
+        raise ValueError(f"Unsupported generator {alias!r}. Choose one of: {', '.join(sorted(GENERATOR_ALIASES))}")
+    return dict(GENERATOR_ALIASES[key])
+
+
+def _load_augmented_dataset_types(root: Path) -> list[str]:
+    manifest_path = root / "augmented_manifest.json"
+    if not manifest_path.exists():
+        raise FileNotFoundError(f"Missing filtered augmented dataset at {root}")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    return list(manifest.get("dataset_types") or [])
+
+
+def _augmented_dataset_sizes(root: Path, dataset_types: list[str]) -> dict[str, int]:
+    from datasets import load_from_disk
+
+    sizes: dict[str, int] = {}
+    for dataset_type in dataset_types:
+        path = root / dataset_type / SETTING_NAMES[0]
+        sizes[dataset_type] = len(load_from_disk(str(path))) if path.exists() else 0
+    return sizes
 
 
 def _slice_task_metadata(
@@ -242,6 +290,13 @@ def _cluster_resources(args: argparse.Namespace) -> dict[str, object]:
         "cpus_per_task": args.cpus_per_task,
         "gpu_type": args.gpu_type,
     }
+
+
+def _scheduled_resource_class(args: argparse.Namespace, model: str) -> str:
+    resource_class = resource_class_for_model(model)
+    if resource_class == "local" and str(model).startswith("vllm/") and getattr(args, "model_base_url", None):
+        return "api"
+    return resource_class
 
 
 def _runtime_argv(args: argparse.Namespace) -> list[str]:
@@ -457,7 +512,7 @@ def _build_generation_cluster_tasks(args: argparse.Namespace) -> tuple[list[Clus
     tasks_by_ref: dict[str, ClusterTask] = {}
     for dataset_type in dataset_types:
         for model in models:
-            resource_class = resource_class_for_model(model)
+            resource_class = _scheduled_resource_class(args, model)
             for chunk_index, question_start, question_end in chunk_ranges(dataset_sizes.get(dataset_type, 0), args.questions_per_job):
                 question_limit = question_end - question_start
                 for strategy in strategies:
@@ -578,39 +633,26 @@ def _build_generation_cluster_tasks(args: argparse.Namespace) -> tuple[list[Clus
 
 
 def _build_evaluation_cluster_tasks(args: argparse.Namespace) -> tuple[list[ClusterTask], dict[str, int | None]]:
-    processed_dataset, dataset_types, dataset_sizes = _cluster_dataset_context(args)
-    resources = _cluster_resources(args)
-    force = bool(args.force)
-    generation_artifact_base = {
-        "processed_dataset": processed_dataset,
-        "dataset_types": dataset_types,
-        "run_name": args.generator_run_name,
-        "model": args.generator_model,
-        "backend": args.generator_backend,
-        "generation_log_dir": getattr(args, "generation_log_dir", None),
-        "generation_log_root": getattr(args, "generation_log_root", DEFAULT_GENERATION_LOG_ROOT),
-        "cache_root": getattr(args, "cache_root", DEFAULT_AUGMENTED_CACHE_ROOT),
-        "augmented_dataset": args.augmented_dataset,
-        "rebuild": True,
-    }
-    generation_model, _generation_log_dir, resolved_augmented_cache_dir = _resolved_generation_artifacts(
-        ensure=False,
-        **generation_artifact_base,
+    generator = _generator_config(args.generator)
+    generation_run_name = str(generator["run_name"])
+    generation_model = str(generator["model"])
+    augmented_dataset = Path(generator["path"])
+    allowed_dataset_types = _load_augmented_dataset_types(augmented_dataset)
+    dataset_types = _select_values(
+        args.dataset_types,
+        default=allowed_dataset_types,
+        allowed=allowed_dataset_types,
+        label="dataset types",
     )
+    dataset_sizes = _augmented_dataset_sizes(augmented_dataset, dataset_types)
+    if args.limit is not None:
+        dataset_sizes = {dataset_type: min(size, int(args.limit)) for dataset_type, size in dataset_sizes.items()}
+    resources = _cluster_resources(args)
     models = _cluster_models(args.models, default=list(args.default_models), backend=args.backend)
     settings = _select_values(args.settings, default=list(SETTING_NAMES), allowed=list(SETTING_NAMES), label="settings")
     modes = _select_values(args.modes, default=list(MODE_CHOICES), allowed=list(MODE_CHOICES), label="modes")
-    explicit_augmented_dataset = resolved_augmented_cache_dir if getattr(args, "augmented_dataset", None) else None
 
-    existing = _slice_status_lookup(_current_stage_state(stage="evaluate", run_name=args.run_name, output_dir=args.output_dir))
-    generation_state = (
-        {}
-        if explicit_augmented_dataset is not None
-        else _slice_status_lookup(_current_stage_state(stage="generate", run_name=args.generator_run_name))
-    )
     evaluation_counts: dict[tuple[str, str, str, int, int], int] = {}
-    augmented_cache_dir: Path | None = explicit_augmented_dataset
-    support_sample_ids: dict[str, set[str]] | None = None
 
     def runnable_evaluation_sample_count(
         *,
@@ -620,26 +662,14 @@ def _build_evaluation_cluster_tasks(args: argparse.Namespace) -> tuple[list[Clus
         question_start: int,
         question_end: int,
     ) -> int:
-        nonlocal augmented_cache_dir, support_sample_ids
         key = (dataset_type, setting, mode, question_start, question_end)
         if key not in evaluation_counts:
-            if augmented_cache_dir is None:
-                _resolved_model, _generation_log_dir, augmented_cache_dir = _resolved_generation_artifacts(
-                    ensure=True,
-                    **generation_artifact_base,
-                )
-            if support_sample_ids is None:
-                support_sample_ids = _combined_support_ids_for_run(
-                    run_name=args.generator_run_name,
-                    support_root=Path(args.support_root),
-                    cache_root=Path(str(generation_artifact_base["cache_root"])),
-                )
             dataset = build_evaluation_dataset(
-                augmented_cache_dir,
+                augmented_dataset,
                 setting=setting,
                 mode=mode,
                 dataset_types=[dataset_type],
-                support_sample_ids=support_sample_ids,
+                support_sample_ids=None,
                 question_start=question_start,
                 limit=question_end - question_start,
                 shard_count=1,
@@ -652,7 +682,7 @@ def _build_evaluation_cluster_tasks(args: argparse.Namespace) -> tuple[list[Clus
     tasks: list[ClusterTask] = []
     for dataset_type in dataset_types:
         for model in models:
-            resource_class = resource_class_for_model(model)
+            resource_class = _scheduled_resource_class(args, model)
             for chunk_index, question_start, question_end in chunk_ranges(dataset_sizes.get(dataset_type, 0), args.questions_per_job):
                 question_limit = question_end - question_start
                 for setting in settings:
@@ -668,53 +698,14 @@ def _build_evaluation_cluster_tasks(args: argparse.Namespace) -> tuple[list[Clus
                             question_end=question_end,
                         )
                         slice_ref = str(metadata["slice_ref"])
-                        existing_slice = existing.get(slice_ref, {})
-                        if not args.force and str(existing_slice.get("status", "")) in {"current", "pending"}:
+                        if runnable_evaluation_sample_count(
+                            dataset_type=dataset_type,
+                            setting=setting,
+                            mode=mode,
+                            question_start=question_start,
+                            question_end=question_end,
+                        ) <= 0:
                             continue
-
-                        if explicit_augmented_dataset is not None:
-                            if runnable_evaluation_sample_count(
-                                dataset_type=dataset_type,
-                                setting=setting,
-                                mode=mode,
-                                question_start=question_start,
-                                question_end=question_end,
-                            ) <= 0:
-                                continue
-                            state_dependency_refs: list[str] = []
-                        else:
-                            state_dependency_refs = _evaluation_generation_dependencies(
-                                setting=setting,
-                                generator_run_name=args.generator_run_name,
-                                generator_model=generation_model,
-                                dataset_type=dataset_type,
-                                question_start=question_start,
-                                question_end=question_end,
-                                generation_state=generation_state,
-                            )
-                            for dependency_ref in state_dependency_refs:
-                                dependency_state = generation_state.get(dependency_ref)
-                                dependency_status = str((dependency_state or {}).get("status", ""))
-                                if dependency_status == "current":
-                                    continue
-                                if dependency_status == "failed":
-                                    if runnable_evaluation_sample_count(
-                                        dataset_type=dataset_type,
-                                        setting=setting,
-                                        mode=mode,
-                                        question_start=question_start,
-                                        question_end=question_end,
-                                    ) > 0:
-                                        continue
-                                    state_dependency_refs = []
-                                    break
-                                if dependency_status != "current":
-                                    raise ValueError(
-                                        f"Missing current generation prerequisite for {slice_ref}: {dependency_ref}. "
-                                        "Rerun or complete the required generation slice before scheduling evaluation."
-                                    )
-                            if not state_dependency_refs:
-                                continue
 
                         argv = [
                             "evaluate",
@@ -722,12 +713,8 @@ def _build_evaluation_cluster_tasks(args: argparse.Namespace) -> tuple[list[Clus
                             model,
                             "--run-name",
                             args.run_name,
-                            "--generator-run-name",
-                            args.generator_run_name,
-                            "--generator-model",
-                            generation_model,
-                            "--processed-dataset",
-                            str(processed_dataset),
+                            "--generator",
+                            args.generator,
                             "--dataset-types",
                             dataset_type,
                             "--settings",
@@ -739,9 +726,6 @@ def _build_evaluation_cluster_tasks(args: argparse.Namespace) -> tuple[list[Clus
                             "--limit",
                             str(question_limit),
                         ]
-                        if explicit_augmented_dataset is not None:
-                            argv.extend(["--augmented-dataset", str(explicit_augmented_dataset)])
-                        argv.extend(["--support-root", str(args.support_root)])
                         argv.append("--skip-collect-evaluated")
                         argv.extend(_runtime_argv(args))
                         tasks.append(
@@ -758,13 +742,14 @@ def _build_evaluation_cluster_tasks(args: argparse.Namespace) -> tuple[list[Clus
                                 chunk_index=chunk_index,
                                 setting=setting,
                                 mode=mode,
-                                state_dependency_refs=state_dependency_refs,
+                                state_dependency_refs=[],
                                 argv=argv,
                                 resources=resources,
-                                force=force,
-                                generation_run_name=args.generator_run_name,
+                                force=True,
+                                generation_run_name=generation_run_name,
                                 generation_model=generation_model,
-                                collected_root=str(args.collected_root),
+                                collected_root=str(DEFAULT_COLLECTED_DATASET_ROOT),
+                                augmented_dataset=str(augmented_dataset),
                             )
                         )
     return tasks, {"local": args.gpu_count, "api": args.gpu_count}
@@ -1017,7 +1002,7 @@ def _materialize_collected_evaluation(
     evaluation_log_root: Path | str,
     collected_root: Path | str,
     augmented_dataset: Path | str,
-    support_root: Path | str,
+    support_root: Path | str | None,
     generation_run_name: str,
     generation_model: str,
     evaluation_model: str,
@@ -1143,6 +1128,7 @@ def _run_generate(args: argparse.Namespace) -> int:
             generation_model=generation_model,
             output_root=Path(args.support_root),
             dataset_types=dataset_types,
+            augmented_dataset_path=cache_dir,
         )
         print(f"Augmented dataset cache: {cache_dir}")
     return 0
@@ -1151,53 +1137,39 @@ def _run_generate(args: argparse.Namespace) -> int:
 def _run_evaluate(args: argparse.Namespace) -> int:
     from tasks import build_evaluation_tasks
 
+    generator = _generator_config(args.generator)
+    generation_run_name = str(generator["run_name"])
+    generation_model = str(generator["model"])
+    cache_dir = Path(generator["path"])
     dataset_types = _select_values(
         args.dataset_types,
-        default=args.default_dataset_types,
-        allowed=list(ACTIVE_DATASET_TYPES),
+        default=_load_augmented_dataset_types(cache_dir),
+        allowed=_load_augmented_dataset_types(cache_dir),
         label="dataset types",
     )
     settings = _select_values(args.settings, default=list(SETTING_NAMES), allowed=list(SETTING_NAMES), label="settings")
     modes = _select_values(args.modes, default=list(MODE_CHOICES), allowed=list(MODE_CHOICES), label="modes")
     eval_model = resolve_model_name(args.model, args.backend)
-    generation_model, _generation_log_dir, cache_dir = _resolved_generation_artifacts(
-        processed_dataset=Path(args.processed_dataset),
-        dataset_types=dataset_types,
-        run_name=args.generator_run_name,
-        model=args.generator_model,
-        backend=args.generator_backend,
-        generation_log_dir=args.generation_log_dir,
-        generation_log_root=args.generation_log_root,
-        cache_root=args.cache_root,
-        augmented_dataset=args.augmented_dataset,
-        rebuild=args.rebuild_cache,
-        ensure=True,
-    )
     log_dir = _evaluation_log_dir(
-        Path(args.log_root),
+        Path(DEFAULT_EVALUATION_LOG_ROOT),
         args.run_name,
-        args.generator_run_name,
+        generation_run_name,
         generation_model,
         eval_model,
     )
-    support_sample_ids = _combined_support_ids_for_run(
-        run_name=args.generator_run_name,
-        support_root=Path(args.support_root),
-        cache_root=Path(args.cache_root),
-    )
     tasks = build_evaluation_tasks(
         augmented_dataset_path=cache_dir,
-        support_sample_ids=support_sample_ids,
+        support_sample_ids=None,
         dataset_types=dataset_types,
         settings=settings,
         modes=modes,
-        question_start=args.question_start,
-        shard_count=args.shard_count,
-        shard_index=args.shard_index,
-        shard_strategy=args.shard_strategy,
-        limit=args.limit,
+        question_start=getattr(args, "question_start", 0),
+        shard_count=1,
+        shard_index=0,
+        shard_strategy="contiguous",
+        limit=getattr(args, "limit", None),
         run_name=args.run_name,
-        generation_run_name=args.generator_run_name,
+        generation_run_name=generation_run_name,
         generation_model=generation_model,
         evaluation_model=eval_model,
         task_metadata_by_setting_mode={
@@ -1208,12 +1180,12 @@ def _run_evaluate(args: argparse.Namespace) -> int:
                 dataset_type=dataset_types[0],
                 setting=setting,
                 mode=mode,
-                question_start=args.question_start,
-                question_end=args.question_start + int(args.limit or 0),
+                question_start=getattr(args, "question_start", 0),
+                question_end=getattr(args, "question_start", 0) + int(getattr(args, "limit", 0) or 0),
             )
             for setting in settings
             for mode in modes
-            if len(dataset_types) == 1 and args.limit
+            if len(dataset_types) == 1 and getattr(args, "limit", None)
         },
     )
     if not tasks:
@@ -1222,14 +1194,14 @@ def _run_evaluate(args: argparse.Namespace) -> int:
     planned_tasks = _local_evaluation_task_plans(tasks, fallback_model=eval_model)
     eval_logs = inspect_eval(tasks, model=eval_model, log_dir=log_dir, args=args)
     print(f"Evaluation logs: {log_dir}")
-    if args.collect_evaluated:
+    if getattr(args, "collect_evaluated", True):
         collected_outputs = _materialize_collected_evaluation(
             run_name=args.run_name,
             evaluation_log_root=log_dir,
-            collected_root=Path(args.collected_root),
+            collected_root=Path(DEFAULT_COLLECTED_DATASET_ROOT),
             augmented_dataset=cache_dir,
-            support_root=Path(args.support_root),
-            generation_run_name=args.generator_run_name,
+            support_root=None,
+            generation_run_name=generation_run_name,
             generation_model=generation_model,
             evaluation_model=eval_model,
             dataset_types=dataset_types,
@@ -1293,7 +1265,7 @@ def _run_collect_evaluated(args: argparse.Namespace) -> int:
                 evaluation_log_root=Path(spec["evaluation_log_root"]),
                 collected_root=Path(args.collected_root),
                 augmented_dataset=Path(spec["augmented_dataset"]),
-                support_root=Path(args.support_root),
+                support_root=None,
                 generation_run_name=str(spec["generator_run_name"]),
                 generation_model=str(spec["generator_model"]),
                 evaluation_model=str(spec["evaluation_model"]),
@@ -1309,7 +1281,7 @@ def _run_collect_evaluated(args: argparse.Namespace) -> int:
             evaluation_log_root=Path(args.evaluation_log_root),
             collected_root=Path(args.collected_root),
             augmented_dataset=Path(args.augmented_dataset),
-            support_root=Path(args.support_root),
+            support_root=Path(args.support_root) if args.support_root else None,
             generation_run_name=args.generator_run_name,
             generation_model=args.generator_model,
             evaluation_model=args.model,
@@ -1360,6 +1332,7 @@ def _run_materialize_store(args: argparse.Namespace) -> int:
         generation_model=raw_model,
         output_root=Path(args.support_root),
         dataset_types=dataset_types,
+        augmented_dataset_path=output_path,
     )
     print(output_path)
     print(support_path)
@@ -1515,7 +1488,7 @@ def _run_submit_cluster(
         concurrency_caps=concurrency_caps,
         output_dir=args.output_dir,
         submit=args.submit,
-        dry_run=args.dry_run,
+        dry_run=getattr(args, "dry_run", False),
     )
 
 
@@ -1588,17 +1561,23 @@ def add_shard_flags(command: argparse.ArgumentParser) -> None:
     )
 
 
-def add_cluster_submit_flags(command: argparse.ArgumentParser) -> None:
+def add_cluster_submit_flags(
+    command: argparse.ArgumentParser,
+    *,
+    include_processed_dataset: bool = True,
+    include_force: bool = True,
+) -> None:
     command.add_argument(
         "--models",
         default=None,
         help="Comma-separated list of models to schedule. Models can be local vllm/... or hosted/API providers.",
     )
-    command.add_argument(
-        "--processed-dataset",
-        default=str(DEFAULT_PROCESSED_DATASET),
-        help="Unified processed DatasetDict to use when building scheduler slices.",
-    )
+    if include_processed_dataset:
+        command.add_argument(
+            "--processed-dataset",
+            default=str(DEFAULT_PROCESSED_DATASET),
+            help="Unified processed DatasetDict to use when building scheduler slices.",
+        )
     command.add_argument(
         "--dataset-types",
         default=None,
@@ -1640,16 +1619,12 @@ def add_cluster_submit_flags(command: argparse.ArgumentParser) -> None:
         action="store_false",
         help="Advanced control: write manifests and submit helpers but do not call sbatch.",
     )
-    command.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Advanced control: print the planned scheduler details without writing or submitting anything.",
-    )
-    command.add_argument(
-        "--force",
-        action="store_true",
-        help="Resubmit the selected slices even if they are already current or pending in this run.",
-    )
+    if include_force:
+        command.add_argument(
+            "--force",
+            action="store_true",
+            help="Resubmit the selected slices even if they are already current or pending in this run.",
+        )
     command.add_argument(
         "--partition",
         default="clip",
@@ -1741,43 +1716,21 @@ def _add_evaluate_parser(sub: argparse._SubParsersAction[argparse.ArgumentParser
     )
     evaluate.add_argument("--model", required=True, help="Model name or alias to use for evaluation.")
     evaluate.add_argument("--run-name", required=True, help="Logical run name used to organize evaluation logs.")
-    evaluate.add_argument("--generator-run-name", required=True, help="Generation run name whose augmented cache or logs should be evaluated.")
-    evaluate.add_argument("--generator-model", required=True, help="Generation model whose outputs should be evaluated.")
-    evaluate.add_argument("--generator-backend", default=None, help="Situational: backend prefix to apply when resolving --generator-model.")
-    evaluate.add_argument("--generation-log-dir", default=None, help="Advanced override: exact generation log directory to read instead of deriving one from run name and model.")
-    evaluate.add_argument("--generation-log-root", default=str(DEFAULT_GENERATION_LOG_ROOT), help="Advanced override: root directory for generation Inspect logs when deriving inputs automatically.")
-    evaluate.add_argument("--processed-dataset", default=str(DEFAULT_PROCESSED_DATASET), help="Processed dataset source used only when deriving and materializing the augmented store automatically from generation logs.")
-    evaluate.add_argument("--augmented-dataset", default=None, help="Advanced override: exact read-only augmented store path to evaluate instead of deriving one from generation artifacts.")
-    evaluate.add_argument("--cache-root", default=str(DEFAULT_AUGMENTED_CACHE_ROOT), help="Advanced override: root directory where augmented dataset caches are stored.")
-    evaluate.add_argument("--support-root", default=str(DEFAULT_SUPPORT_SET_ROOT), help="Advanced override: root directory where generation support manifests are stored.")
+    evaluate.add_argument("--generator", required=True, choices=sorted(GENERATOR_ALIASES), help="Generator alias to evaluate: gemini, gpt/gpt52, or qwen.")
     evaluate.add_argument("--dataset-types", default=None, help="Optional subset: comma-separated subset of dataset splits to evaluate.")
-    evaluate.add_argument("--question-start", type=int, default=0, help="Advanced/debug option: zero-based per-dataset starting row for evaluation.")
     evaluate.add_argument("--settings", default=None, help="Advanced subset override: comma-separated subset of Augmented MCQA settings to evaluate.")
     evaluate.add_argument("--modes", default=None, help="Advanced subset override: comma-separated subset of evaluation modes to run.")
-    evaluate.add_argument("--limit", type=int, default=None, help="Advanced/debug option: optional per-dataset cap on the number of evaluation samples.")
-    evaluate.add_argument("--log-root", default=str(DEFAULT_EVALUATION_LOG_ROOT), help="Advanced override: root directory for Inspect evaluation logs.")
-    evaluate.add_argument(
-        "--collected-root",
-        default=str(DEFAULT_COLLECTED_DATASET_ROOT),
-        help="Root directory where the collected evaluation dataset should be written when collection is enabled.",
-    )
-    evaluate.add_argument(
-        "--collect-evaluated",
-        dest="collect_evaluated",
-        action="store_true",
-        default=True,
-        help="Materialize the collected evaluation dataset immediately after this evaluate command finishes.",
-    )
+    evaluate.add_argument("--question-start", type=int, default=0, help=argparse.SUPPRESS)
+    evaluate.add_argument("--limit", type=int, default=None, help=argparse.SUPPRESS)
     evaluate.add_argument(
         "--skip-collect-evaluated",
         dest="collect_evaluated",
         action="store_false",
         help="Skip collected dataset materialization for this evaluate command. Intended for cluster slice jobs that defer collection to a finalizer.",
     )
-    evaluate.add_argument("--rebuild-cache", action="store_true", help="Advanced override: force regeneration of the augmented cache before evaluation.")
+    evaluate.set_defaults(collect_evaluated=True)
     evaluate.set_defaults(default_dataset_types=list(DEFAULT_DATASET_TYPES))
     add_runtime_flags(evaluate)
-    add_shard_flags(evaluate)
     evaluate.set_defaults(handler=_run_evaluate)
     return evaluate
 
@@ -1852,20 +1805,15 @@ def _add_submit_generate_cluster_parser(sub: argparse._SubParsersAction[argparse
 def _add_submit_evaluate_cluster_parser(sub: argparse._SubParsersAction[argparse.ArgumentParser], formatter) -> argparse.ArgumentParser:
     parser = sub.add_parser(
         "submit-evaluate-cluster",
-        help="Submit dependency-aware evaluation jobs over model×dataset×setting×mode×chunk slices.",
-        description="Generate per-slice SLURM submissions for local and API-backed evaluation, keyed to exact generation prerequisites.",
+        help="Submit evaluation jobs over model×dataset×setting×mode×chunk slices.",
+        description="Generate per-slice SLURM submissions for local and API-backed evaluation from a strict filtered augmented dataset.",
         formatter_class=formatter,
     )
     parser.add_argument("--run-name", required=True, help="Logical run name used to organize generated manifests and evaluation logs.")
-    parser.add_argument("--generator-run-name", required=True, help="Generation run name whose augmented outputs the cluster jobs should evaluate.")
-    parser.add_argument("--generator-model", required=True, help="Generation model whose outputs the cluster jobs should evaluate.")
-    parser.add_argument("--generator-backend", default=None, help="Situational: backend prefix to apply when resolving --generator-model.")
+    parser.add_argument("--generator", required=True, choices=sorted(GENERATOR_ALIASES), help="Generator alias to evaluate: gemini, gpt/gpt52, or qwen.")
     parser.add_argument("--settings", default=None, help="Comma-separated subset of Augmented MCQA settings to schedule.")
     parser.add_argument("--modes", default=None, help="Comma-separated subset of evaluation modes to schedule.")
-    parser.add_argument("--augmented-dataset", default=None, help="Advanced override: exact setting-scoped augmented store path to schedule directly instead of deriving one from generation logs.")
-    parser.add_argument("--support-root", default=str(DEFAULT_SUPPORT_SET_ROOT), help="Advanced override: root directory where generation support manifests are stored.")
-    parser.add_argument("--collected-root", default=str(DEFAULT_COLLECTED_DATASET_ROOT), help="Root directory where collected evaluation datasets should be refreshed after cluster evaluation completes.")
-    add_cluster_submit_flags(parser)
+    add_cluster_submit_flags(parser, include_processed_dataset=False, include_force=False)
     add_runtime_flags(parser)
     parser.set_defaults(default_models=list(DEFAULT_LOCAL_EVALUATION_MODELS))
     parser.set_defaults(default_dataset_types=list(DEFAULT_DATASET_TYPES))

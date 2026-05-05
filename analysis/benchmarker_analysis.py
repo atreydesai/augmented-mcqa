@@ -66,6 +66,27 @@ RULES_ORDER = [
     "problem_in_stem",
     "single_best_answer",
 ]
+
+
+def _payload_from_log_object(log: object) -> dict[str, object]:
+    metadata = dict(getattr(getattr(log, "eval", None), "metadata", {}) or {})
+    summaries: list[dict[str, object]] = []
+    for sample in list(getattr(log, "samples", []) or []):
+        scores: dict[str, dict[str, object]] = {}
+        for name, score in dict(getattr(sample, "scores", {}) or {}).items():
+            scores[str(name)] = {
+                "value": getattr(score, "value", None),
+                "metadata": dict(getattr(score, "metadata", {}) or {}),
+            }
+        summaries.append({"id": getattr(sample, "id", ""), "scores": scores})
+    return {"metadata": metadata, "summaries": summaries}
+
+
+def iter_eval_logs(results_root: Path) -> Iterator[tuple[Path, dict[str, object]]]:
+    for log_path in find_eval_logs(results_root):
+        payload = read_log_payload(log_path)
+        if payload is not None:
+            yield log_path, payload
 PALETTE = {
     "human_from_scratch": "#2196F3",
     "model_from_scratch": "#FF9800",
@@ -319,19 +340,10 @@ def load_evaluation_samples(
     eval_models: list[str],
 ) -> pd.DataFrame:
     rows: list[dict[str, object]] = []
-    run_filter = safe_name(generator_run_name) if generator_run_name else None
-    model_filter = safe_name(resolve_model_name(generator_model)) if generator_model else None
-    for log_path in find_eval_logs(results_root):
-        log_path_str = str(log_path)
-        if run_filter and f"/{run_filter}/" not in log_path_str:
-            continue
-        if model_filter and f"/{model_filter}/" not in log_path_str:
-            continue
-        log = read_log_payload(log_path)
-        if log is None:
-            continue
+    for log_path, loaded_log in iter_eval_logs(results_root):
+        log = loaded_log if isinstance(loaded_log, dict) else _payload_from_log_object(loaded_log)
         log_meta = dict(log.get("metadata", {}) or {})
-        if log_meta.get("kind") != "evaluation":
+        if log_meta.get("kind") not in (None, "", "evaluation"):
             continue
         generation_model = str(log_meta.get("generation_model", ""))
         logged_generation_run_name = str(log_meta.get("generation_run_name", ""))

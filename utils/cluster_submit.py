@@ -304,6 +304,7 @@ class ClusterTask:
     generation_run_name: str | None = None
     generation_model: str | None = None
     collected_root: str | None = None
+    augmented_dataset: str | None = None
 
     def as_dict(self, *, task_index: int, submission_created_at: str, submission_id: str, task_log_dir: Path) -> dict[str, Any]:
         task_stdout = task_log_dir / f"{self.task_slug}__%j.out"
@@ -331,6 +332,7 @@ class ClusterTask:
             "generation_run_name": self.generation_run_name,
             "generation_model": self.generation_model,
             "collected_root": self.collected_root,
+            "augmented_dataset": self.augmented_dataset,
             "state_dependency_refs": list(self.state_dependency_refs or []),
             "submit_dependency_refs": list(self.submit_dependency_refs or []),
             "argv": list(self.argv),
@@ -483,13 +485,6 @@ def render_manifest(
                 )
             )
     elif stage == "evaluate":
-        def task_arg(task: ClusterTask, flag: str) -> str | None:
-            argv = list(task.argv)
-            if flag not in argv:
-                return None
-            index = argv.index(flag) + 1
-            return argv[index] if index < len(argv) else None
-
         grouped_tasks: dict[tuple[str, str, str], list[ClusterTask]] = {}
         for task in ordered_tasks:
             grouped_tasks.setdefault(
@@ -502,14 +497,10 @@ def render_manifest(
             dependency_refs = [task.slice_ref for task in ordered_tasks]
             collection_specs: list[str] = []
             for (evaluation_model, generation_run_name, generation_model), group_tasks in sorted(grouped_tasks.items()):
-                explicit_augmented_dataset = task_arg(group_tasks[0], "--augmented-dataset")
-                augmented_dataset = (
-                    explicit_augmented_dataset
-                    or str(
-                        Path(DEFAULT_AUGMENTED_CACHE_ROOT)
-                        / safe_name(generation_run_name or "unknown_generation_run")
-                        / safe_name(generation_model or "unknown_generation_model")
-                    )
+                augmented_dataset = group_tasks[0].augmented_dataset or str(
+                    Path(DEFAULT_AUGMENTED_CACHE_ROOT)
+                    / safe_name(generation_run_name or "unknown_generation_run")
+                    / safe_name(generation_model or "unknown_generation_model")
                 )
                 evaluation_log_root = str(
                     Path(DEFAULT_EVALUATION_LOG_ROOT)
@@ -539,8 +530,6 @@ def render_manifest(
                 run_name,
                 "--collected-root",
                 collected_root,
-                "--support-root",
-                str(DEFAULT_SUPPORT_SET_ROOT),
                 "--scheduler-output-dir",
                 str(paths.run_dir),
             ]

@@ -1,0 +1,23 @@
+{
+  "schema_version": "augmented_mcqa_setting_records_v2",
+  "storage_kind": "setting_records",
+  "dataset_types": [
+    "arc_challenge",
+    "gpqa",
+    "mmlu_pro"
+  ],
+  "settings": [
+    "human_from_scratch",
+    "model_from_scratch",
+    "augment_human",
+    "augment_model",
+    "augment_ablation"
+  ],
+  "filter": "strict_3gen_5setting",
+  "source_augmented_store": "datasets/augmented/gen_gpt52_v2/openai_gpt-5.2-2025-12-11",
+  "strict_counts_by_dataset": {
+    "arc_challenge": 995,
+    "gpqa": 415,
+    "mmlu_pro": 954
+  }
+}

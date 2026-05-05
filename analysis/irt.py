@@ -229,8 +229,11 @@ def load_irt_frame(
                     path = group_root / dataset / setting / mode
                     if not path.exists():
                         continue
-                    data = load_from_disk(str(path)).select_columns(
-                        [
+                    loaded = load_from_disk(str(path))
+                    available_columns = set(loaded.column_names)
+                    selected_columns = [
+                        column
+                        for column in [
                             "sample_id",
                             "question",
                             "evaluation_status",
@@ -240,7 +243,13 @@ def load_irt_frame(
                             "num_choices",
                             "setting",
                         ]
-                    ).to_pandas()
+                        if column in available_columns
+                    ]
+                    data = loaded.select_columns(selected_columns).to_pandas()
+                    if "evaluation_status" not in data:
+                        data["evaluation_status"] = "success"
+                    if "evaluation_used_random_fallback" not in data:
+                        data["evaluation_used_random_fallback"] = False
                     if data.empty:
                         continue
                     stem_ids = dataset + "::" + data["sample_id"].astype(str)

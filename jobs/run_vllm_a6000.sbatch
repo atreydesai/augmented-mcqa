@@ -18,7 +18,7 @@ set -euo pipefail
 
 PROJECT_DIR="/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa"
 HF_ROOT="${HF_ROOT:-/fs/clip-scratch/adesai10}"
-SIF="${VLLM_SIF:-/tmp/vllm-gemma4.sandbox}"
+SIF="${VLLM_SIF:-/fs/clip-scratch/adesai10/containers/vllm-gemma4.sandbox}"
 IMAGE="${VLLM_IMAGE:-docker://vllm/vllm-openai:gemma4}"
 MODEL="${VLLM_MODEL:-google/gemma-4-E4B-it}"
 HOST="${VLLM_HOST:-0.0.0.0}"
@@ -26,7 +26,7 @@ PORT="${VLLM_PORT:-8000}"
 API_KEY="${VLLM_API_KEY:-local-dev-key}"
 TENSOR_PARALLEL_SIZE="${VLLM_TENSOR_PARALLEL_SIZE:-1}"
 GPU_MEMORY_UTILIZATION="${VLLM_GPU_MEMORY_UTILIZATION:-0.90}"
-MAX_MODEL_LEN="${VLLM_MAX_MODEL_LEN:-32768}"
+MAX_MODEL_LEN="${VLLM_MAX_MODEL_LEN:-65536}"
 DTYPE="${VLLM_DTYPE:-auto}"
 SERVED_MODEL_NAME="${VLLM_SERVED_MODEL_NAME:-$MODEL}"
 EXTRA_ARGS="${VLLM_EXTRA_ARGS:-}"
@@ -37,7 +37,7 @@ cd "$PROJECT_DIR"
 if [[ ! -e "$SIF" ]]; then
   echo "Missing Apptainer image/sandbox: $SIF"
   echo "Building local sandbox from: $IMAGE"
-  mkdir -p /fs/clip-scratch/adesai10/apptainer-cache /tmp/adesai10-apptainer-tmp
+  mkdir -p "$(dirname "$SIF")" /fs/clip-scratch/adesai10/apptainer-cache /tmp/adesai10-apptainer-tmp
   APPTAINER_CACHEDIR="${APPTAINER_CACHEDIR:-/fs/clip-scratch/adesai10/apptainer-cache}" \
   APPTAINER_TMPDIR="${APPTAINER_TMPDIR:-/tmp/adesai10-apptainer-tmp}" \
     apptainer build --sandbox "$SIF" "$IMAGE"

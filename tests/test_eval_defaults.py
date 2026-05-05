@@ -28,15 +28,11 @@ def test_main_parser_evaluate_defaults_use_inspect_first_shape():
             "Qwen/Qwen3-4B-Instruct-2507",
             "--run-name",
             "eval",
-            "--generator-run-name",
-            "gen",
-            "--generator-model",
-            "gpt-5.2-2025-12-11",
+            "--generator",
+            "gpt",
         ]
     )
-    assert Path(args.cache_root).parts[-1] == "augmented"
-    assert Path(args.log_root).parts[-2:] == ("inspect", "evaluation")
-    assert args.shard_count == 1
+    assert args.generator == "gpt"
     assert args.collect_evaluated is True
     assert args.max_tokens == 32768
 
@@ -60,12 +56,11 @@ def test_main_parser_submit_evaluate_cluster_defaults_use_local_cluster_shape():
             "submit-evaluate-cluster",
             "--run-name",
             "cluster-eval",
-            "--generator-run-name",
-            "gen",
-            "--generator-model",
-            "gpt-5.2-2025-12-11",
+            "--generator",
+            "gpt",
         ]
     )
+    assert args.generator == "gpt"
     assert args.gpu_count is None
     assert args.limit is None
     assert args.partition == "clip"
@@ -73,7 +68,6 @@ def test_main_parser_submit_evaluate_cluster_defaults_use_local_cluster_shape():
     assert args.qos == "high"
     assert args.gpu_type == "rtxa6000"
     assert args.submit is True
-    assert args.augmented_dataset is None
     assert args.max_tokens == 32768
 
 
