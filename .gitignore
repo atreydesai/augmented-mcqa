@@ -74,12 +74,12 @@ partial_*.json
 Thumbs.db
 
 .claude
+.codex
 .hf_cache
-results/final5_plots/tables/augmented_mcqa_failed_questions.csv
 results/atrey_writing_flaw_rows_gpt.jsonl
 results/atrey_writing_flaw_rows_all.jsonl
 *.tiff
 
 
 *.eval
-# results/inspect/
+!results/inspect/evaluation/eval_gpt54mini_high_gemini/**/*.eval
