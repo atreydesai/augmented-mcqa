@@ -18,7 +18,7 @@ datasets/augmented_filtered/strict/gpt
 datasets/augmented_filtered/strict/qwen
 ```
 
-These stores already apply the shared strict filter across all 3 generators and all 5 settings. Evaluation no longer needs `datasets/support_sets` on the normal path, and it no longer rebuilds augmented caches from generation logs.
+These stores already apply the shared strict filter across all 3 generators and all 5 settings. Evaluation no longer uses support manifests or rebuilt augmented caches on the normal path.
 
 Strict filtered question counts:
 

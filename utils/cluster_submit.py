@@ -10,9 +10,7 @@ from uuid import uuid4
 
 from utils.constants import (
     DEFAULT_AUGMENTED_CACHE_ROOT,
-    DEFAULT_COLLECTED_DATASET_ROOT,
     DEFAULT_EVALUATION_LOG_ROOT,
-    DEFAULT_SUPPORT_SET_ROOT,
 )
 from utils.modeling import safe_name
 from utils.scheduler_state import iso_now
@@ -303,7 +301,6 @@ class ClusterTask:
     force: bool = False
     generation_run_name: str | None = None
     generation_model: str | None = None
-    collected_root: str | None = None
     augmented_dataset: str | None = None
 
     def as_dict(self, *, task_index: int, submission_created_at: str, submission_id: str, task_log_dir: Path) -> dict[str, Any]:
@@ -331,7 +328,6 @@ class ClusterTask:
             "force": self.force,
             "generation_run_name": self.generation_run_name,
             "generation_model": self.generation_model,
-            "collected_root": self.collected_root,
             "augmented_dataset": self.augmented_dataset,
             "state_dependency_refs": list(self.state_dependency_refs or []),
             "submit_dependency_refs": list(self.submit_dependency_refs or []),
@@ -468,8 +464,6 @@ def render_manifest(
                 model,
                 "--processed-dataset",
                 str(representative_task.argv[representative_task.argv.index("--processed-dataset") + 1]),
-                "--support-root",
-                str(DEFAULT_SUPPORT_SET_ROOT),
             ]
             finalizers.append(
                 _finalizer_record(
@@ -492,8 +486,6 @@ def render_manifest(
                 [],
             ).append(task)
         if grouped_tasks:
-            representative_task = next(iter(grouped_tasks.values()))[0]
-            collected_root = representative_task.collected_root or str(DEFAULT_COLLECTED_DATASET_ROOT)
             dependency_refs = [task.slice_ref for task in ordered_tasks]
             collection_specs: list[str] = []
             for (evaluation_model, generation_run_name, generation_model), group_tasks in sorted(grouped_tasks.items()):
@@ -528,8 +520,6 @@ def render_manifest(
                 "build-collected-dataset",
                 "--run-name",
                 run_name,
-                "--collected-root",
-                collected_root,
                 "--scheduler-output-dir",
                 str(paths.run_dir),
             ]

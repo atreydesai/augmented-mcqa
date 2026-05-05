@@ -550,7 +550,6 @@ def test_submit_evaluate_cluster_uses_strict_filtered_store_without_generation_p
     assert "--generator" in task["argv"]
     assert task["argv"][task["argv"].index("--generator") + 1] == "gpt"
     assert "--skip-collect-evaluated" in task["argv"]
-    assert "--support-root" not in task["argv"]
     assert "--augmented-dataset" not in task["argv"]
 
 
@@ -961,7 +960,6 @@ def test_submit_evaluate_cluster_finalizer_collects_from_filtered_augmented_data
     assert manifest["task_count"] == 1
     assert manifest["tasks"][0]["augmented_dataset"] == str(augmented_path)
     finalizer = manifest["finalizers"][0]
-    assert "--support-root" not in finalizer["argv"]
     spec = json.loads(finalizer["argv"][finalizer["argv"].index("--collection-spec") + 1])
     assert spec["augmented_dataset"] == str(augmented_path)
 

@@ -10,7 +10,6 @@ from solvers.evaluation import evaluation_solver
 def build_evaluation_tasks(
     *,
     augmented_dataset_path,
-    support_sample_ids=None,
     dataset_types,
     settings,
     modes,
@@ -34,7 +33,6 @@ def build_evaluation_tasks(
                 setting=setting,
                 mode=mode,
                 dataset_types=dataset_types,
-                support_sample_ids=support_sample_ids,
                 question_start=question_start,
                 limit=limit,
                 shard_count=shard_count,

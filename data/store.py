@@ -18,13 +18,10 @@ from utils.constants import (
     COLLECTED_STATE_FILENAME,
     DEFAULT_AUGMENTED_CACHE_ROOT,
     DEFAULT_COLLECTED_DATASET_ROOT,
-    DEFAULT_SUPPORT_SET_ROOT,
     EVALUATED_STORE_MANIFEST,
     EVALUATED_STORE_SCHEMA_VERSION,
     MODE_CHOICES,
     SETTING_NAMES,
-    SUPPORT_SET_MANIFEST,
-    SUPPORT_SET_SCHEMA_VERSION,
 )
 from utils.logs import iter_eval_logs, iter_log_payloads
 from utils.modeling import safe_name
@@ -425,281 +422,6 @@ def iter_augmented_rows(
         for setting in wanted_settings:
             for row in _load_setting_dataset(root_path, dataset_type, setting):
                 yield dict(row)
-
-
-def _support_manifest_dir(root: Path | str, *, run_name: str, generation_model: str) -> Path:
-    return Path(root) / safe_name(run_name or "unknown_generation_run") / safe_name(generation_model or "unknown_generation_model")
-
-
-def _support_manifest_path(root: Path | str, *, run_name: str, generation_model: str) -> Path:
-    return _support_manifest_dir(root, run_name=run_name, generation_model=generation_model) / SUPPORT_SET_MANIFEST
-
-
-def _load_support_manifest(path: Path | str) -> dict[str, Any]:
-    payload = json.loads(Path(path).read_text(encoding="utf-8"))
-    if payload.get("schema_version") != SUPPORT_SET_SCHEMA_VERSION:
-        raise ValueError(f"Unsupported support manifest schema at {path}")
-    return payload
-
-
-def _eligible_support_ids(payload: dict[str, Any]) -> dict[str, set[str]]:
-    return {
-        str(dataset_type): {str(sample_id) for sample_id in list(sample_ids or [])}
-        for dataset_type, sample_ids in dict(payload.get("eligible_sample_ids_by_dataset", {}) or {}).items()
-    }
-
-
-def _support_payload_from_augmented_store(
-    augmented_path: Path | str,
-    *,
-    run_name: str,
-    generation_model: str,
-) -> dict[str, Any]:
-    root = _normalize_augmented_root(augmented_path)
-    manifest = _load_augmented_manifest(root)
-    wanted = list(manifest.get("dataset_types") or [])
-    settings = [str(setting) for setting in list(manifest.get("settings") or SETTING_NAMES) if str(setting) in SETTING_NAMES]
-    eligible_by_dataset: dict[str, list[str]] = {}
-    totals_by_dataset: dict[str, int] = {}
-    excluded_by_setting: dict[str, dict[str, int]] = {
-        dataset_type: {setting: 0 for setting in settings} for dataset_type in wanted
-    }
-
-    for dataset_type in wanted:
-        rows_by_setting: dict[str, dict[str, dict[str, Any]]] = {}
-        sample_order: list[str] = []
-        for setting in settings:
-            setting_rows: dict[str, dict[str, Any]] = {}
-            for row in _load_setting_dataset(root, dataset_type, setting):
-                payload = dict(row)
-                sample_id = str(payload.get("sample_id") or "")
-                if not sample_id:
-                    continue
-                setting_rows[sample_id] = payload
-                if setting == settings[0]:
-                    sample_order.append(sample_id)
-            rows_by_setting[setting] = setting_rows
-
-        totals_by_dataset[dataset_type] = len(sample_order)
-        eligible: list[str] = []
-        for sample_id in sample_order:
-            all_settings_usable = True
-            for setting in settings:
-                record = rows_by_setting.get(setting, {}).get(sample_id)
-                if record is None or not _setting_record_is_usable(record, setting=setting):
-                    excluded_by_setting[dataset_type][setting] += 1
-                    all_settings_usable = False
-            if all_settings_usable:
-                eligible.append(sample_id)
-        eligible_by_dataset[dataset_type] = eligible
-
-    return {
-        "schema_version": SUPPORT_SET_SCHEMA_VERSION,
-        "storage_kind": "generation_support_set",
-        "generation_run_name": str(run_name or ""),
-        "generation_model": str(generation_model or ""),
-        "dataset_types": wanted,
-        "settings": settings,
-        "eligible_sample_ids_by_dataset": eligible_by_dataset,
-        "candidate_counts_by_dataset": totals_by_dataset,
-        "eligible_counts_by_dataset": {
-            dataset_type: len(sample_ids) for dataset_type, sample_ids in eligible_by_dataset.items()
-        },
-        "excluded_counts_by_dataset": {
-            dataset_type: max(0, totals_by_dataset.get(dataset_type, 0) - len(eligible_by_dataset.get(dataset_type, [])))
-            for dataset_type in wanted
-        },
-        "excluded_counts_by_setting": excluded_by_setting,
-        "support_source": "augmented_store",
-    }
-
-
-def _support_manifest_is_current(payload: dict[str, Any], expected: dict[str, Any]) -> bool:
-    if list(payload.get("dataset_types") or []) != list(expected.get("dataset_types") or []):
-        return False
-    if list(payload.get("settings") or []) != list(expected.get("settings") or []):
-        return False
-    if dict(payload.get("eligible_counts_by_dataset") or {}) != dict(expected.get("eligible_counts_by_dataset") or {}):
-        return False
-    if dict(payload.get("excluded_counts_by_setting") or {}) != dict(expected.get("excluded_counts_by_setting") or {}):
-        return False
-    return _eligible_support_ids(payload) == _eligible_support_ids(expected)
-
-
-def _write_support_manifest(path: Path, payload: dict[str, Any]) -> Path:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
-    return path
-
-
-def _load_or_refresh_support_manifest(path: Path, *, run_name: str, augmented_run_root: Path) -> dict[str, Any]:
-    payload = _load_support_manifest(path)
-    augmented_path = augmented_run_root / path.parent.name
-    if not augmented_path.exists():
-        return payload
-    augmented_manifest = _load_augmented_manifest(augmented_path)
-    if set(augmented_manifest.get("settings") or []) != set(SETTING_NAMES):
-        return payload
-
-    expected = _support_payload_from_augmented_store(
-        augmented_path,
-        run_name=run_name,
-        generation_model=str(payload.get("generation_model") or path.parent.name),
-    )
-    if not _support_manifest_is_current(payload, expected):
-        _write_support_manifest(path, expected)
-        return expected
-    return payload
-
-
-def _setting_record_is_usable(record: dict[str, Any], *, setting: str) -> bool:
-    recipe = get_setting_recipe(setting)
-    options = _string_list(record.get("options_randomized"))
-    correct_letter = str(record.get("correct_answer_letter", "") or "")
-    if len(options) != recipe.num_choices or correct_letter not in CHOICE_LABELS[: len(options)]:
-        return False
-    human = _string_list(record.get("human_distractors"))
-    model = _string_list(record.get("model_distractors"))
-    return len(human) == recipe.num_human and len(model) == recipe.num_model
-
-
-def _human_from_scratch_is_valid(row: dict[str, Any]) -> bool:
-    return _setting_record_is_usable(_human_from_scratch_record(_base_record(row)), setting="human_from_scratch")
-
-
-def _generation_successes(log_dir: Path | str) -> dict[str, set[str]]:
-    successes: dict[str, set[str]] = {}
-    for _path, log in iter_log_payloads(log_dir, kind="generation"):
-        log_meta = dict(log.get("metadata", {}) or {})
-        for sample in list(log.get("summaries", []) or []):
-            scores = dict(sample.get("scores", {}) or {})
-            if not scores:
-                continue
-            score = _preferred_score(scores, preferred_metric="augmented_mcqa_generation")
-            if score is None:
-                continue
-            score_meta = dict(score.get("metadata", {}) or {})
-            sample_meta = dict(sample.get("metadata", {}) or {})
-            strategy = str(
-                score_meta.get("generation_strategy")
-                or sample_meta.get("generation_strategy")
-                or log_meta.get("generation_strategy")
-                or ""
-            )
-            if not strategy:
-                continue
-            if str(score_meta.get("status", "") or "") != "success":
-                continue
-            sample_id = str(score_meta.get("sample_id") or sample_meta.get("sample_id") or sample.get("id", "") or "")
-            if not sample_id:
-                continue
-            successes.setdefault(sample_id, set()).add(strategy)
-    return successes
-
-
-def build_generation_support_manifest(
-    *,
-    processed_dataset_path: Path | str,
-    generation_log_dir: Path | str,
-    run_name: str,
-    generation_model: str,
-    output_root: Path | str = DEFAULT_SUPPORT_SET_ROOT,
-    dataset_types: list[str] | None = None,
-    augmented_dataset_path: Path | str | None = None,
-) -> Path:
-    output_dir = _support_manifest_dir(output_root, run_name=run_name, generation_model=generation_model)
-    output_path = output_dir / SUPPORT_SET_MANIFEST
-    if augmented_dataset_path is not None:
-        payload = _support_payload_from_augmented_store(
-            augmented_dataset_path,
-            run_name=run_name,
-            generation_model=generation_model,
-        )
-        return _write_support_manifest(output_path, payload)
-
-    wanted = _selected_values(dataset_types, list(ACTIVE_DATASET_TYPES))
-    rows = iter_processed_rows(processed_dataset_path, dataset_types=wanted)
-    generated_payloads = _generation_payloads(generation_log_dir)
-    non_hfs_settings = [setting for setting in SETTING_NAMES if setting != "human_from_scratch"]
-    eligible_by_dataset: dict[str, list[str]] = {dataset_type: [] for dataset_type in wanted}
-    totals_by_dataset = {dataset_type: 0 for dataset_type in wanted}
-    excluded_by_setting: dict[str, dict[str, int]] = {
-        dataset_type: {setting: 0 for setting in SETTING_NAMES} for dataset_type in wanted
-    }
-
-    for row in rows:
-        dataset_type = str(row["dataset_type"])
-        sample_id = str(row["sample_id"])
-        totals_by_dataset[dataset_type] += 1
-        hfs_valid = _human_from_scratch_is_valid(row)
-        if not hfs_valid:
-            excluded_by_setting[dataset_type]["human_from_scratch"] += 1
-        missing_generation_settings: list[str] = []
-        generated_row = generated_payloads.get(sample_id)
-        for setting in non_hfs_settings:
-            record = None
-            if generated_row is not None:
-                record = _record_from_generation_payload(_base_record(row), generated_row, setting=setting)
-            if record is None or not _setting_record_is_usable(record, setting=setting):
-                excluded_by_setting[dataset_type][setting] += 1
-                missing_generation_settings.append(setting)
-        if hfs_valid and not missing_generation_settings:
-            eligible_by_dataset[dataset_type].append(sample_id)
-
-    payload = {
-        "schema_version": SUPPORT_SET_SCHEMA_VERSION,
-        "storage_kind": "generation_support_set",
-        "generation_run_name": str(run_name or ""),
-        "generation_model": str(generation_model or ""),
-        "dataset_types": wanted,
-        "settings": list(SETTING_NAMES),
-        "eligible_sample_ids_by_dataset": eligible_by_dataset,
-        "candidate_counts_by_dataset": totals_by_dataset,
-        "eligible_counts_by_dataset": {
-            dataset_type: len(sample_ids) for dataset_type, sample_ids in eligible_by_dataset.items()
-        },
-        "excluded_counts_by_dataset": {
-            dataset_type: max(0, totals_by_dataset.get(dataset_type, 0) - len(eligible_by_dataset.get(dataset_type, [])))
-            for dataset_type in wanted
-        },
-        "excluded_counts_by_setting": excluded_by_setting,
-    }
-    return _write_support_manifest(output_path, payload)
-
-
-def combined_support_ids(
-    *,
-    run_name: str,
-    support_root: Path | str = DEFAULT_SUPPORT_SET_ROOT,
-    augmented_root: Path | str = DEFAULT_AUGMENTED_CACHE_ROOT,
-) -> dict[str, set[str]]:
-    support_run_root = Path(support_root) / safe_name(run_name or "unknown_generation_run")
-    augmented_run_root = Path(augmented_root) / safe_name(run_name or "unknown_generation_run")
-    manifest_paths = sorted(support_run_root.glob(f"*/{SUPPORT_SET_MANIFEST}"))
-    if not manifest_paths:
-        raise FileNotFoundError(f"Missing support manifests under {support_run_root}")
-
-    support_models = {path.parent.name for path in manifest_paths}
-    augmented_models = {path.name for path in augmented_run_root.iterdir() if path.is_dir()} if augmented_run_root.exists() else set()
-    if augmented_models and support_models != augmented_models:
-        missing_manifests = sorted(augmented_models - support_models)
-        if missing_manifests:
-            raise ValueError(
-                f"Support manifests are incomplete for run {run_name!r}; missing manifests for: {', '.join(missing_manifests)}"
-            )
-
-    manifests = [
-        _load_or_refresh_support_manifest(path, run_name=run_name, augmented_run_root=augmented_run_root)
-        for path in manifest_paths
-    ]
-    dataset_types = list(manifests[0].get("dataset_types") or [])
-    combined: dict[str, set[str]] = {}
-    for dataset_type in dataset_types:
-        shared = set(_eligible_support_ids(manifests[0]).get(dataset_type, set()))
-        for manifest in manifests[1:]:
-            shared.intersection_update(_eligible_support_ids(manifest).get(dataset_type, set()))
-        combined[dataset_type] = shared
-    return combined
 
 
 def _empty_augmented_dataset() -> Dataset:
@@ -1537,7 +1259,6 @@ def _group_evaluated_records(
     modes: list[str],
     group_observed: dict[str, dict[str, dict[str, dict[str, Any]]]],
     augmented_cache: dict[tuple[str, str, str], dict[str, dict[str, Any]]],
-    support_sample_ids: dict[str, set[str]] | None,
     evaluation_model: str,
 ) -> dict[str, dict[str, dict[str, list[dict[str, Any]]]]]:
     group_records: dict[str, dict[str, dict[str, list[dict[str, Any]]]]] = {
@@ -1546,14 +1267,11 @@ def _group_evaluated_records(
     }
     for dataset_type in dataset_types:
         dataset_observed = group_observed.get(dataset_type, {})
-        eligible_ids = None if support_sample_ids is None else set(support_sample_ids.get(dataset_type, set()))
         for setting in settings:
             setting_observed = dataset_observed.get(setting, {})
             augmented_rows = _augmented_record_lookup(augmented_path, dataset_type, setting, augmented_cache)
             seen_sample_ids = set()
             for sample_id, augmented_row in augmented_rows.items():
-                if eligible_ids is not None and sample_id not in eligible_ids:
-                    continue
                 seen_sample_ids.add(sample_id)
                 for mode in modes:
                     group_records[dataset_type][setting][mode].append(
@@ -1569,8 +1287,6 @@ def _group_evaluated_records(
                     )
             for mode in modes:
                 for sample_id, payload in setting_observed.get(mode, {}).items():
-                    if eligible_ids is not None and sample_id not in eligible_ids:
-                        continue
                     if sample_id in seen_sample_ids:
                         continue
                     fallback = _fallback_evaluated_record(sample_id, dataset_type, setting, payload)
@@ -1593,7 +1309,6 @@ def materialize_evaluated_datasets(
     output_root: Path | str = DEFAULT_COLLECTED_DATASET_ROOT,
     *,
     augmented_root: Path | str = DEFAULT_AUGMENTED_CACHE_ROOT,
-    support_root: Path | str | None = DEFAULT_SUPPORT_SET_ROOT,
     expected_dataset_types: list[str] | None = None,
     expected_settings: list[str] | None = None,
     expected_modes: list[str] | None = None,
@@ -1645,16 +1360,6 @@ def materialize_evaluated_datasets(
             evaluation_model=evaluation_model,
         )
         augmented_path = Path(meta["augmented_path"])
-        augmented_scope_root = augmented_root_path
-        if explicit_augmented_store and len(augmented_path.parents) >= 2:
-            augmented_scope_root = augmented_path.parents[1]
-        support_sample_ids = None
-        if support_root is not None and not explicit_augmented_store:
-            support_sample_ids = combined_support_ids(
-                run_name=generation_run_name,
-                support_root=support_root,
-                augmented_root=augmented_scope_root,
-            )
         dataset_types, settings, modes = _group_record_dimensions(
             meta,
             wanted_dataset_types=wanted_dataset_types,
@@ -1670,7 +1375,6 @@ def materialize_evaluated_datasets(
             modes=modes,
             group_observed=observed_by_group.get(group_key, {}),
             augmented_cache=augmented_cache,
-            support_sample_ids=support_sample_ids,
             evaluation_model=evaluation_model,
         )
         _preserve_existing_unobserved_slices(
@@ -1702,7 +1406,6 @@ def build_evaluation_dataset(
     setting: str,
     mode: str,
     dataset_types: list[str] | None = None,
-    support_sample_ids: dict[str, set[str]] | None = None,
     question_start: int = 0,
     limit: int | None = None,
     shard_count: int = 1,
@@ -1722,12 +1425,11 @@ def build_evaluation_dataset(
     question_end = question_start + limit if limit is not None else None
 
     for dataset_type in wanted:
-        eligible_ids = None if support_sample_ids is None else set(support_sample_ids.get(dataset_type, set()))
         split = _load_setting_dataset(root, dataset_type, setting)
         for row in split:
             payload = dict(row)
             sample_id = str(payload.get("sample_id") or "")
-            if eligible_ids is not None and sample_id not in eligible_ids:
+            if not sample_id:
                 continue
             original_row_index = int(payload.get("row_index", -1))
             if original_row_index < question_start:
