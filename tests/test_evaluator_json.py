@@ -47,7 +47,7 @@ def test_evaluate_choices_only_prompt_uses_xml_structure_and_json_contract():
     assert "valid JSON" in prompt
 
 
-def test_evaluation_messages_disable_reasoning_for_nemotron_only():
+def test_evaluation_messages_use_single_user_prompt_for_all_models():
     nemotron_messages, nemotron_payload = _evaluation_messages(
         model="vllm/nvidia/NVIDIA-Nemotron-Nano-9B-v2",
         prompt="Prompt text",
@@ -57,20 +57,16 @@ def test_evaluation_messages_disable_reasoning_for_nemotron_only():
         prompt="Prompt text",
     )
 
-    assert [message.role for message in nemotron_messages] == ["system", "user"]
-    assert nemotron_messages[0].text == "/no_think"
-    assert nemotron_messages[1].text == "Prompt text"
-    assert nemotron_payload == [
-        {"role": "system", "content": "/no_think"},
-        {"role": "user", "content": "Prompt text"},
-    ]
+    assert [message.role for message in nemotron_messages] == ["user"]
+    assert nemotron_messages[0].text == "Prompt text"
+    assert nemotron_payload == [{"role": "user", "content": "Prompt text"}]
 
     assert [message.role for message in other_messages] == ["user"]
     assert other_messages[0].text == "Prompt text"
     assert other_payload == [{"role": "user", "content": "Prompt text"}]
 
 
-def test_nemotron_evaluation_solver_injects_no_think_system_message():
+def test_nemotron_evaluation_solver_preserves_single_user_prompt():
     state = TaskState(
         model="vllm/nvidia/NVIDIA-Nemotron-Nano-9B-v2",
         sample_id="sample-1",
@@ -87,15 +83,16 @@ def test_nemotron_evaluation_solver_injects_no_think_system_message():
     )
 
     async def fake_generate(current_state: TaskState) -> TaskState:
-        assert [message.role for message in current_state.messages] == ["system", "user"]
-        assert current_state.messages[0].text == "/no_think"
+        assert [message.role for message in current_state.messages] == ["user"]
         current_state.output.completion = '{"answer": "A"}'
         return current_state
 
     solved = asyncio.run(evaluation_solver("full_question")(state, fake_generate))
 
     assert solved.metadata["evaluation"]["prediction"] == "A"
-    assert solved.metadata["evaluation"]["messages"][0] == {"role": "system", "content": "/no_think"}
+    assert solved.metadata["evaluation"]["messages"] == [
+        {"role": "user", "content": solved.metadata["evaluation"]["prompt"]}
+    ]
     assert solved.metadata["evaluation"]["raw_output"] == '{"answer": "A"}'
 
 

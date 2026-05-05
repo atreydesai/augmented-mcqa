@@ -10,7 +10,7 @@ trap 'rm -rf "$TMPDIR"' EXIT
 PROJECT_ROOT="${PROJECT_ROOT:-/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa}"
 PYTHON_BIN="${PYTHON_BIN:-/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/python}"
 
-"$PYTHON_BIN" - <<'PY' "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_gemini/submissions/2026-04-30T03_57_21_00_00_570b94d6/manifest.json" "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_gemini/submissions/2026-04-30T03_57_21_00_00_570b94d6/run_local_task.sbatch" "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_gemini/submissions/2026-04-30T03_57_21_00_00_570b94d6/run_api_task.sbatch" "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_gemini/submissions/2026-04-30T03_57_21_00_00_570b94d6/run_finalize_task.sbatch" "$PROJECT_ROOT" "$PYTHON_BIN"
+"$PYTHON_BIN" - <<'PY' "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_gemini/submissions/2026-05-05T21_04_27_00_00_312ebdfe/manifest.json" "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_gemini/submissions/2026-05-05T21_04_27_00_00_312ebdfe/run_local_task.sbatch" "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_gemini/submissions/2026-05-05T21_04_27_00_00_312ebdfe/run_api_task.sbatch" "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_gemini/submissions/2026-05-05T21_04_27_00_00_312ebdfe/run_finalize_task.sbatch" "$PROJECT_ROOT" "$PYTHON_BIN"
 import json
 import subprocess
 import sys

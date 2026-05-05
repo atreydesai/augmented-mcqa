@@ -1,10 +1,210 @@
 {
   "stage": "evaluate",
   "run_name": "eval_together",
-  "generated_at": "2026-05-05T21:04:01+00:00",
-  "submission_count": 1,
-  "slice_count": 150,
-  "slices": [
+  "submission_id": "2026-05-05T21_03_14_00_00_e8478b2b",
+  "submission_created_at": "2026-05-05T21:03:14+00:00",
+  "task_count": 150,
+  "resources": {
+    "partition": "clip",
+    "account": "clip",
+    "qos": "high",
+    "time_limit": "12:00:00",
+    "memory": "32G",
+    "cpus_per_task": 4,
+    "gpu_type": "rtxa6000"
+  },
+  "concurrency_caps": {
+    "local": null,
+    "api": null
+  },
+  "finalizers": [
+    {
+      "finalizer_index": 0,
+      "kind": "materialize_collected_evaluation_run",
+      "model": "eval_together",
+      "dependency_refs": [
+        "evaluation|eval_together|vllm_Qwen_Qwen3-4B-Instruct-2507|arc_challenge|augment_ablation|choices_only|0|995",
+        "evaluation|eval_together|vllm_Qwen_Qwen3-4B-Instruct-2507|arc_challenge|augment_ablation|full_question|0|995",
+        "evaluation|eval_together|vllm_Qwen_Qwen3-4B-Instruct-2507|arc_challenge|augment_human|choices_only|0|995",
+        "evaluation|eval_together|vllm_Qwen_Qwen3-4B-Instruct-2507|arc_challenge|augment_human|full_question|0|995",
+        "evaluation|eval_together|vllm_Qwen_Qwen3-4B-Instruct-2507|arc_challenge|augment_model|choices_only|0|995",
+        "evaluation|eval_together|vllm_Qwen_Qwen3-4B-Instruct-2507|arc_challenge|augment_model|full_question|0|995",
+        "evaluation|eval_together|vllm_Qwen_Qwen3-4B-Instruct-2507|arc_challenge|human_from_scratch|choices_only|0|995",
+        "evaluation|eval_together|vllm_Qwen_Qwen3-4B-Instruct-2507|arc_challenge|human_from_scratch|full_question|0|995",
+        "evaluation|eval_together|vllm_Qwen_Qwen3-4B-Instruct-2507|arc_challenge|model_from_scratch|choices_only|0|995",
+        "evaluation|eval_together|vllm_Qwen_Qwen3-4B-Instruct-2507|arc_challenge|model_from_scratch|full_question|0|995",
+        "evaluation|eval_together|vllm_Qwen_Qwen3-4B-Instruct-2507|gpqa|augment_ablation|choices_only|0|415",
+        "evaluation|eval_together|vllm_Qwen_Qwen3-4B-Instruct-2507|gpqa|augment_ablation|full_question|0|415",
+        "evaluation|eval_together|vllm_Qwen_Qwen3-4B-Instruct-2507|gpqa|augment_human|choices_only|0|415",
+        "evaluation|eval_together|vllm_Qwen_Qwen3-4B-Instruct-2507|gpqa|augment_human|full_question|0|415",
+        "evaluation|eval_together|vllm_Qwen_Qwen3-4B-Instruct-2507|gpqa|augment_model|choices_only|0|415",
+        "evaluation|eval_together|vllm_Qwen_Qwen3-4B-Instruct-2507|gpqa|augment_model|full_question|0|415",
+        "evaluation|eval_together|vllm_Qwen_Qwen3-4B-Instruct-2507|gpqa|human_from_scratch|choices_only|0|415",
+        "evaluation|eval_together|vllm_Qwen_Qwen3-4B-Instruct-2507|gpqa|human_from_scratch|full_question|0|415",
+        "evaluation|eval_together|vllm_Qwen_Qwen3-4B-Instruct-2507|gpqa|model_from_scratch|choices_only|0|415",
+        "evaluation|eval_together|vllm_Qwen_Qwen3-4B-Instruct-2507|gpqa|model_from_scratch|full_question|0|415",
+        "evaluation|eval_together|vllm_Qwen_Qwen3-4B-Instruct-2507|mmlu_pro|augment_ablation|choices_only|0|954",
+        "evaluation|eval_together|vllm_Qwen_Qwen3-4B-Instruct-2507|mmlu_pro|augment_ablation|full_question|0|954",
+        "evaluation|eval_together|vllm_Qwen_Qwen3-4B-Instruct-2507|mmlu_pro|augment_human|choices_only|0|954",
+        "evaluation|eval_together|vllm_Qwen_Qwen3-4B-Instruct-2507|mmlu_pro|augment_human|full_question|0|954",
+        "evaluation|eval_together|vllm_Qwen_Qwen3-4B-Instruct-2507|mmlu_pro|augment_model|choices_only|0|954",
+        "evaluation|eval_together|vllm_Qwen_Qwen3-4B-Instruct-2507|mmlu_pro|augment_model|full_question|0|954",
+        "evaluation|eval_together|vllm_Qwen_Qwen3-4B-Instruct-2507|mmlu_pro|human_from_scratch|choices_only|0|954",
+        "evaluation|eval_together|vllm_Qwen_Qwen3-4B-Instruct-2507|mmlu_pro|human_from_scratch|full_question|0|954",
+        "evaluation|eval_together|vllm_Qwen_Qwen3-4B-Instruct-2507|mmlu_pro|model_from_scratch|choices_only|0|954",
+        "evaluation|eval_together|vllm_Qwen_Qwen3-4B-Instruct-2507|mmlu_pro|model_from_scratch|full_question|0|954",
+        "evaluation|eval_together|vllm_allenai_Olmo-3-7B-Instruct|arc_challenge|augment_ablation|choices_only|0|995",
+        "evaluation|eval_together|vllm_allenai_Olmo-3-7B-Instruct|arc_challenge|augment_ablation|full_question|0|995",
+        "evaluation|eval_together|vllm_allenai_Olmo-3-7B-Instruct|arc_challenge|augment_human|choices_only|0|995",
+        "evaluation|eval_together|vllm_allenai_Olmo-3-7B-Instruct|arc_challenge|augment_human|full_question|0|995",
+        "evaluation|eval_together|vllm_allenai_Olmo-3-7B-Instruct|arc_challenge|augment_model|choices_only|0|995",
+        "evaluation|eval_together|vllm_allenai_Olmo-3-7B-Instruct|arc_challenge|augment_model|full_question|0|995",
+        "evaluation|eval_together|vllm_allenai_Olmo-3-7B-Instruct|arc_challenge|human_from_scratch|choices_only|0|995",
+        "evaluation|eval_together|vllm_allenai_Olmo-3-7B-Instruct|arc_challenge|human_from_scratch|full_question|0|995",
+        "evaluation|eval_together|vllm_allenai_Olmo-3-7B-Instruct|arc_challenge|model_from_scratch|choices_only|0|995",
+        "evaluation|eval_together|vllm_allenai_Olmo-3-7B-Instruct|arc_challenge|model_from_scratch|full_question|0|995",
+        "evaluation|eval_together|vllm_allenai_Olmo-3-7B-Instruct|gpqa|augment_ablation|choices_only|0|415",
+        "evaluation|eval_together|vllm_allenai_Olmo-3-7B-Instruct|gpqa|augment_ablation|full_question|0|415",
+        "evaluation|eval_together|vllm_allenai_Olmo-3-7B-Instruct|gpqa|augment_human|choices_only|0|415",
+        "evaluation|eval_together|vllm_allenai_Olmo-3-7B-Instruct|gpqa|augment_human|full_question|0|415",
+        "evaluation|eval_together|vllm_allenai_Olmo-3-7B-Instruct|gpqa|augment_model|choices_only|0|415",
+        "evaluation|eval_together|vllm_allenai_Olmo-3-7B-Instruct|gpqa|augment_model|full_question|0|415",
+        "evaluation|eval_together|vllm_allenai_Olmo-3-7B-Instruct|gpqa|human_from_scratch|choices_only|0|415",
+        "evaluation|eval_together|vllm_allenai_Olmo-3-7B-Instruct|gpqa|human_from_scratch|full_question|0|415",
+        "evaluation|eval_together|vllm_allenai_Olmo-3-7B-Instruct|gpqa|model_from_scratch|choices_only|0|415",
+        "evaluation|eval_together|vllm_allenai_Olmo-3-7B-Instruct|gpqa|model_from_scratch|full_question|0|415",
+        "evaluation|eval_together|vllm_allenai_Olmo-3-7B-Instruct|mmlu_pro|augment_ablation|choices_only|0|954",
+        "evaluation|eval_together|vllm_allenai_Olmo-3-7B-Instruct|mmlu_pro|augment_ablation|full_question|0|954",
+        "evaluation|eval_together|vllm_allenai_Olmo-3-7B-Instruct|mmlu_pro|augment_human|choices_only|0|954",
+        "evaluation|eval_together|vllm_allenai_Olmo-3-7B-Instruct|mmlu_pro|augment_human|full_question|0|954",
+        "evaluation|eval_together|vllm_allenai_Olmo-3-7B-Instruct|mmlu_pro|augment_model|choices_only|0|954",
+        "evaluation|eval_together|vllm_allenai_Olmo-3-7B-Instruct|mmlu_pro|augment_model|full_question|0|954",
+        "evaluation|eval_together|vllm_allenai_Olmo-3-7B-Instruct|mmlu_pro|human_from_scratch|choices_only|0|954",
+        "evaluation|eval_together|vllm_allenai_Olmo-3-7B-Instruct|mmlu_pro|human_from_scratch|full_question|0|954",
+        "evaluation|eval_together|vllm_allenai_Olmo-3-7B-Instruct|mmlu_pro|model_from_scratch|choices_only|0|954",
+        "evaluation|eval_together|vllm_allenai_Olmo-3-7B-Instruct|mmlu_pro|model_from_scratch|full_question|0|954",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_ablation|choices_only|0|995",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_ablation|full_question|0|995",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_human|choices_only|0|995",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_human|full_question|0|995",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_model|choices_only|0|995",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|augment_model|full_question|0|995",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|human_from_scratch|choices_only|0|995",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|human_from_scratch|full_question|0|995",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|model_from_scratch|choices_only|0|995",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.1-8B-Instruct|arc_challenge|model_from_scratch|full_question|0|995",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_ablation|choices_only|0|415",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_ablation|full_question|0|415",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_human|choices_only|0|415",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_human|full_question|0|415",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_model|choices_only|0|415",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|augment_model|full_question|0|415",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|human_from_scratch|choices_only|0|415",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|human_from_scratch|full_question|0|415",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|model_from_scratch|choices_only|0|415",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.1-8B-Instruct|gpqa|model_from_scratch|full_question|0|415",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_ablation|choices_only|0|954",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_ablation|full_question|0|954",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_human|choices_only|0|954",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_human|full_question|0|954",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_model|choices_only|0|954",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|augment_model|full_question|0|954",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|human_from_scratch|choices_only|0|954",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|human_from_scratch|full_question|0|954",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|model_from_scratch|choices_only|0|954",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.1-8B-Instruct|mmlu_pro|model_from_scratch|full_question|0|954",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.2-3B-Instruct|arc_challenge|augment_ablation|choices_only|0|995",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.2-3B-Instruct|arc_challenge|augment_ablation|full_question|0|995",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.2-3B-Instruct|arc_challenge|augment_human|choices_only|0|995",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.2-3B-Instruct|arc_challenge|augment_human|full_question|0|995",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.2-3B-Instruct|arc_challenge|augment_model|choices_only|0|995",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.2-3B-Instruct|arc_challenge|augment_model|full_question|0|995",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.2-3B-Instruct|arc_challenge|human_from_scratch|choices_only|0|995",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.2-3B-Instruct|arc_challenge|human_from_scratch|full_question|0|995",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.2-3B-Instruct|arc_challenge|model_from_scratch|choices_only|0|995",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.2-3B-Instruct|arc_challenge|model_from_scratch|full_question|0|995",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.2-3B-Instruct|gpqa|augment_ablation|choices_only|0|415",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.2-3B-Instruct|gpqa|augment_ablation|full_question|0|415",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.2-3B-Instruct|gpqa|augment_human|choices_only|0|415",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.2-3B-Instruct|gpqa|augment_human|full_question|0|415",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.2-3B-Instruct|gpqa|augment_model|choices_only|0|415",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.2-3B-Instruct|gpqa|augment_model|full_question|0|415",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.2-3B-Instruct|gpqa|human_from_scratch|choices_only|0|415",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.2-3B-Instruct|gpqa|human_from_scratch|full_question|0|415",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.2-3B-Instruct|gpqa|model_from_scratch|choices_only|0|415",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.2-3B-Instruct|gpqa|model_from_scratch|full_question|0|415",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.2-3B-Instruct|mmlu_pro|augment_ablation|choices_only|0|954",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.2-3B-Instruct|mmlu_pro|augment_ablation|full_question|0|954",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.2-3B-Instruct|mmlu_pro|augment_human|choices_only|0|954",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.2-3B-Instruct|mmlu_pro|augment_human|full_question|0|954",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.2-3B-Instruct|mmlu_pro|augment_model|choices_only|0|954",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.2-3B-Instruct|mmlu_pro|augment_model|full_question|0|954",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.2-3B-Instruct|mmlu_pro|human_from_scratch|choices_only|0|954",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.2-3B-Instruct|mmlu_pro|human_from_scratch|full_question|0|954",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.2-3B-Instruct|mmlu_pro|model_from_scratch|choices_only|0|954",
+        "evaluation|eval_together|vllm_meta-llama_Llama-3.2-3B-Instruct|mmlu_pro|model_from_scratch|full_question|0|954",
+        "evaluation|eval_together|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_ablation|choices_only|0|995",
+        "evaluation|eval_together|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_ablation|full_question|0|995",
+        "evaluation|eval_together|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_human|choices_only|0|995",
+        "evaluation|eval_together|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_human|full_question|0|995",
+        "evaluation|eval_together|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_model|choices_only|0|995",
+        "evaluation|eval_together|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|augment_model|full_question|0|995",
+        "evaluation|eval_together|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|human_from_scratch|choices_only|0|995",
+        "evaluation|eval_together|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|human_from_scratch|full_question|0|995",
+        "evaluation|eval_together|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|model_from_scratch|choices_only|0|995",
+        "evaluation|eval_together|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|arc_challenge|model_from_scratch|full_question|0|995",
+        "evaluation|eval_together|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|augment_ablation|choices_only|0|415",
+        "evaluation|eval_together|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|augment_ablation|full_question|0|415",
+        "evaluation|eval_together|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|augment_human|choices_only|0|415",
+        "evaluation|eval_together|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|augment_human|full_question|0|415",
+        "evaluation|eval_together|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|augment_model|choices_only|0|415",
+        "evaluation|eval_together|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|augment_model|full_question|0|415",
+        "evaluation|eval_together|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|human_from_scratch|choices_only|0|415",
+        "evaluation|eval_together|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|human_from_scratch|full_question|0|415",
+        "evaluation|eval_together|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|model_from_scratch|choices_only|0|415",
+        "evaluation|eval_together|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|gpqa|model_from_scratch|full_question|0|415",
+        "evaluation|eval_together|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_ablation|choices_only|0|954",
+        "evaluation|eval_together|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_ablation|full_question|0|954",
+        "evaluation|eval_together|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_human|choices_only|0|954",
+        "evaluation|eval_together|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_human|full_question|0|954",
+        "evaluation|eval_together|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_model|choices_only|0|954",
+        "evaluation|eval_together|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|augment_model|full_question|0|954",
+        "evaluation|eval_together|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|human_from_scratch|choices_only|0|954",
+        "evaluation|eval_together|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|human_from_scratch|full_question|0|954",
+        "evaluation|eval_together|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|model_from_scratch|choices_only|0|954",
+        "evaluation|eval_together|vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2|mmlu_pro|model_from_scratch|full_question|0|954"
+      ],
+      "argv": [
+        "build-collected-dataset",
+        "--run-name",
+        "eval_together",
+        "--scheduler-output-dir",
+        "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together",
+        "--collection-spec",
+        "{\"augmented_dataset\": \"datasets/augmented_filtered/strict/qwen\", \"dataset_types\": [\"arc_challenge\", \"gpqa\", \"mmlu_pro\"], \"evaluation_log_root\": \"/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/eval_together/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_Qwen_Qwen3-4B-Instruct-2507\", \"evaluation_model\": \"vllm/Qwen/Qwen3-4B-Instruct-2507\", \"generator_model\": \"together/Qwen/Qwen3.5-397B-A17B\", \"generator_run_name\": \"together_from_scratch_testing\", \"modes\": [\"choices_only\", \"full_question\"], \"settings\": [\"augment_ablation\", \"augment_human\", \"augment_model\", \"human_from_scratch\", \"model_from_scratch\"]}",
+        "--collection-spec",
+        "{\"augmented_dataset\": \"datasets/augmented_filtered/strict/qwen\", \"dataset_types\": [\"arc_challenge\", \"gpqa\", \"mmlu_pro\"], \"evaluation_log_root\": \"/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/eval_together/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_allenai_Olmo-3-7B-Instruct\", \"evaluation_model\": \"vllm/allenai/Olmo-3-7B-Instruct\", \"generator_model\": \"together/Qwen/Qwen3.5-397B-A17B\", \"generator_run_name\": \"together_from_scratch_testing\", \"modes\": [\"choices_only\", \"full_question\"], \"settings\": [\"augment_ablation\", \"augment_human\", \"augment_model\", \"human_from_scratch\", \"model_from_scratch\"]}",
+        "--collection-spec",
+        "{\"augmented_dataset\": \"datasets/augmented_filtered/strict/qwen\", \"dataset_types\": [\"arc_challenge\", \"gpqa\", \"mmlu_pro\"], \"evaluation_log_root\": \"/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/eval_together/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_meta-llama_Llama-3.1-8B-Instruct\", \"evaluation_model\": \"vllm/meta-llama/Llama-3.1-8B-Instruct\", \"generator_model\": \"together/Qwen/Qwen3.5-397B-A17B\", \"generator_run_name\": \"together_from_scratch_testing\", \"modes\": [\"choices_only\", \"full_question\"], \"settings\": [\"augment_ablation\", \"augment_human\", \"augment_model\", \"human_from_scratch\", \"model_from_scratch\"]}",
+        "--collection-spec",
+        "{\"augmented_dataset\": \"datasets/augmented_filtered/strict/qwen\", \"dataset_types\": [\"arc_challenge\", \"gpqa\", \"mmlu_pro\"], \"evaluation_log_root\": \"/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/eval_together/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_meta-llama_Llama-3.2-3B-Instruct\", \"evaluation_model\": \"vllm/meta-llama/Llama-3.2-3B-Instruct\", \"generator_model\": \"together/Qwen/Qwen3.5-397B-A17B\", \"generator_run_name\": \"together_from_scratch_testing\", \"modes\": [\"choices_only\", \"full_question\"], \"settings\": [\"augment_ablation\", \"augment_human\", \"augment_model\", \"human_from_scratch\", \"model_from_scratch\"]}",
+        "--collection-spec",
+        "{\"augmented_dataset\": \"datasets/augmented_filtered/strict/qwen\", \"dataset_types\": [\"arc_challenge\", \"gpqa\", \"mmlu_pro\"], \"evaluation_log_root\": \"/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/eval_together/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2\", \"evaluation_model\": \"vllm/nvidia/NVIDIA-Nemotron-Nano-9B-v2\", \"generator_model\": \"together/Qwen/Qwen3.5-397B-A17B\", \"generator_run_name\": \"together_from_scratch_testing\", \"modes\": [\"choices_only\", \"full_question\"], \"settings\": [\"augment_ablation\", \"augment_human\", \"augment_model\", \"human_from_scratch\", \"model_from_scratch\"]}"
+      ],
+      "resources": {
+        "partition": "clip",
+        "account": "clip",
+        "qos": "high",
+        "time_limit": "00:30:00",
+        "memory": "8G",
+        "cpus_per_task": 2
+      },
+      "task_stdout": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/collect__eval_together__%j.out",
+      "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/collect__eval_together__%j.err",
+      "job_name": "augmented-mcqa-evaluate-collect__eval_together"
+    }
+  ],
+  "tasks": [
     {
       "task_index": 0,
       "stage": "evaluate",
@@ -70,16 +270,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__arc_challenge__augment_ablation__choices_only__0-994__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__arc_challenge__augment_ablation__choices_only__0-994",
       "submitted_at": "2026-05-05T21:03:15+00:00",
-      "submitted_job_id": "6769625",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:15+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:15+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769625"
     },
     {
       "task_index": 1,
@@ -146,16 +337,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__arc_challenge__augment_ablation__full_question__0-994__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__arc_challenge__augment_ablation__full_question__0-994",
       "submitted_at": "2026-05-05T21:03:15+00:00",
-      "submitted_job_id": "6769626",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:15+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:15+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769626"
     },
     {
       "task_index": 2,
@@ -222,16 +404,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__arc_challenge__augment_human__choices_only__0-994__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__arc_challenge__augment_human__choices_only__0-994",
       "submitted_at": "2026-05-05T21:03:15+00:00",
-      "submitted_job_id": "6769627",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:15+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:15+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769627"
     },
     {
       "task_index": 3,
@@ -298,16 +471,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__arc_challenge__augment_human__full_question__0-994__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__arc_challenge__augment_human__full_question__0-994",
       "submitted_at": "2026-05-05T21:03:15+00:00",
-      "submitted_job_id": "6769628",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:15+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:15+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769628"
     },
     {
       "task_index": 4,
@@ -374,16 +538,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__arc_challenge__augment_model__choices_only__0-994__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__arc_challenge__augment_model__choices_only__0-994",
       "submitted_at": "2026-05-05T21:03:15+00:00",
-      "submitted_job_id": "6769629",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:15+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:15+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769629"
     },
     {
       "task_index": 5,
@@ -450,16 +605,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__arc_challenge__augment_model__full_question__0-994__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__arc_challenge__augment_model__full_question__0-994",
       "submitted_at": "2026-05-05T21:03:16+00:00",
-      "submitted_job_id": "6769630",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:16+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:16+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769630"
     },
     {
       "task_index": 6,
@@ -526,16 +672,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__arc_challenge__human_from_scratch__choices_only__0-994__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__arc_challenge__human_from_scratch__choices_only__0-994",
       "submitted_at": "2026-05-05T21:03:16+00:00",
-      "submitted_job_id": "6769631",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:16+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:16+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769631"
     },
     {
       "task_index": 7,
@@ -602,16 +739,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__arc_challenge__human_from_scratch__full_question__0-994__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__arc_challenge__human_from_scratch__full_question__0-994",
       "submitted_at": "2026-05-05T21:03:16+00:00",
-      "submitted_job_id": "6769632",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:16+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:16+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769632"
     },
     {
       "task_index": 8,
@@ -678,16 +806,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__arc_challenge__model_from_scratch__choices_only__0-994__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__arc_challenge__model_from_scratch__choices_only__0-994",
       "submitted_at": "2026-05-05T21:03:16+00:00",
-      "submitted_job_id": "6769633",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:16+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:16+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769633"
     },
     {
       "task_index": 9,
@@ -754,16 +873,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__arc_challenge__model_from_scratch__full_question__0-994__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__arc_challenge__model_from_scratch__full_question__0-994",
       "submitted_at": "2026-05-05T21:03:16+00:00",
-      "submitted_job_id": "6769634",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:16+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:16+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769634"
     },
     {
       "task_index": 10,
@@ -830,16 +940,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__gpqa__augment_ablation__choices_only__0-414__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__gpqa__augment_ablation__choices_only__0-414",
       "submitted_at": "2026-05-05T21:03:16+00:00",
-      "submitted_job_id": "6769635",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:16+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:16+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769635"
     },
     {
       "task_index": 11,
@@ -906,16 +1007,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__gpqa__augment_ablation__full_question__0-414__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__gpqa__augment_ablation__full_question__0-414",
       "submitted_at": "2026-05-05T21:03:17+00:00",
-      "submitted_job_id": "6769636",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:17+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:17+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769636"
     },
     {
       "task_index": 12,
@@ -982,16 +1074,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__gpqa__augment_human__choices_only__0-414__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__gpqa__augment_human__choices_only__0-414",
       "submitted_at": "2026-05-05T21:03:17+00:00",
-      "submitted_job_id": "6769637",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:17+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:17+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769637"
     },
     {
       "task_index": 13,
@@ -1058,16 +1141,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__gpqa__augment_human__full_question__0-414__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__gpqa__augment_human__full_question__0-414",
       "submitted_at": "2026-05-05T21:03:17+00:00",
-      "submitted_job_id": "6769638",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:17+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:17+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769638"
     },
     {
       "task_index": 14,
@@ -1134,16 +1208,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__gpqa__augment_model__choices_only__0-414__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__gpqa__augment_model__choices_only__0-414",
       "submitted_at": "2026-05-05T21:03:17+00:00",
-      "submitted_job_id": "6769639",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:17+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:17+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769639"
     },
     {
       "task_index": 15,
@@ -1210,16 +1275,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__gpqa__augment_model__full_question__0-414__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__gpqa__augment_model__full_question__0-414",
       "submitted_at": "2026-05-05T21:03:17+00:00",
-      "submitted_job_id": "6769640",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:17+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:17+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769640"
     },
     {
       "task_index": 16,
@@ -1286,16 +1342,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__gpqa__human_from_scratch__choices_only__0-414__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__gpqa__human_from_scratch__choices_only__0-414",
       "submitted_at": "2026-05-05T21:03:17+00:00",
-      "submitted_job_id": "6769641",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:17+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:17+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769641"
     },
     {
       "task_index": 17,
@@ -1362,16 +1409,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__gpqa__human_from_scratch__full_question__0-414__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__gpqa__human_from_scratch__full_question__0-414",
       "submitted_at": "2026-05-05T21:03:18+00:00",
-      "submitted_job_id": "6769642",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:18+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:18+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769642"
     },
     {
       "task_index": 18,
@@ -1438,16 +1476,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__gpqa__model_from_scratch__choices_only__0-414__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__gpqa__model_from_scratch__choices_only__0-414",
       "submitted_at": "2026-05-05T21:03:18+00:00",
-      "submitted_job_id": "6769643",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:18+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:18+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769643"
     },
     {
       "task_index": 19,
@@ -1514,16 +1543,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__gpqa__model_from_scratch__full_question__0-414__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__gpqa__model_from_scratch__full_question__0-414",
       "submitted_at": "2026-05-05T21:03:18+00:00",
-      "submitted_job_id": "6769644",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:18+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:18+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769644"
     },
     {
       "task_index": 20,
@@ -1590,16 +1610,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__mmlu_pro__augment_ablation__choices_only__0-953__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__mmlu_pro__augment_ablation__choices_only__0-953",
       "submitted_at": "2026-05-05T21:03:18+00:00",
-      "submitted_job_id": "6769645",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:18+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:18+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769645"
     },
     {
       "task_index": 21,
@@ -1666,16 +1677,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__mmlu_pro__augment_ablation__full_question__0-953__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__mmlu_pro__augment_ablation__full_question__0-953",
       "submitted_at": "2026-05-05T21:03:18+00:00",
-      "submitted_job_id": "6769646",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:18+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:18+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769646"
     },
     {
       "task_index": 22,
@@ -1742,16 +1744,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__mmlu_pro__augment_human__choices_only__0-953__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__mmlu_pro__augment_human__choices_only__0-953",
       "submitted_at": "2026-05-05T21:03:19+00:00",
-      "submitted_job_id": "6769647",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:19+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:19+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769647"
     },
     {
       "task_index": 23,
@@ -1818,16 +1811,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__mmlu_pro__augment_human__full_question__0-953__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__mmlu_pro__augment_human__full_question__0-953",
       "submitted_at": "2026-05-05T21:03:19+00:00",
-      "submitted_job_id": "6769648",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:19+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:19+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769648"
     },
     {
       "task_index": 24,
@@ -1894,16 +1878,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__mmlu_pro__augment_model__choices_only__0-953__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__mmlu_pro__augment_model__choices_only__0-953",
       "submitted_at": "2026-05-05T21:03:19+00:00",
-      "submitted_job_id": "6769649",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:19+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:19+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769649"
     },
     {
       "task_index": 25,
@@ -1970,16 +1945,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__mmlu_pro__augment_model__full_question__0-953__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__mmlu_pro__augment_model__full_question__0-953",
       "submitted_at": "2026-05-05T21:03:19+00:00",
-      "submitted_job_id": "6769650",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:19+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:19+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769650"
     },
     {
       "task_index": 26,
@@ -2046,16 +2012,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__mmlu_pro__human_from_scratch__choices_only__0-953__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__mmlu_pro__human_from_scratch__choices_only__0-953",
       "submitted_at": "2026-05-05T21:03:19+00:00",
-      "submitted_job_id": "6769651",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:19+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:19+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769651"
     },
     {
       "task_index": 27,
@@ -2122,16 +2079,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__mmlu_pro__human_from_scratch__full_question__0-953__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__mmlu_pro__human_from_scratch__full_question__0-953",
       "submitted_at": "2026-05-05T21:03:19+00:00",
-      "submitted_job_id": "6769652",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:19+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:19+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769652"
     },
     {
       "task_index": 28,
@@ -2198,16 +2146,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__mmlu_pro__model_from_scratch__choices_only__0-953__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__mmlu_pro__model_from_scratch__choices_only__0-953",
       "submitted_at": "2026-05-05T21:03:20+00:00",
-      "submitted_job_id": "6769653",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:20+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:20+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769653"
     },
     {
       "task_index": 29,
@@ -2274,16 +2213,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__mmlu_pro__model_from_scratch__full_question__0-953__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_Qwen_Qwen3-4B-Instruct-2507__mmlu_pro__model_from_scratch__full_question__0-953",
       "submitted_at": "2026-05-05T21:03:20+00:00",
-      "submitted_job_id": "6769654",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:20+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:20+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769654"
     },
     {
       "task_index": 30,
@@ -2350,16 +2280,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_allenai_Olmo-3-7B-Instruct__arc_challenge__augment_ablation__choices_only__0-994__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_allenai_Olmo-3-7B-Instruct__arc_challenge__augment_ablation__choices_only__0-994",
       "submitted_at": "2026-05-05T21:03:20+00:00",
-      "submitted_job_id": "6769655",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:20+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:20+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769655"
     },
     {
       "task_index": 31,
@@ -2426,16 +2347,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_allenai_Olmo-3-7B-Instruct__arc_challenge__augment_ablation__full_question__0-994__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_allenai_Olmo-3-7B-Instruct__arc_challenge__augment_ablation__full_question__0-994",
       "submitted_at": "2026-05-05T21:03:20+00:00",
-      "submitted_job_id": "6769656",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:20+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:20+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769656"
     },
     {
       "task_index": 32,
@@ -2502,16 +2414,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_allenai_Olmo-3-7B-Instruct__arc_challenge__augment_human__choices_only__0-994__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_allenai_Olmo-3-7B-Instruct__arc_challenge__augment_human__choices_only__0-994",
       "submitted_at": "2026-05-05T21:03:20+00:00",
-      "submitted_job_id": "6769657",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:20+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:20+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769657"
     },
     {
       "task_index": 33,
@@ -2578,16 +2481,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_allenai_Olmo-3-7B-Instruct__arc_challenge__augment_human__full_question__0-994__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_allenai_Olmo-3-7B-Instruct__arc_challenge__augment_human__full_question__0-994",
       "submitted_at": "2026-05-05T21:03:21+00:00",
-      "submitted_job_id": "6769658",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:21+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:21+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769658"
     },
     {
       "task_index": 34,
@@ -2654,16 +2548,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_allenai_Olmo-3-7B-Instruct__arc_challenge__augment_model__choices_only__0-994__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_allenai_Olmo-3-7B-Instruct__arc_challenge__augment_model__choices_only__0-994",
       "submitted_at": "2026-05-05T21:03:21+00:00",
-      "submitted_job_id": "6769659",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:21+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:21+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769659"
     },
     {
       "task_index": 35,
@@ -2730,16 +2615,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_allenai_Olmo-3-7B-Instruct__arc_challenge__augment_model__full_question__0-994__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_allenai_Olmo-3-7B-Instruct__arc_challenge__augment_model__full_question__0-994",
       "submitted_at": "2026-05-05T21:03:21+00:00",
-      "submitted_job_id": "6769660",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:21+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:21+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769660"
     },
     {
       "task_index": 36,
@@ -2806,16 +2682,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_allenai_Olmo-3-7B-Instruct__arc_challenge__human_from_scratch__choices_only__0-994__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_allenai_Olmo-3-7B-Instruct__arc_challenge__human_from_scratch__choices_only__0-994",
       "submitted_at": "2026-05-05T21:03:21+00:00",
-      "submitted_job_id": "6769661",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:21+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:21+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769661"
     },
     {
       "task_index": 37,
@@ -2882,16 +2749,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_allenai_Olmo-3-7B-Instruct__arc_challenge__human_from_scratch__full_question__0-994__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_allenai_Olmo-3-7B-Instruct__arc_challenge__human_from_scratch__full_question__0-994",
       "submitted_at": "2026-05-05T21:03:21+00:00",
-      "submitted_job_id": "6769662",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:21+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:21+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769662"
     },
     {
       "task_index": 38,
@@ -2958,16 +2816,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_allenai_Olmo-3-7B-Instruct__arc_challenge__model_from_scratch__choices_only__0-994__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_allenai_Olmo-3-7B-Instruct__arc_challenge__model_from_scratch__choices_only__0-994",
       "submitted_at": "2026-05-05T21:03:22+00:00",
-      "submitted_job_id": "6769663",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:22+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:22+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769663"
     },
     {
       "task_index": 39,
@@ -3034,16 +2883,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_allenai_Olmo-3-7B-Instruct__arc_challenge__model_from_scratch__full_question__0-994__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_allenai_Olmo-3-7B-Instruct__arc_challenge__model_from_scratch__full_question__0-994",
       "submitted_at": "2026-05-05T21:03:22+00:00",
-      "submitted_job_id": "6769664",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:22+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:22+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769664"
     },
     {
       "task_index": 40,
@@ -3110,16 +2950,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_allenai_Olmo-3-7B-Instruct__gpqa__augment_ablation__choices_only__0-414__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_allenai_Olmo-3-7B-Instruct__gpqa__augment_ablation__choices_only__0-414",
       "submitted_at": "2026-05-05T21:03:22+00:00",
-      "submitted_job_id": "6769665",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:22+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:22+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769665"
     },
     {
       "task_index": 41,
@@ -3186,16 +3017,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_allenai_Olmo-3-7B-Instruct__gpqa__augment_ablation__full_question__0-414__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_allenai_Olmo-3-7B-Instruct__gpqa__augment_ablation__full_question__0-414",
       "submitted_at": "2026-05-05T21:03:22+00:00",
-      "submitted_job_id": "6769666",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:22+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:22+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769666"
     },
     {
       "task_index": 42,
@@ -3262,16 +3084,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_allenai_Olmo-3-7B-Instruct__gpqa__augment_human__choices_only__0-414__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_allenai_Olmo-3-7B-Instruct__gpqa__augment_human__choices_only__0-414",
       "submitted_at": "2026-05-05T21:03:22+00:00",
-      "submitted_job_id": "6769667",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:22+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:22+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769667"
     },
     {
       "task_index": 43,
@@ -3338,16 +3151,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_allenai_Olmo-3-7B-Instruct__gpqa__augment_human__full_question__0-414__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_allenai_Olmo-3-7B-Instruct__gpqa__augment_human__full_question__0-414",
       "submitted_at": "2026-05-05T21:03:22+00:00",
-      "submitted_job_id": "6769668",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:22+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:22+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769668"
     },
     {
       "task_index": 44,
@@ -3414,16 +3218,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_allenai_Olmo-3-7B-Instruct__gpqa__augment_model__choices_only__0-414__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_allenai_Olmo-3-7B-Instruct__gpqa__augment_model__choices_only__0-414",
       "submitted_at": "2026-05-05T21:03:23+00:00",
-      "submitted_job_id": "6769669",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:23+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:23+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769669"
     },
     {
       "task_index": 45,
@@ -3490,16 +3285,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_allenai_Olmo-3-7B-Instruct__gpqa__augment_model__full_question__0-414__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_allenai_Olmo-3-7B-Instruct__gpqa__augment_model__full_question__0-414",
       "submitted_at": "2026-05-05T21:03:23+00:00",
-      "submitted_job_id": "6769670",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:23+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:23+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769670"
     },
     {
       "task_index": 46,
@@ -3566,16 +3352,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_allenai_Olmo-3-7B-Instruct__gpqa__human_from_scratch__choices_only__0-414__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_allenai_Olmo-3-7B-Instruct__gpqa__human_from_scratch__choices_only__0-414",
       "submitted_at": "2026-05-05T21:03:23+00:00",
-      "submitted_job_id": "6769671",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:23+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:23+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769671"
     },
     {
       "task_index": 47,
@@ -3642,16 +3419,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_allenai_Olmo-3-7B-Instruct__gpqa__human_from_scratch__full_question__0-414__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_allenai_Olmo-3-7B-Instruct__gpqa__human_from_scratch__full_question__0-414",
       "submitted_at": "2026-05-05T21:03:23+00:00",
-      "submitted_job_id": "6769672",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:23+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:23+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769672"
     },
     {
       "task_index": 48,
@@ -3718,16 +3486,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_allenai_Olmo-3-7B-Instruct__gpqa__model_from_scratch__choices_only__0-414__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_allenai_Olmo-3-7B-Instruct__gpqa__model_from_scratch__choices_only__0-414",
       "submitted_at": "2026-05-05T21:03:23+00:00",
-      "submitted_job_id": "6769673",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:23+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:23+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769673"
     },
     {
       "task_index": 49,
@@ -3794,16 +3553,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_allenai_Olmo-3-7B-Instruct__gpqa__model_from_scratch__full_question__0-414__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_allenai_Olmo-3-7B-Instruct__gpqa__model_from_scratch__full_question__0-414",
       "submitted_at": "2026-05-05T21:03:24+00:00",
-      "submitted_job_id": "6769674",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:24+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:24+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769674"
     },
     {
       "task_index": 50,
@@ -3870,16 +3620,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_allenai_Olmo-3-7B-Instruct__mmlu_pro__augment_ablation__choices_only__0-953__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_allenai_Olmo-3-7B-Instruct__mmlu_pro__augment_ablation__choices_only__0-953",
       "submitted_at": "2026-05-05T21:03:24+00:00",
-      "submitted_job_id": "6769675",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:24+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:24+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769675"
     },
     {
       "task_index": 51,
@@ -3946,16 +3687,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_allenai_Olmo-3-7B-Instruct__mmlu_pro__augment_ablation__full_question__0-953__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_allenai_Olmo-3-7B-Instruct__mmlu_pro__augment_ablation__full_question__0-953",
       "submitted_at": "2026-05-05T21:03:24+00:00",
-      "submitted_job_id": "6769676",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:24+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:24+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769676"
     },
     {
       "task_index": 52,
@@ -4022,16 +3754,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_allenai_Olmo-3-7B-Instruct__mmlu_pro__augment_human__choices_only__0-953__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_allenai_Olmo-3-7B-Instruct__mmlu_pro__augment_human__choices_only__0-953",
       "submitted_at": "2026-05-05T21:03:24+00:00",
-      "submitted_job_id": "6769677",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:24+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:24+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769677"
     },
     {
       "task_index": 53,
@@ -4098,16 +3821,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_allenai_Olmo-3-7B-Instruct__mmlu_pro__augment_human__full_question__0-953__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_allenai_Olmo-3-7B-Instruct__mmlu_pro__augment_human__full_question__0-953",
       "submitted_at": "2026-05-05T21:03:24+00:00",
-      "submitted_job_id": "6769678",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:24+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:24+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769678"
     },
     {
       "task_index": 54,
@@ -4174,16 +3888,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_allenai_Olmo-3-7B-Instruct__mmlu_pro__augment_model__choices_only__0-953__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_allenai_Olmo-3-7B-Instruct__mmlu_pro__augment_model__choices_only__0-953",
       "submitted_at": "2026-05-05T21:03:24+00:00",
-      "submitted_job_id": "6769679",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:24+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:24+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769679"
     },
     {
       "task_index": 55,
@@ -4250,16 +3955,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_allenai_Olmo-3-7B-Instruct__mmlu_pro__augment_model__full_question__0-953__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_allenai_Olmo-3-7B-Instruct__mmlu_pro__augment_model__full_question__0-953",
       "submitted_at": "2026-05-05T21:03:25+00:00",
-      "submitted_job_id": "6769680",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:25+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:25+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769680"
     },
     {
       "task_index": 56,
@@ -4326,16 +4022,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_allenai_Olmo-3-7B-Instruct__mmlu_pro__human_from_scratch__choices_only__0-953__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_allenai_Olmo-3-7B-Instruct__mmlu_pro__human_from_scratch__choices_only__0-953",
       "submitted_at": "2026-05-05T21:03:25+00:00",
-      "submitted_job_id": "6769681",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:25+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:25+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769681"
     },
     {
       "task_index": 57,
@@ -4402,16 +4089,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_allenai_Olmo-3-7B-Instruct__mmlu_pro__human_from_scratch__full_question__0-953__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_allenai_Olmo-3-7B-Instruct__mmlu_pro__human_from_scratch__full_question__0-953",
       "submitted_at": "2026-05-05T21:03:25+00:00",
-      "submitted_job_id": "6769682",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:25+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:25+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769682"
     },
     {
       "task_index": 58,
@@ -4478,16 +4156,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_allenai_Olmo-3-7B-Instruct__mmlu_pro__model_from_scratch__choices_only__0-953__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_allenai_Olmo-3-7B-Instruct__mmlu_pro__model_from_scratch__choices_only__0-953",
       "submitted_at": "2026-05-05T21:03:25+00:00",
-      "submitted_job_id": "6769683",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:25+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:25+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769683"
     },
     {
       "task_index": 59,
@@ -4554,16 +4223,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_allenai_Olmo-3-7B-Instruct__mmlu_pro__model_from_scratch__full_question__0-953__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_allenai_Olmo-3-7B-Instruct__mmlu_pro__model_from_scratch__full_question__0-953",
       "submitted_at": "2026-05-05T21:03:25+00:00",
-      "submitted_job_id": "6769684",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:25+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:25+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769684"
     },
     {
       "task_index": 60,
@@ -4630,16 +4290,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__arc_challenge__augment_ablation__choices_only__0-994__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__arc_challenge__augment_ablation__choices_only__0-994",
       "submitted_at": "2026-05-05T21:03:25+00:00",
-      "submitted_job_id": "6769685",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:25+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:25+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769685"
     },
     {
       "task_index": 61,
@@ -4706,16 +4357,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__arc_challenge__augment_ablation__full_question__0-994__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__arc_challenge__augment_ablation__full_question__0-994",
       "submitted_at": "2026-05-05T21:03:26+00:00",
-      "submitted_job_id": "6769686",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:26+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:26+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769686"
     },
     {
       "task_index": 62,
@@ -4782,16 +4424,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__arc_challenge__augment_human__choices_only__0-994__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__arc_challenge__augment_human__choices_only__0-994",
       "submitted_at": "2026-05-05T21:03:26+00:00",
-      "submitted_job_id": "6769687",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:26+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:26+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769687"
     },
     {
       "task_index": 63,
@@ -4858,16 +4491,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__arc_challenge__augment_human__full_question__0-994__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__arc_challenge__augment_human__full_question__0-994",
       "submitted_at": "2026-05-05T21:03:26+00:00",
-      "submitted_job_id": "6769688",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:26+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:26+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769688"
     },
     {
       "task_index": 64,
@@ -4934,16 +4558,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__arc_challenge__augment_model__choices_only__0-994__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__arc_challenge__augment_model__choices_only__0-994",
       "submitted_at": "2026-05-05T21:03:26+00:00",
-      "submitted_job_id": "6769689",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:26+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:26+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769689"
     },
     {
       "task_index": 65,
@@ -5010,16 +4625,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__arc_challenge__augment_model__full_question__0-994__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__arc_challenge__augment_model__full_question__0-994",
       "submitted_at": "2026-05-05T21:03:26+00:00",
-      "submitted_job_id": "6769690",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:26+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:26+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769690"
     },
     {
       "task_index": 66,
@@ -5086,16 +4692,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__arc_challenge__human_from_scratch__choices_only__0-994__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__arc_challenge__human_from_scratch__choices_only__0-994",
       "submitted_at": "2026-05-05T21:03:26+00:00",
-      "submitted_job_id": "6769691",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:26+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:26+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769691"
     },
     {
       "task_index": 67,
@@ -5162,16 +4759,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__arc_challenge__human_from_scratch__full_question__0-994__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__arc_challenge__human_from_scratch__full_question__0-994",
       "submitted_at": "2026-05-05T21:03:27+00:00",
-      "submitted_job_id": "6769692",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:27+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:27+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769692"
     },
     {
       "task_index": 68,
@@ -5238,16 +4826,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__arc_challenge__model_from_scratch__choices_only__0-994__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__arc_challenge__model_from_scratch__choices_only__0-994",
       "submitted_at": "2026-05-05T21:03:27+00:00",
-      "submitted_job_id": "6769693",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:27+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:27+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769693"
     },
     {
       "task_index": 69,
@@ -5314,16 +4893,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__arc_challenge__model_from_scratch__full_question__0-994__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__arc_challenge__model_from_scratch__full_question__0-994",
       "submitted_at": "2026-05-05T21:03:27+00:00",
-      "submitted_job_id": "6769694",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:27+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:27+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769694"
     },
     {
       "task_index": 70,
@@ -5390,16 +4960,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__gpqa__augment_ablation__choices_only__0-414__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__gpqa__augment_ablation__choices_only__0-414",
       "submitted_at": "2026-05-05T21:03:27+00:00",
-      "submitted_job_id": "6769695",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:27+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:27+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769695"
     },
     {
       "task_index": 71,
@@ -5466,16 +5027,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__gpqa__augment_ablation__full_question__0-414__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__gpqa__augment_ablation__full_question__0-414",
       "submitted_at": "2026-05-05T21:03:27+00:00",
-      "submitted_job_id": "6769696",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:27+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:27+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769696"
     },
     {
       "task_index": 72,
@@ -5542,16 +5094,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__gpqa__augment_human__choices_only__0-414__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__gpqa__augment_human__choices_only__0-414",
       "submitted_at": "2026-05-05T21:03:28+00:00",
-      "submitted_job_id": "6769697",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:28+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:28+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769697"
     },
     {
       "task_index": 73,
@@ -5618,16 +5161,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__gpqa__augment_human__full_question__0-414__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__gpqa__augment_human__full_question__0-414",
       "submitted_at": "2026-05-05T21:03:28+00:00",
-      "submitted_job_id": "6769698",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:28+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:28+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769698"
     },
     {
       "task_index": 74,
@@ -5694,16 +5228,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__gpqa__augment_model__choices_only__0-414__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__gpqa__augment_model__choices_only__0-414",
       "submitted_at": "2026-05-05T21:03:28+00:00",
-      "submitted_job_id": "6769699",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:28+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:28+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769699"
     },
     {
       "task_index": 75,
@@ -5770,16 +5295,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__gpqa__augment_model__full_question__0-414__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__gpqa__augment_model__full_question__0-414",
       "submitted_at": "2026-05-05T21:03:28+00:00",
-      "submitted_job_id": "6769700",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:28+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:28+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769700"
     },
     {
       "task_index": 76,
@@ -5846,16 +5362,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__gpqa__human_from_scratch__choices_only__0-414__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__gpqa__human_from_scratch__choices_only__0-414",
       "submitted_at": "2026-05-05T21:03:28+00:00",
-      "submitted_job_id": "6769701",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:28+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:28+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769701"
     },
     {
       "task_index": 77,
@@ -5922,16 +5429,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__gpqa__human_from_scratch__full_question__0-414__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__gpqa__human_from_scratch__full_question__0-414",
       "submitted_at": "2026-05-05T21:03:28+00:00",
-      "submitted_job_id": "6769702",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:28+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:28+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769702"
     },
     {
       "task_index": 78,
@@ -5998,16 +5496,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__gpqa__model_from_scratch__choices_only__0-414__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__gpqa__model_from_scratch__choices_only__0-414",
       "submitted_at": "2026-05-05T21:03:29+00:00",
-      "submitted_job_id": "6769703",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:29+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:29+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769703"
     },
     {
       "task_index": 79,
@@ -6074,16 +5563,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__gpqa__model_from_scratch__full_question__0-414__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__gpqa__model_from_scratch__full_question__0-414",
       "submitted_at": "2026-05-05T21:03:29+00:00",
-      "submitted_job_id": "6769704",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:29+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:29+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769704"
     },
     {
       "task_index": 80,
@@ -6150,16 +5630,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__mmlu_pro__augment_ablation__choices_only__0-953__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__mmlu_pro__augment_ablation__choices_only__0-953",
       "submitted_at": "2026-05-05T21:03:29+00:00",
-      "submitted_job_id": "6769705",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:29+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:29+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769705"
     },
     {
       "task_index": 81,
@@ -6226,16 +5697,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__mmlu_pro__augment_ablation__full_question__0-953__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__mmlu_pro__augment_ablation__full_question__0-953",
       "submitted_at": "2026-05-05T21:03:29+00:00",
-      "submitted_job_id": "6769706",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:29+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:29+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769706"
     },
     {
       "task_index": 82,
@@ -6302,16 +5764,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__mmlu_pro__augment_human__choices_only__0-953__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__mmlu_pro__augment_human__choices_only__0-953",
       "submitted_at": "2026-05-05T21:03:29+00:00",
-      "submitted_job_id": "6769707",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:29+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:29+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769707"
     },
     {
       "task_index": 83,
@@ -6378,16 +5831,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__mmlu_pro__augment_human__full_question__0-953__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__mmlu_pro__augment_human__full_question__0-953",
       "submitted_at": "2026-05-05T21:03:30+00:00",
-      "submitted_job_id": "6769708",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:30+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:30+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769708"
     },
     {
       "task_index": 84,
@@ -6454,16 +5898,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__mmlu_pro__augment_model__choices_only__0-953__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__mmlu_pro__augment_model__choices_only__0-953",
       "submitted_at": "2026-05-05T21:03:30+00:00",
-      "submitted_job_id": "6769709",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:30+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:30+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769709"
     },
     {
       "task_index": 85,
@@ -6530,16 +5965,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__mmlu_pro__augment_model__full_question__0-953__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__mmlu_pro__augment_model__full_question__0-953",
       "submitted_at": "2026-05-05T21:03:30+00:00",
-      "submitted_job_id": "6769710",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:30+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:30+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769710"
     },
     {
       "task_index": 86,
@@ -6606,16 +6032,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__mmlu_pro__human_from_scratch__choices_only__0-953__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__mmlu_pro__human_from_scratch__choices_only__0-953",
       "submitted_at": "2026-05-05T21:03:30+00:00",
-      "submitted_job_id": "6769711",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:30+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:30+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769711"
     },
     {
       "task_index": 87,
@@ -6682,16 +6099,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__mmlu_pro__human_from_scratch__full_question__0-953__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__mmlu_pro__human_from_scratch__full_question__0-953",
       "submitted_at": "2026-05-05T21:03:30+00:00",
-      "submitted_job_id": "6769712",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:30+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:30+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769712"
     },
     {
       "task_index": 88,
@@ -6758,16 +6166,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__mmlu_pro__model_from_scratch__choices_only__0-953__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__mmlu_pro__model_from_scratch__choices_only__0-953",
       "submitted_at": "2026-05-05T21:03:30+00:00",
-      "submitted_job_id": "6769713",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:30+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:30+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769713"
     },
     {
       "task_index": 89,
@@ -6834,16 +6233,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__mmlu_pro__model_from_scratch__full_question__0-953__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.1-8B-Instruct__mmlu_pro__model_from_scratch__full_question__0-953",
       "submitted_at": "2026-05-05T21:03:31+00:00",
-      "submitted_job_id": "6769714",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:31+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:31+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769714"
     },
     {
       "task_index": 90,
@@ -6910,16 +6300,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__arc_challenge__augment_ablation__choices_only__0-994__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__arc_challenge__augment_ablation__choices_only__0-994",
       "submitted_at": "2026-05-05T21:03:31+00:00",
-      "submitted_job_id": "6769715",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:31+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:31+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769715"
     },
     {
       "task_index": 91,
@@ -6986,16 +6367,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__arc_challenge__augment_ablation__full_question__0-994__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__arc_challenge__augment_ablation__full_question__0-994",
       "submitted_at": "2026-05-05T21:03:31+00:00",
-      "submitted_job_id": "6769716",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:31+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:31+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769716"
     },
     {
       "task_index": 92,
@@ -7062,16 +6434,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__arc_challenge__augment_human__choices_only__0-994__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__arc_challenge__augment_human__choices_only__0-994",
       "submitted_at": "2026-05-05T21:03:31+00:00",
-      "submitted_job_id": "6769717",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:31+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:31+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769717"
     },
     {
       "task_index": 93,
@@ -7138,16 +6501,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__arc_challenge__augment_human__full_question__0-994__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__arc_challenge__augment_human__full_question__0-994",
       "submitted_at": "2026-05-05T21:03:31+00:00",
-      "submitted_job_id": "6769718",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:31+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:31+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769718"
     },
     {
       "task_index": 94,
@@ -7214,16 +6568,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__arc_challenge__augment_model__choices_only__0-994__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__arc_challenge__augment_model__choices_only__0-994",
       "submitted_at": "2026-05-05T21:03:31+00:00",
-      "submitted_job_id": "6769719",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:31+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:31+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769719"
     },
     {
       "task_index": 95,
@@ -7290,16 +6635,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__arc_challenge__augment_model__full_question__0-994__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__arc_challenge__augment_model__full_question__0-994",
       "submitted_at": "2026-05-05T21:03:32+00:00",
-      "submitted_job_id": "6769720",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:32+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:32+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769720"
     },
     {
       "task_index": 96,
@@ -7366,16 +6702,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__arc_challenge__human_from_scratch__choices_only__0-994__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__arc_challenge__human_from_scratch__choices_only__0-994",
       "submitted_at": "2026-05-05T21:03:32+00:00",
-      "submitted_job_id": "6769721",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:32+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:32+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769721"
     },
     {
       "task_index": 97,
@@ -7442,16 +6769,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__arc_challenge__human_from_scratch__full_question__0-994__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__arc_challenge__human_from_scratch__full_question__0-994",
       "submitted_at": "2026-05-05T21:03:32+00:00",
-      "submitted_job_id": "6769722",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:32+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:32+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769722"
     },
     {
       "task_index": 98,
@@ -7518,16 +6836,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__arc_challenge__model_from_scratch__choices_only__0-994__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__arc_challenge__model_from_scratch__choices_only__0-994",
       "submitted_at": "2026-05-05T21:03:32+00:00",
-      "submitted_job_id": "6769723",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:32+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:32+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769723"
     },
     {
       "task_index": 99,
@@ -7594,16 +6903,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__arc_challenge__model_from_scratch__full_question__0-994__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__arc_challenge__model_from_scratch__full_question__0-994",
       "submitted_at": "2026-05-05T21:03:34+00:00",
-      "submitted_job_id": "6769724",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:34+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:34+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769724"
     },
     {
       "task_index": 100,
@@ -7670,16 +6970,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__gpqa__augment_ablation__choices_only__0-414__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__gpqa__augment_ablation__choices_only__0-414",
       "submitted_at": "2026-05-05T21:03:35+00:00",
-      "submitted_job_id": "6769725",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:35+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:35+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769725"
     },
     {
       "task_index": 101,
@@ -7746,16 +7037,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__gpqa__augment_ablation__full_question__0-414__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__gpqa__augment_ablation__full_question__0-414",
       "submitted_at": "2026-05-05T21:03:35+00:00",
-      "submitted_job_id": "6769726",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:35+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:35+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769726"
     },
     {
       "task_index": 102,
@@ -7822,16 +7104,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__gpqa__augment_human__choices_only__0-414__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__gpqa__augment_human__choices_only__0-414",
       "submitted_at": "2026-05-05T21:03:37+00:00",
-      "submitted_job_id": "6769727",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:37+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:37+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769727"
     },
     {
       "task_index": 103,
@@ -7898,16 +7171,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__gpqa__augment_human__full_question__0-414__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__gpqa__augment_human__full_question__0-414",
       "submitted_at": "2026-05-05T21:03:37+00:00",
-      "submitted_job_id": "6769728",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:37+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:37+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769728"
     },
     {
       "task_index": 104,
@@ -7974,16 +7238,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__gpqa__augment_model__choices_only__0-414__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__gpqa__augment_model__choices_only__0-414",
       "submitted_at": "2026-05-05T21:03:39+00:00",
-      "submitted_job_id": "6769729",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:39+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:39+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769729"
     },
     {
       "task_index": 105,
@@ -8050,16 +7305,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__gpqa__augment_model__full_question__0-414__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__gpqa__augment_model__full_question__0-414",
       "submitted_at": "2026-05-05T21:03:40+00:00",
-      "submitted_job_id": "6769730",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:40+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:40+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769730"
     },
     {
       "task_index": 106,
@@ -8126,16 +7372,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__gpqa__human_from_scratch__choices_only__0-414__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__gpqa__human_from_scratch__choices_only__0-414",
       "submitted_at": "2026-05-05T21:03:40+00:00",
-      "submitted_job_id": "6769731",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:40+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:40+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769731"
     },
     {
       "task_index": 107,
@@ -8202,16 +7439,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__gpqa__human_from_scratch__full_question__0-414__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__gpqa__human_from_scratch__full_question__0-414",
       "submitted_at": "2026-05-05T21:03:42+00:00",
-      "submitted_job_id": "6769732",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:42+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:42+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769732"
     },
     {
       "task_index": 108,
@@ -8278,16 +7506,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__gpqa__model_from_scratch__choices_only__0-414__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__gpqa__model_from_scratch__choices_only__0-414",
       "submitted_at": "2026-05-05T21:03:42+00:00",
-      "submitted_job_id": "6769733",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:42+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:42+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769733"
     },
     {
       "task_index": 109,
@@ -8354,16 +7573,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__gpqa__model_from_scratch__full_question__0-414__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__gpqa__model_from_scratch__full_question__0-414",
       "submitted_at": "2026-05-05T21:03:44+00:00",
-      "submitted_job_id": "6769734",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:44+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:44+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769734"
     },
     {
       "task_index": 110,
@@ -8430,16 +7640,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__mmlu_pro__augment_ablation__choices_only__0-953__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__mmlu_pro__augment_ablation__choices_only__0-953",
       "submitted_at": "2026-05-05T21:03:45+00:00",
-      "submitted_job_id": "6769735",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:45+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:45+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769735"
     },
     {
       "task_index": 111,
@@ -8506,16 +7707,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__mmlu_pro__augment_ablation__full_question__0-953__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__mmlu_pro__augment_ablation__full_question__0-953",
       "submitted_at": "2026-05-05T21:03:45+00:00",
-      "submitted_job_id": "6769736",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:45+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:45+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769736"
     },
     {
       "task_index": 112,
@@ -8582,16 +7774,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__mmlu_pro__augment_human__choices_only__0-953__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__mmlu_pro__augment_human__choices_only__0-953",
       "submitted_at": "2026-05-05T21:03:47+00:00",
-      "submitted_job_id": "6769737",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:47+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:47+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769737"
     },
     {
       "task_index": 113,
@@ -8658,16 +7841,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__mmlu_pro__augment_human__full_question__0-953__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__mmlu_pro__augment_human__full_question__0-953",
       "submitted_at": "2026-05-05T21:03:47+00:00",
-      "submitted_job_id": "6769738",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:47+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:47+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769738"
     },
     {
       "task_index": 114,
@@ -8734,16 +7908,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__mmlu_pro__augment_model__choices_only__0-953__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__mmlu_pro__augment_model__choices_only__0-953",
       "submitted_at": "2026-05-05T21:03:48+00:00",
-      "submitted_job_id": "6769739",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:48+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:48+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769739"
     },
     {
       "task_index": 115,
@@ -8810,16 +7975,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__mmlu_pro__augment_model__full_question__0-953__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__mmlu_pro__augment_model__full_question__0-953",
       "submitted_at": "2026-05-05T21:03:50+00:00",
-      "submitted_job_id": "6769740",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:50+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:50+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769740"
     },
     {
       "task_index": 116,
@@ -8886,16 +8042,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__mmlu_pro__human_from_scratch__choices_only__0-953__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__mmlu_pro__human_from_scratch__choices_only__0-953",
       "submitted_at": "2026-05-05T21:03:50+00:00",
-      "submitted_job_id": "6769741",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:50+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:50+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769741"
     },
     {
       "task_index": 117,
@@ -8962,16 +8109,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__mmlu_pro__human_from_scratch__full_question__0-953__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__mmlu_pro__human_from_scratch__full_question__0-953",
       "submitted_at": "2026-05-05T21:03:50+00:00",
-      "submitted_job_id": "6769742",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:50+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:50+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769742"
     },
     {
       "task_index": 118,
@@ -9038,16 +8176,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__mmlu_pro__model_from_scratch__choices_only__0-953__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__mmlu_pro__model_from_scratch__choices_only__0-953",
       "submitted_at": "2026-05-05T21:03:52+00:00",
-      "submitted_job_id": "6769743",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:52+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:52+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769743"
     },
     {
       "task_index": 119,
@@ -9114,16 +8243,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__mmlu_pro__model_from_scratch__full_question__0-953__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_meta-llama_Llama-3.2-3B-Instruct__mmlu_pro__model_from_scratch__full_question__0-953",
       "submitted_at": "2026-05-05T21:03:52+00:00",
-      "submitted_job_id": "6769744",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:52+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:52+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769744"
     },
     {
       "task_index": 120,
@@ -9190,16 +8310,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__arc_challenge__augment_ablation__choices_only__0-994__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__arc_challenge__augment_ablation__choices_only__0-994",
       "submitted_at": "2026-05-05T21:03:53+00:00",
-      "submitted_job_id": "6769745",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:53+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:53+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769745"
     },
     {
       "task_index": 121,
@@ -9266,16 +8377,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__arc_challenge__augment_ablation__full_question__0-994__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__arc_challenge__augment_ablation__full_question__0-994",
       "submitted_at": "2026-05-05T21:03:55+00:00",
-      "submitted_job_id": "6769746",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:55+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:55+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769746"
     },
     {
       "task_index": 122,
@@ -9342,16 +8444,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__arc_challenge__augment_human__choices_only__0-994__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__arc_challenge__augment_human__choices_only__0-994",
       "submitted_at": "2026-05-05T21:03:55+00:00",
-      "submitted_job_id": "6769747",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:55+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:55+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769747"
     },
     {
       "task_index": 123,
@@ -9418,16 +8511,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__arc_challenge__augment_human__full_question__0-994__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__arc_challenge__augment_human__full_question__0-994",
       "submitted_at": "2026-05-05T21:03:55+00:00",
-      "submitted_job_id": "6769748",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:55+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:55+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769748"
     },
     {
       "task_index": 124,
@@ -9494,16 +8578,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__arc_challenge__augment_model__choices_only__0-994__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__arc_challenge__augment_model__choices_only__0-994",
       "submitted_at": "2026-05-05T21:03:56+00:00",
-      "submitted_job_id": "6769749",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:56+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:56+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769749"
     },
     {
       "task_index": 125,
@@ -9570,16 +8645,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__arc_challenge__augment_model__full_question__0-994__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__arc_challenge__augment_model__full_question__0-994",
       "submitted_at": "2026-05-05T21:03:56+00:00",
-      "submitted_job_id": "6769751",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:56+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:56+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769751"
     },
     {
       "task_index": 126,
@@ -9646,16 +8712,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__arc_challenge__human_from_scratch__choices_only__0-994__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__arc_challenge__human_from_scratch__choices_only__0-994",
       "submitted_at": "2026-05-05T21:03:56+00:00",
-      "submitted_job_id": "6769752",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:56+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:56+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769752"
     },
     {
       "task_index": 127,
@@ -9722,16 +8779,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__arc_challenge__human_from_scratch__full_question__0-994__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__arc_challenge__human_from_scratch__full_question__0-994",
       "submitted_at": "2026-05-05T21:03:57+00:00",
-      "submitted_job_id": "6769753",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:57+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:57+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769753"
     },
     {
       "task_index": 128,
@@ -9798,16 +8846,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__arc_challenge__model_from_scratch__choices_only__0-994__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__arc_challenge__model_from_scratch__choices_only__0-994",
       "submitted_at": "2026-05-05T21:03:57+00:00",
-      "submitted_job_id": "6769754",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:57+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:57+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769754"
     },
     {
       "task_index": 129,
@@ -9874,16 +8913,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__arc_challenge__model_from_scratch__full_question__0-994__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__arc_challenge__model_from_scratch__full_question__0-994",
       "submitted_at": "2026-05-05T21:03:57+00:00",
-      "submitted_job_id": "6769755",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:57+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:57+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769755"
     },
     {
       "task_index": 130,
@@ -9950,16 +8980,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__gpqa__augment_ablation__choices_only__0-414__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__gpqa__augment_ablation__choices_only__0-414",
       "submitted_at": "2026-05-05T21:03:57+00:00",
-      "submitted_job_id": "6769756",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:57+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:57+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769756"
     },
     {
       "task_index": 131,
@@ -10026,16 +9047,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__gpqa__augment_ablation__full_question__0-414__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__gpqa__augment_ablation__full_question__0-414",
       "submitted_at": "2026-05-05T21:03:57+00:00",
-      "submitted_job_id": "6769757",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:57+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:57+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769757"
     },
     {
       "task_index": 132,
@@ -10102,16 +9114,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__gpqa__augment_human__choices_only__0-414__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__gpqa__augment_human__choices_only__0-414",
       "submitted_at": "2026-05-05T21:03:58+00:00",
-      "submitted_job_id": "6769758",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:58+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:58+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769758"
     },
     {
       "task_index": 133,
@@ -10178,16 +9181,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__gpqa__augment_human__full_question__0-414__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__gpqa__augment_human__full_question__0-414",
       "submitted_at": "2026-05-05T21:03:58+00:00",
-      "submitted_job_id": "6769759",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:58+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:58+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769759"
     },
     {
       "task_index": 134,
@@ -10254,16 +9248,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__gpqa__augment_model__choices_only__0-414__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__gpqa__augment_model__choices_only__0-414",
       "submitted_at": "2026-05-05T21:03:58+00:00",
-      "submitted_job_id": "6769760",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:58+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:58+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769760"
     },
     {
       "task_index": 135,
@@ -10330,16 +9315,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__gpqa__augment_model__full_question__0-414__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__gpqa__augment_model__full_question__0-414",
       "submitted_at": "2026-05-05T21:03:58+00:00",
-      "submitted_job_id": "6769761",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:58+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:58+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769761"
     },
     {
       "task_index": 136,
@@ -10406,16 +9382,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__gpqa__human_from_scratch__choices_only__0-414__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__gpqa__human_from_scratch__choices_only__0-414",
       "submitted_at": "2026-05-05T21:03:58+00:00",
-      "submitted_job_id": "6769762",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:58+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:58+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769762"
     },
     {
       "task_index": 137,
@@ -10482,16 +9449,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__gpqa__human_from_scratch__full_question__0-414__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__gpqa__human_from_scratch__full_question__0-414",
       "submitted_at": "2026-05-05T21:03:59+00:00",
-      "submitted_job_id": "6769763",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:59+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:59+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769763"
     },
     {
       "task_index": 138,
@@ -10558,16 +9516,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__gpqa__model_from_scratch__choices_only__0-414__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__gpqa__model_from_scratch__choices_only__0-414",
       "submitted_at": "2026-05-05T21:03:59+00:00",
-      "submitted_job_id": "6769764",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:59+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:59+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769764"
     },
     {
       "task_index": 139,
@@ -10634,16 +9583,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__gpqa__model_from_scratch__full_question__0-414__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__gpqa__model_from_scratch__full_question__0-414",
       "submitted_at": "2026-05-05T21:03:59+00:00",
-      "submitted_job_id": "6769765",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:59+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:59+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769765"
     },
     {
       "task_index": 140,
@@ -10710,16 +9650,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__mmlu_pro__augment_ablation__choices_only__0-953__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__mmlu_pro__augment_ablation__choices_only__0-953",
       "submitted_at": "2026-05-05T21:03:59+00:00",
-      "submitted_job_id": "6769766",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:59+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:59+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769766"
     },
     {
       "task_index": 141,
@@ -10786,16 +9717,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__mmlu_pro__augment_ablation__full_question__0-953__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__mmlu_pro__augment_ablation__full_question__0-953",
       "submitted_at": "2026-05-05T21:03:59+00:00",
-      "submitted_job_id": "6769767",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:59+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:59+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769767"
     },
     {
       "task_index": 142,
@@ -10862,16 +9784,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__mmlu_pro__augment_human__choices_only__0-953__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__mmlu_pro__augment_human__choices_only__0-953",
       "submitted_at": "2026-05-05T21:03:59+00:00",
-      "submitted_job_id": "6769768",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:03:59+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:03:59+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769768"
     },
     {
       "task_index": 143,
@@ -10938,16 +9851,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__mmlu_pro__augment_human__full_question__0-953__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__mmlu_pro__augment_human__full_question__0-953",
       "submitted_at": "2026-05-05T21:04:00+00:00",
-      "submitted_job_id": "6769769",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:04:00+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:04:00+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769769"
     },
     {
       "task_index": 144,
@@ -11014,16 +9918,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__mmlu_pro__augment_model__choices_only__0-953__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__mmlu_pro__augment_model__choices_only__0-953",
       "submitted_at": "2026-05-05T21:04:00+00:00",
-      "submitted_job_id": "6769770",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:04:00+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:04:00+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769770"
     },
     {
       "task_index": 145,
@@ -11090,16 +9985,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__mmlu_pro__augment_model__full_question__0-953__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__mmlu_pro__augment_model__full_question__0-953",
       "submitted_at": "2026-05-05T21:04:00+00:00",
-      "submitted_job_id": "6769771",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:04:00+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:04:00+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769771"
     },
     {
       "task_index": 146,
@@ -11166,16 +10052,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__mmlu_pro__human_from_scratch__choices_only__0-953__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__mmlu_pro__human_from_scratch__choices_only__0-953",
       "submitted_at": "2026-05-05T21:04:00+00:00",
-      "submitted_job_id": "6769772",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:04:00+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:04:00+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769772"
     },
     {
       "task_index": 147,
@@ -11242,16 +10119,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__mmlu_pro__human_from_scratch__full_question__0-953__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__mmlu_pro__human_from_scratch__full_question__0-953",
       "submitted_at": "2026-05-05T21:04:00+00:00",
-      "submitted_job_id": "6769773",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:04:00+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:04:00+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769773"
     },
     {
       "task_index": 148,
@@ -11318,16 +10186,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__mmlu_pro__model_from_scratch__choices_only__0-953__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__mmlu_pro__model_from_scratch__choices_only__0-953",
       "submitted_at": "2026-05-05T21:04:01+00:00",
-      "submitted_job_id": "6769774",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:04:01+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:04:01+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769774"
     },
     {
       "task_index": 149,
@@ -11394,16 +10253,7 @@
       "task_stderr": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/logs/slurm/evaluate/eval_together/evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__mmlu_pro__model_from_scratch__full_question__0-953__%j.err",
       "job_name": "augmented-mcqa-evaluate-evaluate__vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2__mmlu_pro__model_from_scratch__full_question__0-953",
       "submitted_at": "2026-05-05T21:04:01+00:00",
-      "submitted_job_id": "6769775",
-      "submission_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/jobs/generated/evaluate/eval_together/submissions/2026-05-05T21_03_14_00_00_e8478b2b/manifest.json",
-      "submission_count": 1,
-      "latest_attempt": null,
-      "latest_success": null,
-      "latest_submitted_at": "2026-05-05T21:04:01+00:00",
-      "latest_attempt_at": "",
-      "latest_success_at": "",
-      "dependency_change_at": "2026-05-05T21:04:01+00:00",
-      "status": "pending"
+      "submitted_job_id": "6769775"
     }
   ]
 }

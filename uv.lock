@@ -191,6 +191,7 @@ source = { virtual = "." }
 dependencies = [
     { name = "anthropic", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
     { name = "datasets", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
+    { name = "flashinfer-cubin", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
     { name = "google-genai", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
     { name = "huggingface-hub", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
     { name = "inspect-ai", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
@@ -211,6 +212,7 @@ dependencies = [
 requires-dist = [
     { name = "anthropic", specifier = "==0.71.0" },
     { name = "datasets", specifier = ">=4.5.0" },
+    { name = "flashinfer-cubin", specifier = "==0.5.3" },
     { name = "google-genai", specifier = ">=1.63.0" },
     { name = "huggingface-hub", specifier = ">=0.34.0" },
     { name = "inspect-ai", specifier = ">=0.3.189" },
@@ -646,6 +648,14 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/94/b8/00651a0f559862f3bb7d6f7477b192afe3f583cc5e26403b44e59a55ab34/filelock-3.25.2.tar.gz", hash = "sha256:b64ece2b38f4ca29dd3e810287aa8c48182bbecd1ae6e9ae126c9b35f1382694", size = 40480, upload-time = "2026-03-11T20:45:38.487Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a4/a5/842ae8f0c08b61d6484b52f99a03510a3a72d23141942d216ebe81fefbce/filelock-3.25.2-py3-none-any.whl", hash = "sha256:ca8afb0da15f229774c9ad1b455ed96e85a81373065fb10446672f64444ddf70", size = 26759, upload-time = "2026-03-11T20:45:37.437Z" },
+]
+
+[[package]]
+name = "flashinfer-cubin"
+version = "0.5.3"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/3b/81/7e3fdd9dfef8992ec2297a3a375660b45c96923da48541f8cd0c36fc6711/flashinfer_cubin-0.5.3-py3-none-any.whl", hash = "sha256:30a172ffc21856fcdcf96672ac780ce80f703e82cc1626f2c5344cf769d401a7", size = 103550617, upload-time = "2025-11-24T08:54:38.241Z" },
 ]
 
 [[package]]

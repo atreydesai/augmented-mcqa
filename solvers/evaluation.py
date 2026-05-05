@@ -2,11 +2,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from inspect_ai.model import ChatMessageSystem, ChatMessageUser
+from inspect_ai.model import ChatMessageUser
 from inspect_ai.solver import Generate, TaskState, solver
 
 from utils.constants import CHOICE_LABELS, PROMPTS_DIR
-from utils.modeling import is_nemotron_model
 from utils.parsing import extract_answer_letter_from_json, format_choice_lines
 
 
@@ -32,18 +31,8 @@ def _message_payload(role: str, content: str) -> dict[str, str]:
 
 
 def _evaluation_messages(*, model: str, prompt: str) -> tuple[list[object], list[dict[str, str]]]:
-    if is_nemotron_model(model):
-        messages = [
-            ChatMessageSystem(content="/no_think"),
-            ChatMessageUser(content=prompt),
-        ]
-        payload = [
-            _message_payload("system", "/no_think"),
-            _message_payload("user", prompt),
-        ]
-    else:
-        messages = [ChatMessageUser(content=prompt)]
-        payload = [_message_payload("user", prompt)]
+    messages = [ChatMessageUser(content=prompt)]
+    payload = [_message_payload("user", prompt)]
     return messages, payload
 
 
