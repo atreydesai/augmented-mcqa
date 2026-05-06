@@ -29,6 +29,19 @@ def _extract_last_json_object(blob: str) -> dict[str, object] | None:
     return None
 
 
+def _extract_trailing_json_object(blob: str) -> dict[str, object] | None:
+    decoder = json.JSONDecoder()
+    for start in reversed([match.start() for match in re.finditer(r"\{", blob)]):
+        try:
+            parsed, end = decoder.raw_decode(blob, idx=start)
+        except json.JSONDecodeError:
+            continue
+        suffix = blob[end:]
+        if isinstance(parsed, dict) and (not suffix.strip() or re.fullmatch(r"\s*```\s*", suffix)):
+            return parsed
+    return None
+
+
 def _extract_json_object(text: str) -> dict[str, object]:
     payload = strip_code_fences(text)
     try:
@@ -146,13 +159,20 @@ def _extract_answer_letter_from_answer_field(text: str, valid_letters: str) -> s
 
 
 def extract_answer_letter_from_json(text: str, valid_letters: str) -> str:
-    if not strip_code_fences(text).lstrip().startswith("{"):
-        return ""
+    payload_text = strip_code_fences(text)
     try:
-        payload = _extract_json_object(text)
+        payload = json.loads(payload_text)
     except LabeledParseError:
         return _extract_answer_letter_from_answer_field(text, valid_letters)
+    except json.JSONDecodeError:
+        payload = _extract_trailing_json_object(payload_text)
+        if payload is None:
+            if payload_text.lstrip().startswith("{"):
+                return _extract_answer_letter_from_answer_field(text, valid_letters)
+            return ""
 
+    if not isinstance(payload, dict):
+        return ""
     answer = normalize_text(payload.get("answer", ""))
     if answer:
         candidate = answer.upper()

@@ -16,6 +16,16 @@ def test_extract_answer_letter_from_json_accepts_valid_json_outputs():
     assert extract_answer_letter_from_json("{'answer': 'c'}", "ABCD") == "C"
 
 
+def test_extract_answer_letter_from_json_accepts_final_json_after_reasoning():
+    payload = 'Reasoning before final answer. So answer C.\n</think>\n\n{"answer": "C"}'
+    assert extract_answer_letter_from_json(payload, "ABCD") == "C"
+
+
+def test_extract_answer_letter_from_json_accepts_final_fenced_json_after_reasoning():
+    payload = 'Reasoning before final answer.\n</think>\n\n```json\n{"answer": "B"}\n```'
+    assert extract_answer_letter_from_json(payload, "ABCD") == "B"
+
+
 def test_extract_answer_letter_from_json_rejects_stray_answer_schema_text():
     payload = 'Use {"answer":"A"} format. Final output was malformed: answer: B'
     assert extract_answer_letter_from_json(payload, "ABCD") == ""
