@@ -1,0 +1,130 @@
+{
+  "schema_version": "augmented_mcqa_collected_state_v1",
+  "storage_kind": "evaluation_slice_state",
+  "generated_at": "2026-05-06T22:46:05+00:00",
+  "run_name": "eval_gptmini_high_32k_on_gpt52_gpqa_full_question",
+  "generation_run_name": "gen_gpt52_v2",
+  "generation_model": "openai/gpt-5.2-2025-12-11",
+  "evaluation_model": "openai/gpt-5.4-mini",
+  "slice_count": 5,
+  "status_counts": {
+    "current": 5
+  },
+  "slices": [
+    {
+      "slice_ref": "evaluation|eval_gptmini_high_32k_on_gpt52_gpqa_full_question|openai_gpt-5.4-mini|gpqa|augment_ablation|full_question|0|444",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gptmini_high_32k_on_gpt52_gpqa_full_question|openai_gpt-5.4-mini|gpqa|augment_ablation|full_question|0|444",
+        "status": "success",
+        "completed_at": "2026-04-24T07:38:37+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/eval_gptmini_high_32k_on_gpt52_gpqa_full_question/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/openai_gpt-5.4-mini/2026-04-24T07-07-40-00-00_augmented-mcqa-eval-augment-ablation-full-question_LBJPVCM8RvxheNf6ZYBpAi.eval",
+        "sample_count": 434
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gptmini_high_32k_on_gpt52_gpqa_full_question|openai_gpt-5.4-mini|gpqa|augment_ablation|full_question|0|444",
+        "status": "success",
+        "completed_at": "2026-04-24T07:38:37+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/eval_gptmini_high_32k_on_gpt52_gpqa_full_question/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/openai_gpt-5.4-mini/2026-04-24T07-07-40-00-00_augmented-mcqa-eval-augment-ablation-full-question_LBJPVCM8RvxheNf6ZYBpAi.eval",
+        "sample_count": 434
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-24T07:38:37+00:00",
+      "latest_success_at": "2026-04-24T07:38:37+00:00",
+      "dependency_change_at": "2026-04-24T07:38:37+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gptmini_high_32k_on_gpt52_gpqa_full_question|openai_gpt-5.4-mini|gpqa|augment_human|full_question|0|444",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gptmini_high_32k_on_gpt52_gpqa_full_question|openai_gpt-5.4-mini|gpqa|augment_human|full_question|0|444",
+        "status": "success",
+        "completed_at": "2026-04-24T07:43:55+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/eval_gptmini_high_32k_on_gpt52_gpqa_full_question/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/openai_gpt-5.4-mini/2026-04-24T07-07-49-00-00_augmented-mcqa-eval-augment-human-full-question_PghvCWP2LB6bzXHT2q9JJm.eval",
+        "sample_count": 434
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gptmini_high_32k_on_gpt52_gpqa_full_question|openai_gpt-5.4-mini|gpqa|augment_human|full_question|0|444",
+        "status": "success",
+        "completed_at": "2026-04-24T07:43:55+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/eval_gptmini_high_32k_on_gpt52_gpqa_full_question/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/openai_gpt-5.4-mini/2026-04-24T07-07-49-00-00_augmented-mcqa-eval-augment-human-full-question_PghvCWP2LB6bzXHT2q9JJm.eval",
+        "sample_count": 434
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-24T07:43:55+00:00",
+      "latest_success_at": "2026-04-24T07:43:55+00:00",
+      "dependency_change_at": "2026-04-24T07:43:55+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gptmini_high_32k_on_gpt52_gpqa_full_question|openai_gpt-5.4-mini|gpqa|augment_model|full_question|0|444",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gptmini_high_32k_on_gpt52_gpqa_full_question|openai_gpt-5.4-mini|gpqa|augment_model|full_question|0|444",
+        "status": "success",
+        "completed_at": "2026-04-24T07:42:22+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/eval_gptmini_high_32k_on_gpt52_gpqa_full_question/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/openai_gpt-5.4-mini/2026-04-24T07-08-04-00-00_augmented-mcqa-eval-augment-model-full-question_66os3iTG6Z3girioHBruoX.eval",
+        "sample_count": 434
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gptmini_high_32k_on_gpt52_gpqa_full_question|openai_gpt-5.4-mini|gpqa|augment_model|full_question|0|444",
+        "status": "success",
+        "completed_at": "2026-04-24T07:42:22+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/eval_gptmini_high_32k_on_gpt52_gpqa_full_question/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/openai_gpt-5.4-mini/2026-04-24T07-08-04-00-00_augmented-mcqa-eval-augment-model-full-question_66os3iTG6Z3girioHBruoX.eval",
+        "sample_count": 434
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-24T07:42:22+00:00",
+      "latest_success_at": "2026-04-24T07:42:22+00:00",
+      "dependency_change_at": "2026-04-24T07:42:22+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gptmini_high_32k_on_gpt52_gpqa_full_question|openai_gpt-5.4-mini|gpqa|human_from_scratch|full_question|0|444",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gptmini_high_32k_on_gpt52_gpqa_full_question|openai_gpt-5.4-mini|gpqa|human_from_scratch|full_question|0|444",
+        "status": "success",
+        "completed_at": "2026-04-24T07:35:57+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/eval_gptmini_high_32k_on_gpt52_gpqa_full_question/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/openai_gpt-5.4-mini/2026-04-24T07-07-33-00-00_augmented-mcqa-eval-human-from-scratch-full-question_Dr8Ne2k7WmyfZErNBUDXSW.eval",
+        "sample_count": 434
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gptmini_high_32k_on_gpt52_gpqa_full_question|openai_gpt-5.4-mini|gpqa|human_from_scratch|full_question|0|444",
+        "status": "success",
+        "completed_at": "2026-04-24T07:35:57+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/eval_gptmini_high_32k_on_gpt52_gpqa_full_question/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/openai_gpt-5.4-mini/2026-04-24T07-07-33-00-00_augmented-mcqa-eval-human-from-scratch-full-question_Dr8Ne2k7WmyfZErNBUDXSW.eval",
+        "sample_count": 434
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-24T07:35:57+00:00",
+      "latest_success_at": "2026-04-24T07:35:57+00:00",
+      "dependency_change_at": "2026-04-24T07:35:57+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|eval_gptmini_high_32k_on_gpt52_gpqa_full_question|openai_gpt-5.4-mini|gpqa|model_from_scratch|full_question|0|444",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|eval_gptmini_high_32k_on_gpt52_gpqa_full_question|openai_gpt-5.4-mini|gpqa|model_from_scratch|full_question|0|444",
+        "status": "success",
+        "completed_at": "2026-04-24T07:36:49+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/eval_gptmini_high_32k_on_gpt52_gpqa_full_question/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/openai_gpt-5.4-mini/2026-04-24T07-07-36-00-00_augmented-mcqa-eval-model-from-scratch-full-question_bPXwkFu8w59JqVDeTNQhDT.eval",
+        "sample_count": 434
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|eval_gptmini_high_32k_on_gpt52_gpqa_full_question|openai_gpt-5.4-mini|gpqa|model_from_scratch|full_question|0|444",
+        "status": "success",
+        "completed_at": "2026-04-24T07:36:49+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/eval_gptmini_high_32k_on_gpt52_gpqa_full_question/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/openai_gpt-5.4-mini/2026-04-24T07-07-36-00-00_augmented-mcqa-eval-model-from-scratch-full-question_bPXwkFu8w59JqVDeTNQhDT.eval",
+        "sample_count": 434
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-04-24T07:36:49+00:00",
+      "latest_success_at": "2026-04-24T07:36:49+00:00",
+      "dependency_change_at": "2026-04-24T07:36:49+00:00",
+      "status": "current"
+    }
+  ]
+}
