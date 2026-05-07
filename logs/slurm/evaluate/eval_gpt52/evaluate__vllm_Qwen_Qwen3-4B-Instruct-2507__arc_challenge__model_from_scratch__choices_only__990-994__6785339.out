@@ -1,0 +1,22 @@
+---------------------------------------------------------                                               
+augmented_mcqa_eval_model_from_scratch_choices_only (5 samples): vllm/Qwen/Qwen3-4B-Instruct-2507       
+max_tokens: 32768, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)
+---------------------------------------------------------                                               
+                                                                                                        
+Steps:   5/5 100% | Samples:   1/  5 | mean:  n/a | vllm:  0/10 | HTTP retries: 0
+
+---------------------------------------------------------                                                                                                                                                               
+augmented_mcqa_eval_model_from_scratch_choices_only (5 samples): vllm/Qwen/Qwen3-4B-Instruct-2507                                                                                                                       
+max_tokens: 32768, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)                                                                                                                
+                                                                                                                                                                                                                        
+total time:                                                                                                           0:00:44                                                                                           
+vllm/Qwen/Qwen3-4B-Instruct-2507                                                                                      884 tokens [I: 834, O: 50]                                                                        
+augmented_mcqa_eval                                                                                                                                                                                                     
+mean                 0.800                                                                                                                                                                                              
+stderr               0.200                                                                                                                                                                                              
+Log:                                                                                                                                                                                                                    
+results/inspect/evaluation/eval_gpt52/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_Qwen_Qwen3-4B-Instruct-2507/2026-05-07T03-03-49-00-00_augmented-mcqa-eval-model-from-scratch-choices-only_iQgaJHut7TYbeMnYEPftri.eval 
+---------------------------------------------------------                                                                                                                                                               
+                                                                                                                                                                                                                        
+Evaluation logs: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/eval_gpt52/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_Qwen_Qwen3-4B-Instruct-2507
+Running: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/python main.py evaluate --model vllm/Qwen/Qwen3-4B-Instruct-2507 --run-name eval_gpt52 --generator gpt --dataset-types arc_challenge --settings model_from_scratch --modes choices_only --question-start 990 --limit 5 --skip-collect-evaluated --max-tokens 32768 --reasoning-effort medium --retry-on-error 2

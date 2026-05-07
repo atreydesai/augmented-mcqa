@@ -1,0 +1,37 @@
+---------------------------------------------------------                                               
+augmented_mcqa_eval_augment_human_full_question (44 samples): vllm/nvidia/NVIDIA-Nemotron-Nano-9B-v2    
+max_tokens: 32768, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)
+---------------------------------------------------------                                               
+                                                                                                        
+Steps:   1/44   2% | Samples:   1/ 44 | mean:  n/a | vllm:  9/10 | HTTP retries: 0
+Steps:   5/44  11% | Samples:   5/ 44 | mean: 0.75 | vllm:  9/10 | HTTP retries: 0
+Steps:   9/44  20% | Samples:   9/ 44 | mean: 0.75 | vllm:  9/10 | HTTP retries: 0
+Steps:  11/44  25% | Samples:  11/ 44 | mean: 0.80 | vllm:  9/10 | HTTP retries: 0
+Steps:  12/44  27% | Samples:  12/ 44 | mean: 0.73 | vllm:  9/10 | HTTP retries: 0
+Steps:  16/44  36% | Samples:  16/ 44 | mean: 0.73 | vllm:  9/10 | HTTP retries: 0
+Steps:  18/44  40% | Samples:  18/ 44 | mean: 0.69 | vllm:  8/10 | HTTP retries: 0
+Steps:  21/44  47% | Samples:  21/ 44 | mean: 0.75 | vllm:  9/10 | HTTP retries: 0
+Steps:  24/44  54% | Samples:  24/ 44 | mean: 0.78 | vllm:  9/10 | HTTP retries: 0
+Steps:  27/44  61% | Samples:  27/ 44 | mean: 0.81 | vllm:  9/10 | HTTP retries: 0
+Steps:  31/44  70% | Samples:  31/ 44 | mean: 0.83 | vllm:  9/10 | HTTP retries: 0
+Steps:  33/44  75% | Samples:  33/ 44 | mean: 0.84 | vllm:  9/10 | HTTP retries: 0
+Steps:  35/44  79% | Samples:  35/ 44 | mean: 0.82 | vllm:  9/10 | HTTP retries: 0
+Steps:  38/44  86% | Samples:  38/ 44 | mean: 0.83 | vllm:  6/10 | HTTP retries: 0
+Steps:  42/44  95% | Samples:  42/ 44 | mean: 0.85 | vllm:  2/10 | HTTP retries: 0
+Steps:  44/44 100% | Samples:  44/ 44 | mean: 0.84 | vllm:  0/10 | HTTP retries: 0
+
+---------------------------------------------------------                                                                                                                                                               
+augmented_mcqa_eval_augment_human_full_question (44 samples): vllm/nvidia/NVIDIA-Nemotron-Nano-9B-v2                                                                                                                    
+max_tokens: 32768, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)                                                                                                                
+                                                                                                                                                                                                                        
+total time:                                                                                                   0:02:45                                                                                                   
+vllm/nvidia/NVIDIA-Nemotron-Nano-9B-v2                                                                        42,144 tokens [I: 11,236, O: 30,908]                                                                      
+augmented_mcqa_eval                                                                                                                                                                                                     
+mean                 0.841                                                                                                                                                                                              
+stderr               0.056                                                                                                                                                                                              
+Log:                                                                                                                                                                                                                    
+results/inspect/evaluation/eval_together/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-05-07T01-30-54-00-00_augmented-mcqa-eval-augment-human-full-question…
+---------------------------------------------------------                                                                                                                                                               
+                                                                                                                                                                                                                        
+Evaluation logs: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/eval_together/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2
+Running: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/python main.py evaluate --model vllm/nvidia/NVIDIA-Nemotron-Nano-9B-v2 --run-name eval_together --generator qwen --dataset-types mmlu_pro --settings augment_human --modes full_question --question-start 910 --limit 44 --skip-collect-evaluated --max-tokens 32768 --reasoning-effort medium --retry-on-error 2

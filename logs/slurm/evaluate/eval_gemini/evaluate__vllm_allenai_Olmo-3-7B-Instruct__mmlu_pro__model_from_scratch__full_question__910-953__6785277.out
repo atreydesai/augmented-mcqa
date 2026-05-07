@@ -1,0 +1,25 @@
+---------------------------------------------------------                                               
+augmented_mcqa_eval_model_from_scratch_full_question (44 samples): vllm/allenai/Olmo-3-7B-Instruct      
+max_tokens: 32768, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)
+---------------------------------------------------------                                               
+                                                                                                        
+Steps:  10/44  22% | Samples:   1/ 44 | mean:  n/a | vllm:  0/10 | HTTP retries: 0
+Steps:  18/44  40% | Samples:  17/ 44 | mean: 0.50 | vllm:  3/10 | HTTP retries: 0
+Steps:  31/44  70% | Samples:  29/ 44 | mean: 0.50 | vllm:  6/10 | HTTP retries: 0
+Steps:  44/44 100% | Samples:  44/ 44 | mean: 0.47 | vllm:  0/10 | HTTP retries: 0
+
+---------------------------------------------------------                                                                                                                                                               
+augmented_mcqa_eval_model_from_scratch_full_question (44 samples): vllm/allenai/Olmo-3-7B-Instruct                                                                                                                      
+max_tokens: 32768, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)                                                                                                                
+                                                                                                                                                                                                                        
+total time:                                                                                                0:00:59                                                                                                      
+vllm/allenai/Olmo-3-7B-Instruct                                                                            8,472 tokens [I: 8,053, O: 419]                                                                              
+augmented_mcqa_eval                                                                                                                                                                                                     
+mean                 0.477                                                                                                                                                                                              
+stderr               0.076                                                                                                                                                                                              
+Log:                                                                                                                                                                                                                    
+results/inspect/evaluation/eval_gemini/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_allenai_Olmo-3-7B-Instruct/2026-05-07T02-40-27-00-00_augmented-mcqa-eval-model-from-scratch-full-question_Z2gXe92…
+---------------------------------------------------------                                                                                                                                                               
+                                                                                                                                                                                                                        
+Evaluation logs: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/eval_gemini/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_allenai_Olmo-3-7B-Instruct
+Running: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/python main.py evaluate --model vllm/allenai/Olmo-3-7B-Instruct --run-name eval_gemini --generator gemini --dataset-types mmlu_pro --settings model_from_scratch --modes full_question --question-start 910 --limit 44 --skip-collect-evaluated --max-tokens 32768 --reasoning-effort medium --retry-on-error 2

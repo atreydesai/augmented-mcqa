@@ -1,0 +1,26 @@
+---------------------------------------------------------                                               
+augmented_mcqa_eval_model_from_scratch_choices_only (44 samples): vllm/meta-llama/Llama-3.1-8B-Instruct 
+max_tokens: 32768, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)
+---------------------------------------------------------                                               
+                                                                                                        
+Steps:  10/44  22% | Samples:   1/ 44 | mean:  n/a | vllm:  0/10 | HTTP retries: 0
+Steps:  15/44  34% | Samples:  14/ 44 | mean: 0.38 | vllm:  7/10 | HTTP retries: 0
+Steps:  26/44  59% | Samples:  25/ 44 | mean: 0.30 | vllm:  5/10 | HTTP retries: 0
+Steps:  38/44  86% | Samples:  34/ 44 | mean: 0.39 | vllm:  2/10 | HTTP retries: 0
+Steps:  44/44 100% | Samples:  44/ 44 | mean: 0.34 | vllm:  0/10 | HTTP retries: 0
+
+---------------------------------------------------------                                                                                                                                                               
+augmented_mcqa_eval_model_from_scratch_choices_only (44 samples): vllm/meta-llama/Llama-3.1-8B-Instruct                                                                                                                 
+max_tokens: 32768, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)                                                                                                                
+                                                                                                                                                                                                                        
+total time:                                                                                                          0:01:06                                                                                            
+vllm/meta-llama/Llama-3.1-8B-Instruct                                                                                7,904 tokens [I: 7,464, O: 440]                                                                    
+augmented_mcqa_eval                                                                                                                                                                                                     
+mean                 0.341                                                                                                                                                                                              
+stderr               0.072                                                                                                                                                                                              
+Log:                                                                                                                                                                                                                    
+results/inspect/evaluation/eval_gemini/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-05-07T02-44-30-00-00_augmented-mcqa-eval-model-from-scratch-choices-only_cT…
+---------------------------------------------------------                                                                                                                                                               
+                                                                                                                                                                                                                        
+Evaluation logs: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/eval_gemini/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_meta-llama_Llama-3.1-8B-Instruct
+Running: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/python main.py evaluate --model vllm/meta-llama/Llama-3.1-8B-Instruct --run-name eval_gemini --generator gemini --dataset-types mmlu_pro --settings model_from_scratch --modes choices_only --question-start 910 --limit 44 --skip-collect-evaluated --max-tokens 32768 --reasoning-effort medium --retry-on-error 2

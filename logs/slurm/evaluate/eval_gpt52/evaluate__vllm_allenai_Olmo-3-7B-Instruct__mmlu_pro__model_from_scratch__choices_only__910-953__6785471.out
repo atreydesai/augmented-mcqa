@@ -1,0 +1,26 @@
+---------------------------------------------------------                                               
+augmented_mcqa_eval_model_from_scratch_choices_only (44 samples): vllm/allenai/Olmo-3-7B-Instruct       
+max_tokens: 32768, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)
+---------------------------------------------------------                                               
+                                                                                                        
+Steps:  10/44  22% | Samples:   1/ 44 | mean:  n/a | vllm:  0/10 | HTTP retries: 0
+Steps:  21/44  47% | Samples:  13/ 44 | mean: 0.33 | vllm:  0/10 | HTTP retries: 1
+Steps:  27/44  61% | Samples:  26/ 44 | mean: 0.36 | vllm:  8/10 | HTTP retries: 2
+Steps:  37/44  84% | Samples:  36/ 44 | mean: 0.31 | vllm:  4/10 | HTTP retries: 2
+Steps:  44/44 100% | Samples:  44/ 44 | mean: 0.37 | vllm:  0/10 | HTTP retries: 2
+
+---------------------------------------------------------                                                                                                                                                               
+augmented_mcqa_eval_model_from_scratch_choices_only (44 samples): vllm/allenai/Olmo-3-7B-Instruct                                                                                                                       
+max_tokens: 32768, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)                                                                                                                
+                                                                                                                                                                                                                        
+total time:                                                                                                0:01:06                                                                                                      
+vllm/allenai/Olmo-3-7B-Instruct                                                                            8,188 tokens [I: 7,801, O: 387]                                                                              
+augmented_mcqa_eval                                                                                                                                                                                                     
+mean                 0.364                                                                                                                                                                                              
+stderr               0.073                                                                                                                                                                                              
+Log:                                                                                                                                                                                                                    
+results/inspect/evaluation/eval_gpt52/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_allenai_Olmo-3-7B-Instruct/2026-05-07T04-04-03-00-00_augmented-mcqa-eval-model-from-scratch-choices-only_j7Upr7UsG79XagaS6BAgW6.eval  
+---------------------------------------------------------                                                                                                                                                               
+                                                                                                                                                                                                                        
+Evaluation logs: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/eval_gpt52/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_allenai_Olmo-3-7B-Instruct
+Running: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/python main.py evaluate --model vllm/allenai/Olmo-3-7B-Instruct --run-name eval_gpt52 --generator gpt --dataset-types mmlu_pro --settings model_from_scratch --modes choices_only --question-start 910 --limit 44 --skip-collect-evaluated --max-tokens 32768 --reasoning-effort medium --retry-on-error 2

@@ -624,7 +624,12 @@ def _build_evaluation_cluster_tasks(args: argparse.Namespace) -> tuple[list[Clus
         allowed=allowed_dataset_types,
         label="dataset types",
     )
+    question_start_offset = max(0, int(getattr(args, "question_start", 0) or 0))
     dataset_sizes = _augmented_dataset_sizes(augmented_dataset, dataset_types)
+    dataset_sizes = {
+        dataset_type: max(0, size - question_start_offset)
+        for dataset_type, size in dataset_sizes.items()
+    }
     if args.limit is not None:
         dataset_sizes = {dataset_type: min(size, int(args.limit)) for dataset_type, size in dataset_sizes.items()}
     resources = _cluster_resources(args)
@@ -662,7 +667,9 @@ def _build_evaluation_cluster_tasks(args: argparse.Namespace) -> tuple[list[Clus
     for dataset_type in dataset_types:
         for model in models:
             resource_class = _scheduled_resource_class(args, model)
-            for chunk_index, question_start, question_end in chunk_ranges(dataset_sizes.get(dataset_type, 0), args.questions_per_job):
+            for chunk_index, relative_start, relative_end in chunk_ranges(dataset_sizes.get(dataset_type, 0), args.questions_per_job):
+                question_start = question_start_offset + relative_start
+                question_end = question_start_offset + relative_end
                 question_limit = question_end - question_start
                 for setting in settings:
                     for mode in modes:
@@ -1717,6 +1724,7 @@ def _add_submit_evaluate_cluster_parser(sub: argparse._SubParsersAction[argparse
     parser.add_argument("--generator", required=True, choices=sorted(GENERATOR_ALIASES), help="Generator alias to evaluate: gemini, gpt/gpt52, or qwen.")
     parser.add_argument("--settings", default=None, help="Comma-separated subset of Augmented MCQA settings to schedule.")
     parser.add_argument("--modes", default=None, help="Comma-separated subset of evaluation modes to schedule.")
+    parser.add_argument("--question-start", type=int, default=0, help="Advanced/debug option: zero-based filtered-row offset to schedule.")
     add_cluster_submit_flags(parser, include_processed_dataset=False, include_force=False)
     add_runtime_flags(parser)
     parser.set_defaults(default_models=list(DEFAULT_LOCAL_EVALUATION_MODELS))

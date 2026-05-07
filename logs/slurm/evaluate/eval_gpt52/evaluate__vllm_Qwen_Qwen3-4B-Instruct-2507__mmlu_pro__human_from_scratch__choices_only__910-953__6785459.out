@@ -1,0 +1,27 @@
+---------------------------------------------------------                                               
+augmented_mcqa_eval_human_from_scratch_choices_only (44 samples): vllm/Qwen/Qwen3-4B-Instruct-2507      
+max_tokens: 32768, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)
+---------------------------------------------------------                                               
+                                                                                                        
+Steps:  10/44  22% | Samples:   1/ 44 | mean:  n/a | vllm:  0/10 | HTTP retries: 0
+Steps:  12/44  27% | Samples:  12/ 44 | mean: 0.50 | vllm:  1/10 | HTTP retries: 0
+Steps:  22/44  50% | Samples:  21/ 44 | mean: 0.30 | vllm:  6/10 | HTTP retries: 0
+Steps:  32/44  72% | Samples:  25/ 44 | mean: 0.26 | vllm:  1/10 | HTTP retries: 0
+Steps:  36/44  81% | Samples:  35/ 44 | mean: 0.21 | vllm:  7/10 | HTTP retries: 0
+Steps:  44/44 100% | Samples:  44/ 44 | mean: 0.21 | vllm:  0/10 | HTTP retries: 0
+
+---------------------------------------------------------                                                                                                                                                               
+augmented_mcqa_eval_human_from_scratch_choices_only (44 samples): vllm/Qwen/Qwen3-4B-Instruct-2507                                                                                                                      
+max_tokens: 32768, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)                                                                                                                
+                                                                                                                                                                                                                        
+total time:                                                                                                  0:01:10                                                                                                    
+vllm/Qwen/Qwen3-4B-Instruct-2507                                                                             6,588 tokens [I: 6,148, O: 440]                                                                            
+augmented_mcqa_eval                                                                                                                                                                                                     
+mean                 0.227                                                                                                                                                                                              
+stderr               0.064                                                                                                                                                                                              
+Log:                                                                                                                                                                                                                    
+results/inspect/evaluation/eval_gpt52/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_Qwen_Qwen3-4B-Instruct-2507/2026-05-07T03-57-57-00-00_augmented-mcqa-eval-human-from-scratch-choices-only_9xCJ56eaq2zK9Z7mE4QSr8.eval 
+---------------------------------------------------------                                                                                                                                                               
+                                                                                                                                                                                                                        
+Evaluation logs: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/eval_gpt52/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_Qwen_Qwen3-4B-Instruct-2507
+Running: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/python main.py evaluate --model vllm/Qwen/Qwen3-4B-Instruct-2507 --run-name eval_gpt52 --generator gpt --dataset-types mmlu_pro --settings human_from_scratch --modes choices_only --question-start 910 --limit 44 --skip-collect-evaluated --max-tokens 32768 --reasoning-effort medium --retry-on-error 2

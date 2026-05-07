@@ -1,0 +1,24 @@
+---------------------------------------------------------                                               
+augmented_mcqa_eval_augment_model_full_question (26 samples): vllm/Qwen/Qwen3-4B-Instruct-2507          
+max_tokens: 32768, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)
+---------------------------------------------------------                                               
+                                                                                                        
+Steps:  10/26  38% | Samples:   1/ 26 | mean:  n/a | vllm:  0/10 | HTTP retries: 0
+Steps:  18/26  69% | Samples:  16/ 26 | mean: 0.08 | vllm:  5/10 | HTTP retries: 0
+Steps:  26/26 100% | Samples:  26/ 26 | mean: 0.17 | vllm:  0/10 | HTTP retries: 0
+
+---------------------------------------------------------                                                                                                                                                               
+augmented_mcqa_eval_augment_model_full_question (26 samples): vllm/Qwen/Qwen3-4B-Instruct-2507                                                                                                                          
+max_tokens: 32768, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)                                                                                                                
+                                                                                                                                                                                                                        
+total time:                                                                                                  0:00:56                                                                                                    
+vllm/Qwen/Qwen3-4B-Instruct-2507                                                                             9,694 tokens [I: 9,414, O: 280]                                                                            
+augmented_mcqa_eval                                                                                                                                                                                                     
+mean                 0.154                                                                                                                                                                                              
+stderr               0.072                                                                                                                                                                                              
+Log:                                                                                                                                                                                                                    
+results/inspect/evaluation/eval_together/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_Qwen_Qwen3-4B-Instruct-2507/2026-05-07T00-30-20-00-00_augmented-mcqa-eval-augment-model-full-question_234K8…
+---------------------------------------------------------                                                                                                                                                               
+                                                                                                                                                                                                                        
+Evaluation logs: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/eval_together/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_Qwen_Qwen3-4B-Instruct-2507
+Running: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/python main.py evaluate --model vllm/Qwen/Qwen3-4B-Instruct-2507 --run-name eval_together --generator qwen --dataset-types gpqa --settings augment_model --modes full_question --question-start 389 --limit 26 --skip-collect-evaluated --max-tokens 32768 --reasoning-effort medium --retry-on-error 2

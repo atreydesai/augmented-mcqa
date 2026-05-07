@@ -900,7 +900,7 @@ def test_build_evaluation_dataset_limit_applies_per_dataset_split(tmp_path):
     ]
 
 
-def test_build_evaluation_dataset_respects_raw_question_chunk_bounds(tmp_path):
+def test_build_evaluation_dataset_respects_filtered_question_chunk_bounds(tmp_path):
     path = tmp_path / "augmented"
     _write_human_from_scratch_store(
         path,
@@ -962,6 +962,51 @@ def test_build_evaluation_dataset_respects_raw_question_chunk_bounds(tmp_path):
     )
 
     assert [sample.id for sample in eval_dataset] == ["arc_challenge:arc-2"]
+
+
+def test_build_evaluation_dataset_chunks_sparse_filtered_tail_by_position(tmp_path):
+    path = tmp_path / "augmented"
+    _write_human_from_scratch_store(
+        path,
+        {
+            "arc_challenge": [
+                _setting_record(
+                    dataset_type="arc_challenge",
+                    sample_id="arc_challenge:arc-0",
+                    row_index=0,
+                    question="ARC 0",
+                    answer="Gold ARC 0",
+                    human_distractors=["A1", "A2", "A3"],
+                    options_randomized=["Gold ARC 0", "A1", "A2", "A3"],
+                    correct_answer_letter="A",
+                ),
+                _setting_record(
+                    dataset_type="arc_challenge",
+                    sample_id="arc_challenge:arc-tail",
+                    row_index=999,
+                    question="ARC tail",
+                    answer="Gold ARC tail",
+                    human_distractors=["T1", "T2", "T3"],
+                    options_randomized=["Gold ARC tail", "T1", "T2", "T3"],
+                    correct_answer_letter="A",
+                ),
+            ],
+            "mmlu_pro": [],
+            "gpqa": [],
+        },
+    )
+
+    eval_dataset = build_evaluation_dataset(
+        path,
+        setting="human_from_scratch",
+        mode="full_question",
+        dataset_types=["arc_challenge"],
+        question_start=1,
+        limit=1,
+    )
+
+    assert [sample.id for sample in eval_dataset] == ["arc_challenge:arc-tail"]
+    assert eval_dataset[0].metadata["row_index"] == 999
 
 
 def test_fresh_state_clones_task_state_without_model_copy():

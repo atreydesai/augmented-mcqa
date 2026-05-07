@@ -1,0 +1,23 @@
+---------------------------------------------------------                                               
+augmented_mcqa_eval_augment_human_choices_only (5 samples): vllm/nvidia/NVIDIA-Nemotron-Nano-9B-v2      
+max_tokens: 32768, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)
+---------------------------------------------------------                                               
+                                                                                                        
+Steps:   2/5  40% | Samples:   1/  5 | mean:  n/a | vllm:  3/10 | HTTP retries: 0
+Steps:   5/5 100% | Samples:   5/  5 | mean: 0.67 | vllm:  0/10 | HTTP retries: 0
+
+---------------------------------------------------------                                                                                                                                                               
+augmented_mcqa_eval_augment_human_choices_only (5 samples): vllm/nvidia/NVIDIA-Nemotron-Nano-9B-v2                                                                                                                      
+max_tokens: 32768, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)                                                                                                                
+                                                                                                                                                                                                                        
+total time:                                                                                                        0:01:24                                                                                              
+vllm/nvidia/NVIDIA-Nemotron-Nano-9B-v2                                                                             4,862 tokens [I: 1,382, O: 3,480]                                                                    
+augmented_mcqa_eval                                                                                                                                                                                                     
+mean                 0.800                                                                                                                                                                                              
+stderr               0.200                                                                                                                                                                                              
+Log:                                                                                                                                                                                                                    
+results/inspect/evaluation/eval_gemini/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-05-07T01-49-23-00-00_augmented-mcqa-eval-augment-human-choices-only_TbBrBs…
+---------------------------------------------------------                                                                                                                                                               
+                                                                                                                                                                                                                        
+Evaluation logs: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/eval_gemini/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2
+Running: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/python main.py evaluate --model vllm/nvidia/NVIDIA-Nemotron-Nano-9B-v2 --run-name eval_gemini --generator gemini --dataset-types arc_challenge --settings augment_human --modes choices_only --question-start 990 --limit 5 --skip-collect-evaluated --max-tokens 32768 --reasoning-effort medium --retry-on-error 2

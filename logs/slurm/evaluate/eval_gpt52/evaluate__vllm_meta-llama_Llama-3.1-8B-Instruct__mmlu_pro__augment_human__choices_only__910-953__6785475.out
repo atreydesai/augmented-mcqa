@@ -1,0 +1,27 @@
+---------------------------------------------------------                                               
+augmented_mcqa_eval_augment_human_choices_only (44 samples): vllm/meta-llama/Llama-3.1-8B-Instruct      
+max_tokens: 32768, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)
+---------------------------------------------------------                                               
+                                                                                                        
+Steps:  10/44  22% | Samples:   1/ 44 | mean:  n/a | vllm:  0/10 | HTTP retries: 0
+Steps:  11/44  25% | Samples:  11/ 44 | mean: 0.10 | vllm:  9/10 | HTTP retries: 0
+Steps:  20/44  45% | Samples:  17/ 44 | mean: 0.06 | vllm:  2/10 | HTTP retries: 0
+Steps:  27/44  61% | Samples:  26/ 44 | mean: 0.04 | vllm:  6/10 | HTTP retries: 0
+Steps:  36/44  81% | Samples:  34/ 44 | mean: 0.06 | vllm:  5/10 | HTTP retries: 0
+Steps:  44/44 100% | Samples:  44/ 44 | mean: 0.10 | vllm:  0/10 | HTTP retries: 0
+
+---------------------------------------------------------                                                                                                                                                               
+augmented_mcqa_eval_augment_human_choices_only (44 samples): vllm/meta-llama/Llama-3.1-8B-Instruct                                                                                                                      
+max_tokens: 32768, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)                                                                                                                
+                                                                                                                                                                                                                        
+total time:                                                                                                      0:01:14                                                                                                
+vllm/meta-llama/Llama-3.1-8B-Instruct                                                                            12,863 tokens [I: 12,423, O: 440]                                                                      
+augmented_mcqa_eval                                                                                                                                                                                                     
+mean                 0.091                                                                                                                                                                                              
+stderr               0.044                                                                                                                                                                                              
+Log:                                                                                                                                                                                                                    
+results/inspect/evaluation/eval_gpt52/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct/2026-05-07T04-06-07-00-00_augmented-mcqa-eval-augment-human-choices-only_QAEV3bQUWP3v49a8W8tr2w.eval 
+---------------------------------------------------------                                                                                                                                                               
+                                                                                                                                                                                                                        
+Evaluation logs: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/eval_gpt52/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct
+Running: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/python main.py evaluate --model vllm/meta-llama/Llama-3.1-8B-Instruct --run-name eval_gpt52 --generator gpt --dataset-types mmlu_pro --settings augment_human --modes choices_only --question-start 910 --limit 44 --skip-collect-evaluated --max-tokens 32768 --reasoning-effort medium --retry-on-error 2

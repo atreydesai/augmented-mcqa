@@ -1,0 +1,22 @@
+---------------------------------------------------------                                               
+augmented_mcqa_eval_model_from_scratch_choices_only (5 samples): vllm/meta-llama/Llama-3.2-3B-Instruct  
+max_tokens: 32768, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)
+---------------------------------------------------------                                               
+                                                                                                        
+Steps:   5/5 100% | Samples:   1/  5 | mean:  n/a | vllm:  0/10 | HTTP retries: 0
+
+---------------------------------------------------------                                                                                                                                                               
+augmented_mcqa_eval_model_from_scratch_choices_only (5 samples): vllm/meta-llama/Llama-3.2-3B-Instruct                                                                                                                  
+max_tokens: 32768, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)                                                                                                                
+                                                                                                                                                                                                                        
+total time:                                                                                                                  0:00:39                                                                                    
+vllm/meta-llama/Llama-3.2-3B-Instruct                                                                                        964 tokens [I: 914, O: 50]                                                                 
+augmented_mcqa_eval                                                                                                                                                                                                     
+mean                 0.800                                                                                                                                                                                              
+stderr               0.200                                                                                                                                                                                              
+Log:                                                                                                                                                                                                                    
+results/inspect/evaluation/eval_gemini/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_meta-llama_Llama-3.2-3B-Instruct/2026-05-07T01-48-21-00-00_augmented-mcqa-eval-model-from-scratch-choices-only_fk…
+---------------------------------------------------------                                                                                                                                                               
+                                                                                                                                                                                                                        
+Evaluation logs: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/eval_gemini/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_meta-llama_Llama-3.2-3B-Instruct
+Running: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/python main.py evaluate --model vllm/meta-llama/Llama-3.2-3B-Instruct --run-name eval_gemini --generator gemini --dataset-types arc_challenge --settings model_from_scratch --modes choices_only --question-start 990 --limit 5 --skip-collect-evaluated --max-tokens 32768 --reasoning-effort medium --retry-on-error 2

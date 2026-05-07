@@ -639,6 +639,45 @@ def test_submit_evaluate_cluster_writes_setting_mode_chunk_tasks_when_generation
     assert {task["resource_class"] for task in task_by_model[api_eval_model]} == {"api"}
 
 
+def test_submit_evaluate_cluster_can_schedule_filtered_tail_offset(tmp_path, monkeypatch):
+    bundle_dir = tmp_path / "bundle"
+    _patch_strict_evaluation_store(monkeypatch, tmp_path, counts={"arc_challenge": 995, "mmlu_pro": 0, "gpqa": 0})
+
+    rc = app_main.main(
+        [
+            "submit-evaluate-cluster",
+            "--run-name",
+            "cluster-eval",
+            "--generator",
+            "gpt",
+            "--dataset-types",
+            "arc_challenge",
+            "--models",
+            "Qwen/Qwen3-4B-Instruct-2507",
+            "--settings",
+            "human_from_scratch",
+            "--modes",
+            "full_question",
+            "--question-start",
+            "990",
+            "--limit",
+            "5",
+            "--output-dir",
+            str(bundle_dir),
+            "--write-only",
+        ]
+    )
+
+    assert rc == 0
+    manifest = _read_manifest(bundle_dir)
+    assert manifest["task_count"] == 1
+    task = manifest["tasks"][0]
+    assert task["question_start"] == 990
+    assert task["question_end"] == 995
+    assert task["argv"][task["argv"].index("--question-start") + 1] == "990"
+    assert task["argv"][task["argv"].index("--limit") + 1] == "5"
+
+
 def test_submit_evaluate_cluster_vllm_base_url_uses_api_resource_class(tmp_path, monkeypatch):
     bundle_dir = tmp_path / "bundle"
     _patch_strict_evaluation_store(monkeypatch, tmp_path, counts={"arc_challenge": 2, "mmlu_pro": 0, "gpqa": 0})

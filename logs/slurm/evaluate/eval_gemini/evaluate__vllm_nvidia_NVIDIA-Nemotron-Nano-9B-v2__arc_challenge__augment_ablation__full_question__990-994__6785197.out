@@ -1,0 +1,23 @@
+---------------------------------------------------------                                               
+augmented_mcqa_eval_augment_ablation_full_question (5 samples): vllm/nvidia/NVIDIA-Nemotron-Nano-9B-v2  
+max_tokens: 32768, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)
+---------------------------------------------------------                                               
+                                                                                                        
+Steps:   1/5  20% | Samples:   1/  5 | mean:  n/a | vllm:  4/10 | HTTP retries: 0
+Steps:   5/5 100% | Samples:   5/  5 | mean: 1.00 | vllm:  0/10 | HTTP retries: 0
+
+---------------------------------------------------------                                                                                                                                                               
+augmented_mcqa_eval_augment_ablation_full_question (5 samples): vllm/nvidia/NVIDIA-Nemotron-Nano-9B-v2                                                                                                                  
+max_tokens: 32768, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)                                                                                                                
+                                                                                                                                                                                                                        
+total time:                                                                                                        0:01:04                                                                                              
+vllm/nvidia/NVIDIA-Nemotron-Nano-9B-v2                                                                             4,229 tokens [I: 1,494, O: 2,735]                                                                    
+augmented_mcqa_eval                                                                                                                                                                                                     
+mean                 1.000                                                                                                                                                                                              
+stderr               0.000                                                                                                                                                                                              
+Log:                                                                                                                                                                                                                    
+results/inspect/evaluation/eval_gemini/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2/2026-05-07T01-49-23-00-00_augmented-mcqa-eval-augment-ablation-full-question_LL…
+---------------------------------------------------------                                                                                                                                                               
+                                                                                                                                                                                                                        
+Evaluation logs: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/eval_gemini/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_nvidia_NVIDIA-Nemotron-Nano-9B-v2
+Running: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/python main.py evaluate --model vllm/nvidia/NVIDIA-Nemotron-Nano-9B-v2 --run-name eval_gemini --generator gemini --dataset-types arc_challenge --settings augment_ablation --modes full_question --question-start 990 --limit 5 --skip-collect-evaluated --max-tokens 32768 --reasoning-effort medium --retry-on-error 2

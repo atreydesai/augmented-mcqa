@@ -1,0 +1,24 @@
+---------------------------------------------------------                                               
+augmented_mcqa_eval_augment_model_choices_only (26 samples): vllm/meta-llama/Llama-3.2-3B-Instruct      
+max_tokens: 32768, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)
+---------------------------------------------------------                                               
+                                                                                                        
+Steps:  10/26  38% | Samples:   1/ 26 | mean:  n/a | vllm:  0/10 | HTTP retries: 0
+Steps:  14/26  53% | Samples:  14/ 26 | mean: 0.00 | vllm:  9/10 | HTTP retries: 1
+Steps:  26/26 100% | Samples:  26/ 26 | mean: 0.00 | vllm:  0/10 | HTTP retries: 1
+
+---------------------------------------------------------                                                                                                                                                               
+augmented_mcqa_eval_augment_model_choices_only (26 samples): vllm/meta-llama/Llama-3.2-3B-Instruct                                                                                                                      
+max_tokens: 32768, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)                                                                                                                
+                                                                                                                                                                                                                        
+total time:                                                                                                          0:00:55                                                                                            
+vllm/meta-llama/Llama-3.2-3B-Instruct                                                                                8,215 tokens [I: 7,972, O: 243]                                                                    
+augmented_mcqa_eval                                                                                                                                                                                                     
+mean                 0.000                                                                                                                                                                                              
+stderr               0.000                                                                                                                                                                                              
+Log:                                                                                                                                                                                                                    
+results/inspect/evaluation/eval_gpt52/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.2-3B-Instruct/2026-05-07T03-34-31-00-00_augmented-mcqa-eval-augment-model-choices-only_DvLdbHFKPCmXGcYKvQZ42n.eval 
+---------------------------------------------------------                                                                                                                                                               
+                                                                                                                                                                                                                        
+Evaluation logs: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/eval_gpt52/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.2-3B-Instruct
+Running: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/python main.py evaluate --model vllm/meta-llama/Llama-3.2-3B-Instruct --run-name eval_gpt52 --generator gpt --dataset-types gpqa --settings augment_model --modes choices_only --question-start 389 --limit 26 --skip-collect-evaluated --max-tokens 32768 --reasoning-effort medium --retry-on-error 2

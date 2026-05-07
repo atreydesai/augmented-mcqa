@@ -16,7 +16,7 @@ from data.store import (
     EVALUATED_RECORD_COLUMNS,
     materialize_evaluated_datasets,
 )
-from utils.constants import AUGMENTED_STORE_MANIFEST, COLLECTED_STATE_FILENAME
+from utils.constants import AUGMENTED_STORE_MANIFEST, COLLECTED_STATE_FILENAME, EVALUATED_STORE_MANIFEST
 from utils.modeling import safe_name
 
 
@@ -353,6 +353,63 @@ def test_materialize_evaluated_datasets_can_write_missing_rows_without_eval_logs
     assert row["evaluation_used_random_fallback"] is True
     assert row["evaluation_prediction"] in {"A", "B"}
     assert row["evaluation_log_path"] == ""
+
+
+def test_materialize_evaluated_datasets_preserves_existing_unrequested_dataset(tmp_path):
+    eval_root = tmp_path / "inspect"
+    augmented_root = tmp_path / "augmented"
+    output_root = tmp_path / "collected"
+    _write_augmented_predecessor(augmented_root)
+
+    store_root = augmented_root / safe_name(GEN_RUN_NAME) / safe_name(GEN_MODEL)
+    manifest_path = store_root / AUGMENTED_STORE_MANIFEST
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["dataset_types"] = ["arc_challenge", "gpqa"]
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    arc_row = dict(load_from_disk(str(store_root / "arc_challenge" / "human_from_scratch"))[0])
+    gpqa_row = dict(arc_row)
+    gpqa_row.update(
+        {
+            "id": "gpqa:test-0",
+            "question_id": "gpqa:test-0",
+            "dataset_type": "gpqa",
+            "sample_id": "gpqa:test-0",
+            "question": "Which material is magnetic?",
+        }
+    )
+    Dataset.from_list([gpqa_row]).save_to_disk(str(store_root / "gpqa" / "human_from_scratch"))
+
+    materialize_evaluated_datasets(
+        eval_root,
+        output_root,
+        augmented_root=store_root,
+        expected_dataset_types=["arc_challenge", "gpqa"],
+        expected_settings=["human_from_scratch"],
+        expected_modes=["full_question"],
+        generation_run_name=GEN_RUN_NAME,
+        generation_model=GEN_MODEL,
+        evaluation_model=EVAL_MODEL,
+    )
+    _write_eval_log(eval_root)
+
+    materialize_evaluated_datasets(
+        eval_root,
+        output_root,
+        augmented_root=store_root,
+        expected_dataset_types=["arc_challenge"],
+        expected_settings=["human_from_scratch"],
+        expected_modes=["full_question"],
+        generation_run_name=GEN_RUN_NAME,
+        generation_model=GEN_MODEL,
+        evaluation_model=EVAL_MODEL,
+    )
+
+    group_root = output_root / safe_name(GEN_RUN_NAME) / safe_name(GEN_MODEL) / safe_name(EVAL_MODEL)
+    manifest = json.loads((group_root / EVALUATED_STORE_MANIFEST).read_text(encoding="utf-8"))
+    assert manifest["dataset_types"] == ["arc_challenge", "gpqa"]
+    gpqa_rows = list(load_from_disk(str(group_root / "gpqa" / "human_from_scratch" / "full_question")))
+    assert len(gpqa_rows) == 1
+    assert gpqa_rows[0]["sample_id"] == "gpqa:test-0"
 
 
 def test_materialize_evaluated_datasets_does_not_return_unrelated_group_from_shared_output_root(tmp_path):

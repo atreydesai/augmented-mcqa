@@ -1359,12 +1359,25 @@ def materialize_evaluated_datasets(
             generation_model=generation_model,
             evaluation_model=evaluation_model,
         )
+        existing_manifest_path = _evaluated_manifest_path(output_path)
+        existing_manifest: dict[str, Any] = {}
+        if existing_manifest_path.exists():
+            existing_manifest = json.loads(existing_manifest_path.read_text(encoding="utf-8"))
+        group_wanted_dataset_types = list(
+            dict.fromkeys([*wanted_dataset_types, *list(existing_manifest.get("dataset_types") or [])])
+        )
+        group_wanted_settings = list(
+            dict.fromkeys([*wanted_settings, *list(existing_manifest.get("settings") or [])])
+        )
+        group_wanted_modes = list(
+            dict.fromkeys([*wanted_modes, *list(existing_manifest.get("modes") or [])])
+        )
         augmented_path = Path(meta["augmented_path"])
         dataset_types, settings, modes = _group_record_dimensions(
             meta,
-            wanted_dataset_types=wanted_dataset_types,
-            wanted_settings=wanted_settings,
-            wanted_modes=wanted_modes,
+            wanted_dataset_types=group_wanted_dataset_types,
+            wanted_settings=group_wanted_settings,
+            wanted_modes=group_wanted_modes,
             setting_order=setting_order,
             mode_order=mode_order,
         )
@@ -1426,16 +1439,16 @@ def build_evaluation_dataset(
 
     for dataset_type in wanted:
         split = _load_setting_dataset(root, dataset_type, setting)
-        for row in split:
+        for filtered_row_index, row in enumerate(split):
+            if filtered_row_index < question_start:
+                continue
+            if question_end is not None and filtered_row_index >= question_end:
+                continue
             payload = dict(row)
             sample_id = str(payload.get("sample_id") or "")
             if not sample_id:
                 continue
             original_row_index = int(payload.get("row_index", -1))
-            if original_row_index < question_start:
-                continue
-            if question_end is not None and original_row_index >= question_end:
-                continue
             options = list(payload.get("options_randomized") or [])
             correct_letter = str(payload.get("correct_answer_letter", "") or "")
             if not options or correct_letter not in CHOICE_LABELS[: len(options)]:

@@ -1,0 +1,26 @@
+---------------------------------------------------------                                               
+augmented_mcqa_eval_augment_ablation_choices_only (44 samples): vllm/allenai/Olmo-3-7B-Instruct         
+max_tokens: 32768, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)
+---------------------------------------------------------                                               
+                                                                                                        
+Steps:  10/44  22% | Samples:   1/ 44 | mean:  n/a | vllm:  0/10 | HTTP retries: 0
+Steps:  12/44  27% | Samples:  12/ 44 | mean: 0.10 | vllm:  8/10 | HTTP retries: 0
+Steps:  23/44  52% | Samples:  20/ 44 | mean: 0.05 | vllm:  6/10 | HTTP retries: 0
+Steps:  34/44  77% | Samples:  29/ 44 | mean: 0.07 | vllm:  3/10 | HTTP retries: 0
+Steps:  44/44 100% | Samples:  44/ 44 | mean: 0.12 | vllm:  0/10 | HTTP retries: 0
+
+---------------------------------------------------------                                                                                                                                                               
+augmented_mcqa_eval_augment_ablation_choices_only (44 samples): vllm/allenai/Olmo-3-7B-Instruct                                                                                                                         
+max_tokens: 32768, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)                                                                                                                
+                                                                                                                                                                                                                        
+total time:                                                                                             0:01:08                                                                                                         
+vllm/allenai/Olmo-3-7B-Instruct                                                                         13,046 tokens [I: 12,648, O: 398]                                                                               
+augmented_mcqa_eval                                                                                                                                                                                                     
+mean                 0.114                                                                                                                                                                                              
+stderr               0.048                                                                                                                                                                                              
+Log:                                                                                                                                                                                                                    
+results/inspect/evaluation/eval_gpt52/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_allenai_Olmo-3-7B-Instruct/2026-05-07T03-59-58-00-00_augmented-mcqa-eval-augment-ablation-choices-only_8vS8HuS7ncV9hXGszwkT5s.eval    
+---------------------------------------------------------                                                                                                                                                               
+                                                                                                                                                                                                                        
+Evaluation logs: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/eval_gpt52/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_allenai_Olmo-3-7B-Instruct
+Running: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/python main.py evaluate --model vllm/allenai/Olmo-3-7B-Instruct --run-name eval_gpt52 --generator gpt --dataset-types mmlu_pro --settings augment_ablation --modes choices_only --question-start 910 --limit 44 --skip-collect-evaluated --max-tokens 32768 --reasoning-effort medium --retry-on-error 2
