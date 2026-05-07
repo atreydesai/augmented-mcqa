@@ -1419,6 +1419,7 @@ def build_evaluation_dataset(
     setting: str,
     mode: str,
     dataset_types: list[str] | None = None,
+    sample_ids: set[str] | None = None,
     question_start: int = 0,
     limit: int | None = None,
     shard_count: int = 1,
@@ -1447,6 +1448,8 @@ def build_evaluation_dataset(
             payload = dict(row)
             sample_id = str(payload.get("sample_id") or "")
             if not sample_id:
+                continue
+            if sample_ids is not None and sample_id not in sample_ids:
                 continue
             original_row_index = int(payload.get("row_index", -1))
             options = list(payload.get("options_randomized") or [])

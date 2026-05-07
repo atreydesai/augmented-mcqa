@@ -116,6 +116,17 @@ def _load_augmented_dataset_types(root: Path) -> list[str]:
     return list(manifest.get("dataset_types") or [])
 
 
+def _load_sample_ids(path: str | None) -> set[str] | None:
+    if not path:
+        return None
+    values: set[str] = set()
+    for line in Path(path).read_text(encoding="utf-8").splitlines():
+        value = line.strip()
+        if value:
+            values.add(value)
+    return values
+
+
 def _augmented_dataset_sizes(root: Path, dataset_types: list[str]) -> dict[str, int]:
     from datasets import load_from_disk
 
@@ -1136,6 +1147,7 @@ def _run_evaluate(args: argparse.Namespace) -> int:
         dataset_types=dataset_types,
         settings=settings,
         modes=modes,
+        sample_ids=_load_sample_ids(getattr(args, "sample_ids_file", None)),
         question_start=getattr(args, "question_start", 0),
         shard_count=1,
         shard_index=0,
@@ -1633,6 +1645,7 @@ def _add_evaluate_parser(sub: argparse._SubParsersAction[argparse.ArgumentParser
     evaluate.add_argument("--modes", default=None, help="Advanced subset override: comma-separated subset of evaluation modes to run.")
     evaluate.add_argument("--question-start", type=int, default=0, help=argparse.SUPPRESS)
     evaluate.add_argument("--limit", type=int, default=None, help=argparse.SUPPRESS)
+    evaluate.add_argument("--sample-ids-file", default=None, help=argparse.SUPPRESS)
     evaluate.add_argument(
         "--skip-collect-evaluated",
         dest="collect_evaluated",
