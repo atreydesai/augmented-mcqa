@@ -76,25 +76,11 @@ Thumbs.db
 .claude
 .codex
 .hf_cache
-results/atrey_writing_flaw_rows_gpt.jsonl
-results/atrey_writing_flaw_rows_all.jsonl
 *.tiff
-
-
-*.eval
-# Whitelist specific results for tracking
-!results/inspect/evaluation/eval_gpt54mini_high_gemini/**/*.eval
-!results/inspect/evaluation/eval_gpt54mini_high_gpt52_remaining/**/*.eval
-!results/inspect/evaluation/eval_gpt54mini_high_together/**/*.eval
-!results/inspect/evaluation/eval_gptmini_high_32k_on_gpt52_gpqa_full_question/**/*.eval
-!results/inspect/evaluation/gpqa_full_question_gemma4_26b_64k_20q_20260501_101654/**/*.eval
-!results/inspect/evaluation/smoke_gemma4_26b_64k_ctx_32k_out_20260501_100448/**/*.eval
-
-# Old/Archives (Optional - whitelisting subdirectories for batching)
-!results/inspect/evaluation/old/**/*.eval
+results/atrey_writing_flaw_rows_strict.jsonl
 
 # Allow slurm logs
 !logs/slurm/**/*.out
 !logs/slurm/**/*.err
 
-.bck
+.bcktmp/

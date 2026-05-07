@@ -1,17 +1,17 @@
 {
-  "n_obs": 211485,
+  "n_obs": 211046,
   "n_test_takers": 6,
-  "n_stems": 2423,
-  "n_instantiated_items": 36005,
-  "n_params": 110450,
+  "n_stems": 2364,
+  "n_instantiated_items": 35460,
+  "n_params": 108756,
   "equation": "P(X_ij=1)=c_i+(1-c_i)*sigmoid(1.702*a_i*(theta_j-b_i)); b_i=dataset+stem+generator+setting+item_noise",
   "fit": {
     "success": true,
     "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
-    "iterations": 1289,
-    "log_likelihood": -58214.27703737826,
-    "aic": 337328.5540747565,
-    "bic": 1470756.4421100249
+    "iterations": 1516,
+    "log_likelihood": -58196.2403025064,
+    "aic": 333904.4806050128,
+    "bic": 1449722.7041450704
   },
   "regularization": {
     "stem_sd": 3.0,
@@ -21,7 +21,7 @@
     "guessing_center": "logit(1 / num_choices)"
   },
   "quality_figure": {
-    "benchmarker_jsonl": "results/atrey_writing_flaw_rows_all.jsonl"
+    "benchmarker_jsonl": "results/atrey_writing_flaw_rows_strict.jsonl"
   },
   "references": {
     "theta": "vllm/nvidia/NVIDIA-Nemotron-Nano-9B-v2",

@@ -43,6 +43,8 @@ def row(sample_id: str, dataset: str, setting: str, mode: str, num_choices: int,
         "sample_id": sample_id,
         "question": f"Question {sample_id}",
         "dataset_type": dataset,
+        "evaluation_status": "success",
+        "evaluation_used_random_fallback": False,
         "evaluation_prediction": "A" if correct else "B",
         "evaluation_is_correct": correct,
         "num_choices": num_choices,
@@ -79,6 +81,43 @@ def test_load_irt_frame_creates_expected_ids(tmp_path):
     assert set(frame["choice_group"]) == {"4-choice", "10-choice"}
     assert frame["stem_id"].str.contains("::").all()
     assert frame["item_id"].str.contains("::").all()
+
+
+def test_load_irt_frame_excludes_unusable_evaluations_but_keeps_fallbacks(tmp_path):
+    rows = [
+        row("kept-correct", "arc_challenge", "human_from_scratch", "full_question", 4, True),
+        row("kept-wrong", "arc_challenge", "human_from_scratch", "full_question", 4, False),
+        {
+            **row("missing-status", "arc_challenge", "human_from_scratch", "full_question", 4, False),
+            "evaluation_status": "missing",
+        },
+        {
+            **row("random-fallback", "arc_challenge", "human_from_scratch", "full_question", 4, False),
+            "evaluation_used_random_fallback": True,
+        },
+        {
+            **row("blank-prediction", "arc_challenge", "human_from_scratch", "full_question", 4, False),
+            "evaluation_prediction": "",
+        },
+        {
+            **row("null-correct", "arc_challenge", "human_from_scratch", "full_question", 4, False),
+            "evaluation_is_correct": None,
+        },
+    ]
+    write_group(
+        tmp_path / "collected",
+        generator="generator",
+        test_taker="taker",
+        rows_by_split={("arc_challenge", "human_from_scratch", "full_question"): rows},
+    )
+
+    frame = load_irt_frame(tmp_path / "collected")
+    assert set(frame["sample_id"]) == {"kept-correct", "kept-wrong", "random-fallback"}
+    assert frame.set_index("sample_id")["correct"].to_dict() == {
+        "kept-correct": 1.0,
+        "kept-wrong": 0.0,
+        "random-fallback": 0.0,
+    }
 
 
 def test_gradient_matches_finite_difference(tmp_path):

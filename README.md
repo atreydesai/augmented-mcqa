@@ -38,6 +38,10 @@ datasets: arc_challenge, mmlu_pro, gpqa
 
 ## Run All Evaluations
 
+For Apptainer-backed vLLM on Nexus/CLIP, including quantized one-A6000 models
+and `--model-base-url` routing, see
+[docs/apptainer-vllm-guide.md](docs/apptainer-vllm-guide.md).
+
 Use `submit-evaluate-cluster` with a generator alias. This writes the per-slice jobs and a final collection job. The slice jobs use `--skip-collect-evaluated` internally; collection is deferred to the finalizer.
 
 Evaluator models:

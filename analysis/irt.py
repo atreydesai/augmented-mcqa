@@ -25,7 +25,7 @@ from utils.constants import EVALUATED_STORE_MANIFEST, SETTING_NAMES, SETTING_SPE
 IRT_SCALING = 1.702
 EPS = 1e-8
 DEFAULT_OUTPUT_DIR = Path("results/augmented_mcqa_irt")
-DEFAULT_BENCHMARKER_JSONL = Path("results/atrey_writing_flaw_rows_all.jsonl")
+DEFAULT_BENCHMARKER_JSONL = Path("results/atrey_writing_flaw_rows_strict.jsonl")
 LOGO_DIR = Path(__file__).parent / "assets" / "logos"
 DEFAULT_REFERENCE_TEST_TAKER = "vllm/nvidia/NVIDIA-Nemotron-Nano-9B-v2"
 DEFAULT_REFERENCE_SETTING = "human_from_scratch"
@@ -230,26 +230,21 @@ def load_irt_frame(
                     if not path.exists():
                         continue
                     loaded = load_from_disk(str(path))
-                    available_columns = set(loaded.column_names)
                     selected_columns = [
-                        column
-                        for column in [
-                            "sample_id",
-                            "question",
-                            "evaluation_status",
-                            "evaluation_used_random_fallback",
-                            "evaluation_prediction",
-                            "evaluation_is_correct",
-                            "num_choices",
-                            "setting",
-                        ]
-                        if column in available_columns
+                        "sample_id",
+                        "question",
+                        "evaluation_status",
+                        "evaluation_used_random_fallback",
+                        "evaluation_prediction",
+                        "evaluation_is_correct",
+                        "num_choices",
+                        "setting",
                     ]
+                    missing_columns = sorted(set(selected_columns) - set(loaded.column_names))
+                    if missing_columns:
+                        missing = ", ".join(missing_columns)
+                        raise ValueError(f"{path} is missing required evaluation columns: {missing}")
                     data = loaded.select_columns(selected_columns).to_pandas()
-                    if "evaluation_status" not in data:
-                        data["evaluation_status"] = "success"
-                    if "evaluation_used_random_fallback" not in data:
-                        data["evaluation_used_random_fallback"] = False
                     if data.empty:
                         continue
                     stem_ids = dataset + "::" + data["sample_id"].astype(str)
@@ -277,9 +272,9 @@ def load_irt_frame(
 
     frame = pd.concat(frames, ignore_index=True)
     frame = frame[frame["evaluation_status"].fillna("").astype(str) == "success"].copy()
-    frame = frame[~frame["evaluation_used_random_fallback"].fillna(False).astype(bool)].copy()
     frame = frame[frame["evaluation_prediction"].fillna("").astype(str).str.strip() != ""].copy()
-    frame["correct"] = frame["evaluation_is_correct"].fillna(False).astype(bool).astype(float)
+    frame = frame[frame["evaluation_is_correct"].notna()].copy()
+    frame["correct"] = frame["evaluation_is_correct"].astype(bool).astype(float)
     frame["choice_count"] = frame["num_choices"].astype(int)
     frame["choice_group"] = np.where(frame["choice_count"] <= 4, "4-choice", "10-choice")
     frame["stem_id"] = frame["dataset"].astype(str) + "::" + frame["sample_id"].astype(str)
@@ -515,9 +510,24 @@ def setting_difficulty_frame(fit: Fit) -> pd.DataFrame:
 
 
 def dataset_difficulty_frame(fit: Fit) -> pd.DataFrame:
-    table = coefficient_table(fit, "dataset")
-    table["dataset"] = table["level"]
-    return table.sort_values("estimate", ascending=False).reset_index(drop=True)
+    dataset = coefficient_table(fit, "dataset")[["level", "estimate"]].rename(
+        columns={"level": "dataset", "estimate": "dataset_estimate"}
+    )
+    stem = stem_difficulty_frame(fit).rename(columns={"estimate": "stem_estimate"})
+    summary = (
+        stem.merge(dataset, on="dataset", how="left")
+        .assign(estimate=lambda frame: frame["dataset_estimate"] + frame["stem_estimate"])
+        .groupby("dataset", as_index=False)
+        .agg(
+            estimate=("estimate", "mean"),
+            n_stems=("stem_id", "nunique"),
+            dataset_estimate=("dataset_estimate", "first"),
+            mean_stem_estimate=("stem_estimate", "mean"),
+        )
+    )
+    summary["level"] = summary["dataset"]
+    summary["reference"] = False
+    return summary.sort_values("estimate", ascending=False).reset_index(drop=True)
 
 
 def generator_difficulty_frame(fit: Fit) -> pd.DataFrame:
