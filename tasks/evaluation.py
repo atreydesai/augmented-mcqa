@@ -14,6 +14,7 @@ def build_evaluation_tasks(
     settings,
     modes,
     sample_ids=None,
+    sample_ids_by_slice=None,
     question_start=0,
     shard_count,
     shard_index,
@@ -27,14 +28,20 @@ def build_evaluation_tasks(
 ) -> list[Task]:
     tasks: list[Task] = []
     task_metadata_by_setting_mode = task_metadata_by_setting_mode or {}
+    sample_ids_by_slice = sample_ids_by_slice or {}
     for setting in settings:
         for mode in modes:
+            selected_sample_ids = sample_ids
+            if sample_ids_by_slice:
+                selected_sample_ids = set()
+                for dataset_type in dataset_types:
+                    selected_sample_ids.update(sample_ids_by_slice.get((dataset_type, setting, mode), set()))
             dataset = build_evaluation_dataset(
                 augmented_dataset_path,
                 setting=setting,
                 mode=mode,
                 dataset_types=dataset_types,
-                sample_ids=sample_ids,
+                sample_ids=selected_sample_ids,
                 question_start=question_start,
                 limit=limit,
                 shard_count=shard_count,

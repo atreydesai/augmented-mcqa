@@ -119,12 +119,37 @@ def _load_augmented_dataset_types(root: Path) -> list[str]:
 def _load_sample_ids(path: str | None) -> set[str] | None:
     if not path:
         return None
+    sample_path = Path(path)
+    if sample_path.suffix == ".json":
+        return None
     values: set[str] = set()
-    for line in Path(path).read_text(encoding="utf-8").splitlines():
+    for line in sample_path.read_text(encoding="utf-8").splitlines():
         value = line.strip()
         if value:
             values.add(value)
     return values
+
+
+def _load_sample_ids_by_slice(path: str | None, *, generator: str | None = None) -> dict[tuple[str, str, str], set[str]]:
+    if not path:
+        return {}
+    sample_path = Path(path)
+    if sample_path.suffix != ".json":
+        return {}
+    payload = json.loads(sample_path.read_text(encoding="utf-8"))
+    if generator and generator in payload:
+        payload = payload[generator]
+    result: dict[tuple[str, str, str], set[str]] = {}
+    for item in list(payload.get("missing_by_slice") or []):
+        key = (
+            str(item.get("dataset_type") or ""),
+            str(item.get("setting") or ""),
+            str(item.get("mode") or ""),
+        )
+        values = {str(value) for value in list(item.get("sample_ids") or []) if str(value)}
+        if all(key) and values:
+            result[key] = values
+    return result
 
 
 def _augmented_dataset_sizes(root: Path, dataset_types: list[str]) -> dict[str, int]:
@@ -647,6 +672,8 @@ def _build_evaluation_cluster_tasks(args: argparse.Namespace) -> tuple[list[Clus
     models = _cluster_models(args.models, default=list(args.default_models), backend=args.backend)
     settings = _select_values(args.settings, default=list(SETTING_NAMES), allowed=list(SETTING_NAMES), label="settings")
     modes = _select_values(args.modes, default=list(MODE_CHOICES), allowed=list(MODE_CHOICES), label="modes")
+    sample_ids = _load_sample_ids(getattr(args, "sample_ids_file", None))
+    sample_ids_by_slice = _load_sample_ids_by_slice(getattr(args, "sample_ids_file", None), generator=args.generator)
 
     evaluation_counts: dict[tuple[str, str, str, int, int], int] = {}
 
@@ -665,6 +692,11 @@ def _build_evaluation_cluster_tasks(args: argparse.Namespace) -> tuple[list[Clus
                 setting=setting,
                 mode=mode,
                 dataset_types=[dataset_type],
+                sample_ids=(
+                    sample_ids_by_slice.get((dataset_type, setting, mode), set())
+                    if sample_ids_by_slice
+                    else sample_ids
+                ),
                 question_start=question_start,
                 limit=question_end - question_start,
                 shard_count=1,
@@ -723,6 +755,8 @@ def _build_evaluation_cluster_tasks(args: argparse.Namespace) -> tuple[list[Clus
                             "--limit",
                             str(question_limit),
                         ]
+                        if getattr(args, "sample_ids_file", None):
+                            argv.extend(["--sample-ids-file", str(args.sample_ids_file)])
                         argv.append("--skip-collect-evaluated")
                         argv.extend(_runtime_argv(args))
                         tasks.append(
@@ -1134,6 +1168,7 @@ def _run_evaluate(args: argparse.Namespace) -> int:
     )
     settings = _select_values(args.settings, default=list(SETTING_NAMES), allowed=list(SETTING_NAMES), label="settings")
     modes = _select_values(args.modes, default=list(MODE_CHOICES), allowed=list(MODE_CHOICES), label="modes")
+    sample_ids_by_slice = _load_sample_ids_by_slice(getattr(args, "sample_ids_file", None), generator=args.generator)
     eval_model = resolve_model_name(args.model, args.backend)
     log_dir = _evaluation_log_dir(
         Path(DEFAULT_EVALUATION_LOG_ROOT),
@@ -1157,6 +1192,7 @@ def _run_evaluate(args: argparse.Namespace) -> int:
         generation_run_name=generation_run_name,
         generation_model=generation_model,
         evaluation_model=eval_model,
+        sample_ids_by_slice=sample_ids_by_slice,
         task_metadata_by_setting_mode={
             (setting, mode): _slice_task_metadata(
                 stage="evaluate",
@@ -1738,6 +1774,7 @@ def _add_submit_evaluate_cluster_parser(sub: argparse._SubParsersAction[argparse
     parser.add_argument("--settings", default=None, help="Comma-separated subset of Augmented MCQA settings to schedule.")
     parser.add_argument("--modes", default=None, help="Comma-separated subset of evaluation modes to schedule.")
     parser.add_argument("--question-start", type=int, default=0, help="Advanced/debug option: zero-based filtered-row offset to schedule.")
+    parser.add_argument("--sample-ids-file", default=None, help="Advanced/debug option: newline-delimited sample IDs to schedule.")
     add_cluster_submit_flags(parser, include_processed_dataset=False, include_force=False)
     add_runtime_flags(parser)
     parser.set_defaults(default_models=list(DEFAULT_LOCAL_EVALUATION_MODELS))
