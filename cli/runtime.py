@@ -6,7 +6,7 @@ import sys
 from contextlib import contextmanager
 from pathlib import Path
 
-from utils.modeling import reasoning_effort_for_model, vllm_server_args
+from utils.modeling import extra_body_for_model, reasoning_effort_for_model, vllm_server_args
 
 
 @contextmanager
@@ -40,6 +40,7 @@ def inspect_eval(tasks, *, model: str, log_dir: Path, args):
         server_args = vllm_server_args(model)
         if server_args:
             env_updates["VLLM_DEFAULT_SERVER_ARGS"] = json.dumps(server_args)
+    extra_body = extra_body_for_model(model)
     with temporary_env(env_updates):
         return run_eval(
             tasks,
@@ -53,6 +54,7 @@ def inspect_eval(tasks, *, model: str, log_dir: Path, args):
             max_tokens=args.max_tokens,
             temperature=args.temperature,
             reasoning_effort=reasoning_effort_for_model(model, args.reasoning_effort),
+            extra_body=extra_body,
             stop_seqs=args.stop_seqs,
         )
 

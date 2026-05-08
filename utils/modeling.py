@@ -16,16 +16,47 @@ QWEN35_35B_FP8_MODEL_IDS = (
 TRUST_REMOTE_CODE_MODEL_IDS = (
     "allenai/Olmo-3-7B-Instruct",
     "vllm/allenai/Olmo-3-7B-Instruct",
+    "LiquidAI/LFM2-8B-A1B",
+    "vllm/LiquidAI/LFM2-8B-A1B",
+    "cyankiwi/LFM2-24B-A2B-AWQ-8bit",
+    "vllm/cyankiwi/LFM2-24B-A2B-AWQ-8bit",
     *NEMOTRON_MODEL_IDS,
+)
+THINKING_CHAT_TEMPLATE_MODEL_IDS = (
+    "Qwen/Qwen3-14B-AWQ",
+    "vllm/Qwen/Qwen3-14B-AWQ",
+    "LGAI-EXAONE/EXAONE-4.0-32B-AWQ",
+    "vllm/LGAI-EXAONE/EXAONE-4.0-32B-AWQ",
+    "LGAI-EXAONE/EXAONE-4.0-1.2B",
+    "vllm/LGAI-EXAONE/EXAONE-4.0-1.2B",
+)
+THINKING_ONLY_MODEL_IDS = (
+    "cyankiwi/Qwen3-30B-A3B-Thinking-2507-AWQ-8bit",
+    "vllm/cyankiwi/Qwen3-30B-A3B-Thinking-2507-AWQ-8bit",
+    "cyankiwi/Olmo-3-32B-Think-AWQ-4bit",
+    "vllm/cyankiwi/Olmo-3-32B-Think-AWQ-4bit",
 )
 NO_REASONING_EFFORT_MODEL_IDS = (
     "together/Qwen/Qwen3.5-397B-A17B",
     "together/Qwen/Qwen3.5-9B",
 )
 VLLM_STARTUP_MAX_MODEL_LEN = 65536
+GEMMA_CONTEXT_LEN = 128 * 1024
 VLLM_STARTUP_SERVER_ARGS = {
     "enforce_eager": True,
     "max_model_len": VLLM_STARTUP_MAX_MODEL_LEN,
+}
+VLLM_MODEL_SERVER_ARGS = {
+    "vllm/LiquidAI/LFM2-8B-A1B": {"max_model_len": 32768},
+    "vllm/cyankiwi/LFM2-24B-A2B-AWQ-8bit": {"max_model_len": 32768},
+    "vllm/Qwen/Qwen3-14B-AWQ": {"max_model_len": 32768},
+    "vllm/cyankiwi/Qwen3-30B-A3B-Thinking-2507-AWQ-8bit": {"max_model_len": 32768},
+    "vllm/cyankiwi/Olmo-3-32B-Think-AWQ-4bit": {"max_model_len": 65536},
+    "vllm/cyankiwi/Olmo-3.1-32B-Instruct-AWQ-4bit": {"max_model_len": 65536},
+    "vllm/google/gemma-3-4b-it": {"max_model_len": 123904},
+    "vllm/google/gemma-3-12b-it": {"max_model_len": 123904},
+    "vllm/google/gemma-3n-E2B-it": {"max_model_len": 123904},
+    "vllm/google/gemma-3n-E4B-it": {"max_model_len": 123904},
 }
 
 MODEL_REGISTRY_PATH = Path(__file__).resolve().parent.parent / "config" / "model_registry.json"
@@ -84,6 +115,7 @@ def vllm_server_args(model: str) -> dict[str, object]:
     if not str(resolved).startswith("vllm/"):
         return {}
     args = dict(VLLM_STARTUP_SERVER_ARGS)
+    args.update(VLLM_MODEL_SERVER_ARGS.get(resolved, {}))
     if resolved in TRUST_REMOTE_CODE_MODEL_IDS:
         args["trust_remote_code"] = True
     if resolved in NEMOTRON_MODEL_IDS:
@@ -91,6 +123,19 @@ def vllm_server_args(model: str) -> dict[str, object]:
     if resolved in QWEN35_35B_FP8_MODEL_IDS:
         args["quantization"] = "fp8"
     return args
+
+
+def extra_body_for_model(model: str) -> dict[str, object] | None:
+    raw_model = str(model or "").strip()
+    if not raw_model:
+        return None
+    try:
+        resolved = resolve_model_name(raw_model)
+    except ValueError:
+        resolved = raw_model
+    if resolved in THINKING_CHAT_TEMPLATE_MODEL_IDS or resolved in THINKING_ONLY_MODEL_IDS:
+        return {"chat_template_kwargs": {"enable_thinking": True}}
+    return None
 
 
 def reasoning_effort_for_model(model: str, reasoning_effort: str | None) -> str | None:

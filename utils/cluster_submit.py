@@ -23,14 +23,15 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TMPDIR_ROOT="${SLURM_TMPDIR:-/tmp}"
 export TMPDIR="$(mktemp -d "$TMPDIR_ROOT/task.XXXXXX")"
 trap 'rm -rf "$TMPDIR"' EXIT
-export MODEL_HUB_ROOT="${MODEL_HUB_ROOT:-/fs/nexus-scratch/${USER}/hub}"
+export MODEL_HUB_ROOT="${MODEL_HUB_ROOT:-/fs/clip-scratch/${USER}/hub}"
 export RUNTIME_CACHE_ROOT="$MODEL_HUB_ROOT/runtime-cache"
 export XDG_CACHE_HOME="$RUNTIME_CACHE_ROOT/xdg-cache"
 export XDG_DATA_HOME="$RUNTIME_CACHE_ROOT/xdg-data"
 export XDG_STATE_HOME="$RUNTIME_CACHE_ROOT/xdg-state"
 export HF_HOME="$MODEL_HUB_ROOT"
+export HF_HUB_CACHE="$MODEL_HUB_ROOT"
 export HUGGINGFACE_HUB_CACHE="$MODEL_HUB_ROOT"
-export TRANSFORMERS_CACHE="$MODEL_HUB_ROOT/transformers"
+export TRANSFORMERS_CACHE="$MODEL_HUB_ROOT"
 export TORCH_HOME="$MODEL_HUB_ROOT/torch"
 export TRITON_CACHE_DIR="$RUNTIME_CACHE_ROOT/triton"
 export TORCHINDUCTOR_CACHE_DIR="$RUNTIME_CACHE_ROOT/torchinductor"
@@ -43,6 +44,11 @@ PYTHON_BIN="${4:-python}"
 PYTHON_DIR="$(dirname "$PYTHON_BIN")"
 
 cd "$PROJECT_ROOT"
+if [ -f .env ]; then
+  set -a
+  source .env
+  set +a
+fi
 export PATH="$PYTHON_DIR:$PATH"
 
 "$PYTHON_BIN" - <<'PY' "$MANIFEST_PATH" "$TASK_INDEX" "$PROJECT_ROOT" "$PYTHON_BIN"
@@ -72,14 +78,15 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TMPDIR_ROOT="${SLURM_TMPDIR:-/tmp}"
 export TMPDIR="$(mktemp -d "$TMPDIR_ROOT/finalizer.XXXXXX")"
 trap 'rm -rf "$TMPDIR"' EXIT
-export MODEL_HUB_ROOT="${MODEL_HUB_ROOT:-/fs/nexus-scratch/${USER}/hub}"
+export MODEL_HUB_ROOT="${MODEL_HUB_ROOT:-/fs/clip-scratch/${USER}/hub}"
 export RUNTIME_CACHE_ROOT="$MODEL_HUB_ROOT/runtime-cache"
 export XDG_CACHE_HOME="$RUNTIME_CACHE_ROOT/xdg-cache"
 export XDG_DATA_HOME="$RUNTIME_CACHE_ROOT/xdg-data"
 export XDG_STATE_HOME="$RUNTIME_CACHE_ROOT/xdg-state"
 export HF_HOME="$MODEL_HUB_ROOT"
+export HF_HUB_CACHE="$MODEL_HUB_ROOT"
 export HUGGINGFACE_HUB_CACHE="$MODEL_HUB_ROOT"
-export TRANSFORMERS_CACHE="$MODEL_HUB_ROOT/transformers"
+export TRANSFORMERS_CACHE="$MODEL_HUB_ROOT"
 export TORCH_HOME="$MODEL_HUB_ROOT/torch"
 export TRITON_CACHE_DIR="$RUNTIME_CACHE_ROOT/triton"
 export TORCHINDUCTOR_CACHE_DIR="$RUNTIME_CACHE_ROOT/torchinductor"
@@ -92,6 +99,11 @@ PYTHON_BIN="${4:-python}"
 PYTHON_DIR="$(dirname "$PYTHON_BIN")"
 
 cd "$PROJECT_ROOT"
+if [ -f .env ]; then
+  set -a
+  source .env
+  set +a
+fi
 export PATH="$PYTHON_DIR:$PATH"
 
 "$PYTHON_BIN" - <<'PY' "$MANIFEST_PATH" "$FINALIZER_INDEX" "$PROJECT_ROOT" "$PYTHON_BIN"
