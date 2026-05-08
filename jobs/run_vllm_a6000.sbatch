@@ -13,12 +13,12 @@ set -euo pipefail
 
 # vLLM server for Inspect AI.
 # Runs vLLM inside Apptainer on an RTX A6000 node and binds the shared
-# Hugging Face cache at /fs/clip-scratch/adesai10.
+# Hugging Face cache at /fs/clip-scratch/${USER}.
 # This script does not activate or modify the project .venv.
 
 PROJECT_DIR="/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa"
-HF_ROOT="${HF_ROOT:-/fs/clip-scratch/adesai10}"
-SIF="${VLLM_SIF:-/fs/clip-scratch/adesai10/containers/vllm-gemma4.sandbox}"
+HF_ROOT="${HF_ROOT:-/fs/clip-scratch/${USER}}"
+SIF="${VLLM_SIF:-/fs/clip-scratch/${USER}/containers/vllm-gemma4.sandbox}"
 IMAGE="${VLLM_IMAGE:-docker://vllm/vllm-openai:gemma4}"
 MODEL="${VLLM_MODEL:-google/gemma-4-E4B-it}"
 HOST="${VLLM_HOST:-0.0.0.0}"
@@ -37,9 +37,9 @@ cd "$PROJECT_DIR"
 if [[ ! -e "$SIF" ]]; then
   echo "Missing Apptainer image/sandbox: $SIF"
   echo "Building local sandbox from: $IMAGE"
-  mkdir -p "$(dirname "$SIF")" /fs/clip-scratch/adesai10/apptainer-cache /tmp/adesai10-apptainer-tmp
-  APPTAINER_CACHEDIR="${APPTAINER_CACHEDIR:-/fs/clip-scratch/adesai10/apptainer-cache}" \
-  APPTAINER_TMPDIR="${APPTAINER_TMPDIR:-/tmp/adesai10-apptainer-tmp}" \
+  mkdir -p "$(dirname "$SIF")" "/fs/clip-scratch/${USER}/apptainer-cache" "/tmp/${USER}-apptainer-tmp"
+  APPTAINER_CACHEDIR="${APPTAINER_CACHEDIR:-/fs/clip-scratch/${USER}/apptainer-cache}" \
+  APPTAINER_TMPDIR="${APPTAINER_TMPDIR:-/tmp/${USER}-apptainer-tmp}" \
     apptainer build --sandbox "$SIF" "$IMAGE"
 fi
 

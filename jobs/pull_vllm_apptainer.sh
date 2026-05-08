@@ -5,7 +5,7 @@ set -euo pipefail
 # This does not touch the project .venv.
 
 IMAGE="${VLLM_IMAGE:-docker://vllm/vllm-openai:gemma4}"
-OUT="${VLLM_SIF:-/fs/clip-scratch/adesai10/containers/vllm-gemma4.sif}"
+OUT="${VLLM_SIF:-/fs/clip-scratch/${USER}/containers/vllm-gemma4.sif}"
 FORCE=0
 
 usage() {
@@ -17,7 +17,7 @@ Options:
   --image <docker-uri>  Docker image to pull
                        default: docker://vllm/vllm-openai:gemma4
   --out <path>          Output .sif path
-                       default: /fs/clip-scratch/adesai10/containers/vllm-gemma4.sif
+                       default: /fs/clip-scratch/${USER}/containers/vllm-gemma4.sif
   --force              Replace an existing .sif
   --help               Show this help
 
@@ -58,10 +58,10 @@ if ! command -v apptainer >/dev/null 2>&1; then
 fi
 
 mkdir -p "$(dirname "$OUT")" \
-  /fs/clip-scratch/adesai10/apptainer-cache \
-  /fs/clip-scratch/adesai10/apptainer-tmp
-export APPTAINER_CACHEDIR="${APPTAINER_CACHEDIR:-/fs/clip-scratch/adesai10/apptainer-cache}"
-export APPTAINER_TMPDIR="${APPTAINER_TMPDIR:-/fs/clip-scratch/adesai10/apptainer-tmp}"
+  "/fs/clip-scratch/${USER}/apptainer-cache" \
+  "/fs/clip-scratch/${USER}/apptainer-tmp"
+export APPTAINER_CACHEDIR="${APPTAINER_CACHEDIR:-/fs/clip-scratch/${USER}/apptainer-cache}"
+export APPTAINER_TMPDIR="${APPTAINER_TMPDIR:-/fs/clip-scratch/${USER}/apptainer-tmp}"
 
 if [[ -e "$OUT" && "$FORCE" != "1" ]]; then
   echo "SIF already exists: $OUT"
