@@ -1,0 +1,360 @@
+{
+  "schema_version": "augmented_mcqa_collected_state_v1",
+  "storage_kind": "evaluation_slice_state",
+  "generated_at": "2026-05-10T21:51:29+00:00",
+  "run_name": "more_local_eval_models",
+  "generation_run_name": "gemini_from_scratch_testing",
+  "generation_model": "google/gemini-3.1-pro-preview",
+  "evaluation_model": "vllm/google/gemma-3-12b-it",
+  "slice_count": 15,
+  "status_counts": {
+    "current": 15
+  },
+  "slices": [
+    {
+      "slice_ref": "evaluation|more_local_eval_models|vllm_google_gemma-3-12b-it|arc_challenge|augment_ablation|full_question|0|995",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_google_gemma-3-12b-it|arc_challenge|augment_ablation|full_question|0|995",
+        "status": "success",
+        "completed_at": "2026-05-10T01:01:17+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_google_gemma-3-12b-it/2026-05-10T00-50-55-00-00_augmented-mcqa-eval-augment-ablation-full-question_Dqg9EANEBiisQyCzciRADh.eval",
+        "sample_count": 995
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_google_gemma-3-12b-it|arc_challenge|augment_ablation|full_question|0|995",
+        "status": "success",
+        "completed_at": "2026-05-10T01:01:17+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_google_gemma-3-12b-it/2026-05-10T00-50-55-00-00_augmented-mcqa-eval-augment-ablation-full-question_Dqg9EANEBiisQyCzciRADh.eval",
+        "sample_count": 995
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-05-10T01:01:17+00:00",
+      "latest_success_at": "2026-05-10T01:01:17+00:00",
+      "dependency_change_at": "2026-05-10T01:01:17+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|more_local_eval_models|vllm_google_gemma-3-12b-it|arc_challenge|augment_human|full_question|0|995",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_google_gemma-3-12b-it|arc_challenge|augment_human|full_question|0|995",
+        "status": "success",
+        "completed_at": "2026-05-10T01:06:32+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_google_gemma-3-12b-it/2026-05-10T00-52-20-00-00_augmented-mcqa-eval-augment-human-full-question_6KUin9LM6ijCdaeb4FQNGX.eval",
+        "sample_count": 995
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_google_gemma-3-12b-it|arc_challenge|augment_human|full_question|0|995",
+        "status": "success",
+        "completed_at": "2026-05-10T01:06:32+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_google_gemma-3-12b-it/2026-05-10T00-52-20-00-00_augmented-mcqa-eval-augment-human-full-question_6KUin9LM6ijCdaeb4FQNGX.eval",
+        "sample_count": 995
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-05-10T01:06:32+00:00",
+      "latest_success_at": "2026-05-10T01:06:32+00:00",
+      "dependency_change_at": "2026-05-10T01:06:32+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|more_local_eval_models|vllm_google_gemma-3-12b-it|arc_challenge|augment_model|full_question|0|995",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_google_gemma-3-12b-it|arc_challenge|augment_model|full_question|0|995",
+        "status": "success",
+        "completed_at": "2026-05-10T01:07:00+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_google_gemma-3-12b-it/2026-05-10T00-52-24-00-00_augmented-mcqa-eval-augment-model-full-question_EzZpLevAgBBgyaxzC2XHcK.eval",
+        "sample_count": 995
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_google_gemma-3-12b-it|arc_challenge|augment_model|full_question|0|995",
+        "status": "success",
+        "completed_at": "2026-05-10T01:07:00+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_google_gemma-3-12b-it/2026-05-10T00-52-24-00-00_augmented-mcqa-eval-augment-model-full-question_EzZpLevAgBBgyaxzC2XHcK.eval",
+        "sample_count": 995
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-05-10T01:07:00+00:00",
+      "latest_success_at": "2026-05-10T01:07:00+00:00",
+      "dependency_change_at": "2026-05-10T01:07:00+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|more_local_eval_models|vllm_google_gemma-3-12b-it|arc_challenge|human_from_scratch|full_question|0|995",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_google_gemma-3-12b-it|arc_challenge|human_from_scratch|full_question|0|995",
+        "status": "success",
+        "completed_at": "2026-05-10T01:06:59+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_google_gemma-3-12b-it/2026-05-10T00-56-15-00-00_augmented-mcqa-eval-human-from-scratch-full-question_EJG9KV9VuqD2rgoza5C8Zc.eval",
+        "sample_count": 995
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_google_gemma-3-12b-it|arc_challenge|human_from_scratch|full_question|0|995",
+        "status": "success",
+        "completed_at": "2026-05-10T01:06:59+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_google_gemma-3-12b-it/2026-05-10T00-56-15-00-00_augmented-mcqa-eval-human-from-scratch-full-question_EJG9KV9VuqD2rgoza5C8Zc.eval",
+        "sample_count": 995
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-05-10T01:06:59+00:00",
+      "latest_success_at": "2026-05-10T01:06:59+00:00",
+      "dependency_change_at": "2026-05-10T01:06:59+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|more_local_eval_models|vllm_google_gemma-3-12b-it|arc_challenge|model_from_scratch|full_question|0|995",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_google_gemma-3-12b-it|arc_challenge|model_from_scratch|full_question|0|995",
+        "status": "success",
+        "completed_at": "2026-05-10T01:13:31+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_google_gemma-3-12b-it/2026-05-10T01-01-30-00-00_augmented-mcqa-eval-model-from-scratch-full-question_3DKycJxWwXjAaC8tr78UYd.eval",
+        "sample_count": 995
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_google_gemma-3-12b-it|arc_challenge|model_from_scratch|full_question|0|995",
+        "status": "success",
+        "completed_at": "2026-05-10T01:13:31+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_google_gemma-3-12b-it/2026-05-10T01-01-30-00-00_augmented-mcqa-eval-model-from-scratch-full-question_3DKycJxWwXjAaC8tr78UYd.eval",
+        "sample_count": 995
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-05-10T01:13:31+00:00",
+      "latest_success_at": "2026-05-10T01:13:31+00:00",
+      "dependency_change_at": "2026-05-10T01:13:31+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|more_local_eval_models|vllm_google_gemma-3-12b-it|gpqa|augment_ablation|full_question|0|415",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_google_gemma-3-12b-it|gpqa|augment_ablation|full_question|0|415",
+        "status": "success",
+        "completed_at": "2026-05-10T01:09:30+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_google_gemma-3-12b-it/2026-05-10T01-02-20-00-00_augmented-mcqa-eval-augment-ablation-full-question_CSVPA22ZRHauusoiCPj2sd.eval",
+        "sample_count": 415
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_google_gemma-3-12b-it|gpqa|augment_ablation|full_question|0|415",
+        "status": "success",
+        "completed_at": "2026-05-10T01:09:30+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_google_gemma-3-12b-it/2026-05-10T01-02-20-00-00_augmented-mcqa-eval-augment-ablation-full-question_CSVPA22ZRHauusoiCPj2sd.eval",
+        "sample_count": 415
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-05-10T01:09:30+00:00",
+      "latest_success_at": "2026-05-10T01:09:30+00:00",
+      "dependency_change_at": "2026-05-10T01:09:30+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|more_local_eval_models|vllm_google_gemma-3-12b-it|gpqa|augment_human|full_question|0|415",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_google_gemma-3-12b-it|gpqa|augment_human|full_question|0|415",
+        "status": "success",
+        "completed_at": "2026-05-10T01:15:58+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_google_gemma-3-12b-it/2026-05-10T01-06-44-00-00_augmented-mcqa-eval-augment-human-full-question_4syW5vMVfcSn5EuhJVjSbP.eval",
+        "sample_count": 415
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_google_gemma-3-12b-it|gpqa|augment_human|full_question|0|415",
+        "status": "success",
+        "completed_at": "2026-05-10T01:15:58+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_google_gemma-3-12b-it/2026-05-10T01-06-44-00-00_augmented-mcqa-eval-augment-human-full-question_4syW5vMVfcSn5EuhJVjSbP.eval",
+        "sample_count": 415
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-05-10T01:15:58+00:00",
+      "latest_success_at": "2026-05-10T01:15:58+00:00",
+      "dependency_change_at": "2026-05-10T01:15:58+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|more_local_eval_models|vllm_google_gemma-3-12b-it|gpqa|augment_model|full_question|0|415",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_google_gemma-3-12b-it|gpqa|augment_model|full_question|0|415",
+        "status": "success",
+        "completed_at": "2026-05-10T01:14:53+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_google_gemma-3-12b-it/2026-05-10T01-07-09-00-00_augmented-mcqa-eval-augment-model-full-question_RA6xX9MgAvTaLFP2Bdu2nZ.eval",
+        "sample_count": 415
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_google_gemma-3-12b-it|gpqa|augment_model|full_question|0|415",
+        "status": "success",
+        "completed_at": "2026-05-10T01:14:53+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_google_gemma-3-12b-it/2026-05-10T01-07-09-00-00_augmented-mcqa-eval-augment-model-full-question_RA6xX9MgAvTaLFP2Bdu2nZ.eval",
+        "sample_count": 415
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-05-10T01:14:53+00:00",
+      "latest_success_at": "2026-05-10T01:14:53+00:00",
+      "dependency_change_at": "2026-05-10T01:14:53+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|more_local_eval_models|vllm_google_gemma-3-12b-it|gpqa|human_from_scratch|full_question|0|415",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_google_gemma-3-12b-it|gpqa|human_from_scratch|full_question|0|415",
+        "status": "success",
+        "completed_at": "2026-05-10T01:12:17+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_google_gemma-3-12b-it/2026-05-10T01-07-12-00-00_augmented-mcqa-eval-human-from-scratch-full-question_Rwtc3LXzEVMSv4yUff2y69.eval",
+        "sample_count": 415
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_google_gemma-3-12b-it|gpqa|human_from_scratch|full_question|0|415",
+        "status": "success",
+        "completed_at": "2026-05-10T01:12:17+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_google_gemma-3-12b-it/2026-05-10T01-07-12-00-00_augmented-mcqa-eval-human-from-scratch-full-question_Rwtc3LXzEVMSv4yUff2y69.eval",
+        "sample_count": 415
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-05-10T01:12:17+00:00",
+      "latest_success_at": "2026-05-10T01:12:17+00:00",
+      "dependency_change_at": "2026-05-10T01:12:17+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|more_local_eval_models|vllm_google_gemma-3-12b-it|gpqa|model_from_scratch|full_question|0|415",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_google_gemma-3-12b-it|gpqa|model_from_scratch|full_question|0|415",
+        "status": "success",
+        "completed_at": "2026-05-10T01:13:56+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_google_gemma-3-12b-it/2026-05-10T01-07-34-00-00_augmented-mcqa-eval-model-from-scratch-full-question_ES4wLKPEfvEGQz6HDLQmqi.eval",
+        "sample_count": 415
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_google_gemma-3-12b-it|gpqa|model_from_scratch|full_question|0|415",
+        "status": "success",
+        "completed_at": "2026-05-10T01:13:56+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_google_gemma-3-12b-it/2026-05-10T01-07-34-00-00_augmented-mcqa-eval-model-from-scratch-full-question_ES4wLKPEfvEGQz6HDLQmqi.eval",
+        "sample_count": 415
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-05-10T01:13:56+00:00",
+      "latest_success_at": "2026-05-10T01:13:56+00:00",
+      "dependency_change_at": "2026-05-10T01:13:56+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|more_local_eval_models|vllm_google_gemma-3-12b-it|mmlu_pro|augment_ablation|full_question|0|954",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_google_gemma-3-12b-it|mmlu_pro|augment_ablation|full_question|0|954",
+        "status": "success",
+        "completed_at": "2026-05-10T01:27:17+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_google_gemma-3-12b-it/2026-05-10T01-09-40-00-00_augmented-mcqa-eval-augment-ablation-full-question_n5bwzegNj5pZFSAmtSVLzV.eval",
+        "sample_count": 954
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_google_gemma-3-12b-it|mmlu_pro|augment_ablation|full_question|0|954",
+        "status": "success",
+        "completed_at": "2026-05-10T01:27:17+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_google_gemma-3-12b-it/2026-05-10T01-09-40-00-00_augmented-mcqa-eval-augment-ablation-full-question_n5bwzegNj5pZFSAmtSVLzV.eval",
+        "sample_count": 954
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-05-10T01:27:17+00:00",
+      "latest_success_at": "2026-05-10T01:27:17+00:00",
+      "dependency_change_at": "2026-05-10T01:27:17+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|more_local_eval_models|vllm_google_gemma-3-12b-it|mmlu_pro|augment_human|full_question|0|954",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_google_gemma-3-12b-it|mmlu_pro|augment_human|full_question|0|954",
+        "status": "success",
+        "completed_at": "2026-05-10T01:20:22+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_google_gemma-3-12b-it/2026-05-10T01-10-25-00-00_augmented-mcqa-eval-augment-human-full-question_S8Lbs2xPuBFMVGQsxxw77j.eval",
+        "sample_count": 954
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_google_gemma-3-12b-it|mmlu_pro|augment_human|full_question|0|954",
+        "status": "success",
+        "completed_at": "2026-05-10T01:20:22+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_google_gemma-3-12b-it/2026-05-10T01-10-25-00-00_augmented-mcqa-eval-augment-human-full-question_S8Lbs2xPuBFMVGQsxxw77j.eval",
+        "sample_count": 954
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-05-10T01:20:22+00:00",
+      "latest_success_at": "2026-05-10T01:20:22+00:00",
+      "dependency_change_at": "2026-05-10T01:20:22+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|more_local_eval_models|vllm_google_gemma-3-12b-it|mmlu_pro|augment_model|full_question|0|954",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_google_gemma-3-12b-it|mmlu_pro|augment_model|full_question|0|954",
+        "status": "success",
+        "completed_at": "2026-05-10T01:22:04+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_google_gemma-3-12b-it/2026-05-10T01-12-27-00-00_augmented-mcqa-eval-augment-model-full-question_5A95XLX78BTNXC2EscU9WU.eval",
+        "sample_count": 954
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_google_gemma-3-12b-it|mmlu_pro|augment_model|full_question|0|954",
+        "status": "success",
+        "completed_at": "2026-05-10T01:22:04+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_google_gemma-3-12b-it/2026-05-10T01-12-27-00-00_augmented-mcqa-eval-augment-model-full-question_5A95XLX78BTNXC2EscU9WU.eval",
+        "sample_count": 954
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-05-10T01:22:04+00:00",
+      "latest_success_at": "2026-05-10T01:22:04+00:00",
+      "dependency_change_at": "2026-05-10T01:22:04+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|more_local_eval_models|vllm_google_gemma-3-12b-it|mmlu_pro|human_from_scratch|full_question|0|954",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_google_gemma-3-12b-it|mmlu_pro|human_from_scratch|full_question|0|954",
+        "status": "success",
+        "completed_at": "2026-05-10T01:26:29+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_google_gemma-3-12b-it/2026-05-10T01-13-43-00-00_augmented-mcqa-eval-human-from-scratch-full-question_Yp7KpkFzYcRK8f6PqsXg2h.eval",
+        "sample_count": 954
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_google_gemma-3-12b-it|mmlu_pro|human_from_scratch|full_question|0|954",
+        "status": "success",
+        "completed_at": "2026-05-10T01:26:29+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_google_gemma-3-12b-it/2026-05-10T01-13-43-00-00_augmented-mcqa-eval-human-from-scratch-full-question_Yp7KpkFzYcRK8f6PqsXg2h.eval",
+        "sample_count": 954
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-05-10T01:26:29+00:00",
+      "latest_success_at": "2026-05-10T01:26:29+00:00",
+      "dependency_change_at": "2026-05-10T01:26:29+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|more_local_eval_models|vllm_google_gemma-3-12b-it|mmlu_pro|model_from_scratch|full_question|0|954",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_google_gemma-3-12b-it|mmlu_pro|model_from_scratch|full_question|0|954",
+        "status": "success",
+        "completed_at": "2026-05-10T01:26:57+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_google_gemma-3-12b-it/2026-05-10T01-14-05-00-00_augmented-mcqa-eval-model-from-scratch-full-question_J2JdJzATUf77T74NpZjJjk.eval",
+        "sample_count": 954
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_google_gemma-3-12b-it|mmlu_pro|model_from_scratch|full_question|0|954",
+        "status": "success",
+        "completed_at": "2026-05-10T01:26:57+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_google_gemma-3-12b-it/2026-05-10T01-14-05-00-00_augmented-mcqa-eval-model-from-scratch-full-question_J2JdJzATUf77T74NpZjJjk.eval",
+        "sample_count": 954
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-05-10T01:26:57+00:00",
+      "latest_success_at": "2026-05-10T01:26:57+00:00",
+      "dependency_change_at": "2026-05-10T01:26:57+00:00",
+      "status": "current"
+    }
+  ]
+}
