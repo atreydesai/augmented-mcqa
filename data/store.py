@@ -925,6 +925,9 @@ def _write_evaluated_store(
         for setting in settings:
             for mode in modes:
                 mode_rows = records.get(dataset_type, {}).get(setting, {}).get(mode, [])
+                for row in mode_rows:
+                    if row.get("question_id") is not None:
+                        row["question_id"] = str(row.get("question_id"))
                 dataset = Dataset.from_list(mode_rows) if mode_rows else _empty_evaluated_dataset()
                 path = _evaluated_store_path(tmp_path, dataset_type, setting, mode)
                 path.parent.mkdir(parents=True, exist_ok=True)
@@ -1289,18 +1292,6 @@ def _group_evaluated_records(
                 for sample_id, payload in setting_observed.get(mode, {}).items():
                     if sample_id in seen_sample_ids:
                         continue
-                    fallback = _fallback_evaluated_record(sample_id, dataset_type, setting, payload)
-                    group_records[dataset_type][setting][mode].append(
-                        _evaluated_record(
-                            fallback,
-                            _with_random_fallback(
-                                fallback,
-                                payload,
-                                eval_model=evaluation_model,
-                                mode=mode,
-                            ),
-                        )
-                    )
     return group_records
 
 

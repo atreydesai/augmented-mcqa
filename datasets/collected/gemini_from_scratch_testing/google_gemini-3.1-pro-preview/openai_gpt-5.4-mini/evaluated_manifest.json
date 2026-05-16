@@ -3,8 +3,8 @@
   "storage_kind": "evaluated_setting_mode_records",
   "dataset_types": [
     "arc_challenge",
-    "mmlu_pro",
-    "gpqa"
+    "gpqa",
+    "mmlu_pro"
   ],
   "settings": [
     "human_from_scratch",
@@ -20,6 +20,6 @@
   "generation_run_name": "gemini_from_scratch_testing",
   "generation_model": "google/gemini-3.1-pro-preview",
   "evaluation_model": "openai/gpt-5.4-mini",
-  "source_results_root": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/eval_gpt54mini_high_gemini/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/openai_gpt-5.4-mini",
+  "source_results_root": "tmp/gpt54mini_combined_eval_logs_no_old/gemini",
   "collection_state_file": "collected_state.json"
 }
