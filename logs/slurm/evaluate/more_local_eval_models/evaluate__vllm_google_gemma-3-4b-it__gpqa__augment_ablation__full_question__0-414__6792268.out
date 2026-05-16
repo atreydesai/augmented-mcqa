@@ -1,0 +1,61 @@
+---------------------------------------------------------                                               
+augmented_mcqa_eval_augment_ablation_full_question (415 samples): vllm/google/gemma-3-4b-it             
+max_tokens: 32768, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)
+---------------------------------------------------------                                               
+                                                                                                        
+Steps:  10/415   2% | Samples:   1/415 | mean:  n/a | vllm:  0/10 | HTTP retries: 0
+Steps:  17/415   4% | Samples:  13/415 | mean: 0.25 | vllm:  5/10 | HTTP retries: 1
+Steps:  27/415   6% | Samples:  25/415 | mean: 0.30 | vllm:  6/10 | HTTP retries: 1
+Steps:  42/415  10% | Samples:  36/415 | mean: 0.29 | vllm:  2/10 | HTTP retries: 1
+Steps:  51/415  12% | Samples:  48/415 | mean: 0.30 | vllm:  5/10 | HTTP retries: 2
+Steps:  62/415  14% | Samples:  60/415 | mean: 0.29 | vllm:  5/10 | HTTP retries: 2
+Steps:  71/415  17% | Samples:  70/415 | mean: 0.28 | vllm:  3/10 | HTTP retries: 2
+Steps:  83/415  20% | Samples:  80/415 | mean: 0.31 | vllm:  5/10 | HTTP retries: 2
+Steps:  95/415  22% | Samples:  92/415 | mean: 0.35 | vllm:  3/10 | HTTP retries: 3
+Steps: 106/415  25% | Samples: 104/415 | mean: 0.32 | vllm:  5/10 | HTTP retries: 3
+Steps: 116/415  27% | Samples: 114/415 | mean: 0.32 | vllm:  4/10 | HTTP retries: 3
+Steps: 126/415  30% | Samples: 125/415 | mean: 0.30 | vllm:  6/10 | HTTP retries: 3
+Steps: 137/415  33% | Samples: 135/415 | mean: 0.31 | vllm:  5/10 | HTTP retries: 3
+Steps: 147/415  35% | Samples: 145/415 | mean: 0.32 | vllm:  5/10 | HTTP retries: 3
+Steps: 157/415  37% | Samples: 155/415 | mean: 0.31 | vllm:  6/10 | HTTP retries: 3
+Steps: 167/415  40% | Samples: 165/415 | mean: 0.31 | vllm:  5/10 | HTTP retries: 3
+Steps: 178/415  42% | Samples: 176/415 | mean: 0.30 | vllm:  6/10 | HTTP retries: 3
+Steps: 188/415  45% | Samples: 187/415 | mean: 0.29 | vllm:  7/10 | HTTP retries: 3
+Steps: 198/415  47% | Samples: 196/415 | mean: 0.29 | vllm:  6/10 | HTTP retries: 3
+Steps: 208/415  50% | Samples: 207/415 | mean: 0.30 | vllm:  6/10 | HTTP retries: 3
+Steps: 220/415  53% | Samples: 218/415 | mean: 0.30 | vllm:  6/10 | HTTP retries: 3
+Steps: 231/415  55% | Samples: 228/415 | mean: 0.29 | vllm:  5/10 | HTTP retries: 3
+Steps: 241/415  58% | Samples: 238/415 | mean: 0.29 | vllm:  4/10 | HTTP retries: 3
+Steps: 250/415  60% | Samples: 247/415 | mean: 0.29 | vllm:  5/10 | HTTP retries: 3
+Steps: 257/415  61% | Samples: 256/415 | mean: 0.29 | vllm:  5/10 | HTTP retries: 3
+Steps: 267/415  64% | Samples: 266/415 | mean: 0.28 | vllm:  5/10 | HTTP retries: 3
+Steps: 278/415  66% | Samples: 276/415 | mean: 0.28 | vllm:  4/10 | HTTP retries: 3
+Steps: 289/415  69% | Samples: 287/415 | mean: 0.28 | vllm:  4/10 | HTTP retries: 3
+Steps: 300/415  72% | Samples: 299/415 | mean: 0.27 | vllm:  5/10 | HTTP retries: 3
+Steps: 312/415  75% | Samples: 310/415 | mean: 0.27 | vllm:  6/10 | HTTP retries: 3
+Steps: 324/415  78% | Samples: 322/415 | mean: 0.28 | vllm:  7/10 | HTTP retries: 3
+Steps: 334/415  80% | Samples: 333/415 | mean: 0.27 | vllm:  7/10 | HTTP retries: 3
+Steps: 345/415  83% | Samples: 344/415 | mean: 0.26 | vllm:  6/10 | HTTP retries: 3
+Steps: 356/415  85% | Samples: 355/415 | mean: 0.26 | vllm:  8/10 | HTTP retries: 3
+Steps: 367/415  88% | Samples: 366/415 | mean: 0.26 | vllm:  4/10 | HTTP retries: 3
+Steps: 380/415  91% | Samples: 378/415 | mean: 0.26 | vllm:  7/10 | HTTP retries: 3
+Steps: 389/415  93% | Samples: 388/415 | mean: 0.27 | vllm:  6/10 | HTTP retries: 3
+Steps: 401/415  96% | Samples: 400/415 | mean: 0.27 | vllm:  7/10 | HTTP retries: 4
+Steps: 414/415  99% | Samples: 414/415 | mean: 0.27 | vllm:  1/10 | HTTP retries: 4
+Steps: 415/415 100% | Samples: 415/415 | mean: 0.27 | vllm:  0/10 | HTTP retries: 4
+
+---------------------------------------------------------                                                                                     
+augmented_mcqa_eval_augment_ablation_full_question (415 samples): vllm/google/gemma-3-4b-it                                                   
+max_tokens: 32768, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)                                      
+                                                                                                                                              
+total time:                                              0:05:12                                                                              
+vllm/google/gemma-3-4b-it                                183,732 tokens [I: 171,493, O: 12,239]                                               
+augmented_mcqa_eval                                                                                                                           
+mean                 0.272                                                                                                                    
+stderr               0.022                                                                                                                    
+Log:                                                                                                                                          
+results/inspect/evaluation/more_local_eval_models/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_google_gemma-3-4b-it/202…
+---------------------------------------------------------                                                                                     
+                                                                                                                                              
+Evaluation logs: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_google_gemma-3-4b-it
+Running: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/python main.py evaluate --model vllm/google/gemma-3-4b-it --run-name more_local_eval_models --generator qwen --dataset-types gpqa --settings augment_ablation --modes full_question --question-start 0 --limit 415 --skip-collect-evaluated --max-tokens 32768 --reasoning-effort medium --retry-on-error 2
