@@ -1,0 +1,360 @@
+{
+  "schema_version": "augmented_mcqa_collected_state_v1",
+  "storage_kind": "evaluation_slice_state",
+  "generated_at": "2026-05-10T21:51:59+00:00",
+  "run_name": "more_local_eval_models",
+  "generation_run_name": "together_from_scratch_testing",
+  "generation_model": "together/Qwen/Qwen3.5-397B-A17B",
+  "evaluation_model": "vllm/cyankiwi/Olmo-3.1-32B-Instruct-AWQ-4bit",
+  "slice_count": 15,
+  "status_counts": {
+    "current": 15
+  },
+  "slices": [
+    {
+      "slice_ref": "evaluation|more_local_eval_models|vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit|arc_challenge|augment_ablation|full_question|0|995",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit|arc_challenge|augment_ablation|full_question|0|995",
+        "status": "success",
+        "completed_at": "2026-05-10T03:57:30+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit/2026-05-10T03-41-04-00-00_augmented-mcqa-eval-augment-ablation-full-question_Pnwj6EJbHU3A3C2rEd4oft.eval",
+        "sample_count": 995
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit|arc_challenge|augment_ablation|full_question|0|995",
+        "status": "success",
+        "completed_at": "2026-05-10T03:57:30+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit/2026-05-10T03-41-04-00-00_augmented-mcqa-eval-augment-ablation-full-question_Pnwj6EJbHU3A3C2rEd4oft.eval",
+        "sample_count": 995
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-05-10T03:57:30+00:00",
+      "latest_success_at": "2026-05-10T03:57:30+00:00",
+      "dependency_change_at": "2026-05-10T03:57:30+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|more_local_eval_models|vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit|arc_challenge|augment_human|full_question|0|995",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit|arc_challenge|augment_human|full_question|0|995",
+        "status": "success",
+        "completed_at": "2026-05-10T03:59:05+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit/2026-05-10T03-43-42-00-00_augmented-mcqa-eval-augment-human-full-question_MDGCHZJuZ9UHv3GmmgjpAP.eval",
+        "sample_count": 995
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit|arc_challenge|augment_human|full_question|0|995",
+        "status": "success",
+        "completed_at": "2026-05-10T03:59:05+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit/2026-05-10T03-43-42-00-00_augmented-mcqa-eval-augment-human-full-question_MDGCHZJuZ9UHv3GmmgjpAP.eval",
+        "sample_count": 995
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-05-10T03:59:05+00:00",
+      "latest_success_at": "2026-05-10T03:59:05+00:00",
+      "dependency_change_at": "2026-05-10T03:59:05+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|more_local_eval_models|vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit|arc_challenge|augment_model|full_question|0|995",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit|arc_challenge|augment_model|full_question|0|995",
+        "status": "success",
+        "completed_at": "2026-05-10T03:57:11+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit/2026-05-10T03-47-53-00-00_augmented-mcqa-eval-augment-model-full-question_mU5RVNM77ihv5fnCeU937E.eval",
+        "sample_count": 995
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit|arc_challenge|augment_model|full_question|0|995",
+        "status": "success",
+        "completed_at": "2026-05-10T03:57:11+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit/2026-05-10T03-47-53-00-00_augmented-mcqa-eval-augment-model-full-question_mU5RVNM77ihv5fnCeU937E.eval",
+        "sample_count": 995
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-05-10T03:57:11+00:00",
+      "latest_success_at": "2026-05-10T03:57:11+00:00",
+      "dependency_change_at": "2026-05-10T03:57:11+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|more_local_eval_models|vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit|arc_challenge|human_from_scratch|full_question|0|995",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit|arc_challenge|human_from_scratch|full_question|0|995",
+        "status": "success",
+        "completed_at": "2026-05-10T04:01:25+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit/2026-05-10T03-48-48-00-00_augmented-mcqa-eval-human-from-scratch-full-question_AjzVZJZcidpmdz3eJi8yKf.eval",
+        "sample_count": 995
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit|arc_challenge|human_from_scratch|full_question|0|995",
+        "status": "success",
+        "completed_at": "2026-05-10T04:01:25+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit/2026-05-10T03-48-48-00-00_augmented-mcqa-eval-human-from-scratch-full-question_AjzVZJZcidpmdz3eJi8yKf.eval",
+        "sample_count": 995
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-05-10T04:01:25+00:00",
+      "latest_success_at": "2026-05-10T04:01:25+00:00",
+      "dependency_change_at": "2026-05-10T04:01:25+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|more_local_eval_models|vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit|arc_challenge|model_from_scratch|full_question|0|995",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit|arc_challenge|model_from_scratch|full_question|0|995",
+        "status": "success",
+        "completed_at": "2026-05-10T04:04:44+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit/2026-05-10T03-52-14-00-00_augmented-mcqa-eval-model-from-scratch-full-question_Dd6sgxriQgP2WGKaFKRuFi.eval",
+        "sample_count": 995
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit|arc_challenge|model_from_scratch|full_question|0|995",
+        "status": "success",
+        "completed_at": "2026-05-10T04:04:44+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit/2026-05-10T03-52-14-00-00_augmented-mcqa-eval-model-from-scratch-full-question_Dd6sgxriQgP2WGKaFKRuFi.eval",
+        "sample_count": 995
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-05-10T04:04:44+00:00",
+      "latest_success_at": "2026-05-10T04:04:44+00:00",
+      "dependency_change_at": "2026-05-10T04:04:44+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|more_local_eval_models|vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit|gpqa|augment_ablation|full_question|0|415",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit|gpqa|augment_ablation|full_question|0|415",
+        "status": "success",
+        "completed_at": "2026-05-10T04:45:17+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit/2026-05-10T03-53-26-00-00_augmented-mcqa-eval-augment-ablation-full-question_GJuzsYFEENPUyvDkTJSsd4.eval",
+        "sample_count": 415
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit|gpqa|augment_ablation|full_question|0|415",
+        "status": "success",
+        "completed_at": "2026-05-10T04:45:17+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit/2026-05-10T03-53-26-00-00_augmented-mcqa-eval-augment-ablation-full-question_GJuzsYFEENPUyvDkTJSsd4.eval",
+        "sample_count": 415
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-05-10T04:45:17+00:00",
+      "latest_success_at": "2026-05-10T04:45:17+00:00",
+      "dependency_change_at": "2026-05-10T04:45:17+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|more_local_eval_models|vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit|gpqa|augment_human|full_question|0|415",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit|gpqa|augment_human|full_question|0|415",
+        "status": "success",
+        "completed_at": "2026-05-10T04:45:45+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit/2026-05-10T03-57-23-00-00_augmented-mcqa-eval-augment-human-full-question_MND5ZvSg54oiC7Saf3iybe.eval",
+        "sample_count": 415
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit|gpqa|augment_human|full_question|0|415",
+        "status": "success",
+        "completed_at": "2026-05-10T04:45:45+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit/2026-05-10T03-57-23-00-00_augmented-mcqa-eval-augment-human-full-question_MND5ZvSg54oiC7Saf3iybe.eval",
+        "sample_count": 415
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-05-10T04:45:45+00:00",
+      "latest_success_at": "2026-05-10T04:45:45+00:00",
+      "dependency_change_at": "2026-05-10T04:45:45+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|more_local_eval_models|vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit|gpqa|augment_model|full_question|0|415",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit|gpqa|augment_model|full_question|0|415",
+        "status": "success",
+        "completed_at": "2026-05-10T05:00:16+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit/2026-05-10T03-57-41-00-00_augmented-mcqa-eval-augment-model-full-question_5XKGW6rCz8toL9SR4VLVrC.eval",
+        "sample_count": 415
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit|gpqa|augment_model|full_question|0|415",
+        "status": "success",
+        "completed_at": "2026-05-10T05:00:16+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit/2026-05-10T03-57-41-00-00_augmented-mcqa-eval-augment-model-full-question_5XKGW6rCz8toL9SR4VLVrC.eval",
+        "sample_count": 415
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-05-10T05:00:16+00:00",
+      "latest_success_at": "2026-05-10T05:00:16+00:00",
+      "dependency_change_at": "2026-05-10T05:00:16+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|more_local_eval_models|vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit|gpqa|human_from_scratch|full_question|0|415",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit|gpqa|human_from_scratch|full_question|0|415",
+        "status": "success",
+        "completed_at": "2026-05-10T04:35:01+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit/2026-05-10T03-59-16-00-00_augmented-mcqa-eval-human-from-scratch-full-question_K2dzZrYg94GoxizZpQ9Nzw.eval",
+        "sample_count": 415
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit|gpqa|human_from_scratch|full_question|0|415",
+        "status": "success",
+        "completed_at": "2026-05-10T04:35:01+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit/2026-05-10T03-59-16-00-00_augmented-mcqa-eval-human-from-scratch-full-question_K2dzZrYg94GoxizZpQ9Nzw.eval",
+        "sample_count": 415
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-05-10T04:35:01+00:00",
+      "latest_success_at": "2026-05-10T04:35:01+00:00",
+      "dependency_change_at": "2026-05-10T04:35:01+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|more_local_eval_models|vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit|gpqa|model_from_scratch|full_question|0|415",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit|gpqa|model_from_scratch|full_question|0|415",
+        "status": "success",
+        "completed_at": "2026-05-10T04:21:30+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit/2026-05-10T04-01-37-00-00_augmented-mcqa-eval-model-from-scratch-full-question_XkBbzxwYkUeM3imxn7s7iq.eval",
+        "sample_count": 415
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit|gpqa|model_from_scratch|full_question|0|415",
+        "status": "success",
+        "completed_at": "2026-05-10T04:21:30+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit/2026-05-10T04-01-37-00-00_augmented-mcqa-eval-model-from-scratch-full-question_XkBbzxwYkUeM3imxn7s7iq.eval",
+        "sample_count": 415
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-05-10T04:21:30+00:00",
+      "latest_success_at": "2026-05-10T04:21:30+00:00",
+      "dependency_change_at": "2026-05-10T04:21:30+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|more_local_eval_models|vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit|mmlu_pro|augment_ablation|full_question|0|954",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit|mmlu_pro|augment_ablation|full_question|0|954",
+        "status": "success",
+        "completed_at": "2026-05-10T04:26:15+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit/2026-05-10T04-04-56-00-00_augmented-mcqa-eval-augment-ablation-full-question_6cgshvgwuccXdt5nbyE8gK.eval",
+        "sample_count": 954
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit|mmlu_pro|augment_ablation|full_question|0|954",
+        "status": "success",
+        "completed_at": "2026-05-10T04:26:15+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit/2026-05-10T04-04-56-00-00_augmented-mcqa-eval-augment-ablation-full-question_6cgshvgwuccXdt5nbyE8gK.eval",
+        "sample_count": 954
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-05-10T04:26:15+00:00",
+      "latest_success_at": "2026-05-10T04:26:15+00:00",
+      "dependency_change_at": "2026-05-10T04:26:15+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|more_local_eval_models|vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit|mmlu_pro|augment_human|full_question|0|954",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit|mmlu_pro|augment_human|full_question|0|954",
+        "status": "success",
+        "completed_at": "2026-05-10T04:36:14+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit/2026-05-10T04-21-41-00-00_augmented-mcqa-eval-augment-human-full-question_cdPC7drQpEuv83CcvVnGDb.eval",
+        "sample_count": 954
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit|mmlu_pro|augment_human|full_question|0|954",
+        "status": "success",
+        "completed_at": "2026-05-10T04:36:14+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit/2026-05-10T04-21-41-00-00_augmented-mcqa-eval-augment-human-full-question_cdPC7drQpEuv83CcvVnGDb.eval",
+        "sample_count": 954
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-05-10T04:36:14+00:00",
+      "latest_success_at": "2026-05-10T04:36:14+00:00",
+      "dependency_change_at": "2026-05-10T04:36:14+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|more_local_eval_models|vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit|mmlu_pro|augment_model|full_question|0|954",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit|mmlu_pro|augment_model|full_question|0|954",
+        "status": "success",
+        "completed_at": "2026-05-10T04:40:37+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit/2026-05-10T04-26-28-00-00_augmented-mcqa-eval-augment-model-full-question_MXWvYCFwx9NVnQym2DEGTs.eval",
+        "sample_count": 954
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit|mmlu_pro|augment_model|full_question|0|954",
+        "status": "success",
+        "completed_at": "2026-05-10T04:40:37+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit/2026-05-10T04-26-28-00-00_augmented-mcqa-eval-augment-model-full-question_MXWvYCFwx9NVnQym2DEGTs.eval",
+        "sample_count": 954
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-05-10T04:40:37+00:00",
+      "latest_success_at": "2026-05-10T04:40:37+00:00",
+      "dependency_change_at": "2026-05-10T04:40:37+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|more_local_eval_models|vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit|mmlu_pro|human_from_scratch|full_question|0|954",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit|mmlu_pro|human_from_scratch|full_question|0|954",
+        "status": "success",
+        "completed_at": "2026-05-10T04:45:10+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit/2026-05-10T04-35-11-00-00_augmented-mcqa-eval-human-from-scratch-full-question_6KmU7Lt6S98CUs4TAZWsMz.eval",
+        "sample_count": 954
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit|mmlu_pro|human_from_scratch|full_question|0|954",
+        "status": "success",
+        "completed_at": "2026-05-10T04:45:10+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit/2026-05-10T04-35-11-00-00_augmented-mcqa-eval-human-from-scratch-full-question_6KmU7Lt6S98CUs4TAZWsMz.eval",
+        "sample_count": 954
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-05-10T04:45:10+00:00",
+      "latest_success_at": "2026-05-10T04:45:10+00:00",
+      "dependency_change_at": "2026-05-10T04:45:10+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|more_local_eval_models|vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit|mmlu_pro|model_from_scratch|full_question|0|954",
+      "submission_count": 0,
+      "latest_attempt": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit|mmlu_pro|model_from_scratch|full_question|0|954",
+        "status": "success",
+        "completed_at": "2026-05-10T04:48:45+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit/2026-05-10T04-36-26-00-00_augmented-mcqa-eval-model-from-scratch-full-question_CwuXSzoHK4w5btvGrNqB9i.eval",
+        "sample_count": 954
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|more_local_eval_models|vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit|mmlu_pro|model_from_scratch|full_question|0|954",
+        "status": "success",
+        "completed_at": "2026-05-10T04:48:45+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit/2026-05-10T04-36-26-00-00_augmented-mcqa-eval-model-from-scratch-full-question_CwuXSzoHK4w5btvGrNqB9i.eval",
+        "sample_count": 954
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-05-10T04:48:45+00:00",
+      "latest_success_at": "2026-05-10T04:48:45+00:00",
+      "dependency_change_at": "2026-05-10T04:48:45+00:00",
+      "status": "current"
+    }
+  ]
+}
