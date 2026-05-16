@@ -1,0 +1,125 @@
+---------------------------------------------------------                                                       
+augmented_mcqa_eval_model_from_scratch_full_question (954 samples): vllm/cyankiwi/Olmo-3.1-32B-Instruct-AWQ-4bit
+max_tokens: 32768, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)        
+---------------------------------------------------------                                                       
+                                                                                                                
+Steps:  10/954   1% | Samples:   1/954 | mean:  n/a | vllm:  0/10 | HTTP retries: 0
+Steps:  16/954   1% | Samples:  16/954 | mean: 0.93 | vllm:  1/10 | HTTP retries: 0
+Steps:  30/954   3% | Samples:  29/954 | mean: 0.70 | vllm:  8/10 | HTTP retries: 0
+Steps:  44/954   4% | Samples:  36/954 | mean: 0.69 | vllm:  1/10 | HTTP retries: 0
+Steps:  48/954   5% | Samples:  48/954 | mean: 0.74 | vllm:  7/10 | HTTP retries: 0
+Steps:  60/954   6% | Samples:  57/954 | mean: 0.70 | vllm:  2/10 | HTTP retries: 0
+Steps:  71/954   7% | Samples:  67/954 | mean: 0.74 | vllm:  5/10 | HTTP retries: 0
+Steps:  79/954   8% | Samples:  78/954 | mean: 0.75 | vllm:  5/10 | HTTP retries: 0
+Steps:  90/954   9% | Samples:  89/954 | mean: 0.76 | vllm:  3/10 | HTTP retries: 0
+Steps: 101/954  10% | Samples: 101/954 | mean: 0.73 | vllm:  7/10 | HTTP retries: 0
+Steps: 115/954  12% | Samples: 109/954 | mean: 0.71 | vllm:  1/10 | HTTP retries: 0
+Steps: 122/954  12% | Samples: 120/954 | mean: 0.69 | vllm:  5/10 | HTTP retries: 0
+Steps: 130/954  13% | Samples: 129/954 | mean: 0.69 | vllm:  5/10 | HTTP retries: 0
+Steps: 140/954  14% | Samples: 137/954 | mean: 0.69 | vllm:  3/10 | HTTP retries: 0
+Steps: 149/954  15% | Samples: 147/954 | mean: 0.66 | vllm:  5/10 | HTTP retries: 0
+Steps: 162/954  16% | Samples: 157/954 | mean: 0.64 | vllm:  3/10 | HTTP retries: 0
+Steps: 168/954  17% | Samples: 166/954 | mean: 0.63 | vllm:  6/10 | HTTP retries: 0
+Steps: 184/954  19% | Samples: 175/954 | mean: 0.61 | vllm:  0/10 | HTTP retries: 0
+Steps: 186/954  19% | Samples: 186/954 | mean: 0.61 | vllm:  0/10 | HTTP retries: 1
+Steps: 207/954  21% | Samples: 198/954 | mean: 0.60 | vllm:  0/10 | HTTP retries: 2
+Steps: 209/954  21% | Samples: 209/954 | mean: 0.60 | vllm:  0/10 | HTTP retries: 2
+Steps: 230/954  24% | Samples: 221/954 | mean: 0.60 | vllm:  0/10 | HTTP retries: 3
+Steps: 232/954  24% | Samples: 232/954 | mean: 0.58 | vllm:  0/10 | HTTP retries: 3
+Steps: 253/954  26% | Samples: 244/954 | mean: 0.57 | vllm:  0/10 | HTTP retries: 4
+Steps: 255/954  26% | Samples: 255/954 | mean: 0.56 | vllm:  0/10 | HTTP retries: 5
+Steps: 276/954  28% | Samples: 267/954 | mean: 0.56 | vllm:  0/10 | HTTP retries: 6
+Steps: 278/954  29% | Samples: 278/954 | mean: 0.57 | vllm:  9/10 | HTTP retries: 6
+Steps: 288/954  30% | Samples: 279/954 | mean: 0.57 | vllm:  0/10 | HTTP retries: 6
+Steps: 290/954  30% | Samples: 290/954 | mean: 0.56 | vllm:  0/10 | HTTP retries: 6
+Steps: 301/954  31% | Samples: 301/954 | mean: 0.56 | vllm:  9/10 | HTTP retries: 6
+Steps: 311/954  32% | Samples: 302/954 | mean: 0.56 | vllm:  0/10 | HTTP retries: 6
+Steps: 322/954  33% | Samples: 313/954 | mean: 0.56 | vllm:  0/10 | HTTP retries: 6
+Steps: 324/954  33% | Samples: 324/954 | mean: 0.55 | vllm:  9/10 | HTTP retries: 6
+Steps: 334/954  35% | Samples: 325/954 | mean: 0.55 | vllm:  0/10 | HTTP retries: 6
+Steps: 336/954  35% | Samples: 336/954 | mean: 0.56 | vllm:  9/10 | HTTP retries: 6
+Steps: 346/954  36% | Samples: 337/954 | mean: 0.56 | vllm:  0/10 | HTTP retries: 6
+Steps: 348/954  36% | Samples: 348/954 | mean: 0.55 | vllm:  9/10 | HTTP retries: 6
+Steps: 358/954  37% | Samples: 355/954 | mean: 0.55 | vllm:  4/10 | HTTP retries: 6
+Steps: 369/954  38% | Samples: 360/954 | mean: 0.54 | vllm:  0/10 | HTTP retries: 6
+Steps: 371/954  38% | Samples: 371/954 | mean: 0.54 | vllm:  9/10 | HTTP retries: 7
+Steps: 381/954  39% | Samples: 377/954 | mean: 0.55 | vllm:  3/10 | HTTP retries: 7
+Steps: 392/954  41% | Samples: 383/954 | mean: 0.54 | vllm:  0/10 | HTTP retries: 7
+Steps: 394/954  41% | Samples: 394/954 | mean: 0.54 | vllm:  0/10 | HTTP retries: 8
+Steps: 415/954  43% | Samples: 406/954 | mean: 0.55 | vllm:  0/10 | HTTP retries: 9
+Steps: 417/954  43% | Samples: 417/954 | mean: 0.54 | vllm:  0/10 | HTTP retries: 9
+Steps: 438/954  45% | Samples: 429/954 | mean: 0.54 | vllm:  0/10 | HTTP retries: 10
+Steps: 450/954  47% | Samples: 441/954 | mean: 0.54 | vllm:  0/10 | HTTP retries: 10
+Steps: 461/954  48% | Samples: 452/954 | mean: 0.54 | vllm:  0/10 | HTTP retries: 10
+Steps: 473/954  49% | Samples: 464/954 | mean: 0.54 | vllm:  0/10 | HTTP retries: 11
+Steps: 475/954  49% | Samples: 475/954 | mean: 0.54 | vllm:  0/10 | HTTP retries: 12
+Steps: 496/954  51% | Samples: 487/954 | mean: 0.55 | vllm:  0/10 | HTTP retries: 12
+Steps: 498/954  52% | Samples: 498/954 | mean: 0.54 | vllm:  0/10 | HTTP retries: 12
+Steps: 519/954  54% | Samples: 510/954 | mean: 0.54 | vllm:  0/10 | HTTP retries: 12
+Steps: 521/954  54% | Samples: 521/954 | mean: 0.53 | vllm:  0/10 | HTTP retries: 12
+Steps: 542/954  56% | Samples: 533/954 | mean: 0.53 | vllm:  0/10 | HTTP retries: 13
+Steps: 553/954  57% | Samples: 544/954 | mean: 0.53 | vllm:  0/10 | HTTP retries: 13
+Steps: 556/954  58% | Samples: 556/954 | mean: 0.53 | vllm:  8/10 | HTTP retries: 13
+Steps: 569/954  59% | Samples: 560/954 | mean: 0.53 | vllm:  0/10 | HTTP retries: 13
+Steps: 575/954  60% | Samples: 573/954 | mean: 0.53 | vllm:  7/10 | HTTP retries: 14
+Steps: 585/954  61% | Samples: 579/954 | mean: 0.53 | vllm:  3/10 | HTTP retries: 14
+Steps: 591/954  61% | Samples: 589/954 | mean: 0.52 | vllm:  7/10 | HTTP retries: 14
+Steps: 603/954  63% | Samples: 594/954 | mean: 0.52 | vllm:  0/10 | HTTP retries: 14
+Steps: 614/954  64% | Samples: 605/954 | mean: 0.52 | vllm:  0/10 | HTTP retries: 14
+Steps: 618/954  64% | Samples: 618/954 | mean: 0.52 | vllm:  9/10 | HTTP retries: 14
+Steps: 628/954  65% | Samples: 620/954 | mean: 0.52 | vllm:  1/10 | HTTP retries: 14
+Steps: 633/954  66% | Samples: 632/954 | mean: 0.52 | vllm:  6/10 | HTTP retries: 14
+Steps: 644/954  67% | Samples: 635/954 | mean: 0.52 | vllm:  0/10 | HTTP retries: 14
+Steps: 647/954  67% | Samples: 645/954 | mean: 0.51 | vllm:  7/10 | HTTP retries: 14
+Steps: 657/954  68% | Samples: 651/954 | mean: 0.51 | vllm:  1/10 | HTTP retries: 14
+Steps: 663/954  69% | Samples: 661/954 | mean: 0.52 | vllm:  7/10 | HTTP retries: 14
+Steps: 669/954  70% | Samples: 667/954 | mean: 0.52 | vllm:  3/10 | HTTP retries: 14
+Steps: 678/954  71% | Samples: 676/954 | mean: 0.52 | vllm:  7/10 | HTTP retries: 15
+Steps: 691/954  72% | Samples: 682/954 | mean: 0.52 | vllm:  0/10 | HTTP retries: 16
+Steps: 702/954  73% | Samples: 693/954 | mean: 0.52 | vllm:  0/10 | HTTP retries: 16
+Steps: 714/954  74% | Samples: 705/954 | mean: 0.52 | vllm:  0/10 | HTTP retries: 16
+Steps: 724/954  75% | Samples: 715/954 | mean: 0.52 | vllm:  0/10 | HTTP retries: 17
+Steps: 735/954  77% | Samples: 726/954 | mean: 0.52 | vllm:  0/10 | HTTP retries: 17
+Steps: 746/954  78% | Samples: 738/954 | mean: 0.52 | vllm:  1/10 | HTTP retries: 18
+Steps: 750/954  78% | Samples: 750/954 | mean: 0.52 | vllm:  9/10 | HTTP retries: 19
+Steps: 760/954  79% | Samples: 756/954 | mean: 0.52 | vllm:  4/10 | HTTP retries: 19
+Steps: 768/954  80% | Samples: 765/954 | mean: 0.52 | vllm:  5/10 | HTTP retries: 20
+Steps: 777/954  81% | Samples: 772/954 | mean: 0.52 | vllm:  1/10 | HTTP retries: 20
+Steps: 784/954  82% | Samples: 782/954 | mean: 0.53 | vllm:  5/10 | HTTP retries: 20
+Steps: 793/954  83% | Samples: 791/954 | mean: 0.53 | vllm:  6/10 | HTTP retries: 20
+Steps: 801/954  83% | Samples: 799/954 | mean: 0.53 | vllm:  5/10 | HTTP retries: 20
+Steps: 809/954  84% | Samples: 806/954 | mean: 0.54 | vllm:  3/10 | HTTP retries: 20
+Steps: 819/954  85% | Samples: 816/954 | mean: 0.54 | vllm:  4/10 | HTTP retries: 20
+Steps: 826/954  86% | Samples: 824/954 | mean: 0.54 | vllm:  5/10 | HTTP retries: 20
+Steps: 833/954  87% | Samples: 832/954 | mean: 0.54 | vllm:  6/10 | HTTP retries: 20
+Steps: 841/954  88% | Samples: 840/954 | mean: 0.54 | vllm:  4/10 | HTTP retries: 20
+Steps: 851/954  89% | Samples: 848/954 | mean: 0.54 | vllm:  5/10 | HTTP retries: 20
+Steps: 859/954  90% | Samples: 857/954 | mean: 0.54 | vllm:  5/10 | HTTP retries: 20
+Steps: 867/954  90% | Samples: 865/954 | mean: 0.54 | vllm:  5/10 | HTTP retries: 20
+Steps: 875/954  91% | Samples: 873/954 | mean: 0.54 | vllm:  5/10 | HTTP retries: 20
+Steps: 883/954  92% | Samples: 880/954 | mean: 0.54 | vllm:  4/10 | HTTP retries: 20
+Steps: 891/954  93% | Samples: 888/954 | mean: 0.55 | vllm:  3/10 | HTTP retries: 20
+Steps: 900/954  94% | Samples: 897/954 | mean: 0.55 | vllm:  5/10 | HTTP retries: 21
+Steps: 906/954  94% | Samples: 906/954 | mean: 0.55 | vllm:  4/10 | HTTP retries: 21
+Steps: 914/954  95% | Samples: 914/954 | mean: 0.55 | vllm:  5/10 | HTTP retries: 21
+Steps: 924/954  96% | Samples: 923/954 | mean: 0.55 | vllm:  7/10 | HTTP retries: 21
+Steps: 932/954  97% | Samples: 931/954 | mean: 0.55 | vllm:  6/10 | HTTP retries: 21
+Steps: 941/954  98% | Samples: 939/954 | mean: 0.55 | vllm:  4/10 | HTTP retries: 21
+Steps: 951/954  99% | Samples: 950/954 | mean: 0.55 | vllm:  2/10 | HTTP retries: 21
+Steps: 954/954 100% | Samples: 954/954 | mean: 0.55 | vllm:  0/10 | HTTP retries: 21
+
+---------------------------------------------------------                                                                                                                                      
+augmented_mcqa_eval_model_from_scratch_full_question (954 samples): vllm/cyankiwi/Olmo-3.1-32B-Instruct-AWQ-4bit                                                                               
+max_tokens: 32768, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)                                                                                       
+                                                                                                                                                                                               
+total time:                                                                                             0:12:37                                                                                
+vllm/cyankiwi/Olmo-3.1-32B-Instruct-AWQ-4bit                                                            312,937 tokens [I: 303,137, O: 9,800]                                                  
+augmented_mcqa_eval                                                                                                                                                                            
+mean                 0.551                                                                                                                                                                     
+stderr               0.016                                                                                                                                                                     
+Log:                                                                                                                                                                                           
+results/inspect/evaluation/more_local_eval_models/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit/2026-05-10T03-16-12-00-00_augment…
+---------------------------------------------------------                                                                                                                                      
+                                                                                                                                                                                               
+Evaluation logs: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/together_from_scratch_testing/together_Qwen_Qwen3.5-397B-A17B/vllm_cyankiwi_Olmo-3.1-32B-Instruct-AWQ-4bit
+Running: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/python main.py evaluate --model vllm/cyankiwi/Olmo-3.1-32B-Instruct-AWQ-4bit --run-name more_local_eval_models --generator qwen --dataset-types mmlu_pro --settings model_from_scratch --modes full_question --question-start 0 --limit 954 --skip-collect-evaluated --max-tokens 32768 --reasoning-effort medium --retry-on-error 2

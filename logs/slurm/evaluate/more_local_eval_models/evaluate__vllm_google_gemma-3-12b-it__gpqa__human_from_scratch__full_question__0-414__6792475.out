@@ -1,0 +1,60 @@
+---------------------------------------------------------                                               
+augmented_mcqa_eval_human_from_scratch_full_question (415 samples): vllm/google/gemma-3-12b-it          
+max_tokens: 32768, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)
+---------------------------------------------------------                                               
+                                                                                                        
+Steps:   1/415   0% | Samples:   1/415 | mean:  n/a | vllm:  0/10 | HTTP retries: 0
+Steps:  18/415   4% | Samples:  14/415 | mean: 0.42 | vllm:  0/10 | HTTP retries: 1
+Steps:  29/415   6% | Samples:  27/415 | mean: 0.29 | vllm:  4/10 | HTTP retries: 1
+Steps:  41/415   9% | Samples:  39/415 | mean: 0.34 | vllm:  5/10 | HTTP retries: 1
+Steps:  51/415  12% | Samples:  51/415 | mean: 0.41 | vllm:  6/10 | HTTP retries: 1
+Steps:  63/415  15% | Samples:  62/415 | mean: 0.34 | vllm:  6/10 | HTTP retries: 1
+Steps:  73/415  17% | Samples:  71/415 | mean: 0.33 | vllm:  7/10 | HTTP retries: 1
+Steps:  81/415  19% | Samples:  81/415 | mean: 0.31 | vllm:  9/10 | HTTP retries: 3
+Steps:  92/415  22% | Samples:  92/415 | mean: 0.30 | vllm:  9/10 | HTTP retries: 3
+Steps: 105/415  25% | Samples: 104/415 | mean: 0.31 | vllm:  8/10 | HTTP retries: 3
+Steps: 117/415  28% | Samples: 115/415 | mean: 0.32 | vllm:  6/10 | HTTP retries: 3
+Steps: 129/415  31% | Samples: 127/415 | mean: 0.33 | vllm:  5/10 | HTTP retries: 6
+Steps: 141/415  33% | Samples: 139/415 | mean: 0.32 | vllm:  5/10 | HTTP retries: 6
+Steps: 155/415  37% | Samples: 151/415 | mean: 0.32 | vllm:  5/10 | HTTP retries: 6
+Steps: 165/415  39% | Samples: 162/415 | mean: 0.32 | vllm:  6/10 | HTTP retries: 6
+Steps: 175/415  42% | Samples: 174/415 | mean: 0.32 | vllm:  6/10 | HTTP retries: 6
+Steps: 187/415  45% | Samples: 185/415 | mean: 0.33 | vllm:  6/10 | HTTP retries: 6
+Steps: 198/415  47% | Samples: 196/415 | mean: 0.32 | vllm:  6/10 | HTTP retries: 6
+Steps: 207/415  49% | Samples: 206/415 | mean: 0.32 | vllm:  7/10 | HTTP retries: 6
+Steps: 220/415  53% | Samples: 218/415 | mean: 0.34 | vllm:  7/10 | HTTP retries: 6
+Steps: 230/415  55% | Samples: 229/415 | mean: 0.35 | vllm:  6/10 | HTTP retries: 6
+Steps: 243/415  58% | Samples: 240/415 | mean: 0.34 | vllm:  4/10 | HTTP retries: 6
+Steps: 254/415  61% | Samples: 251/415 | mean: 0.35 | vllm:  4/10 | HTTP retries: 6
+Steps: 264/415  63% | Samples: 263/415 | mean: 0.35 | vllm:  5/10 | HTTP retries: 6
+Steps: 276/415  66% | Samples: 274/415 | mean: 0.35 | vllm:  6/10 | HTTP retries: 6
+Steps: 287/415  69% | Samples: 285/415 | mean: 0.34 | vllm:  7/10 | HTTP retries: 6
+Steps: 296/415  71% | Samples: 296/415 | mean: 0.35 | vllm:  8/10 | HTTP retries: 6
+Steps: 306/415  73% | Samples: 306/415 | mean: 0.35 | vllm:  8/10 | HTTP retries: 6
+Steps: 316/415  76% | Samples: 314/415 | mean: 0.35 | vllm:  4/10 | HTTP retries: 6
+Steps: 321/415  77% | Samples: 320/415 | mean: 0.34 | vllm:  5/10 | HTTP retries: 6
+Steps: 330/415  79% | Samples: 329/415 | mean: 0.34 | vllm:  5/10 | HTTP retries: 6
+Steps: 341/415  82% | Samples: 340/415 | mean: 0.34 | vllm:  4/10 | HTTP retries: 6
+Steps: 352/415  84% | Samples: 352/415 | mean: 0.34 | vllm:  6/10 | HTTP retries: 6
+Steps: 364/415  87% | Samples: 363/415 | mean: 0.33 | vllm:  6/10 | HTTP retries: 6
+Steps: 376/415  90% | Samples: 373/415 | mean: 0.33 | vllm:  4/10 | HTTP retries: 6
+Steps: 387/415  93% | Samples: 384/415 | mean: 0.33 | vllm:  5/10 | HTTP retries: 6
+Steps: 396/415  95% | Samples: 395/415 | mean: 0.33 | vllm:  6/10 | HTTP retries: 6
+Steps: 404/415  97% | Samples: 404/415 | mean: 0.33 | vllm:  8/10 | HTTP retries: 6
+Steps: 415/415 100% | Samples: 415/415 | mean: 0.33 | vllm:  0/10 | HTTP retries: 6
+
+---------------------------------------------------------                                                                                     
+augmented_mcqa_eval_human_from_scratch_full_question (415 samples): vllm/google/gemma-3-12b-it                                                
+max_tokens: 32768, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)                                      
+                                                                                                                                              
+total time:                                                0:05:05                                                                            
+vllm/google/gemma-3-12b-it                                 124,026 tokens [I: 115,335, O: 8,691]                                              
+augmented_mcqa_eval                                                                                                                           
+mean                 0.328                                                                                                                    
+stderr               0.023                                                                                                                    
+Log:                                                                                                                                          
+results/inspect/evaluation/more_local_eval_models/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_google_gemma-3-12b-it/2026-0…
+---------------------------------------------------------                                                                                     
+                                                                                                                                              
+Evaluation logs: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_google_gemma-3-12b-it
+Running: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/python main.py evaluate --model vllm/google/gemma-3-12b-it --run-name more_local_eval_models --generator gemini --dataset-types gpqa --settings human_from_scratch --modes full_question --question-start 0 --limit 415 --skip-collect-evaluated --max-tokens 32768 --reasoning-effort medium --retry-on-error 2
