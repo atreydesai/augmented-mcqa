@@ -1,0 +1,56 @@
+---------------------------------------------------------                                               
+augmented_mcqa_eval_augment_human_full_question (415 samples): vllm/LiquidAI/LFM2-1.2B                  
+max_tokens: 32768, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)
+---------------------------------------------------------                                               
+                                                                                                        
+Steps:   9/415   2% | Samples:   1/415 | mean:  n/a | vllm:  1/10 | HTTP retries: 0
+Steps:  18/415   4% | Samples:  16/415 | mean: 0.20 | vllm:  6/10 | HTTP retries: 0
+Steps:  29/415   6% | Samples:  27/415 | mean: 0.15 | vllm:  5/10 | HTTP retries: 0
+Steps:  40/415   9% | Samples:  39/415 | mean: 0.11 | vllm:  6/10 | HTTP retries: 0
+Steps:  56/415  13% | Samples:  52/415 | mean: 0.12 | vllm:  4/10 | HTTP retries: 0
+Steps:  68/415  16% | Samples:  66/415 | mean: 0.14 | vllm:  5/10 | HTTP retries: 0
+Steps:  81/415  19% | Samples:  80/415 | mean: 0.19 | vllm:  6/10 | HTTP retries: 0
+Steps:  96/415  23% | Samples:  94/415 | mean: 0.18 | vllm:  6/10 | HTTP retries: 0
+Steps: 109/415  26% | Samples: 109/415 | mean: 0.16 | vllm:  7/10 | HTTP retries: 0
+Steps: 123/415  29% | Samples: 122/415 | mean: 0.15 | vllm:  7/10 | HTTP retries: 0
+Steps: 138/415  33% | Samples: 137/415 | mean: 0.14 | vllm:  7/10 | HTTP retries: 0
+Steps: 151/415  36% | Samples: 150/415 | mean: 0.13 | vllm:  5/10 | HTTP retries: 0
+Steps: 164/415  39% | Samples: 163/415 | mean: 0.12 | vllm:  4/10 | HTTP retries: 0
+Steps: 178/415  42% | Samples: 174/415 | mean: 0.12 | vllm:  4/10 | HTTP retries: 0
+Steps: 189/415  45% | Samples: 188/415 | mean: 0.12 | vllm:  8/10 | HTTP retries: 0
+Steps: 201/415  48% | Samples: 200/415 | mean: 0.11 | vllm:  4/10 | HTTP retries: 0
+Steps: 215/415  51% | Samples: 214/415 | mean: 0.11 | vllm:  8/10 | HTTP retries: 1
+Steps: 227/415  54% | Samples: 226/415 | mean: 0.10 | vllm:  7/10 | HTTP retries: 1
+Steps: 241/415  58% | Samples: 239/415 | mean: 0.12 | vllm:  5/10 | HTTP retries: 1
+Steps: 253/415  60% | Samples: 253/415 | mean: 0.13 | vllm:  8/10 | HTTP retries: 1
+Steps: 267/415  64% | Samples: 266/415 | mean: 0.13 | vllm:  6/10 | HTTP retries: 1
+Steps: 280/415  67% | Samples: 279/415 | mean: 0.13 | vllm:  5/10 | HTTP retries: 1
+Steps: 295/415  71% | Samples: 294/415 | mean: 0.13 | vllm:  6/10 | HTTP retries: 1
+Steps: 308/415  74% | Samples: 307/415 | mean: 0.12 | vllm:  5/10 | HTTP retries: 1
+Steps: 320/415  77% | Samples: 318/415 | mean: 0.12 | vllm:  6/10 | HTTP retries: 1
+Steps: 330/415  79% | Samples: 328/415 | mean: 0.12 | vllm:  6/10 | HTTP retries: 1
+Steps: 341/415  82% | Samples: 339/415 | mean: 0.12 | vllm:  7/10 | HTTP retries: 1
+Steps: 351/415  84% | Samples: 349/415 | mean: 0.12 | vllm:  5/10 | HTTP retries: 1
+Steps: 363/415  87% | Samples: 361/415 | mean: 0.13 | vllm:  6/10 | HTTP retries: 1
+Steps: 373/415  89% | Samples: 373/415 | mean: 0.12 | vllm:  7/10 | HTTP retries: 1
+Steps: 386/415  93% | Samples: 383/415 | mean: 0.12 | vllm:  4/10 | HTTP retries: 1
+Steps: 398/415  95% | Samples: 396/415 | mean: 0.12 | vllm:  7/10 | HTTP retries: 1
+Steps: 410/415  98% | Samples: 409/415 | mean: 0.12 | vllm:  5/10 | HTTP retries: 1
+Steps: 414/415  99% | Samples: 414/415 | mean: 0.13 | vllm:  1/10 | HTTP retries: 1
+Steps: 415/415 100% | Samples: 415/415 | mean: 0.13 | vllm:  0/10 | HTTP retries: 1
+
+---------------------------------------------------------                                                                                     
+augmented_mcqa_eval_augment_human_full_question (415 samples): vllm/LiquidAI/LFM2-1.2B                                                        
+max_tokens: 32768, reasoning_effort: medium, fail_on_error: False, retry_on_error: 2, dataset: (samples)                                      
+                                                                                                                                              
+total time:                                           0:03:38                                                                                 
+vllm/LiquidAI/LFM2-1.2B                               229,723 tokens [I: 171,415, O: 58,308]                                                  
+augmented_mcqa_eval                                                                                                                           
+mean                 0.128                                                                                                                    
+stderr               0.016                                                                                                                    
+Log:                                                                                                                                          
+results/inspect/evaluation/more_local_eval_models/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_LiquidAI_LFM2-1.2B/2026-05-0…
+---------------------------------------------------------                                                                                     
+                                                                                                                                              
+Evaluation logs: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/gemini_from_scratch_testing/google_gemini-3.1-pro-preview/vllm_LiquidAI_LFM2-1.2B
+Running: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/python main.py evaluate --model vllm/LiquidAI/LFM2-1.2B --run-name more_local_eval_models --generator gemini --dataset-types gpqa --settings augment_human --modes full_question --question-start 0 --limit 415 --skip-collect-evaluated --max-tokens 32768 --reasoning-effort medium --retry-on-error 2
