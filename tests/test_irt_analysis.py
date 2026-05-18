@@ -2,9 +2,11 @@ import json
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 from datasets import Dataset
 
 from analysis.irt import (
+    benchmarker_validity_frame,
     gradient,
     make_design,
     objective,
@@ -163,6 +165,28 @@ def test_run_irt_analysis_writes_outputs(tmp_path):
     assert "setting_difficulty.png" in names
     assert "question_quality_all_settings.png" in names
     assert "item_fit.png" in names
+
+
+def test_benchmarker_validity_frame_uses_cached_table(tmp_path):
+    table_path = tmp_path / "writing_flaw_rows.csv"
+    pd.DataFrame(
+        [
+            {
+                "dataset": "arc_challenge",
+                "config": "human_from_scratch",
+                "generator_model": "openai/gpt-5.2-2025-12-11",
+                "question": "Question 1",
+                "flaw_value": 0.75,
+                "n_flaws": 3,
+            }
+        ]
+    ).to_csv(table_path, index=False)
+
+    frame = benchmarker_validity_frame(path=tmp_path / "missing.jsonl", table_path=table_path)
+    assert list(frame["dataset"]) == ["arc_challenge"]
+    assert list(frame["setting"]) == ["human_from_scratch"]
+    assert float(frame.loc[0, "mean_flaws"]) == 3.0
+    assert float(frame.loc[0, "mean_flaws_se"]) == 0.0
 
 
 def test_cli_analyze_irt_smoke(tmp_path):

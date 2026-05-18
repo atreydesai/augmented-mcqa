@@ -26,6 +26,7 @@ IRT_SCALING = 1.702
 EPS = 1e-8
 DEFAULT_OUTPUT_DIR = Path("results/augmented_mcqa_irt")
 DEFAULT_BENCHMARKER_JSONL = Path("results/atrey_writing_flaw_rows_strict.jsonl")
+DEFAULT_BENCHMARKER_TABLE = Path("results/augmented_mcqa_irt/tables/writing_flaw_rows.csv")
 LOGO_DIR = Path(__file__).parent / "assets" / "logos"
 DEFAULT_REFERENCE_TEST_TAKER = "vllm/nvidia/NVIDIA-Nemotron-Nano-9B-v2"
 DEFAULT_REFERENCE_SETTING = "human_from_scratch"
@@ -651,12 +652,21 @@ def irt_quality_summary_frame(items: pd.DataFrame) -> pd.DataFrame:
     return summary
 
 
-def benchmarker_validity_frame(path: Path = DEFAULT_BENCHMARKER_JSONL) -> pd.DataFrame:
-    if not path.exists():
-        return pd.DataFrame(columns=["dataset", "setting", "n_questions", "mean_flaws", "mean_flaws_se"])
-    from analysis.benchmarker_analysis import load_writing_flaw_data
+def benchmarker_validity_frame(
+    path: Path = DEFAULT_BENCHMARKER_JSONL,
+    table_path: Path = DEFAULT_BENCHMARKER_TABLE,
+) -> pd.DataFrame:
+    if table_path.exists():
+        flaw_df = pd.read_csv(table_path)
+    elif path.exists():
+        from analysis.benchmarker_analysis import load_writing_flaw_data
 
-    flaw_df, _ = load_writing_flaw_data(path)
+        flaw_df, _ = load_writing_flaw_data(path)
+        table_path.parent.mkdir(parents=True, exist_ok=True)
+        flaw_df.to_csv(table_path, index=False)
+    else:
+        return pd.DataFrame(columns=["dataset", "setting", "n_questions", "mean_flaws", "mean_flaws_se"])
+
     flaw_df = flaw_df.rename(columns={"config": "setting"}).copy()
     flaw_df["generator"] = flaw_df["generator_model"].apply(lambda x: next((g for g, _ in MODEL_ORDER if x in g), x))
     grouped = (
