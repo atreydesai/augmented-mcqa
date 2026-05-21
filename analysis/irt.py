@@ -11,6 +11,7 @@ import matplotlib
 
 matplotlib.use("Agg")
 
+from matplotlib import font_manager
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -28,6 +29,8 @@ DEFAULT_OUTPUT_DIR = Path("results/augmented_mcqa_irt")
 DEFAULT_BENCHMARKER_JSONL = Path("results/atrey_writing_flaw_rows_strict.jsonl")
 DEFAULT_BENCHMARKER_TABLE = Path("results/augmented_mcqa_irt/tables/writing_flaw_rows.csv")
 LOGO_DIR = Path(__file__).parent / "assets" / "logos"
+FONT_DIR = Path(__file__).parent / "assets" / "fonts"
+INTER_FONT = FONT_DIR / "InterVariable.ttf"
 DEFAULT_REFERENCE_TEST_TAKER = "vllm/nvidia/NVIDIA-Nemotron-Nano-9B-v2"
 DEFAULT_REFERENCE_SETTING = "human_from_scratch"
 TOP_N_ITEMS = 20
@@ -67,6 +70,19 @@ MODEL_LOGO_ZOOM = {
     "Gemini Ablation": 0.070,
     "Qwen Ablation": 0.080,
 }
+
+
+def use_inter_font() -> None:
+    if INTER_FONT.exists():
+        font_manager.fontManager.addfont(str(INTER_FONT))
+        family = font_manager.FontProperties(fname=str(INTER_FONT)).get_name()
+        plt.rcParams["font.family"] = family
+        plt.rcParams["font.sans-serif"] = [family, "DejaVu Sans"]
+    else:
+        plt.rcParams["font.family"] = "sans-serif"
+        plt.rcParams["font.sans-serif"] = ["Inter", "DejaVu Sans"]
+    plt.rcParams["pdf.fonttype"] = 42
+    plt.rcParams["ps.fonttype"] = 42
 
 STEM_PRIOR_SD = 3.0
 ITEM_NOISE_PRIOR_SD = 1.0
@@ -1644,6 +1660,8 @@ def plot_stacked_extended_summary(
     from matplotlib.patches import Circle, Ellipse, Rectangle
     from matplotlib.transforms import Bbox, TransformedBbox
 
+    use_inter_font()
+
     PHI = (1 + 5 ** 0.5) / 2
     EXT_HUMAN_COLOR = "#E8DAB2"
     EXT_MODEL_COLOR = "#DD6E42"
@@ -1659,7 +1677,7 @@ def plot_stacked_extended_summary(
         "google/gemini-3.1-pro-preview":   LOGO_DIR / "google_gemini_icon.svg",
         "together/Qwen/Qwen3.5-397B-A17B": LOGO_DIR / "qwen_logo.svg",
     }
-    HUMAN_SIZE = 6.0
+    HUMAN_SIZE = 12.0
     GEN_SIZES = {
         "openai/gpt-5.2-2025-12-11": 9.0,
         "google/gemini-3.1-pro-preview": 9.0,
@@ -1679,7 +1697,7 @@ def plot_stacked_extended_summary(
     }
     metrics = [
         ("difficulty",     "difficulty_se",     "IRT Difficulty"),
-        ("discrimination", "discrimination_se", "IRT Discrimination"),
+        ("discrimination", "discrimination_se", "IRT Discriminability"),
         ("mean_flaws",     "mean_flaws_se",     "Average Writing Flaws"),
     ]
 
@@ -1708,9 +1726,9 @@ def plot_stacked_extended_summary(
         [("aug_m_" + gen, gen, EXT_MODEL_COLOR, GEN_LOGOS[gen], GEN_SIZES[gen]) for gen in GEN_KEYS]
     )
 
-    bar_width = 0.13
-    intra_gap = 0.004
-    inter_gap = 0.15
+    bar_width = 0.123
+    intra_gap = 0.012
+    inter_gap = 0.142
 
     def _offsets(n):
         total = n * bar_width + (n - 1) * intra_gap
@@ -1725,9 +1743,9 @@ def plot_stacked_extended_summary(
 
     FIG_W = 13.0
     FIG_H = (FIG_W / PHI) / 2
-    FONT_TITLE = 8.5
-    FONT_TICK  = 7.0
-    FONT_ROW   = 8.0
+    FONT_TITLE = 9.5
+    FONT_TICK  = 8.5
+    FONT_ROW   = 9.5
 
     fig, axes = plt.subplots(2, n_panels, figsize=(FIG_W, FIG_H), squeeze=False)
 
@@ -1792,8 +1810,8 @@ def plot_stacked_extended_summary(
     for col, (metric, err_col, title) in enumerate(metrics):
         ticks, ymin, ymax = YTICK_SPECS[metric]
         for row_idx, (ax, centers, show_x, show_title, row_lbl) in enumerate([
-            (axes[0][col], top_ctr, False, True,  "4-Choice"  if col == 0 else None),
-            (axes[1][col], bot_ctr, True,  False, "10-Choice" if col == 0 else None),
+            (axes[0][col], top_ctr, False, True,  "MCQ Generation"   if col == 0 else None),
+            (axes[1][col], bot_ctr, True,  False, "MCQ Augmentation" if col == 0 else None),
         ]):
             ax.set_ylim(ymin, ymax)
             ax.set_yticks(ticks)
@@ -1872,14 +1890,21 @@ def plot_stacked_extended_summary(
             )
         )
 
-    LEGEND_FONT = 6.4
+    LEGEND_FONT = 10.0
 
-    def _legend_text(x: float, y: float, text: str, *, weight: str = "normal") -> None:
+    def _legend_text(
+        x: float,
+        y: float,
+        text: str,
+        *,
+        weight: str = "normal",
+        ha: str = "center",
+    ) -> None:
         fig.text(
             x,
             y,
             text,
-            ha="center",
+            ha=ha,
             va="center",
             fontsize=LEGEND_FONT,
             fontweight=weight,
@@ -1887,7 +1912,7 @@ def plot_stacked_extended_summary(
         )
 
     def _legend_swatch(x: float, y: float, color: str) -> None:
-        sw_w, sw_h = 0.012, 0.014
+        sw_w, sw_h = 0.018, 0.020
         fig.add_artist(
             Rectangle(
                 (x - sw_w / 2, y - sw_h / 2),
@@ -1902,9 +1927,9 @@ def plot_stacked_extended_summary(
 
     def _legend_logo(svg_path: Path, x: float, y: float) -> None:
         point_sizes = {
-            "chatgpt_logo.svg": 7.3,
-            "google_gemini_icon.svg": 6.6,
-            "qwen_logo.svg": 8.1,
+            "chatgpt_logo.svg": 10.8,
+            "google_gemini_icon.svg": 9.8,
+            "qwen_logo.svg": 12.0,
         }
         w, h = _fig_square_size(point_sizes.get(svg_path.name, 7.2))
         bbox = Bbox.from_bounds(x - w / 2, y - h / 2, w, h)
@@ -1918,9 +1943,10 @@ def plot_stacked_extended_summary(
         )
 
     def _legend_bust(x: float, y: float) -> None:
-        da = DrawingArea(7.0, 7.0, 0, 0)
-        da.add_artist(Circle((3.5, 3.95), radius=1.25, facecolor="black", edgecolor="black", linewidth=0))
-        da.add_artist(Ellipse((3.5, 1.75), width=4.7, height=2.45, facecolor="black", edgecolor="black", linewidth=0))
+        size = 13.0
+        da = DrawingArea(size, size, 0, 0)
+        da.add_artist(Circle((size * 0.5, size * 0.68), radius=size * 0.20, facecolor="black", edgecolor="black", linewidth=0))
+        da.add_artist(Ellipse((size * 0.5, size * 0.30), width=size * 0.72, height=size * 0.42, facecolor="black", edgecolor="black", linewidth=0))
         fig.add_artist(
             AnnotationBbox(
                 da,
@@ -1933,36 +1959,36 @@ def plot_stacked_extended_summary(
             )
         )
 
-    legend_y = 0.006
-    legend_h = 0.044
-    left_x, left_w = 0.2, 0.160
-    right_x, right_w = 0.4, 0.410
+    legend_y = -0.006
+    legend_h = 0.056
+    left_x, left_w = 0.075, 0.255
+    right_x, right_w = 0.33875, 0.610
     legend_cy = legend_y + legend_h / 2
     _legend_frame(left_x, legend_y, left_w, legend_h)
     _legend_frame(right_x, legend_y, right_w, legend_h)
 
-    for slot_x, label, color in [
-        (left_x + left_w * 0.16, "Type", None),
-        (left_x + left_w * 0.49, "Human", EXT_HUMAN_COLOR),
-        (left_x + left_w * 0.80, "Model", EXT_MODEL_COLOR),
+    for slot_x, label, color, swatch_gap in [
+        (left_x + left_w * 0.17, "Seed Type", None, 0.0),
+        (left_x + left_w * 0.52, "Human", EXT_HUMAN_COLOR, 0.035),
+        (left_x + left_w * 0.82, "Model", EXT_MODEL_COLOR, 0.030),
     ]:
         if color is not None:
-            _legend_swatch(slot_x - 0.026, legend_cy, color)
+            _legend_swatch(slot_x - swatch_gap, legend_cy, color)
         _legend_text(slot_x, legend_cy, label)
 
     right_slots = [
-        (right_x + right_w * 0.06, "Generator", None, 0.000),
-        (right_x + right_w * 0.25, "Human", HUMAN_MARKER, 0.030),
-        (right_x + right_w * 0.41, GEN_DISPLAY[GEN_KEYS[0]], GEN_LOGOS[GEN_KEYS[0]], 0.033),
-        (right_x + right_w * 0.60, GEN_DISPLAY[GEN_KEYS[1]], GEN_LOGOS[GEN_KEYS[1]], 0.037),
-        (right_x + right_w * 0.83, GEN_DISPLAY[GEN_KEYS[2]], GEN_LOGOS[GEN_KEYS[2]], 0.043),
+        (right_x + right_w * 0.03, right_x + right_w * 0.03, "Generator", None),
+        (right_x + right_w * 0.17, right_x + right_w * 0.20, "Human", HUMAN_MARKER),
+        (right_x + right_w * 0.33, right_x + right_w * 0.36, GEN_DISPLAY[GEN_KEYS[0]], GEN_LOGOS[GEN_KEYS[0]]),
+        (right_x + right_w * 0.53, right_x + right_w * 0.56, GEN_DISPLAY[GEN_KEYS[1]], GEN_LOGOS[GEN_KEYS[1]]),
+        (right_x + right_w * 0.76, right_x + right_w * 0.79, GEN_DISPLAY[GEN_KEYS[2]], GEN_LOGOS[GEN_KEYS[2]]),
     ]
-    for slot_x, label, marker, marker_gap in right_slots:
+    for marker_x, label_x, label, marker in right_slots:
         if marker == HUMAN_MARKER:
-            _legend_bust(slot_x - marker_gap, legend_cy)
+            _legend_bust(marker_x, legend_cy)
         elif isinstance(marker, Path):
-            _legend_logo(marker, slot_x - marker_gap, legend_cy + 0.001)
-        _legend_text(slot_x, legend_cy, label)
+            _legend_logo(marker, marker_x, legend_cy + 0.001)
+        _legend_text(label_x, legend_cy, label, ha="left")
 
     fig.subplots_adjust(left=0.065, right=0.99, bottom=0.12, top=0.94, hspace=0.12, wspace=0.08)
     path.parent.mkdir(parents=True, exist_ok=True)

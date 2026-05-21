@@ -1,11 +1,10 @@
-"""Benchmarker writing-flaw analysis for Inspect-native Augmented MCQA runs.
+"""BenchMarker writing-flaw analysis for augmented MCQA runs.
 
 Example:
   uv run python analysis/benchmarker_analysis.py \
     --writing-flaw-jsonl /path/to/writing_flaw_rows.jsonl \
-    --results-root results/inspect/evaluation \
-    --generator-run-name my-generation-run \
-    --generator-model gpt-5.2-2025-12-11
+    --generator-model gpt-5.2-2025-12-11 \
+    --irt-table-dir results/augmented_mcqa_irt/tables
 """
 
 from __future__ import annotations
@@ -13,7 +12,7 @@ from __future__ import annotations
 import argparse
 import ast
 import json
-import math
+import sys
 import zipfile
 from pathlib import Path
 from typing import Iterable, Iterator
@@ -29,17 +28,15 @@ import pandas as pd
 import scipy.stats as stats
 import seaborn as sns
 
-from data.store import _augmented_manifest_path, _normalize_augmented_root, iter_augmented_rows
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 from utils.constants import (
-    AUGMENTED_STORE_MANIFEST,
-    CHOICE_LABELS,
-    DEFAULT_AUGMENTED_CACHE_ROOT,
-    DEFAULT_EVALUATION_LOG_ROOT,
     SETTING_NAMES,
     SETTING_SPECS,
 )
-from utils.logs import find_eval_logs, read_log_payload
-from utils.modeling import resolve_model_name, safe_name
+from utils.modeling import resolve_model_name
 
 
 CONFIG_ORDER = list(SETTING_NAMES)
@@ -68,25 +65,6 @@ RULES_ORDER = [
 ]
 
 
-def _payload_from_log_object(log: object) -> dict[str, object]:
-    metadata = dict(getattr(getattr(log, "eval", None), "metadata", {}) or {})
-    summaries: list[dict[str, object]] = []
-    for sample in list(getattr(log, "samples", []) or []):
-        scores: dict[str, dict[str, object]] = {}
-        for name, score in dict(getattr(sample, "scores", {}) or {}).items():
-            scores[str(name)] = {
-                "value": getattr(score, "value", None),
-                "metadata": dict(getattr(score, "metadata", {}) or {}),
-            }
-        summaries.append({"id": getattr(sample, "id", ""), "scores": scores})
-    return {"metadata": metadata, "summaries": summaries}
-
-
-def iter_eval_logs(results_root: Path) -> Iterator[tuple[Path, dict[str, object]]]:
-    for log_path in find_eval_logs(results_root):
-        payload = read_log_payload(log_path)
-        if payload is not None:
-            yield log_path, payload
 PALETTE = {
     "human_from_scratch": "#2196F3",
     "model_from_scratch": "#FF9800",
@@ -127,36 +105,12 @@ def _choice_count_label(choice_count: int) -> str:
     return f"{int(choice_count)}-choice"
 
 
-def _setting_choice_group(setting: str, *, include_family: bool = False) -> str:
-    choice_label = _choice_count_label(K_MAP[str(setting)])
-    if not include_family:
-        return choice_label
-    family = "from_scratch" if "from_scratch" in str(setting) else "augment_*"
-    return f"{choice_label}\n({family})"
-
-
 def _choice_group_markers(choice_counts: Iterable[int]) -> dict[int, str]:
     unique_counts = sorted({int(count) for count in choice_counts})
     return {
         count: CHOICE_GROUP_MARKERS[index % len(CHOICE_GROUP_MARKERS)]
         for index, count in enumerate(unique_counts)
     }
-
-
-def _csv_list(raw: str | None) -> list[str]:
-    if not raw:
-        return []
-    return [item.strip() for item in raw.split(",") if item.strip()]
-
-
-def _display_model(value: str) -> str:
-    raw = str(value).replace("/", "_")
-    mapping = {
-        "Qwen_Qwen3-4B-Instruct-2507": "Qwen3-4B",
-        "allenai_Olmo-3-7B-Instruct": "Olmo3-7B",
-        "meta-llama_Llama-3.1-8B-Instruct": "Llama3.1-8B",
-    }
-    return mapping.get(raw, raw)
 
 
 def _mean_ci(series: pd.Series, z: float = 1.96) -> tuple[float, float]:
@@ -284,176 +238,12 @@ def load_writing_flaw_data(path: Path, generator_model: str | None = None) -> tu
 def _model_matches(filter_value: str | None, actual: str) -> bool:
     if not filter_value:
         return True
-    normalized = resolve_model_name(filter_value)
+    try:
+        normalized = resolve_model_name(filter_value)
+    except ValueError:
+        normalized = str(filter_value)
     actual = str(actual).strip()
     return actual == normalized or actual == filter_value or actual.endswith(f"/{filter_value}") or (actual in filter_value) or (actual in normalized)
-
-
-def _resolve_augmented_dataset_path(
-    *,
-    augmented_dataset: str | None,
-    cache_root: str | Path,
-    generator_model: str | None,
-    generator_run_name: str | None,
-) -> Path:
-    if augmented_dataset:
-        return _normalize_augmented_root(augmented_dataset)
-
-    root = _normalize_augmented_root(cache_root)
-    if _augmented_manifest_path(root).exists():
-        return root
-
-    if generator_model and generator_run_name:
-        resolved_model = resolve_model_name(generator_model)
-        candidate = root / safe_name(generator_run_name) / safe_name(resolved_model)
-        if _augmented_manifest_path(_normalize_augmented_root(candidate)).exists():
-            return candidate
-
-    candidates = sorted(
-        {
-            path.parent
-            for pattern in (f"**/{AUGMENTED_STORE_MANIFEST}",)
-            for path in root.glob(pattern)
-        }
-    )
-    if not candidates:
-        raise FileNotFoundError(
-            f"No augmented dataset cache found under {root}. "
-            "Pass --augmented-dataset explicitly or provide --cache-root plus "
-            "--generator-run-name and --generator-model."
-        )
-    if len(candidates) == 1:
-        return candidates[0]
-
-    preview = ", ".join(str(path) for path in candidates[:5])
-    raise ValueError(
-        f"Multiple augmented dataset caches found under {root}: {preview}. "
-        "Pass --augmented-dataset explicitly or provide --generator-run-name and --generator-model."
-    )
-
-
-def load_evaluation_samples(
-    *,
-    results_root: Path,
-    generator_model: str | None,
-    generator_run_name: str | None,
-    eval_models: list[str],
-) -> pd.DataFrame:
-    rows: list[dict[str, object]] = []
-    for log_path, loaded_log in iter_eval_logs(results_root):
-        log = loaded_log if isinstance(loaded_log, dict) else _payload_from_log_object(loaded_log)
-        log_meta = dict(log.get("metadata", {}) or {})
-        if log_meta.get("kind") not in (None, "", "evaluation"):
-            continue
-        generation_model = str(log_meta.get("generation_model", ""))
-        logged_generation_run_name = str(log_meta.get("generation_run_name", ""))
-        evaluation_model = str(log_meta.get("evaluation_model") or "")
-        if not _model_matches(generator_model, generation_model):
-            continue
-        if generator_run_name and logged_generation_run_name != str(generator_run_name):
-            continue
-        if eval_models and not any(_model_matches(model, evaluation_model) for model in eval_models):
-            continue
-
-        for sample in list(log.get("summaries", []) or []):
-            scores = dict(sample.get("scores", {}) or {})
-            if not scores:
-                continue
-            score = scores.get("augmented_mcqa_eval")
-            if score is None and len(scores) == 1:
-                score = next(iter(scores.values()))
-            if score is None:
-                continue
-            score_meta = dict(score.get("metadata", {}) or {})
-            dataset = str(score_meta.get("dataset_type", ""))
-            setting = str(score_meta.get("setting") or log_meta.get("setting", ""))
-            mode = str(score_meta.get("mode") or log_meta.get("mode", ""))
-            if not dataset or setting not in CONFIG_ORDER:
-                continue
-            rows.append(
-                {
-                    "results_path": str(log_path),
-                    "generation_model": generation_model,
-                    "generation_run_name": logged_generation_run_name,
-                    "eval_model": evaluation_model,
-                    "dataset": dataset,
-                    "setting": setting,
-                    "mode": mode,
-                    "sample_id": str(score_meta.get("sample_id") or sample.get("id", "")),
-                    "question_idx": int(score_meta.get("question_idx", -1)),
-                    "category": str(score_meta.get("category", "")),
-                    "prediction": str(score_meta.get("prediction", "") or "").strip().upper(),
-                    "prediction_type": str(score_meta.get("prediction_type", "?")),
-                    "gold_answer_letter": str(score_meta.get("gold_answer_letter", "") or "").strip().upper(),
-                    "is_correct": bool(score.get("value", False)),
-                }
-            )
-
-    df = pd.DataFrame(rows)
-    if df.empty:
-        raise ValueError(f"No matching evaluation rows found under {results_root}")
-
-    generation_models = sorted({value for value in df["generation_model"].dropna().unique() if value})
-    if not generator_model and len(generation_models) > 1:
-        raise ValueError(
-            "Multiple generation models found in results; pass --generator-model to disambiguate: "
-            + ", ".join(generation_models)
-        )
-    run_names = sorted({value for value in df["generation_run_name"].dropna().unique() if value})
-    if not generator_run_name and len(run_names) > 1:
-        raise ValueError(
-            "Multiple generation run names found in results; pass --generator-run-name to disambiguate: "
-            + ", ".join(run_names)
-        )
-    return df
-
-
-def summarize_accuracy(eval_samples: pd.DataFrame) -> pd.DataFrame:
-    grouped = (
-        eval_samples.groupby(
-            ["generation_model", "generation_run_name", "eval_model", "mode", "dataset", "setting"],
-            observed=True,
-        )["is_correct"]
-        .agg(total="count", correct="sum")
-        .reset_index()
-    )
-    grouped["accuracy"] = grouped["correct"] / grouped["total"]
-    grouped["stderr"] = grouped.apply(
-        lambda row: math.sqrt(max(0.0, row["accuracy"] * (1.0 - row["accuracy"])) / row["total"]) if row["total"] else 0.0,
-        axis=1,
-    )
-    grouped["random_baseline"] = grouped["setting"].map(lambda setting: 1.0 / K_MAP[str(setting)])
-    grouped["delta_over_random"] = grouped["accuracy"] - grouped["random_baseline"]
-    grouped["config"] = pd.Categorical(grouped["setting"], categories=CONFIG_ORDER, ordered=True)
-    return grouped
-
-
-def load_augmented_rows(path: Path) -> pd.DataFrame:
-    rows: list[dict[str, object]] = []
-    for row in iter_augmented_rows(path, dataset_types=DATASET_ORDER, settings=CONFIG_ORDER):
-        payload = dict(row)
-        dataset = str(payload.get("dataset_type", "") or "")
-        setting = str(payload.get("setting", "") or "")
-        options = list(payload.get("options_randomized") or [])
-        gold_letter = str(payload.get("correct_answer_letter", "") or "")
-        if dataset not in DATASET_ORDER or setting not in CONFIG_ORDER or not options or not gold_letter:
-            continue
-        rows.append(
-            {
-                "dataset": dataset,
-                "config": setting,
-                "sample_id": str(payload.get("sample_id", "") or ""),
-                "question_idx": int(payload.get("row_index", -1)),
-                "question": str(payload.get("question", "") or ""),
-                "gold_answer_letter": gold_letter,
-                "options_randomized": options,
-            }
-        )
-    df = pd.DataFrame(rows)
-    if df.empty:
-        raise ValueError(f"No augmented rows found at {path}")
-    df["config"] = pd.Categorical(df["config"], categories=CONFIG_ORDER, ordered=True)
-    return df
 
 
 def _config_fail_rate(data: pd.DataFrame, config: str) -> float:
@@ -461,30 +251,96 @@ def _config_fail_rate(data: pd.DataFrame, config: str) -> float:
     return float(row["fail_rate"].iloc[0]) if not row.empty else 0.0
 
 
-def build_per_question_dataframe(
-    *,
-    eval_samples: pd.DataFrame,
-    augmented_rows: pd.DataFrame,
-    flaw_df: pd.DataFrame,
-) -> pd.DataFrame:
-    full_question = eval_samples[eval_samples["mode"] == "full_question"].copy()
-    if full_question.empty:
-        return pd.DataFrame()
+def _filter_generator_rows(frame: pd.DataFrame, generator_model: str | None) -> pd.DataFrame:
+    if not generator_model or "generator" not in frame.columns:
+        return frame.copy()
+    generator = frame["generator"].fillna("").astype(str)
+    keep = generator.eq("") | generator.map(lambda actual: _model_matches(generator_model, actual))
+    return frame[keep].copy()
 
-    full_question["config"] = full_question["setting"]
-    merged = full_question.merge(
-        augmented_rows,
-        on=["dataset", "sample_id", "config"],
-        how="left",
-        suffixes=("", "_augmented"),
+
+def load_irt_quality_data(table_dir: Path, generator_model: str | None = None) -> pd.DataFrame:
+    grouped_path = table_dir / "final_grouped_question_quality.csv"
+    ablation_path = table_dir / "final_ablation_question_quality.csv"
+    if not grouped_path.exists():
+        raise FileNotFoundError(f"Missing IRT table: {grouped_path}")
+    if not ablation_path.exists():
+        raise FileNotFoundError(f"Missing IRT table: {ablation_path}")
+
+    grouped = _filter_generator_rows(pd.read_csv(grouped_path), generator_model)
+    ablation = _filter_generator_rows(pd.read_csv(ablation_path), generator_model)
+    columns = [
+        "dataset",
+        "setting",
+        "generator",
+        "difficulty",
+        "difficulty_se",
+        "discrimination",
+        "discrimination_se",
+    ]
+    quality = pd.concat([grouped[columns], ablation[columns]], ignore_index=True)
+    quality = (
+        quality.groupby(["dataset", "setting"], dropna=False)
+        .agg(
+            difficulty=("difficulty", "mean"),
+            difficulty_se=("difficulty_se", "mean"),
+            discrimination=("discrimination", "mean"),
+            discrimination_se=("discrimination_se", "mean"),
+        )
+        .reset_index()
+        .rename(columns={"setting": "config"})
     )
-    rule_cols = [f"rule_{rule}" for rule in RULES_ORDER]
-    merged = merged.merge(
-        flaw_df[["dataset", "config", "question", "flaw_value", *rule_cols]],
-        on=["dataset", "config", "question"],
-        how="left",
-    )
-    return merged
+    quality["config"] = pd.Categorical(quality["config"], categories=CONFIG_ORDER, ordered=True)
+    return quality.sort_values(["dataset", "config"]).reset_index(drop=True)
+
+
+def _plot_metric_scatter(
+    data: pd.DataFrame,
+    *,
+    x_col: str,
+    y_col: str,
+    xlabel: str,
+    ylabel: str,
+    title: str,
+    output_dir: Path,
+    name: str,
+    percent_x: bool = False,
+) -> None:
+    r_value, p_value = _safe_pearsonr(data[x_col], data[y_col])
+    print(f"  Pearson r({x_col}, {y_col}): r={r_value:.3f}, p={p_value:.4f}")
+    fig, ax = plt.subplots(figsize=(8, 6))
+    markers = _choice_group_markers(data["choice_count"])
+    for _, row in data.iterrows():
+        ax.scatter(
+            row[x_col],
+            row[y_col],
+            color=DATASET_PALETTE.get(str(row["dataset"]), "#666666"),
+            marker=markers[int(row["choice_count"])],
+            s=100,
+            zorder=3,
+        )
+        ax.annotate(
+            CONFIG_SHORT[str(row["config"])],
+            (row[x_col], row[y_col]),
+            textcoords="offset points",
+            xytext=(5, 3),
+            fontsize=7,
+        )
+    fit = _safe_regression(data[x_col], data[y_col])
+    if fit is not None:
+        x_fit = np.linspace(float(data[x_col].min()), float(data[x_col].max()), 100)
+        ax.plot(x_fit, fit[0] * x_fit + fit[1], "k--", linewidth=1, label=f"r={r_value:.2f}, p={p_value:.3f}")
+    for dataset in DATASET_ORDER:
+        ax.scatter([], [], color=DATASET_PALETTE[dataset], label=DATASET_LABELS[dataset], s=80)
+    for choice_count, marker in markers.items():
+        ax.scatter([], [], color="gray", marker=marker, label=_choice_count_label(choice_count), s=80)
+    ax.legend(fontsize=8, loc="best")
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.set_title(title)
+    if percent_x:
+        ax.xaxis.set_major_formatter(mticker.PercentFormatter(xmax=1.0))
+    _save(fig, output_dir, name)
 
 
 def _grouped_bar_quality(
@@ -539,21 +395,6 @@ def _save(fig: plt.Figure, output_dir: Path, name: str) -> None:
     print(f"  Saved {path.name}")
 
 
-def _full_question_accuracy(acc_df: pd.DataFrame) -> pd.DataFrame:
-    full_question = acc_df[acc_df["mode"] == "full_question"].copy()
-    grouped = (
-        full_question.groupby(["dataset", "config"], observed=True)
-        .agg(
-            mean_acc=("accuracy", "mean"),
-            se_acc=("accuracy", lambda x: float(x.std(ddof=1) / np.sqrt(len(x))) if len(x) > 1 else 0.0),
-            mean_delta=("delta_over_random", "mean"),
-        )
-        .reset_index()
-    )
-    grouped["config"] = pd.Categorical(grouped["config"], categories=CONFIG_ORDER, ordered=True)
-    return grouped
-
-
 def _print_quality_summary(summary_df: pd.DataFrame) -> None:
     print("\nReproduced summary:")
     print(f"{'dataset':<20} {'config':<25} {'flaw_value':>12} {'p(>=2 flaws)':>14} {'n':>6}")
@@ -570,30 +411,14 @@ def _print_quality_summary(summary_df: pd.DataFrame) -> None:
 def run_analysis(args: argparse.Namespace) -> int:
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    augmented_dataset_path = _resolve_augmented_dataset_path(
-        augmented_dataset=args.augmented_dataset,
-        cache_root=args.cache_root,
-        generator_model=args.generator_model,
-        generator_run_name=args.generator_run_name,
-    )
 
     print("Loading writing flaw data ...")
     flaw_df, flaw_long_df = load_writing_flaw_data(Path(args.writing_flaw_jsonl), generator_model=args.generator_model)
     print(f"  Loaded {len(flaw_df):,} rows.")
 
-    print("Loading evaluation logs ...")
-    eval_samples = load_evaluation_samples(
-        results_root=Path(args.results_root),
-        generator_model=args.generator_model,
-        generator_run_name=args.generator_run_name,
-        eval_models=_csv_list(args.eval_models),
-    )
-    print(f"  Loaded {len(eval_samples):,} evaluation samples.")
-
-    print("Loading augmented dataset cache ...")
-    print(f"  Using augmented dataset cache at {augmented_dataset_path}")
-    augmented_rows = load_augmented_rows(augmented_dataset_path)
-    print(f"  Loaded {len(augmented_rows):,} augmented setting rows.")
+    print("Loading IRT quality data ...")
+    irt_df = load_irt_quality_data(Path(args.irt_table_dir), generator_model=args.generator_model)
+    print(f"  Loaded {len(irt_df):,} dataset/config IRT rows.")
 
     print("\n" + "=" * 70)
     print("SECTION 1: WRITING QUALITY SUMMARY")
@@ -621,18 +446,6 @@ def run_analysis(args: argparse.Namespace) -> int:
     print("\n" + "=" * 70)
     print("SECTION 2: WRITING QUALITY FIGURES")
     print("=" * 70)
-    fig2a, ax2a = plt.subplots(figsize=(8, 5))
-    _grouped_bar_quality(
-        ax2a,
-        summary_df,
-        "writing_flaws_mean",
-        ylabel="Mean fraction of rules passed (higher is better)",
-        title="Fig 2a: Writing Quality by Config x Dataset",
-        ci_col="writing_flaws_ci",
-    )
-    ax2a.set_ylim(0.0, 1.0)
-    _save(fig2a, output_dir, "fig2a_quality_mean.png")
-
     fig2b, ax2b = plt.subplots(figsize=(8, 5))
     _grouped_bar_quality(
         ax2b,
@@ -645,57 +458,6 @@ def run_analysis(args: argparse.Namespace) -> int:
     ax2b.yaxis.set_major_formatter(mticker.PercentFormatter(xmax=1.0))
     ax2b.set_ylim(0.0, 1.05)
     _save(fig2b, output_dir, "fig2b_p_ge2_flaws.png")
-
-    choice_group_df = flaw_df.copy()
-    choice_group_df["choice_group"] = choice_group_df["config"].map(
-        lambda config: _setting_choice_group(str(config), include_family=True)
-    )
-    grouped_4v10 = (
-        choice_group_df.groupby(["dataset", "choice_group"], observed=True)
-        .agg(
-            mean_flaw=("flaw_value", "mean"),
-            ci_flaw=("flaw_value", lambda x: _mean_ci(pd.Series(x))[1]),
-            mean_p2=("has_ge2_flaws", "mean"),
-            ci_p2=("has_ge2_flaws", lambda x: _mean_ci(pd.Series(x).astype(float))[1]),
-        )
-        .reset_index()
-    )
-    fig2c, axes2c = plt.subplots(1, 2, figsize=(11, 5))
-    groups = list(dict.fromkeys(choice_group_df["choice_group"]))
-    x = np.arange(len(DATASET_ORDER))
-    colors = ["#2196F3", "#F44336", "#4CAF50", "#9C27B0", "#FF9800"]
-    for ax, metric, ci_col, ylabel in [
-        (axes2c[0], "mean_flaw", "ci_flaw", "Mean fraction of rules passed"),
-        (axes2c[1], "mean_p2", "ci_p2", "P(>=2 writing flaws)"),
-    ]:
-        offsets = np.linspace(-(len(groups) - 1) / 2, (len(groups) - 1) / 2, len(groups)) if groups else np.array([0.0])
-        bar_width = min(0.55 / max(len(groups), 1), 0.3)
-        for index, (offset, group) in enumerate(zip(offsets, groups)):
-            color = colors[index % len(colors)]
-            vals: list[float] = []
-            errs: list[float] = []
-            for dataset in DATASET_ORDER:
-                row = grouped_4v10[(grouped_4v10["dataset"] == dataset) & (grouped_4v10["choice_group"] == group)]
-                vals.append(float(row[metric].iloc[0]) if not row.empty else 0.0)
-                errs.append(float(row[ci_col].iloc[0]) if not row.empty else 0.0)
-            ax.bar(
-                x + offset * bar_width,
-                vals,
-                width=bar_width * 0.9,
-                label=group.replace("\n", " "),
-                color=color,
-                alpha=0.85,
-                yerr=errs,
-                capsize=3,
-            )
-        ax.set_xticks(x)
-        ax.set_xticklabels([DATASET_LABELS[dataset] for dataset in DATASET_ORDER])
-        ax.set_ylabel(ylabel)
-        ax.legend(fontsize=8)
-    axes2c[1].yaxis.set_major_formatter(mticker.PercentFormatter(xmax=1.0))
-    axes2c[0].set_title("Fig 2c (left): Quality by choice count")
-    axes2c[1].set_title("Fig 2c (right): P(>=2 flaws) by choice count")
-    _save(fig2c, output_dir, "fig2c_4choice_vs_10choice.png")
 
     print("\n" + "=" * 70)
     print("SECTION 3: PER-RULE FAILURE RATE ANALYSIS")
@@ -776,460 +538,163 @@ def run_analysis(args: argparse.Namespace) -> int:
     _save(fig3c, output_dir, "fig3c_augmentation_penalty.png")
 
     print("\n" + "=" * 70)
-    print("SECTION 4: ACCURACY ANALYSIS")
+    print("SECTION 4: IRT QUALITY METRICS")
     print("=" * 70)
-    acc_df = summarize_accuracy(eval_samples)
-    full_question_acc = _full_question_accuracy(acc_df)
-
+    print(
+        irt_df[["dataset", "config", "difficulty", "difficulty_se", "discrimination", "discrimination_se"]]
+        .to_string(index=False, float_format=lambda value: f"{value:.3f}")
+    )
     fig4a, ax4a = plt.subplots(figsize=(8, 5))
     _grouped_bar_quality(
         ax4a,
-        full_question_acc.rename(columns={"mean_acc": "metric"}),
-        "metric",
-        ylabel="Mean accuracy (full_question)",
-        title="Fig 4a: Accuracy by Config x Dataset",
+        irt_df,
+        "difficulty",
+        ylabel="IRT difficulty (higher = harder)",
+        title="Fig 4a: IRT Difficulty",
+        ci_col="difficulty_se",
     )
-    ax4a.yaxis.set_major_formatter(mticker.PercentFormatter(xmax=1.0))
-    _save(fig4a, output_dir, "fig4a_accuracy_avg.png")
+    _save(fig4a, output_dir, "fig4a_irt_difficulty.png")
 
-    eval_models = sorted(acc_df["eval_model"].unique())
-    fig4b, axes4b = plt.subplots(1, len(eval_models), figsize=(max(6, 5 * len(eval_models)), 5), sharey=True)
-    if len(eval_models) == 1:
-        axes4b = [axes4b]
-    for ax, eval_model in zip(axes4b, eval_models):
-        sub = acc_df[(acc_df["mode"] == "full_question") & (acc_df["eval_model"] == eval_model)]
-        sub_grouped = (
-            sub.groupby(["dataset", "config"], observed=True)
-            .agg(mean_acc=("accuracy", "mean"), se_acc=("accuracy", lambda x: float(x.std(ddof=1) / np.sqrt(len(x))) if len(x) > 1 else 0.0))
-            .reset_index()
-        )
-        n_configs = len(CONFIG_ORDER)
-        x = np.arange(len(DATASET_ORDER))
-        width = 0.14
-        offsets = np.linspace(-(n_configs - 1) / 2, (n_configs - 1) / 2, n_configs) * width
-        for i, config in enumerate(CONFIG_ORDER):
-            vals: list[float] = []
-            errs: list[float] = []
-            for dataset in DATASET_ORDER:
-                row = sub_grouped[(sub_grouped["dataset"] == dataset) & (sub_grouped["config"] == config)]
-                vals.append(float(row["mean_acc"].iloc[0]) if not row.empty else 0.0)
-                errs.append(float(row["se_acc"].iloc[0]) if not row.empty else 0.0)
-            ax.bar(
-                x + offsets[i],
-                vals,
-                width=width * 0.9,
-                color=PALETTE[config],
-                alpha=0.85,
-                label=CONFIG_SHORT[config],
-                yerr=errs,
-                capsize=2,
-            )
-        ax.set_xticks(x)
-        ax.set_xticklabels([DATASET_LABELS[dataset] for dataset in DATASET_ORDER], fontsize=8)
-        ax.yaxis.set_major_formatter(mticker.PercentFormatter(xmax=1.0))
-        ax.set_title(_display_model(eval_model), fontsize=9)
-        ax.legend(fontsize=6, ncol=2)
-    axes4b[0].set_ylabel("Accuracy")
-    _save(fig4b, output_dir, "fig4b_accuracy_by_model.png")
-
-    fig4c, ax4c = plt.subplots(figsize=(8, 5))
+    fig4b, ax4b = plt.subplots(figsize=(8, 5))
     _grouped_bar_quality(
-        ax4c,
-        full_question_acc.rename(columns={"mean_delta": "metric"}),
-        "metric",
-        ylabel="Delta over random baseline",
-        title="Fig 4c: Accuracy Delta Over Random Baseline",
+        ax4b,
+        irt_df,
+        "discrimination",
+        ylabel="IRT discrimination (higher = separates better)",
+        title="Fig 4b: IRT Discrimination",
+        ci_col="discrimination_se",
     )
-    ax4c.yaxis.set_major_formatter(mticker.PercentFormatter(xmax=1.0))
-    _save(fig4c, output_dir, "fig4c_delta_over_random.png")
+    _save(fig4b, output_dir, "fig4b_irt_discrimination.png")
 
     print("\n" + "=" * 70)
-    print("SECTION 5: VALIDITY vs ACCURACY")
+    print("SECTION 5: VALIDITY vs IRT")
     print("=" * 70)
     validity_df = (
         flaw_df.groupby(["dataset", "config"], observed=True)
         .agg(mean_validity=("flaw_value", "mean"), mean_p2=("has_ge2_flaws", "mean"))
         .reset_index()
     )
-    cross = validity_df.merge(
-        full_question_acc.rename(columns={"mean_acc": "mean_accuracy"})[["dataset", "config", "mean_accuracy"]],
-        on=["dataset", "config"],
-        how="inner",
-    )
+    cross = validity_df.merge(irt_df, on=["dataset", "config"], how="inner")
     cross["choice_count"] = cross["config"].map(lambda config: K_MAP[str(config)])
     cross["choice_group"] = cross["choice_count"].map(_choice_count_label)
-    r_val, p_val = _safe_pearsonr(cross["mean_validity"], cross["mean_accuracy"])
-    r_p2, p_p2 = _safe_pearsonr(cross["mean_p2"], cross["mean_accuracy"])
-    print(f"  Pearson r(validity, accuracy): r={r_val:.3f}, p={p_val:.4f}")
-    print(f"  Pearson r(p>=2 flaws, accuracy): r={r_p2:.3f}, p={p_p2:.4f}")
 
-    fig5a, ax5a = plt.subplots(figsize=(8, 6))
-    markers = _choice_group_markers(cross["choice_count"])
-    for _, row in cross.iterrows():
-        ax5a.scatter(
-            row["mean_validity"],
-            row["mean_accuracy"],
-            color=DATASET_PALETTE.get(str(row["dataset"]), "#666666"),
-            marker=markers[int(row["choice_count"])],
-            s=100,
-            zorder=3,
-        )
-        ax5a.annotate(CONFIG_SHORT[str(row["config"])], (row["mean_validity"], row["mean_accuracy"]), textcoords="offset points", xytext=(5, 3), fontsize=7)
-    fit = _safe_regression(cross["mean_validity"], cross["mean_accuracy"])
-    if fit is not None:
-        x_fit = np.linspace(float(cross["mean_validity"].min()), float(cross["mean_validity"].max()), 100)
-        ax5a.plot(x_fit, fit[0] * x_fit + fit[1], "k--", linewidth=1, label=f"r={r_val:.2f}, p={p_val:.3f}")
-    for dataset in DATASET_ORDER:
-        ax5a.scatter([], [], color=DATASET_PALETTE[dataset], label=DATASET_LABELS[dataset], s=80)
-    for choice_count, marker in markers.items():
-        ax5a.scatter([], [], color="gray", marker=marker, label=_choice_count_label(choice_count), s=80)
-    ax5a.legend(fontsize=8, loc="best")
-    ax5a.set_xlabel("Mean writing quality (fraction of rules passed)")
-    ax5a.set_ylabel("Mean accuracy (full_question)")
-    ax5a.set_title("Fig 5a: Writing Quality vs Accuracy")
-    ax5a.yaxis.set_major_formatter(mticker.PercentFormatter(xmax=1.0))
-    _save(fig5a, output_dir, "fig5a_validity_vs_accuracy.png")
+    _plot_metric_scatter(
+        cross,
+        x_col="mean_validity",
+        y_col="difficulty",
+        xlabel="Mean writing quality (fraction of rules passed)",
+        ylabel="IRT difficulty (higher = harder)",
+        title="Fig 5a: Writing Quality vs IRT Difficulty",
+        output_dir=output_dir,
+        name="fig5a_validity_vs_irt_difficulty.png",
+    )
+    _plot_metric_scatter(
+        cross,
+        x_col="mean_validity",
+        y_col="discrimination",
+        xlabel="Mean writing quality (fraction of rules passed)",
+        ylabel="IRT discrimination (higher = separates better)",
+        title="Fig 5b: Writing Quality vs IRT Discrimination",
+        output_dir=output_dir,
+        name="fig5b_validity_vs_irt_discrimination.png",
+    )
+    _plot_metric_scatter(
+        cross,
+        x_col="mean_p2",
+        y_col="difficulty",
+        xlabel="P(>=2 writing flaws)",
+        ylabel="IRT difficulty (higher = harder)",
+        title="Fig 5c: P(>=2 Flaws) vs IRT Difficulty",
+        output_dir=output_dir,
+        name="fig5c_p2flaws_vs_irt_difficulty.png",
+        percent_x=True,
+    )
+    _plot_metric_scatter(
+        cross,
+        x_col="mean_p2",
+        y_col="discrimination",
+        xlabel="P(>=2 writing flaws)",
+        ylabel="IRT discrimination (higher = separates better)",
+        title="Fig 5d: P(>=2 Flaws) vs IRT Discrimination",
+        output_dir=output_dir,
+        name="fig5d_p2flaws_vs_irt_discrimination.png",
+        percent_x=True,
+    )
 
-    baseline_validity = cross[cross["config"] == "human_from_scratch"].set_index("dataset")
+    print("\n" + "=" * 70)
+    print("SECTION 6: DELTA FROM HUMAN BASELINE")
+    print("=" * 70)
+    baseline = cross[cross["config"] == "human_from_scratch"].set_index("dataset")
     delta_rows: list[dict[str, object]] = []
     for _, row in cross[cross["config"] != "human_from_scratch"].iterrows():
         dataset = str(row["dataset"])
-        if dataset not in baseline_validity.index:
+        if dataset not in baseline.index:
             continue
         delta_rows.append(
             {
                 "dataset": dataset,
                 "config": str(row["config"]),
                 "label": f"{DATASET_LABELS[dataset]}\n{CONFIG_SHORT[str(row['config'])]}",
-                "validity_drop": float(row["mean_validity"] - baseline_validity.loc[dataset, "mean_validity"]),
-                "accuracy_drop": float(row["mean_accuracy"] - baseline_validity.loc[dataset, "mean_accuracy"]),
+                "delta_validity": float(row["mean_validity"] - baseline.loc[dataset, "mean_validity"]),
+                "delta_difficulty": float(row["difficulty"] - baseline.loc[dataset, "difficulty"]),
+                "delta_discrimination": float(row["discrimination"] - baseline.loc[dataset, "discrimination"]),
             }
         )
     delta_df = pd.DataFrame(delta_rows)
-    fig5b, ax5b = plt.subplots(figsize=(12, 6))
-    x = np.arange(len(delta_df))
-    width = 0.35
-    ax5b.bar(x - width / 2, delta_df["validity_drop"], width, label="Delta validity", color="#4CAF50", alpha=0.8)
-    ax5b.bar(x + width / 2, delta_df["accuracy_drop"], width, label="Delta accuracy", color="#F44336", alpha=0.8)
-    ax5b.axhline(0, color="black", linewidth=0.7)
-    ax5b.yaxis.set_major_formatter(mticker.PercentFormatter(xmax=1.0))
-    ax5b.set_ylabel("Delta from human_from_scratch")
-    ax5b.set_xticks(x)
-    ax5b.set_xticklabels(delta_df["label"], fontsize=7, rotation=30, ha="right")
-    ax5b.legend(fontsize=9, loc="lower left")
-    ax5b.set_title("Fig 5b: Validity Drop vs Accuracy Drop")
-    _save(fig5b, output_dir, "fig5b_validity_vs_accuracy_delta.png")
-
-    fig5c, ax5c = plt.subplots(figsize=(8, 6))
-    for _, row in cross.iterrows():
-        ax5c.scatter(
-            row["mean_p2"],
-            row["mean_accuracy"],
-            color=DATASET_PALETTE.get(str(row["dataset"]), "#666666"),
-            marker=markers[int(row["choice_count"])],
-            s=100,
-            zorder=3,
-        )
-        ax5c.annotate(CONFIG_SHORT[str(row["config"])], (row["mean_p2"], row["mean_accuracy"]), textcoords="offset points", xytext=(5, 3), fontsize=7)
-    fit = _safe_regression(cross["mean_p2"], cross["mean_accuracy"])
-    if fit is not None:
-        x_fit = np.linspace(float(cross["mean_p2"].min()), float(cross["mean_p2"].max()), 100)
-        ax5c.plot(x_fit, fit[0] * x_fit + fit[1], "k--", linewidth=1, label=f"r={r_p2:.2f}, p={p_p2:.3f}")
+    fig6a, axes6a = plt.subplots(1, 2, figsize=(13, 5))
+    for ax, y_col, ylabel, title in [
+        (axes6a[0], "delta_difficulty", "Delta IRT difficulty", "Difficulty"),
+        (axes6a[1], "delta_discrimination", "Delta IRT discrimination", "Discrimination"),
+    ]:
+        for _, row in delta_df.iterrows():
+            ax.scatter(
+                row["delta_validity"],
+                row[y_col],
+                color=DATASET_PALETTE.get(str(row["dataset"]), "#666666"),
+                s=90,
+                zorder=3,
+            )
+            ax.annotate(str(row["config"]), (row["delta_validity"], row[y_col]), textcoords="offset points", xytext=(4, 3), fontsize=6)
+        ax.axhline(0, color="black", linewidth=0.8)
+        ax.axvline(0, color="black", linewidth=0.8)
+        ax.set_xlabel("Delta writing quality from human")
+        ax.set_ylabel(ylabel)
+        ax.set_title(title)
     for dataset in DATASET_ORDER:
-        ax5c.scatter([], [], color=DATASET_PALETTE[dataset], label=DATASET_LABELS[dataset], s=80)
-    for choice_count, marker in markers.items():
-        ax5c.scatter([], [], color="gray", marker=marker, label=_choice_count_label(choice_count), s=80)
-    ax5c.legend(fontsize=8)
-    ax5c.set_xlabel("P(>=2 writing flaws)")
-    ax5c.set_ylabel("Mean accuracy (full_question)")
-    ax5c.set_title("Fig 5c: P(>=2 Writing Flaws) vs Accuracy")
-    ax5c.xaxis.set_major_formatter(mticker.PercentFormatter(xmax=1.0))
-    ax5c.yaxis.set_major_formatter(mticker.PercentFormatter(xmax=1.0))
-    _save(fig5c, output_dir, "fig5c_p2flaws_vs_accuracy.png")
+        axes6a[1].scatter([], [], color=DATASET_PALETTE[dataset], label=DATASET_LABELS[dataset], s=80)
+    axes6a[1].legend(fontsize=8)
+    _save(fig6a, output_dir, "fig6a_validity_irt_delta.png")
 
     print("\n" + "=" * 70)
-    print("SECTION 6: WITHIN-GROUP CORRELATION")
+    print("SECTION 8: PER-RULE x IRT CORRELATION")
     print("=" * 70)
-    within_group_stats: list[tuple[int, pd.DataFrame, float, float]] = []
-    for choice_count in sorted(cross["choice_count"].dropna().astype(int).unique()):
-        subset = cross[cross["choice_count"] == choice_count]
-        r_value, p_value = _safe_pearsonr(subset["mean_validity"], subset["mean_accuracy"])
-        within_group_stats.append((choice_count, subset, r_value, p_value))
-        print(f"  {_choice_count_label(choice_count)}: r={r_value:.3f}, p={p_value:.4f}")
-    fig6a, ax6a = plt.subplots(figsize=(8, 6))
-    for _, row in cross.iterrows():
-        ax6a.scatter(
-            row["mean_validity"],
-            row["mean_accuracy"],
-            color=DATASET_PALETTE.get(str(row["dataset"]), "#666666"),
-            marker=markers[int(row["choice_count"])],
-            s=110,
-            zorder=3,
-        )
-        ax6a.annotate(CONFIG_SHORT[str(row["config"])], (row["mean_validity"], row["mean_accuracy"]), textcoords="offset points", xytext=(5, 3), fontsize=7)
-    line_styles = ("--", ":", "-.", "-")
-    for index, (choice_count, subset, r_value, p_value) in enumerate(within_group_stats):
-        fit = _safe_regression(subset["mean_validity"], subset["mean_accuracy"])
-        if fit is None:
-            continue
-        x_fit = np.linspace(float(subset["mean_validity"].min()), float(subset["mean_validity"].max()), 100)
-        style = line_styles[index % len(line_styles)]
-        ax6a.plot(
-            x_fit,
-            fit[0] * x_fit + fit[1],
-            style,
-            linewidth=1.5,
-            label=f"{_choice_count_label(choice_count)}: r={r_value:.2f}, p={p_value:.3f}",
-        )
-    for dataset in DATASET_ORDER:
-        ax6a.scatter([], [], color=DATASET_PALETTE[dataset], label=DATASET_LABELS[dataset], s=80)
-    for choice_count, marker in markers.items():
-        ax6a.scatter([], [], color="gray", marker=marker, label=_choice_count_label(choice_count), s=80)
-    ax6a.legend(fontsize=7, loc="best")
-    ax6a.set_xlabel("Mean writing quality")
-    ax6a.set_ylabel("Mean accuracy (full_question)")
-    ax6a.set_title("Fig 6a: Within-Group Correlation")
-    ax6a.yaxis.set_major_formatter(mticker.PercentFormatter(xmax=1.0))
-    _save(fig6a, output_dir, "fig6a_within_group_correlation.png")
-
-    print("\n" + "=" * 70)
-    print("SECTION 7: choices_only vs full_question")
-    print("=" * 70)
-    mode_acc = (
-        acc_df.groupby(["dataset", "config", "mode"], observed=True)
-        .agg(mean_acc=("accuracy", "mean"))
-        .reset_index()
-    )
-    mode_pivot = mode_acc.pivot_table(index=["dataset", "config"], columns="mode", values="mean_acc").reset_index()
-    if "choices_only" not in mode_pivot.columns:
-        mode_pivot["choices_only"] = np.nan
-    if "full_question" not in mode_pivot.columns:
-        mode_pivot["full_question"] = np.nan
-    mode_pivot["delta"] = mode_pivot["choices_only"] - mode_pivot["full_question"]
-    mode_pivot["label"] = [
-        f"{DATASET_LABELS[str(row['dataset'])]}\n{CONFIG_SHORT[str(row['config'])]}"
-        for _, row in mode_pivot.iterrows()
-    ]
-    fig7a, ax7a = plt.subplots(figsize=(14, 5))
-    x = np.arange(len(mode_pivot))
-    width = 0.35
-    ax7a.bar(x - width / 2, mode_pivot["full_question"], width, label="full_question", color="#1976D2", alpha=0.85)
-    ax7a.bar(x + width / 2, mode_pivot["choices_only"], width, label="choices_only", color="#F57C00", alpha=0.85)
-    ax7a.set_xticks(x)
-    ax7a.set_xticklabels(mode_pivot["label"], fontsize=6.5, rotation=30, ha="right")
-    ax7a.set_ylabel("Mean accuracy")
-    ax7a.yaxis.set_major_formatter(mticker.PercentFormatter(xmax=1.0))
-    ax7a.legend(fontsize=9)
-    ax7a.set_title("Fig 7a: choices_only vs full_question Accuracy")
-    _save(fig7a, output_dir, "fig7a_mode_accuracy_comparison.png")
-
-    fig7b, ax7b = plt.subplots(figsize=(14, 5))
-    ax7b.bar(x, mode_pivot["delta"], color=["#4CAF50" if value > 0 else "#F44336" for value in mode_pivot["delta"]], alpha=0.85)
-    ax7b.axhline(0, color="black", linewidth=0.8)
-    ax7b.set_xticks(x)
-    ax7b.set_xticklabels(mode_pivot["label"], fontsize=6.5, rotation=30, ha="right")
-    ax7b.set_ylabel("Delta accuracy (choices_only - full_question)")
-    ax7b.yaxis.set_major_formatter(mticker.PercentFormatter(xmax=1.0))
-    ax7b.set_title("Fig 7b: Mode Delta")
-    _save(fig7b, output_dir, "fig7b_mode_delta.png")
-
-    print("\n" + "=" * 70)
-    print("SECTION 8: PER-RULE x ACCURACY CORRELATION")
-    print("=" * 70)
-    rule_acc_rows: list[dict[str, object]] = []
+    rule_metric_rows: list[dict[str, object]] = []
     for rule in RULES_ORDER:
         rule_data = rule_fail[rule_fail["rule"] == rule].merge(
-            cross[["dataset", "config", "mean_accuracy"]],
+            cross[["dataset", "config", "difficulty", "discrimination"]],
             on=["dataset", "config"],
             how="inner",
         )
-        r_rule, p_rule = _safe_pearsonr(rule_data["fail_rate"], rule_data["mean_accuracy"])
-        rule_acc_rows.append({"rule": rule, "r": r_rule, "p": p_rule})
-    rule_acc_df = pd.DataFrame(rule_acc_rows).sort_values("r").reset_index(drop=True)
-    fig8a, ax8a = plt.subplots(figsize=(10, 7))
-    ax8a.barh(
-        rule_acc_df["rule"],
-        rule_acc_df["r"],
-        color=["#F44336" if value < 0 else "#2196F3" for value in rule_acc_df["r"]],
-        alpha=0.85,
-    )
-    ax8a.axvline(0, color="black", linewidth=0.8)
-    ax8a.set_xlabel("Pearson r (rule fail rate vs mean accuracy)")
-    ax8a.set_title("Fig 8a: Per-Rule Correlation with Accuracy")
-    ax8a.tick_params(axis="y", labelsize=8)
-    _save(fig8a, output_dir, "fig8a_per_rule_accuracy_corr.png")
-
-    print("\n" + "=" * 70)
-    print("SECTION 9: PER-QUESTION WRITING FLAW x ACCURACY")
-    print("=" * 70)
-    per_question_df = build_per_question_dataframe(
-        eval_samples=eval_samples,
-        augmented_rows=augmented_rows,
-        flaw_df=flaw_df,
-    )
-    if per_question_df.empty:
-        print("  No full_question rows available; skipping per-question analysis.")
-    else:
-        pq_r, pq_p = _safe_pearsonr(per_question_df["flaw_value"], per_question_df["is_correct"].astype(float))
-        print(f"  Per-question Pearson r(flaw_value, is_correct): r={pq_r:.4f}, p={pq_p:.4f}")
-        gap_rows: list[dict[str, object]] = []
-        for rule in RULES_ORDER:
-            column = f"rule_{rule}"
-            passed = per_question_df[per_question_df[column] == True]["is_correct"].mean()
-            failed = per_question_df[per_question_df[column] == False]["is_correct"].mean()
-            gap_rows.append({"rule": rule, "acc_passed": passed, "acc_failed": failed, "gap": failed - passed})
-        gap_df = pd.DataFrame(gap_rows).sort_values("gap").reset_index(drop=True)
-        fig9a, ax9a = plt.subplots(figsize=(10, 7))
-        ax9a.barh(
-            gap_df["rule"],
-            gap_df["gap"],
-            color=["#F44336" if value < 0 else "#2196F3" for value in gap_df["gap"]],
+        r_diff, p_diff = _safe_pearsonr(rule_data["fail_rate"], rule_data["difficulty"])
+        r_disc, p_disc = _safe_pearsonr(rule_data["fail_rate"], rule_data["discrimination"])
+        rule_metric_rows.append({"rule": rule, "difficulty_r": r_diff, "difficulty_p": p_diff, "discrimination_r": r_disc, "discrimination_p": p_disc})
+    rule_metric_df = pd.DataFrame(rule_metric_rows).sort_values("difficulty_r").reset_index(drop=True)
+    fig8a, axes8a = plt.subplots(1, 2, figsize=(15, 7), sharey=True)
+    for ax, column, title in [
+        (axes8a[0], "difficulty_r", "Rule Fail Rate vs IRT Difficulty"),
+        (axes8a[1], "discrimination_r", "Rule Fail Rate vs IRT Discrimination"),
+    ]:
+        ax.barh(
+            rule_metric_df["rule"],
+            rule_metric_df[column],
+            color=["#F44336" if value > 0 else "#2196F3" for value in rule_metric_df[column]],
             alpha=0.85,
         )
-        ax9a.axvline(0, color="black", linewidth=0.8)
-        ax9a.xaxis.set_major_formatter(mticker.PercentFormatter(xmax=1.0))
-        ax9a.set_xlabel("Accuracy gap (rule_failed - rule_passed)")
-        ax9a.set_title("Fig 9a: Per-Question Accuracy Gap by Writing Rule")
-        ax9a.tick_params(axis="y", labelsize=8)
-        _save(fig9a, output_dir, "fig9a_per_question_rule_accuracy_gap.png")
-
-        print("\n" + "=" * 70)
-        print("SECTION 10: NONFUNCTIONAL DISTRACTOR RATE")
-        print("=" * 70)
-        distractor_rows: list[dict[str, object]] = []
-        grouped = per_question_df.groupby(["dataset", "config", "sample_id"], observed=True)
-        for (dataset, config, sample_id), group in grouped:
-            first = group.iloc[0]
-            gold_letter = str(first["gold_answer_letter"])
-            val = first["options_randomized"]
-            if val is None or isinstance(val, float):
-                continue
-            options = list(val)
-            chosen = {str(value).strip().upper() for value in group["prediction"].tolist() if str(value).strip().upper() in CHOICE_LABELS[: len(options)]}
-            wrong_letters = [CHOICE_LABELS[i] for i in range(len(options)) if CHOICE_LABELS[i] != gold_letter]
-            distractor_rows.append(
-                {
-                    "dataset": dataset,
-                    "config": config,
-                    "sample_id": sample_id,
-                    "total_distractors": len(wrong_letters),
-                    "nonfunctional_count": sum(1 for letter in wrong_letters if letter not in chosen),
-                }
-            )
-        nf_df = (
-            pd.DataFrame(distractor_rows)
-            .groupby(["dataset", "config"], observed=True)
-            .agg(total_distractors=("total_distractors", "sum"), nonfunctional_count=("nonfunctional_count", "sum"))
-            .reset_index()
-        )
-        nf_df["nonfunctional_rate"] = nf_df["nonfunctional_count"] / nf_df["total_distractors"]
-        nf_df["config"] = pd.Categorical(nf_df["config"], categories=CONFIG_ORDER, ordered=True)
-        fig10a, ax10a = plt.subplots(figsize=(9, 5))
-        n_configs = len(CONFIG_ORDER)
-        x = np.arange(len(DATASET_ORDER))
-        width = 0.14
-        offsets = np.linspace(-(n_configs - 1) / 2, (n_configs - 1) / 2, n_configs) * width
-        for i, config in enumerate(CONFIG_ORDER):
-            vals: list[float] = []
-            for dataset in DATASET_ORDER:
-                row = nf_df[(nf_df["dataset"] == dataset) & (nf_df["config"] == config)]
-                vals.append(float(row["nonfunctional_rate"].iloc[0]) if not row.empty else 0.0)
-            ax10a.bar(
-                x + offsets[i],
-                vals,
-                width * 0.9,
-                label=CONFIG_LABELS[config].replace("\n", " "),
-                color=PALETTE[config],
-                alpha=0.85,
-            )
-        ax10a.set_xticks(x)
-        ax10a.set_xticklabels([DATASET_LABELS[dataset] for dataset in DATASET_ORDER])
-        ax10a.yaxis.set_major_formatter(mticker.PercentFormatter(xmax=1.0))
-        ax10a.set_ylabel("Nonfunctional distractor rate")
-        ax10a.legend(fontsize=7, ncol=2)
-        ax10a.set_title("Fig 10a: Nonfunctional Distractor Rate")
-        _save(fig10a, output_dir, "fig10a_nonfunctional_distractor_rate.png")
-
-    print("\n" + "=" * 70)
-    print("SECTION 11: NORMALISED ACCURACY")
-    print("=" * 70)
-    fq_all = acc_df[acc_df["mode"] == "full_question"].copy()
-    fq_all["k"] = fq_all["setting"].map(K_MAP)
-    fq_all["norm_acc"] = (fq_all["accuracy"] - 1.0 / fq_all["k"]) / (1.0 - 1.0 / fq_all["k"])
-    norm_agg = fq_all.groupby(["dataset", "config"], observed=True)[["accuracy", "norm_acc"]].mean().reset_index()
-    print(f"{'Dataset':<14} {'Config':<22} {'Raw acc':>9} {'Norm acc':>10} {'k':>4}")
-    print("-" * 64)
-    for dataset in DATASET_ORDER:
-        for config in CONFIG_ORDER:
-            row = norm_agg[(norm_agg["dataset"] == dataset) & (norm_agg["config"] == config)]
-            if row.empty:
-                continue
-            print(
-                f"{DATASET_LABELS[dataset]:<14} {config:<22} "
-                f"{float(row['accuracy'].iloc[0]):>8.1%}  {float(row['norm_acc'].iloc[0]):>9.1%}  {K_MAP[config]:>4}"
-            )
-        print()
-
-    fig11a, axes11a = plt.subplots(1, 2, figsize=(15, 5), sharey=False)
-    x = np.arange(len(DATASET_ORDER))
-    n_configs = len(CONFIG_ORDER)
-    width = 0.15
-    offsets = np.linspace(-(n_configs - 1) / 2, (n_configs - 1) / 2, n_configs) * width
-    for ax, column, title in zip(
-        axes11a,
-        ["accuracy", "norm_acc"],
-        ["Raw accuracy", "Normalised accuracy"],
-    ):
-        for i, config in enumerate(CONFIG_ORDER):
-            vals: list[float] = []
-            for dataset in DATASET_ORDER:
-                row = norm_agg[(norm_agg["dataset"] == dataset) & (norm_agg["config"] == config)]
-                vals.append(float(row[column].iloc[0]) if not row.empty else 0.0)
-            ax.bar(
-                x + offsets[i],
-                vals,
-                width * 0.9,
-                label=CONFIG_LABELS[config].replace("\n", " "),
-                color=PALETTE[config],
-                alpha=0.85,
-            )
-        ax.set_xticks(x)
-        ax.set_xticklabels([DATASET_LABELS[dataset] for dataset in DATASET_ORDER])
-        ax.yaxis.set_major_formatter(mticker.PercentFormatter(xmax=1.0))
-        ax.set_ylabel(title)
+        ax.axvline(0, color="black", linewidth=0.8)
+        ax.set_xlabel("Pearson r")
         ax.set_title(title)
-        ax.legend(fontsize=7, ncol=2)
-    _save(fig11a, output_dir, "fig11a_normalised_accuracy.png")
-
-    baseline_norm = norm_agg[norm_agg["config"] == "human_from_scratch"].set_index("dataset")
-    delta_norm_rows: list[dict[str, object]] = []
-    for _, row in norm_agg[norm_agg["config"] != "human_from_scratch"].iterrows():
-        dataset = str(row["dataset"])
-        if dataset not in baseline_norm.index:
-            continue
-        delta_norm_rows.append(
-            {
-                "dataset": dataset,
-                "config": str(row["config"]),
-                "label": f"{DATASET_LABELS[dataset]}\n{CONFIG_SHORT[str(row['config'])]}",
-                "raw_drop": float(row["accuracy"] - baseline_norm.loc[dataset, "accuracy"]),
-                "norm_drop": float(row["norm_acc"] - baseline_norm.loc[dataset, "norm_acc"]),
-            }
-        )
-    delta_norm_df = pd.DataFrame(delta_norm_rows)
-    fig11b, ax11b = plt.subplots(figsize=(13, 5))
-    x = np.arange(len(delta_norm_df))
-    width = 0.35
-    ax11b.bar(x - width / 2, delta_norm_df["raw_drop"], width, label="Delta raw accuracy", color="#1976D2", alpha=0.85)
-    ax11b.bar(x + width / 2, delta_norm_df["norm_drop"], width, label="Delta normalised accuracy", color="#FF9800", alpha=0.85)
-    ax11b.axhline(0, color="black", linewidth=0.7)
-    ax11b.yaxis.set_major_formatter(mticker.PercentFormatter(xmax=1.0))
-    ax11b.set_ylabel("Delta from human_from_scratch")
-    ax11b.set_xticks(x)
-    ax11b.set_xticklabels(delta_norm_df["label"], fontsize=7, rotation=30, ha="right")
-    ax11b.legend(fontsize=9)
-    ax11b.set_title("Fig 11b: Raw vs Normalised Accuracy Drop")
-    _save(fig11b, output_dir, "fig11b_normalised_accuracy_delta.png")
+        ax.tick_params(axis="y", labelsize=8)
+    _save(fig8a, output_dir, "fig8a_per_rule_irt_corr.png")
 
     print("\n" + "=" * 70)
     print("KEY FINDINGS")
@@ -1248,15 +713,11 @@ def run_analysis(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Benchmarker writing-flaw analysis for Inspect-native Augmented MCQA runs")
+    parser = argparse.ArgumentParser(description="BenchMarker writing-flaw analysis using IRT quality metrics")
     parser.add_argument("--writing-flaw-jsonl", required=True)
-    parser.add_argument("--results-root", default=str(DEFAULT_EVALUATION_LOG_ROOT))
-    parser.add_argument("--augmented-dataset", default=None)
-    parser.add_argument("--cache-root", default=str(DEFAULT_AUGMENTED_CACHE_ROOT))
+    parser.add_argument("--irt-table-dir", default="results/augmented_mcqa_irt/tables")
     parser.add_argument("--output-dir", default="results/benchmarker_analysis")
     parser.add_argument("--generator-model", default=None)
-    parser.add_argument("--generator-run-name", default=None)
-    parser.add_argument("--eval-models", default=None, help="Comma-separated list of eval models to include")
     return parser
 
 
