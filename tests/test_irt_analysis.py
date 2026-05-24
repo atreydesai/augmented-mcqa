@@ -17,6 +17,7 @@ from analysis.irt import (
     load_irt_frame,
     taker_ability_frame,
 )
+from analysis.irt_figures import pareto_frontier_mask
 from cli.app import main
 from utils.constants import EVALUATED_STORE_MANIFEST
 
@@ -162,9 +163,19 @@ def test_run_irt_analysis_writes_outputs(tmp_path):
     assert "benchmarker_validity_by_dataset_setting.csv" in names
     assert "question_quality_by_dataset_setting.csv" in names
     assert "fit_summary.json" in names
-    assert "setting_difficulty.png" in names
-    assert "question_quality_all_settings.png" in names
-    assert "item_fit.png" in names
+
+
+def test_pareto_frontier_uses_difficulty_discrimination_and_flaws():
+    frame = pd.DataFrame(
+        [
+            {"difficulty": 2.0, "discrimination": 1.5, "mean_flaws": 2.0},
+            {"difficulty": 2.0, "discrimination": 1.5, "mean_flaws": 1.0},
+            {"difficulty": 2.4, "discrimination": 1.2, "mean_flaws": 0.5},
+            {"difficulty": 1.0, "discrimination": 1.1, "mean_flaws": 3.0},
+        ]
+    )
+
+    assert pareto_frontier_mask(frame).tolist() == [False, True, True, False]
 
 
 def test_benchmarker_validity_frame_uses_cached_table(tmp_path):

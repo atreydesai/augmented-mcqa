@@ -1,4 +1,4 @@
-"""Regenerate Augmented MCQA IRT tables and figures from collected datasets."""
+"""Regenerate Augmented MCQA IRT figures from cached tables."""
 
 from __future__ import annotations
 
@@ -12,13 +12,14 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from analysis.irt import (
+from analysis.irt_figures import (
     plot_final_ablation_quality,
     plot_final_grouped_quality,
+    plot_pareto_quality,
     plot_stacked_extended_summary,
     plot_stacked_quality_summary,
-    # run_irt_analysis,
 )
+from analysis.irt_model import run_irt_analysis
 
 DEFAULT_COLLECTED_ROOT = REPO_ROOT / "datasets" / "collected"
 DEFAULT_OUTPUT_DIR = REPO_ROOT / "results" / "augmented_mcqa_irt"
@@ -32,9 +33,14 @@ def csv_values(raw: str | None) -> list[str] | None:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Regenerate IRT tables and plots from collected datasets.")
+    parser = argparse.ArgumentParser(description="Regenerate IRT plots from cached tables.")
     parser.add_argument("--collected-root", default=str(DEFAULT_COLLECTED_ROOT))
     parser.add_argument("--output-dir", default=str(DEFAULT_OUTPUT_DIR))
+    parser.add_argument(
+        "--run-irt",
+        action="store_true",
+        help="Refit the IRT model and refresh cached tables before regenerating plots.",
+    )
     parser.add_argument(
         "--plots-only",
         action="store_true",
@@ -72,13 +78,40 @@ def regenerate_final_figures(output_dir: Path) -> list[Path]:
             final_ablation,
             figures / "quality_stacked_extended.png",
         ),
+        plot_pareto_quality(
+            final_grouped,
+            final_ablation,
+            figures / "quality_pareto_frontier.png",
+        ),
+        plot_pareto_quality(
+            final_grouped,
+            final_ablation,
+            figures / "quality_pareto_frontier_with_ablation.png",
+            include_ablation=True,
+        ),
     ]
     return outputs
 
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
-    outputs = regenerate_final_figures(Path(args.output_dir))
+    outputs: list[Path] = []
+    if args.run_irt:
+        outputs.extend(
+            run_irt_analysis(
+                collected_root=Path(args.collected_root),
+                output_dir=Path(args.output_dir),
+                generators=csv_values(args.generators),
+                evaluators=csv_values(args.evaluators),
+                datasets=csv_values(args.datasets),
+                settings=csv_values(args.settings),
+                modes=csv_values(args.modes) or ["full_question"],
+                maxiter=int(args.maxiter),
+                maxfun=int(args.maxfun),
+                gtol=float(args.gtol),
+            )
+        )
+    outputs.extend(regenerate_final_figures(Path(args.output_dir)))
     for output in outputs:
         print(output)
     return 0
