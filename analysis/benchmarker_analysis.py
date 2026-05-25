@@ -504,9 +504,10 @@ def run_analysis(args: argparse.Namespace) -> int:
             sub = rule_fail[(rule_fail["dataset"] == dataset) & (rule_fail["rule"] == rule)]
             hum = _config_fail_rate(sub, "human_from_scratch")
             mdl = _config_fail_rate(sub, "model_from_scratch")
-            aug = _config_fail_rate(sub, "augment_human")
+            aug_hum = _config_fail_rate(sub, "augment_human")
+            aug_mdl = _config_fail_rate(sub, "augment_model")
             sensitivity_rows.append({"dataset": dataset, "rule": rule, "delta": mdl - hum})
-            augmentation_rows.append({"dataset": dataset, "rule": rule, "delta": aug - hum})
+            augmentation_rows.append({"dataset": dataset, "rule": rule, "delta": aug_mdl - aug_hum})
     sensitivity_df = pd.DataFrame(sensitivity_rows)
     sensitivity_avg = sensitivity_df.groupby("rule")["delta"].mean().reindex(RULES_ORDER)
     fig3b, ax3b = plt.subplots(figsize=(11, 6))
@@ -520,6 +521,13 @@ def run_analysis(args: argparse.Namespace) -> int:
     ax3b.set_xlabel("Delta fail rate (model_from_scratch - human_from_scratch)")
     ax3b.set_title("Fig 3b: Model-Sensitivity by Rule")
     ax3b.tick_params(axis="y", labelsize=8)
+    fig3b.tight_layout()
+    fig3b.savefig(
+        output_dir / "fig_model_from_scratch_minus_human_from_scratch_rule_delta.png",
+        dpi=150,
+        bbox_inches="tight",
+    )
+    print("  Saved fig_model_from_scratch_minus_human_from_scratch_rule_delta.png")
     _save(fig3b, output_dir, "fig3b_model_sensitivity.png")
 
     augmentation_df = pd.DataFrame(augmentation_rows)
@@ -532,10 +540,36 @@ def run_analysis(args: argparse.Namespace) -> int:
         alpha=0.85,
     )
     ax3c.axvline(0, color="black", linewidth=0.8)
-    ax3c.set_xlabel("Delta fail rate (augment_human - human_from_scratch)")
+    ax3c.set_xlabel("Delta fail rate (augment_model - augment_human)")
     ax3c.set_title("Fig 3c: Augmentation Penalty by Rule")
     ax3c.tick_params(axis="y", labelsize=8)
     _save(fig3c, output_dir, "fig3c_augmentation_penalty.png")
+
+    combined_delta = pd.DataFrame(
+        {
+            "scratch_abs_delta": sensitivity_avg.abs(),
+            "augment_abs_delta": augmentation_avg.abs(),
+        }
+    )
+    combined_delta["combined_abs_delta"] = (
+        combined_delta["scratch_abs_delta"] + combined_delta["augment_abs_delta"]
+    )
+    combined_delta = combined_delta.sort_values("combined_abs_delta")
+    top_rules = set(combined_delta.tail(6).index)
+    fig3d, ax3d = plt.subplots(figsize=(11, 6))
+    ax3d.barh(
+        combined_delta.index,
+        combined_delta["combined_abs_delta"],
+        color=[
+            "#673AB7" if rule in top_rules else "#9E9E9E"
+            for rule in combined_delta.index
+        ],
+        alpha=0.85,
+    )
+    ax3d.set_xlabel("|scratch delta| + |augmentation delta|")
+    ax3d.set_title("Fig 3d: Combined Absolute Rule Delta")
+    ax3d.tick_params(axis="y", labelsize=8)
+    _save(fig3d, output_dir, "fig3d_combined_absolute_rule_delta.png")
 
     print("\n" + "=" * 70)
     print("SECTION 4: IRT QUALITY METRICS")

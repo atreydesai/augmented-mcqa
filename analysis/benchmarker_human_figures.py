@@ -288,6 +288,13 @@ def plot_human_vs_model(df: pd.DataFrame, long: pd.DataFrame, output_dir: Path) 
     ax.set_xlabel("Failure-rate delta (Avg Model - Human)")
     ax.set_title("Rule Failure Delta")
     ax.tick_params(axis="y", labelsize=8)
+    fig.tight_layout()
+    fig.savefig(
+        output_dir / "fig_model_from_scratch_minus_human_from_scratch_rule_delta.png",
+        dpi=180,
+        bbox_inches="tight",
+    )
+    print(f"Saved {output_dir / 'fig_model_from_scratch_minus_human_from_scratch_rule_delta.png'}")
     _save(fig, output_dir, "fig_human_vs_avg_model_rule_delta.png")
 
     print("Human vs average model summary:")
@@ -376,7 +383,7 @@ def plot_aug_human_vs_aug_model(df: pd.DataFrame, long: pd.DataFrame, output_dir
     ax.axvline(0, color="black", linewidth=0.8)
     ax.xaxis.set_major_formatter(mticker.PercentFormatter(xmax=1.0))
     ax.set_xlabel("Failure-rate delta (Aug-Model - Aug-Human)")
-    ax.set_title("10-Choice Rule Failure Delta")
+    ax.set_title("10-Choice Augmentation Penalty by Rule")
     ax.tick_params(axis="y", labelsize=8)
     _save(fig, output_dir, "fig_aug_human_vs_aug_model_rule_delta.png")
 

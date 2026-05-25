@@ -15,7 +15,6 @@ if str(REPO_ROOT) not in sys.path:
 from analysis.irt_figures import (
     plot_final_ablation_quality,
     plot_final_grouped_quality,
-    plot_pareto_quality,
     plot_stacked_extended_summary,
     plot_stacked_quality_summary,
 )
@@ -77,17 +76,6 @@ def regenerate_final_figures(output_dir: Path) -> list[Path]:
             final_grouped,
             final_ablation,
             figures / "quality_stacked_extended.png",
-        ),
-        plot_pareto_quality(
-            final_grouped,
-            final_ablation,
-            figures / "quality_pareto_frontier.png",
-        ),
-        plot_pareto_quality(
-            final_grouped,
-            final_ablation,
-            figures / "quality_pareto_frontier_with_ablation.png",
-            include_ablation=True,
         ),
     ]
     return outputs

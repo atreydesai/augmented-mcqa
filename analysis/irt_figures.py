@@ -9,8 +9,6 @@ import matplotlib
 matplotlib.use("Agg")
 
 from matplotlib import font_manager
-from matplotlib.colors import Normalize
-from matplotlib.lines import Line2D
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -257,7 +255,7 @@ def plot_final_ablation_quality(summary: pd.DataFrame, path: Path) -> Path:
             ax.set_title(DATASET_LABELS.get(str(dataset), str(dataset)) if row_idx == 0 else "")
             ax.set_xlim(-1.08, 1.08)
             ax.set_xticks(section_centers)
-            ax.set_xticklabels(["Augment\nhuman", "Augment\nmodel", "Augment\nablation"], rotation=0)
+            ax.set_xticklabels(["Extension\n(Human)", "Extension\n(Model)", "Extension\n(Ablation)"], rotation=0)
             ax.tick_params(axis="x", pad=21, bottom=False)
             for section_center in section_centers:
                 for model_offset, model_label in zip(model_offsets, model_labels, strict=True):
@@ -284,9 +282,9 @@ def plot_final_ablation_quality(summary: pd.DataFrame, path: Path) -> Path:
                     ymin = min(ymin, min(lows) * 1.1)
                 ax.set_ylim(ymin, ymax)
     handles = [
-        plt.Rectangle((0, 0), 1, 1, facecolor=HUMAN_COLOR, edgecolor="black", label="Augment human"),
-        plt.Rectangle((0, 0), 1, 1, facecolor=MODEL_COLOR, edgecolor="black", label="Augment model"),
-        plt.Rectangle((0, 0), 1, 1, facecolor=ABLATION_COLOR, edgecolor="black", label="Augment ablation"),
+        plt.Rectangle((0, 0), 1, 1, facecolor=HUMAN_COLOR, edgecolor="black", label="Human Guided"),
+        plt.Rectangle((0, 0), 1, 1, facecolor=MODEL_COLOR, edgecolor="black", label="LLM Only"),
+        plt.Rectangle((0, 0), 1, 1, facecolor=ABLATION_COLOR, edgecolor="black", label="Ablation"),
         plt.Rectangle((0, 0), 1, 1, facecolor="white", edgecolor="black", label="GPT"),
         plt.Rectangle((0, 0), 1, 1, facecolor="white", edgecolor="black", hatch="//", label="Gemini"),
         plt.Rectangle((0, 0), 1, 1, facecolor="white", edgecolor="black", hatch="xx", label="Qwen"),
@@ -1011,7 +1009,7 @@ def plot_stacked_extended_summary(
         ticks, ymin, ymax = YTICK_SPECS[metric]
         for row_idx, (ax, centers, show_x, show_title, row_lbl) in enumerate([
             (axes[0][col], top_ctr, False, True,  "MCQ Generation"   if col == 0 else None),
-            (axes[1][col], bot_ctr, True,  False, "MCQ Augmentation" if col == 0 else None),
+            (axes[1][col], bot_ctr, True,  False, "MCQ Extension" if col == 0 else None),
         ]):
             ax.set_ylim(ymin, ymax)
             ax.set_yticks(ticks)
@@ -1092,7 +1090,7 @@ def plot_stacked_extended_summary(
             )
         )
 
-    LEGEND_FONT = 10.0
+    LEGEND_FONT = 9.5
 
     def _legend_text(
         x: float,
@@ -1163,27 +1161,24 @@ def plot_stacked_extended_summary(
 
     legend_y = -0.006
     legend_h = 0.056
-    left_x, left_w = 0.075, 0.255
-    right_x, right_w = 0.33875, 0.610
+    left_x, left_w = 0.045, 0.320
+    right_x, right_w = 0.380, 0.595
     legend_cy = legend_y + legend_h / 2
     _legend_frame(left_x, legend_y, left_w, legend_h)
     _legend_frame(right_x, legend_y, right_w, legend_h)
 
-    for slot_x, label, color, swatch_gap in [
-        (left_x + left_w * 0.17, "Seed Type", None, 0.0),
-        (left_x + left_w * 0.52, "Human", EXT_HUMAN_COLOR, 0.035),
-        (left_x + left_w * 0.82, "Model", EXT_MODEL_COLOR, 0.030),
-    ]:
-        if color is not None:
-            _legend_swatch(slot_x - swatch_gap, legend_cy, color)
-        _legend_text(slot_x, legend_cy, label)
+    _legend_text(left_x + left_w * 0.13, legend_cy, "Type")
+    _legend_swatch(left_x + left_w * 0.31, legend_cy, EXT_HUMAN_COLOR)
+    _legend_text(left_x + left_w * 0.35, legend_cy, "Human Guided", ha="left")
+    _legend_swatch(left_x + left_w * 0.68, legend_cy, EXT_MODEL_COLOR)
+    _legend_text(left_x + left_w * 0.72, legend_cy, "LLM Only", ha="left")
 
     right_slots = [
-        (right_x + right_w * 0.03, right_x + right_w * 0.03, "Generator", None),
-        (right_x + right_w * 0.17, right_x + right_w * 0.20, "Human", HUMAN_MARKER),
-        (right_x + right_w * 0.33, right_x + right_w * 0.36, GEN_DISPLAY[GEN_KEYS[0]], GEN_LOGOS[GEN_KEYS[0]]),
-        (right_x + right_w * 0.53, right_x + right_w * 0.56, GEN_DISPLAY[GEN_KEYS[1]], GEN_LOGOS[GEN_KEYS[1]]),
-        (right_x + right_w * 0.76, right_x + right_w * 0.79, GEN_DISPLAY[GEN_KEYS[2]], GEN_LOGOS[GEN_KEYS[2]]),
+        (right_x + right_w * 0.04, right_x + right_w * 0.04, "Generator", None),
+        (right_x + right_w * 0.17, right_x + right_w * 0.205, "Human", HUMAN_MARKER),
+        (right_x + right_w * 0.32, right_x + right_w * 0.345, GEN_DISPLAY[GEN_KEYS[0]], GEN_LOGOS[GEN_KEYS[0]]),
+        (right_x + right_w * 0.50, right_x + right_w * 0.530, GEN_DISPLAY[GEN_KEYS[1]], GEN_LOGOS[GEN_KEYS[1]]),
+        (right_x + right_w * 0.75, right_x + right_w * 0.780, GEN_DISPLAY[GEN_KEYS[2]], GEN_LOGOS[GEN_KEYS[2]]),
     ]
     for marker_x, label_x, label, marker in right_slots:
         if marker == HUMAN_MARKER:
@@ -1758,227 +1753,5 @@ def plot_item_fit(items: pd.DataFrame, fit: pd.DataFrame, path: Path) -> Path:
     fig.tight_layout()
     path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(path, dpi=200, bbox_inches="tight")
-    plt.close(fig)
-    return path
-
-
-def pareto_frontier_mask(frame: pd.DataFrame) -> np.ndarray:
-    """Return True for rows not dominated on difficulty, discriminability, and flaws."""
-    required = ["difficulty", "discrimination", "mean_flaws"]
-    missing = [column for column in required if column not in frame.columns]
-    if missing:
-        raise ValueError(f"Missing Pareto columns: {', '.join(missing)}")
-
-    values = frame[required].astype(float).to_numpy()
-    finite = np.isfinite(values).all(axis=1)
-    frontier = np.zeros(len(frame), dtype=bool)
-    if not finite.any():
-        return frontier
-
-    for idx, point in enumerate(values):
-        if not finite[idx]:
-            continue
-        others = values[finite]
-        better_or_equal = (
-            (others[:, 0] >= point[0])
-            & (others[:, 1] >= point[1])
-            & (others[:, 2] <= point[2])
-        )
-        strictly_better = (
-            (others[:, 0] > point[0])
-            | (others[:, 1] > point[1])
-            | (others[:, 2] < point[2])
-        )
-        frontier[idx] = not bool(np.any(better_or_equal & strictly_better))
-    return frontier
-
-
-def _method_label(row: pd.Series) -> str:
-    label = str(row.get("label", "")).strip()
-    source = str(row.get("source", "")).strip()
-    if source in {"Human", "Model"}:
-        return label or source
-
-    generator = label.split()[0] if label else str(row.get("generator", "")).split("/")[-1]
-    prefixes = {
-        "Augment Human": "H+",
-        "Augment Model": "M+",
-        "Ablation": "A+",
-    }
-    return f"{prefixes.get(source, '')}{generator}"
-
-
-def _pareto_panel_frame(frame: pd.DataFrame, panel: str) -> pd.DataFrame:
-    plot = frame.copy()
-    plot["panel"] = panel
-    plot["method_label"] = plot.apply(_method_label, axis=1)
-    plot["is_frontier"] = pareto_frontier_mask(plot)
-    return plot
-
-
-def _pareto_label_style(row: pd.Series) -> tuple[tuple[float, float], str, str]:
-    if str(row.get("panel")) != "MCQ Augmentation":
-        return (3.0, 3.0), "left", "bottom"
-
-    x = float(row["difficulty"])
-    source = str(row.get("source", ""))
-    label = str(row.get("method_label", ""))
-    if x > 0.35:
-        if label.endswith("GPT"):
-            yoff = 24.0 if source == "Augment Model" else -18.0
-        elif label.endswith("Gemini"):
-            yoff = 12.0 if source == "Augment Model" else -5.0
-        else:
-            yoff = 0.0 if source == "Augment Model" else 8.0
-        xoff = -8.0 if source == "Augment Model" else -34.0
-        return (xoff, yoff), "right", "center"
-    if x < -1.75:
-        return ((-5.0, -8.0), "right", "top") if source == "Augment Human" else ((5.0, 5.0), "left", "bottom")
-    if source == "Augment Human":
-        return (-5.0, -7.0), "right", "top"
-    return (5.0, 5.0), "left", "bottom"
-
-
-def plot_pareto_quality(
-    grouped: pd.DataFrame,
-    ablation: pd.DataFrame,
-    path: Path,
-    *,
-    include_ablation: bool = False,
-) -> Path:
-    """Plot difficulty/discriminability tradeoffs with writing flaws and Pareto rings."""
-    use_inter_font()
-
-    generation = grouped[grouped["source"].isin(["Human", "Model"])].copy()
-    aug_sources = ["Augment Human", "Augment Model"]
-    if include_ablation:
-        aug_sources.append("Ablation")
-    augmentation = ablation[ablation["source"].isin(aug_sources)].copy()
-
-    panels = [
-        ("MCQ Generation", _pareto_panel_frame(generation, "MCQ Generation")),
-        ("MCQ Augmentation", _pareto_panel_frame(augmentation, "MCQ Augmentation")),
-    ]
-    combined = pd.concat([panel for _, panel in panels], ignore_index=True)
-    if combined.empty:
-        raise ValueError("No rows available for Pareto quality plot.")
-
-    marker_by_dataset = {
-        "arc_challenge": "^",
-        "mmlu_pro": "o",
-        "gpqa": "s",
-    }
-    cmap = plt.get_cmap("viridis_r")
-    flaws = combined["mean_flaws"].astype(float)
-    norm = Normalize(vmin=float(flaws.min()), vmax=float(flaws.max()))
-
-    fig, axes = plt.subplots(1, 2, figsize=(10.8, 3.55), sharex=True, sharey=True)
-    for ax, (title, frame) in zip(axes, panels, strict=True):
-        for dataset in sorted(frame["dataset"].unique(), key=dataset_sort_key):
-            subset = frame[frame["dataset"] == dataset]
-            regular = subset[~subset["is_frontier"]]
-            frontier = subset[subset["is_frontier"]]
-            ax.scatter(
-                regular["difficulty"],
-                regular["discrimination"],
-                c=regular["mean_flaws"],
-                cmap=cmap,
-                norm=norm,
-                marker=marker_by_dataset.get(str(dataset), "o"),
-                s=58,
-                edgecolors="#333333",
-                linewidths=0.45,
-                alpha=0.95,
-                zorder=3,
-            )
-            ax.scatter(
-                frontier["difficulty"],
-                frontier["discrimination"],
-                c=frontier["mean_flaws"],
-                cmap=cmap,
-                norm=norm,
-                marker=marker_by_dataset.get(str(dataset), "o"),
-                s=68,
-                edgecolors="#111111",
-                linewidths=1.7,
-                alpha=0.98,
-                zorder=4,
-            )
-
-        for _, row in frame[frame["is_frontier"]].iterrows():
-            xytext, ha, va = _pareto_label_style(row)
-            ax.annotate(
-                str(row["method_label"]),
-                (float(row["difficulty"]), float(row["discrimination"])),
-                xytext=xytext,
-                textcoords="offset points",
-                fontsize=6.9,
-                ha=ha,
-                va=va,
-                color="#222222",
-                zorder=5,
-            )
-
-        ax.set_title(title, fontsize=9.5, pad=5)
-        ax.grid(True, color="#dddddd", linewidth=0.5, alpha=0.55)
-        ax.tick_params(axis="both", labelsize=8.0)
-        for spine in ax.spines.values():
-            spine.set_visible(True)
-            spine.set_linewidth(0.55)
-            spine.set_color("#666666")
-
-    axes[0].set_ylabel("IRT Discriminability", fontsize=9.0)
-    for ax in axes:
-        ax.set_xlabel("IRT Difficulty", fontsize=9.0)
-
-    x = combined["difficulty"].astype(float)
-    y = combined["discrimination"].astype(float)
-    xpad = max(0.035, float(x.max() - x.min()) * 0.12)
-    ypad = max(0.012, float(y.max() - y.min()) * 0.12)
-    axes[0].set_xlim(float(x.min()) - xpad, float(x.max()) + xpad)
-    axes[0].set_ylim(float(y.min()) - ypad, float(y.max()) + ypad)
-
-    dataset_handles = [
-        Line2D(
-            [0],
-            [0],
-            marker=marker_by_dataset.get(dataset, "o"),
-            color="none",
-            markerfacecolor="#bdbdbd",
-            markeredgecolor="none",
-            markeredgewidth=0.0,
-            markersize=6.2,
-            label=DATASET_LABELS.get(dataset, dataset),
-        )
-        for dataset in sorted(combined["dataset"].unique(), key=dataset_sort_key)
-    ]
-    frontier_handle = Line2D(
-        [0],
-        [0],
-        color="#111111",
-        linewidth=1.5,
-        label="Pareto frontier outline",
-    )
-    fig.legend(
-        handles=dataset_handles + [frontier_handle],
-        loc="lower center",
-        bbox_to_anchor=(0.47, 0.025),
-        ncols=len(dataset_handles) + 1,
-        frameon=False,
-        fontsize=8.0,
-        handletextpad=0.35,
-        columnspacing=0.9,
-    )
-
-    sm = plt.cm.ScalarMappable(norm=norm, cmap=cmap)
-    sm.set_array([])
-    cbar = fig.colorbar(sm, ax=axes, location="right", fraction=0.030, pad=0.018)
-    cbar.set_label("Average writing flaws\n(lighter = fewer)", fontsize=8.4)
-    cbar.ax.tick_params(labelsize=7.6)
-
-    fig.subplots_adjust(left=0.075, right=0.88, bottom=0.245, top=0.88, wspace=0.06)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(path, dpi=300, bbox_inches="tight")
-    fig.savefig(path.with_suffix(".pdf"), bbox_inches="tight")
     plt.close(fig)
     return path
