@@ -71,6 +71,12 @@ PALETTE = {
     "augment_human": "#4CAF50",
     "augment_model": "#F44336",
     "augment_ablation": "#9C27B0",
+    "augment_human_m3": "#66BB6A",
+    "augment_human_m4": "#81C784",
+    "augment_human_m5": "#A5D6A7",
+    "augment_model_m3": "#EF5350",
+    "augment_model_m4": "#E57373",
+    "augment_model_m5": "#EF9A9A",
 }
 DATASET_PALETTE = {
     "arc_challenge": "#1976D2",
@@ -83,6 +89,12 @@ CONFIG_LABEL_PREFIXES = {
     "augment_human": "Aug-Human",
     "augment_model": "Aug-Model",
     "augment_ablation": "Aug-Ablation",
+    "augment_human_m3": "Aug-Human m3",
+    "augment_human_m4": "Aug-Human m4",
+    "augment_human_m5": "Aug-Human m5",
+    "augment_model_m3": "Aug-Model m3",
+    "augment_model_m4": "Aug-Model m4",
+    "augment_model_m5": "Aug-Model m5",
 }
 CONFIG_SHORT_PREFIXES = {
     "human_from_scratch": "Hum",
@@ -90,6 +102,12 @@ CONFIG_SHORT_PREFIXES = {
     "augment_human": "AugH",
     "augment_model": "AugM",
     "augment_ablation": "AugA",
+    "augment_human_m3": "AugH3",
+    "augment_human_m4": "AugH4",
+    "augment_human_m5": "AugH5",
+    "augment_model_m3": "AugM3",
+    "augment_model_m4": "AugM4",
+    "augment_model_m5": "AugM5",
 }
 K_MAP = {setting: int(SETTING_SPECS[setting]["num_choices"]) for setting in CONFIG_ORDER}
 CONFIG_LABELS = {

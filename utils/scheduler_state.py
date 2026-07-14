@@ -27,6 +27,12 @@ EVALUATION_SETTING_DEPENDENCIES: dict[str, tuple[str, ...]] = {
     "augment_human": ("augment_human",),
     "augment_model": ("augment_model",),
     "augment_ablation": ("augment_ablation",),
+    "augment_human_m3": ("augment_human_m3",),
+    "augment_model_m3": ("augment_model_m3",),
+    "augment_human_m4": ("augment_human_m4",),
+    "augment_model_m4": ("augment_model_m4",),
+    "augment_human_m5": ("augment_human_m5",),
+    "augment_model_m5": ("augment_model_m5",),
 }
 
 STATUS_PENDING = "pending"

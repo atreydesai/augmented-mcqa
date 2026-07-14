@@ -572,18 +572,9 @@ def _record_from_generation_payload(
         return _human_from_scratch_record(base)
 
     human = _string_list(payload.get("human_from_scratch"))
-    if setting == "model_from_scratch":
-        human_distractors = []
-        model_distractors = _string_list(payload.get("model_from_scratch"))
-    elif setting == "augment_human":
-        human_distractors = human
-        model_distractors = _string_list(payload.get("augment_human"))
-    elif setting == "augment_model":
-        human_distractors = []
-        model_distractors = _string_list(payload.get("augment_model"))
-    else:
-        human_distractors = []
-        model_distractors = _string_list(payload.get("augment_ablation"))
+    recipe = get_setting_recipe(setting)
+    human_distractors = human if recipe.num_human > 0 else []
+    model_distractors = _string_list(payload.get(setting))
     traces = dict((payload.get("traces") or {}).get(setting, {}) or {})
     record = _record_from_setting_values(
         base,
@@ -943,6 +934,11 @@ def _write_evaluated_store(
 def _existing_evaluated_rows(path: Path) -> list[dict[str, Any]]:
     if not path.exists():
         return []
+    state_path = path / "state.json"
+    if state_path.exists():
+        state = json.loads(state_path.read_text(encoding="utf-8"))
+        if not state.get("_data_files"):
+            return []
     return [dict(row) for row in load_from_disk(str(path))]
 
 

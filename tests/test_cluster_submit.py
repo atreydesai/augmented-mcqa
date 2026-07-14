@@ -9,7 +9,7 @@ from inspect_ai.dataset import MemoryDataset, Sample
 import cli.app as app_main
 from utils.constants import DEFAULT_LOCAL_EVALUATION_MODELS, DEFAULT_LOCAL_GENERATION_MODELS
 from utils.modeling import resolve_model_name
-from utils.scheduler_state import evaluation_slice_ref, generation_slice_ref
+from utils.scheduler_state import SCHEDULABLE_GENERATION_STRATEGIES, evaluation_slice_ref, generation_slice_ref
 
 
 def _processed_dataset(path, *, counts=None):
@@ -158,15 +158,10 @@ def test_submit_generate_cluster_write_only_writes_strategy_slice_manifest(tmp_p
     assert rc == 0
     manifest = _read_manifest(bundle_dir)
     assert manifest["stage"] == "generate"
-    assert manifest["task_count"] == len(DEFAULT_LOCAL_GENERATION_MODELS) * 3 * 4
+    assert manifest["task_count"] == len(DEFAULT_LOCAL_GENERATION_MODELS) * 3 * len(SCHEDULABLE_GENERATION_STRATEGIES)
     assert len(manifest["finalizers"]) == len(DEFAULT_LOCAL_GENERATION_MODELS)
     assert {task["dataset_type"] for task in manifest["tasks"]} == {"arc_challenge", "mmlu_pro", "gpqa"}
-    assert {task["strategy"] for task in manifest["tasks"]} == {
-        "model_from_scratch",
-        "augment_human",
-        "augment_model",
-        "augment_ablation",
-    }
+    assert {task["strategy"] for task in manifest["tasks"]} == set(SCHEDULABLE_GENERATION_STRATEGIES)
     assert {task["resource_class"] for task in manifest["tasks"]} == {"local"}
     first_task = manifest["tasks"][0]
     assert "bootstrap_stdout" not in first_task

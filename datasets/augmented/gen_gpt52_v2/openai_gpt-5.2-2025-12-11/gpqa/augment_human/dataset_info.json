@@ -105,30 +105,30 @@
       "_type": "Value"
     },
     "traces": {
+      "prompt": {
+        "dtype": "string",
+        "_type": "Value"
+      },
+      "output": {
+        "dtype": "string",
+        "_type": "Value"
+      },
       "attempts": {
         "feature": {
           "attempt": {
             "dtype": "int64",
             "_type": "Value"
           },
-          "output": {
+          "prompt": {
             "dtype": "string",
             "_type": "Value"
           },
-          "prompt": {
+          "output": {
             "dtype": "string",
             "_type": "Value"
           }
         },
         "_type": "List"
-      },
-      "output": {
-        "dtype": "string",
-        "_type": "Value"
-      },
-      "prompt": {
-        "dtype": "string",
-        "_type": "Value"
       }
     }
   },

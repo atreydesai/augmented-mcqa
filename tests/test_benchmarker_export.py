@@ -84,7 +84,7 @@ def _build_dataset(path):
         },
     }
 
-    for setting in SETTING_NAMES:
+    for setting in setting_overrides:
         arc_choices, arc_answer = setting_overrides[setting]["arc_challenge"]
         mmlu_choices, mmlu_answer = setting_overrides[setting]["mmlu_pro"]
         gpqa_choices, gpqa_answer = setting_overrides[setting]["gpqa"]
@@ -150,14 +150,7 @@ def test_export_benchmarker_items_end_to_end(tmp_path):
     assert summary_path == export_dir / "export_summary.json"
     assert export_dir.exists()
 
-    expected_files = {
-        "original.jsonl",
-        "human_from_scratch.jsonl",
-        "model_from_scratch.jsonl",
-        "augment_human.jsonl",
-        "augment_model.jsonl",
-        "augment_ablation.jsonl",
-    }
+    expected_files = {"original.jsonl", *(f"{setting}.jsonl" for setting in SETTING_NAMES)}
     for split_name in ("arc_challenge", "mmlu_pro", "gpqa"):
         split_dir = export_dir / split_name
         assert split_dir.exists()

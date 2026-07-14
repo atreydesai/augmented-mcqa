@@ -48,6 +48,12 @@ SETTING_LABELS = {
     "augment_human": "Augment Human",
     "augment_model": "Augment Model",
     "augment_ablation": "Augment Ablation",
+    "augment_human_m3": "Augment Human (m=3)",
+    "augment_model_m3": "Augment Model (m=3)",
+    "augment_human_m4": "Augment Human (m=4)",
+    "augment_model_m4": "Augment Model (m=4)",
+    "augment_human_m5": "Augment Human (m=5)",
+    "augment_model_m5": "Augment Model (m=5)",
 }
 SETTING_SHORT_LABELS = {
     "human_from_scratch": "HFS",
@@ -55,6 +61,12 @@ SETTING_SHORT_LABELS = {
     "augment_human": "AH",
     "augment_model": "AM",
     "augment_ablation": "AA",
+    "augment_human_m3": "AH3",
+    "augment_model_m3": "AM3",
+    "augment_human_m4": "AH4",
+    "augment_model_m4": "AM4",
+    "augment_human_m5": "AH5",
+    "augment_model_m5": "AM5",
 }
 TEST_TAKER_LABELS = {
     "vllm/Qwen/Qwen3-4B-Instruct-2507": "Qwen3-4B",

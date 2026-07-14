@@ -350,10 +350,26 @@ def _runtime_argv(args: argparse.Namespace) -> list[str]:
 
 
 def _strategy_phases(strategies: list[str]) -> list[list[str]]:
-    ordered = [strategy for strategy in ("model_from_scratch", "augment_human", "augment_ablation") if strategy in strategies]
+    ordered = [
+        strategy
+        for strategy in (
+            "model_from_scratch",
+            "augment_human",
+            "augment_ablation",
+            "augment_human_m3",
+            "augment_human_m4",
+            "augment_human_m5",
+        )
+        if strategy in strategies
+    ]
     phases = [ordered] if ordered else []
-    if "augment_model" in strategies:
-        phases.append(["augment_model"])
+    second_phase = [
+        strategy
+        for strategy in ("augment_model", "augment_model_m3", "augment_model_m4", "augment_model_m5")
+        if strategy in strategies
+    ]
+    if second_phase:
+        phases.append(second_phase)
     return phases
 
 
