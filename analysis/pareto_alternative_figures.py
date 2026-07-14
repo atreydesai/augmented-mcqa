@@ -195,7 +195,7 @@ def plot_delta_scatter(
     path: Path,
     *,
     include_ablation_panel: bool = False,
-    fig_height: float = 2.4,
+    fig_height: float = 2.2,
 ) -> Path:
     use_inter_font()
     delta = delta_quality_frame(grouped, ablation, include_ablation_panel=include_ablation_panel)
@@ -286,7 +286,7 @@ def plot_delta_scatter(
     fig.legend(
         handles=handles,
         loc="upper center",
-        bbox_to_anchor=(0.47, 0.125),
+        bbox_to_anchor=(0.47, 0.165),
         ncols=len(handles),
         frameon=True,
         facecolor="white",

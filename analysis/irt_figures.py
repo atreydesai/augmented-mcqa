@@ -885,7 +885,7 @@ def plot_stacked_extended_summary(
     GEN_DISPLAY = {
         "openai/gpt-5.2-2025-12-11":      "GPT 5.2",
         "google/gemini-3.1-pro-preview":   "Gemini 3.1 Pro",
-        "together/Qwen/Qwen3.5-397B-A17B": "Qwen 3.5 389B A17B",
+        "together/Qwen/Qwen3.5-397B-A17B": "Qwen3.5 397B A17B",
     }
 
     YTICK_SPECS = {
@@ -1210,7 +1210,7 @@ def plot_stacked_extended_summary(
     Icons (model logos) are placed above each bar group on a per-bar basis.
     Two legend boxes:
       - Left:  ■ Human color  ■ Model color
-      - Right: [icon] Human · [icon] GPT 5.2 · [icon] Gemini 3.1 Pro · [icon] Qwen 3.5 389B A17B
+      - Right: [icon] Human · [icon] GPT 5.2 · [icon] Gemini 3.1 Pro · [icon] Qwen3.5 397B A17B
 
     Colors: Human = #E8DAB2, Model = #DD6E42 (same as quality_stacked_half).
     Saved as both PNG (200 dpi) and PDF.
@@ -1247,7 +1247,7 @@ def plot_stacked_extended_summary(
         "human":                            "Human",
         "openai/gpt-5.2-2025-12-11":       "GPT 5.2",
         "google/gemini-3.1-pro-preview":    "Gemini 3.1 Pro",
-        "together/Qwen/Qwen3.5-397B-A17B":  "Qwen 3.5 389B A17B",
+        "together/Qwen/Qwen3.5-397B-A17B":  "Qwen3.5 397B A17B",
     }
 
     YTICK_SPECS: dict[str, tuple[list[float], float, float]] = {

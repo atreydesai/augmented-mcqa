@@ -1,0 +1,508 @@
+Reproducibility / ethics checklist addendum for "Quick, Create a Distractor!"
+================================================================================
+
+Scope of this note
+------------------
+This file only covers the checklist items you asked to add or revise:
+B2, B3, B4, C1, C2, C3, and E1. I am leaving B1, B5, B6, D, and appendix
+numbering alone.
+
+
+B2. Licenses / terms for artifacts
+----------------------------------
+Suggested paper text:
+
+We used publicly available benchmark datasets and released software artifacts
+subject to their original licenses or terms of use. The ARC-Challenge dataset
+metadata on Hugging Face lists a CC BY-SA 4.0 license; MMLU is listed under MIT;
+GPQA is listed under CC BY 4.0; and MMLU-Pro is listed under MIT. We used
+InspectAI under its MIT license, vLLM under Apache 2.0, and
+sentence-transformers/all-MiniLM-L6-v2 under Apache 2.0. For hosted model APIs,
+we used the services subject to the relevant provider terms: OpenAI Terms of
+Use and policies for GPT models, Google Gemini API terms for Gemini models, and
+Together AI terms for Qwen generation through Together. For open-weight model
+artifacts used with vLLM, licenses were taken from the corresponding Hugging
+Face model cards; these include Apache 2.0 models (Qwen, OLMo, IBM Granite),
+Gemma terms, Llama 3.x terms, and model-specific "other" licenses for
+Nemotron-Nano, LFM2, and EXAONE. We will release our derived generated
+distractors, model responses, and metadata only under terms compatible with the
+source dataset licenses and the provider/model terms.
+
+Add a short table if space allows:
+
+Artifact                              License / terms to report
+ARC-Challenge / allenai/ai2_arc       CC BY-SA 4.0 in HF metadata
+MMLU / cais/mmlu                      MIT
+GPQA / Idavidrein/gpqa                CC BY 4.0
+MMLU-Pro / TIGER-Lab/MMLU-Pro         MIT
+InspectAI                            MIT
+vLLM                                  Apache 2.0
+all-MiniLM-L6-v2                      Apache 2.0
+OpenAI GPT API models                 OpenAI API / Terms of Use / Usage Policies
+Google Gemini API models              Gemini API Terms
+Together-hosted Qwen generation       Together AI Terms of Service
+Qwen open models                      Apache 2.0
+OLMo open models                      Apache 2.0
+IBM Granite models                    Apache 2.0
+Gemma models                          Gemma license / terms
+Llama models                          Llama 3.1 / 3.2 community license terms
+Nemotron-Nano                         Model card reports "other"; verify NVIDIA license name
+LiquidAI LFM2                         LFM Open License / model-specific terms
+EXAONE                                EXAONE model-specific license / terms
+BenchMarker                           TODO: verify public code/tool license if distributed or cited as a software artifact
+
+Sources checked online:
+- https://huggingface.co/api/datasets/allenai/ai2_arc
+- https://huggingface.co/api/datasets/cais/mmlu
+- https://huggingface.co/api/datasets/Idavidrein/gpqa
+- https://huggingface.co/api/datasets/TIGER-Lab/MMLU-Pro
+- https://github.com/UKGovernmentBEIS/inspect_ai/blob/main/LICENSE
+- https://pypi.org/project/inspect-ai/
+- https://github.com/vllm-project/vllm
+- https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2
+- https://huggingface.co/docs/hub/repositories-licenses
+- https://openai.com/policies/terms-of-use/
+- https://platform.openai.com/policies/
+- https://ai.google.dev/gemini-api/terms
+- https://www.together.ai/testing-tos
+- Relevant Hugging Face model cards for each open-weight model.
+
+
+B3. Intended use consistency
+----------------------------
+Suggested paper text:
+
+Our use of the datasets is consistent with their benchmark-oriented intended
+use: ARC-Challenge, MMLU, MMLU-Pro, and GPQA are public multiple-choice QA
+benchmarks intended for evaluating model knowledge and reasoning. We use them
+only as evaluation seeds and as baselines for studying distractor construction;
+we do not train models on the benchmark items. Our generated artifacts are
+intended for research on MCQA benchmark construction, distractor quality, and
+model evaluation methodology. They should not be used as unsupervised
+high-stakes educational tests or as replacements for expert-authored classroom
+or certification exams without additional human review, accessibility review,
+and validation with the target test-taking population. When releasing derived
+artifacts, we will preserve source identifiers and license metadata so users can
+respect the access conditions of the original datasets.
+
+
+B4. PII / offensive content checks
+----------------------------------
+Ideas you can implement or mention:
+
+1. Automated PII scan:
+   Run a lightweight PII detector over question stems, answer choices,
+   generated distractors, and reasoning traces. Flag emails, phone numbers,
+   addresses, URLs, person names, IDs, and other structured identifiers.
+
+2. Offensive / sensitive content scan:
+   Run a toxicity or safety classifier over generated distractors and reasoning
+   traces. Report the number of flagged items and manually inspect them.
+
+3. Manual spot check:
+   Manually audit a random stratified sample across dataset x generator x
+   setting. For example, 30-50 items per dataset or 5-10 items per cell.
+
+4. Dataset-card justification:
+   Since ARC, MMLU, GPQA, and MMLU-Pro are public benchmark datasets rather
+   than newly collected personal data, say that the risk is lower, but still
+   state what you checked in your derived generations.
+
+Suggested paper text after doing at least a basic scan:
+
+We did not collect new human-subject data. Because our generated artifacts may
+transform public benchmark questions into new answer options and reasoning
+traces, we checked the released stems, answer options, generated distractors,
+and model traces for obvious PII and offensive content using automated pattern
+matching / classifier-based screening plus manual inspection of flagged items.
+We found [ADD COUNTS], and [ADD ACTION TAKEN]. The source datasets are public
+benchmark datasets; nevertheless, we recommend downstream users re-screen
+generated artifacts before using them outside research evaluation.
+
+
+C1. Model size and compute budget
+---------------------------------
+Parameter counts to report:
+
+Generator models:
+- GPT-5.2: proprietary; parameter count not publicly disclosed.
+- Gemini-3.1 Pro: proprietary; parameter count not publicly disclosed.
+- Qwen3.5-397B-A17B: 397B total parameters, 17B active parameters.
+
+Test-taker models:
+- GPT-5.4-mini: proprietary; parameter count not publicly disclosed.
+- NVIDIA-Nemotron-Nano-9B-v2: 9B.
+- google/gemma-3-4b-it: 4B.
+- google/gemma-3-12b-it: 12B.
+- Qwen/Qwen3-4B-Instruct-2507: 4B.
+- allenai/Olmo-3-7B-Instruct: 7B.
+- cyankiwi/Olmo-3.1-32B-Instruct-AWQ-4bit: 32B, quantized to 4-bit AWQ.
+- meta-llama/Llama-3.2-3B-Instruct: 3B.
+- meta-llama/Llama-3.1-8B-Instruct: 8B.
+- LiquidAI/LFM2-2.6B: 2.6B.
+- LiquidAI/LFM2-1.2B: 1.2B.
+- LGAI-EXAONE/EXAONE-4.0-1.2B: 1.2B.
+- ibm-granite/granite-4.0-1b: 1B.
+- ibm-granite/granite-4.0-micro: 3B according to the model card summary.
+
+Compute / API budget from Inspect .eval headers
+-----------------------------------------------
+Source: successful non-old Inspect archives under results/inspect/generation
+and results/inspect/evaluation. I excluded four non-old corrupted evaluation
+archives that did not contain header.json.
+
+Generation:
+- Successful .eval files: 120.
+- Samples across generation jobs: 34,213 job-samples.
+- Total generation wall/job time: 40.51 hours.
+- Total generation token usage: 12,688,558 input tokens; 59,970,027 output
+  tokens; 94,851,586 total tokens; 24,951,648 reasoning tokens.
+
+Generation by model:
+- google/gemini-3.1-pro-preview: 9,782 job-samples; 7.77 job-hours;
+  3,878,216 input; 1,110,539 output; 26,425,404 total; 21,436,649 reasoning.
+- openai/gpt-5.2-2025-12-11: 14,667 job-samples; 6.83 job-hours;
+  5,377,875 input; 5,418,123 output; 10,797,022 total; 3,514,999 reasoning.
+  Note: this includes the non-old gen_gpt52_model_from_scratch_all directory
+  plus gen_gpt52_v2. If that older non-old directory is superseded, remove it
+  and recompute.
+- together/Qwen/Qwen3.5-397B-A17B: 9,764 job-samples; 25.90 job-hours;
+  3,432,467 input; 53,441,365 output; 57,629,160 total.
+
+Evaluation:
+- Successful .eval files: 1,433.
+- Samples across evaluation jobs: 753,696 job-samples.
+- Total evaluation wall/job time: 337.30 hours.
+- Total evaluation token usage: 221,664,959 input tokens; 340,618,890 output
+  tokens; 562,283,849 total tokens; 147,509,936 reasoning tokens.
+- Hosted GPT-5.4-mini evaluation subset: 72,554 job-samples; 68.45 job-hours;
+  19,174,668 input; 148,313,106 output; 167,487,774 total; 147,509,936
+  reasoning.
+- Local vLLM evaluation subset: 681,142 job-samples; 268.85 job-hours;
+  202,490,291 input; 192,305,784 output; 394,796,075 total.
+
+Suggested paper text:
+
+Across all successful non-archived Inspect runs used for generation and
+evaluation, the experiments consumed 657.1M logged model tokens and 377.8
+aggregate job-hours. Generation accounted for 94.9M tokens and 40.5 job-hours;
+evaluation accounted for 562.3M tokens and 337.3 job-hours. Local open-weight
+test-taker evaluation used one NVIDIA RTX A6000 GPU and accounted for 268.9
+aggregate GPU job-hours; hosted API calls accounted for the remaining logged
+job-hours and token usage. These are aggregate job-hours summed over Inspect
+archives, not calendar time, because jobs were parallelized.
+
+
+C2. Experimental setup / hyperparameter reminder
+------------------------------------------------
+Repo / git-history finding:
+
+I did not find evidence of a formal hyperparameter search over model sampling
+settings. The repo history does show engineering changes to prompts, parsing,
+model support, scheduler behavior, vLLM startup arguments, and reasoning
+policies. The final retained source generation runs used fixed settings per
+stage:
+
+- Final source generation stores:
+  - results/inspect/generation/gemini_from_scratch_testing: max_tokens=10000,
+    reasoning_effort=medium for all 32 successful .eval files.
+  - results/inspect/generation/gen_gpt52_v2: max_tokens=10000,
+    reasoning_effort=medium for all 42 successful .eval files.
+  - results/inspect/generation/together_from_scratch_testing: max_tokens=10000
+    for all 26 successful .eval files; 6 logs include reasoning_effort=medium
+    in the Inspect plan config, while 20 omit it. In current code,
+    reasoning_effort_for_model disables reasoning_effort for
+    together/Qwen/Qwen3.5-397B-A17B, so this should be described as
+    unsupported / unused for Qwen.
+- Superseded / non-source generation directory:
+  - results/inspect/generation/gen_gpt52_model_from_scratch_all has 20
+    successful GPT-5.2 .eval files with max_tokens=2048 and
+    reasoning_effort=medium. This directory is not the source for the strict
+    GPT augmented store; datasets/augmented_filtered/strict/gpt points to
+    datasets/augmented/gen_gpt52_v2/openai_gpt-5.2-2025-12-11.
+- Final evaluation logs:
+  - 1,270 successful evaluation .eval files use max_tokens=32768 and
+    reasoning_effort=medium.
+  - 118 successful GPT-5.4-mini evaluation .eval files use max_tokens=32768
+    and reasoning_effort=high.
+  - 45 EXAONE evaluation .eval files use max_tokens=32768,
+    reasoning_effort=medium, plus extra_body={"chat_template_kwargs":
+    {"enable_thinking": true}}.
+
+Hyperparameter / policy changes found in git history:
+
+- Generation max tokens changed in practice from a retained GPT-only 2048-token
+  run to the final 10000-token source run. Treat this as an earlier/superseded
+  generation attempt, not as a reported hyperparameter comparison, unless you
+  used it in analyses.
+- Evaluation max tokens are fixed at 32768 in final logs and README commands.
+- GPT-5.4-mini evaluation uses high reasoning effort; other evaluation runs
+  use medium reasoning effort where accepted.
+- Commit 741a688f removed a Nemotron-specific "/no_think" system message, so
+  final evaluation prompts use a single user message for all models.
+- Commit bdf71e15 added model-specific vLLM startup and thinking support:
+  model-specific max_model_len overrides, trust_remote_code for selected
+  models, Nemotron mamba_ssm_cache_dtype=float32, Qwen FP8 quantization, and
+  EXAONE/Qwen-thinking extra_body enable_thinking support.
+- Commit f9c9c763 updated JSON parsing to accept final JSON after reasoning
+  traces, which affects parsing robustness rather than model sampling.
+
+Suggested paper text:
+
+We did not conduct a hyperparameter search over sampling settings. Generation
+and evaluation settings were fixed for the final runs. For final generation,
+all three generator models used max_tokens=10,000 and provider-default
+temperature; GPT-5.2 and Gemini-3.1 Pro used medium reasoning effort, while
+Qwen-3.5-397B-A17B does not support Inspect's reasoning_effort parameter and
+therefore ignored it / used its provider-side thinking mode. For evaluation,
+all test-taker models used max_tokens=32,768 and provider-default temperature.
+GPT-5.4-mini used high reasoning effort; other test-taker runs used medium
+reasoning effort when the parameter was supported. Local vLLM models were run
+with enforce_eager=True and a default max_model_len=65,536, with model-specific
+overrides for Gemma (123,904), selected LFM/Qwen models (32,768), and selected
+OLMo models (65,536). Some models required model-specific serving options,
+including trust_remote_code, FP8 quantization for the Qwen3.5-35B FP8 model,
+float32 Mamba cache for Nemotron, and enable_thinking chat-template kwargs for
+EXAONE-style thinking models.
+
+Still add manually if you have the exact values:
+
+- Provider-default temperature values, if known.
+- InspectAI, vLLM, sentence-transformers, and BenchMarker versions.
+- BenchMarker judge model/settings.
+
+
+C3. Descriptive statistics / uncertainty
+----------------------------------------
+Suggested paper text:
+
+Unless otherwise noted, reported difficulty, discrimination, and writing-flaw
+values are means over instantiated items. We report standard errors for
+aggregate item-level means. Model-response accuracies and IRT estimates come
+from a single final run. The IRT model was fit to 496,440 observations from 14
+test-taker models, 2,364 stems, and 35,460 instantiated items. The fit included
+108,764 parameters and converged after 1,870 L-BFGS-B iterations
+(log likelihood = -169,915.14; AIC = 557,358.27; BIC = 1,766,293.83).
+
+Key descriptive statistics from results/augmented_mcqa_irt:
+
+IRT fit:
+- Observations: 496,440.
+- Test-taker models: 14.
+- Stems: 2,364.
+- Instantiated items: 35,460.
+- Parameters: 108,764.
+- Optimizer: L-BFGS-B.
+- Converged: yes, after 1,870 iterations.
+- Log likelihood: -169,915.14.
+- AIC: 557,358.27.
+- BIC: 1,766,293.83.
+
+Raw accuracy by generator and setting:
+- Gemini generator: D-Gen human 0.608; D-Gen LLM 0.578;
+  D-Ext human 0.470; D-Ext LLM 0.463.
+- GPT generator: D-Gen human 0.610; D-Gen LLM 0.553;
+  D-Ext human 0.393; D-Ext LLM 0.391.
+- Qwen generator: D-Gen human 0.610; D-Gen LLM 0.596;
+  D-Ext human 0.460; D-Ext LLM 0.475.
+- Each row above has n_obs = 33,096.
+
+From-scratch item statistics, mean +/- SE:
+- ARC human: n=2,985; difficulty -2.636 +/- 0.026; discrimination 1.279 +/- 0.007;
+  flaws 1.496 +/- 0.022.
+- ARC GPT: n=995; difficulty -2.277 +/- 0.048; discrimination 1.315 +/- 0.012;
+  flaws 2.093 +/- 0.045.
+- ARC Gemini: n=995; difficulty -2.417 +/- 0.046; discrimination 1.291 +/- 0.013;
+  flaws 1.433 +/- 0.037.
+- ARC Qwen: n=995; difficulty -2.436 +/- 0.048; discrimination 1.265 +/- 0.013;
+  flaws 1.532 +/- 0.038.
+- MMLU human: n=2,862; difficulty -0.658 +/- 0.030; discrimination 1.264 +/- 0.007;
+  flaws 2.812 +/- 0.030.
+- MMLU GPT: n=954; difficulty -0.350 +/- 0.055; discrimination 1.318 +/- 0.012;
+  flaws 3.018 +/- 0.050.
+- MMLU Gemini: n=954; difficulty -0.517 +/- 0.054; discrimination 1.291 +/- 0.013;
+  flaws 2.406 +/- 0.046.
+- MMLU Qwen: n=954; difficulty -0.658 +/- 0.054; discrimination 1.268 +/- 0.012;
+  flaws 2.523 +/- 0.049.
+- GPQA human: n=1,245; difficulty 0.121 +/- 0.039; discrimination 1.279 +/- 0.010;
+  flaws 2.545 +/- 0.042.
+- GPQA GPT: n=415; difficulty 0.261 +/- 0.073; discrimination 1.263 +/- 0.017;
+  flaws 2.708 +/- 0.068.
+- GPQA Gemini: n=415; difficulty 0.225 +/- 0.070; discrimination 1.231 +/- 0.016;
+  flaws 2.417 +/- 0.065.
+- GPQA Qwen: n=415; difficulty 0.073 +/- 0.072; discrimination 1.215 +/- 0.017;
+  flaws 2.412 +/- 0.072.
+
+Dataset x setting statistics, mean +/- SE:
+- ARC D-Gen human: n=2,985; difficulty -2.636 +/- 0.026; discrimination
+  1.279 +/- 0.007; flaws 1.496 +/- 0.022.
+- ARC D-Gen LLM: n=2,985; difficulty -2.377 +/- 0.027; discrimination
+  1.290 +/- 0.007; flaws 1.686 +/- 0.024.
+- ARC D-Ext human: n=2,985; difficulty -1.816 +/- 0.028; discrimination
+  1.300 +/- 0.009; flaws 2.435 +/- 0.029.
+- ARC D-Ext LLM: n=2,985; difficulty -1.794 +/- 0.028; discrimination
+  1.314 +/- 0.009; flaws 2.489 +/- 0.030.
+- MMLU D-Gen human: n=2,862; difficulty -0.658 +/- 0.030; discrimination
+  1.264 +/- 0.007; flaws 2.812 +/- 0.030.
+- MMLU D-Gen LLM: n=2,862; difficulty -0.509 +/- 0.031; discrimination
+  1.292 +/- 0.007; flaws 2.649 +/- 0.028.
+- MMLU D-Ext human: n=2,862; difficulty -0.092 +/- 0.031; discrimination
+  1.257 +/- 0.007; flaws 3.462 +/- 0.034.
+- MMLU D-Ext LLM: n=2,862; difficulty -0.124 +/- 0.031; discrimination
+  1.269 +/- 0.008; flaws 3.200 +/- 0.032.
+- GPQA D-Gen human: n=1,245; difficulty 0.121 +/- 0.039; discrimination
+  1.279 +/- 0.010; flaws 2.545 +/- 0.042.
+- GPQA D-Gen LLM: n=1,245; difficulty 0.187 +/- 0.041; discrimination
+  1.236 +/- 0.010; flaws 2.512 +/- 0.040.
+- GPQA D-Ext human: n=1,245; difficulty 0.574 +/- 0.042; discrimination
+  1.243 +/- 0.010; flaws 3.182 +/- 0.052.
+- GPQA D-Ext LLM: n=1,245; difficulty 0.512 +/- 0.043; discrimination
+  1.223 +/- 0.010; flaws 3.092 +/- 0.048.
+
+BenchMarker writing-flaw descriptive statistics:
+
+Source: results/augmented_mcqa_irt/tables/writing_flaw_rows.csv. This table
+contains 35,460 item rows: 14,925 ARC rows, 14,310 MMLU-Pro rows, and 6,225
+GPQA rows. Each internal setting has 7,092 rows. The paper-facing summaries
+below use four labels: D-Gen human, D-Gen LLM, D-Ext human, and D-Ext LLM.
+Each generator contributes 11,820 rows.
+
+Overall flaw-count distribution:
+- Mean flaws per item: 2.641 +/- 0.009 SE.
+- SD: 1.690.
+- Median: 2.
+- IQR: 1 to 4.
+- Range: 0 to 12.
+- Items with zero flagged flaws: 7.7%.
+- Items with at least two flagged flaws: 73.0%.
+
+Flaw counts by setting, mean +/- SE:
+- D-Gen human: n=7,092; 2.212 +/- 0.018; SD 1.550; zero-flaw 11.3%;
+  >=2 flaws 63.3%.
+- D-Gen LLM: n=7,092; 2.220 +/- 0.018; SD 1.481; zero-flaw 11.0%;
+  >=2 flaws 65.6%.
+- D-Ext human: n=7,092; 2.980 +/- 0.021; SD 1.781; zero-flaw 5.3%;
+  >=2 flaws 79.2%.
+- D-Ext LLM: n=7,092; 2.882 +/- 0.020; SD 1.709; zero-flaw 5.5%;
+  >=2 flaws 78.1%.
+
+Flaw counts by dataset x setting, mean +/- SE:
+- ARC D-Gen human: n=2,985; 1.496 +/- 0.022; >=2 flaws 43.0%.
+- ARC D-Gen LLM: n=2,985; 1.686 +/- 0.024; >=2 flaws 50.7%.
+- ARC D-Ext human: n=2,985; 2.435 +/- 0.029; >=2 flaws 70.0%.
+- ARC D-Ext LLM: n=2,985; 2.489 +/- 0.030; >=2 flaws 70.3%.
+- MMLU D-Gen human: n=2,862; 2.812 +/- 0.030; >=2 flaws 79.0%.
+- MMLU D-Gen LLM: n=2,862; 2.649 +/- 0.028; >=2 flaws 75.8%.
+- MMLU D-Ext human: n=2,862; 3.462 +/- 0.034; >=2 flaws 86.7%.
+- MMLU D-Ext LLM: n=2,862; 3.200 +/- 0.032; >=2 flaws 83.4%.
+- GPQA D-Gen human: n=1,245; 2.545 +/- 0.042; >=2 flaws 75.9%.
+- GPQA D-Gen LLM: n=1,245; 2.512 +/- 0.040; >=2 flaws 78.0%.
+- GPQA D-Ext human: n=1,245; 3.182 +/- 0.052; >=2 flaws 84.3%.
+- GPQA D-Ext LLM: n=1,245; 3.092 +/- 0.048; >=2 flaws 84.7%.
+
+Flaw counts by generator x setting, mean +/- SE:
+- GPT D-Gen human: n=2,364; 2.259 +/- 0.032; >=2 flaws 64.2%.
+- GPT D-Gen LLM: n=2,364; 2.574 +/- 0.031; >=2 flaws 75.3%.
+- GPT D-Ext human: n=2,364; 3.372 +/- 0.037; >=2 flaws 85.8%.
+- GPT D-Ext LLM: n=2,364; 3.373 +/- 0.036; >=2 flaws 86.2%.
+- Gemini D-Gen human: n=2,364; 2.245 +/- 0.032; >=2 flaws 64.3%.
+- Gemini D-Gen LLM: n=2,364; 1.998 +/- 0.029; >=2 flaws 58.9%.
+- Gemini D-Ext human: n=2,364; 2.719 +/- 0.036; >=2 flaws 74.6%.
+- Gemini D-Ext LLM: n=2,364; 2.534 +/- 0.032; >=2 flaws 72.5%.
+- Qwen D-Gen human: n=2,364; 2.131 +/- 0.031; >=2 flaws 61.5%.
+- Qwen D-Gen LLM: n=2,364; 2.086 +/- 0.030; >=2 flaws 62.6%.
+- Qwen D-Ext human: n=2,364; 2.850 +/- 0.036; >=2 flaws 77.4%.
+- Qwen D-Ext LLM: n=2,364; 2.738 +/- 0.035; >=2 flaws 75.6%.
+
+Individual flaw-type error bars:
+
+Use binomial standard errors for the percentage of items flagged with each
+flaw. The values below are percentage +/- SE percentage points.
+
+All 19 rule rates, pooled across all final items:
+- Unequal Option Length: 31.5 +/- 0.25.
+- Implausible Distractors: 16.7 +/- 0.20.
+- Has Absolute Terms: 19.7 +/- 0.21.
+- Unclear Language: 9.1 +/- 0.15.
+- Multiple Best Answers: 22.3 +/- 0.22.
+- Has Convergence Cues: 20.1 +/- 0.21.
+- Has Extraneous Information: 50.9 +/- 0.27.
+- Unfocused Stem: 28.5 +/- 0.24.
+- Problem Not in Stem: 11.4 +/- 0.17.
+- Unordered Options: 11.2 +/- 0.17.
+- Has Vague Terms: 9.6 +/- 0.16.
+- Has Logical Cues: 8.6 +/- 0.15.
+- Grammatical Inconsistency: 6.8 +/- 0.13.
+- Has K-Type Options: 6.2 +/- 0.13.
+- Has Repetition: 3.9 +/- 0.10.
+- Has Negatives: 3.7 +/- 0.10.
+- Has Fill-in-the-Blank: 3.2 +/- 0.09.
+- Has None of the Above: 0.4 +/- 0.03.
+- Has All of the Above: 0.2 +/- 0.02.
+
+Grouped error bars for highlighted Section 3.3 flaw types:
+- Unequal Option Length: D-Gen human 20.4 +/- 0.48; D-Gen LLM 28.0 +/- 0.53;
+  D-Ext human 37.5 +/- 0.57; D-Ext LLM 37.0 +/- 0.57.
+- Implausible Distractors: D-Gen human 11.2 +/- 0.37; D-Gen LLM 7.8 +/- 0.32;
+  D-Ext human 22.4 +/- 0.50; D-Ext LLM 19.3 +/- 0.47.
+- Has Absolute Terms: D-Gen human 9.6 +/- 0.35; D-Gen LLM 14.4 +/- 0.42;
+  D-Ext human 23.2 +/- 0.50; D-Ext LLM 23.7 +/- 0.50.
+- Multiple Best Answers: D-Gen human 12.2 +/- 0.39; D-Gen LLM 15.3 +/- 0.43;
+  D-Ext human 29.3 +/- 0.54; D-Ext LLM 28.6 +/- 0.54.
+- Has Convergence Cues: D-Gen human 21.6 +/- 0.49; D-Gen LLM 19.1 +/- 0.47;
+  D-Ext human 20.6 +/- 0.48; D-Ext LLM 19.3 +/- 0.47.
+
+Grouped error bars for all flaw types:
+- Unequal Option Length: D-Gen human 20.4 +/- 0.48; D-Gen LLM 28.0 +/- 0.53;
+  D-Ext human 37.5 +/- 0.57; D-Ext LLM 37.0 +/- 0.57.
+- Implausible Distractors: D-Gen human 11.2 +/- 0.37; D-Gen LLM 7.8 +/- 0.32;
+  D-Ext human 22.4 +/- 0.50; D-Ext LLM 19.3 +/- 0.47.
+- Has Absolute Terms: D-Gen human 9.6 +/- 0.35; D-Gen LLM 14.4 +/- 0.42;
+  D-Ext human 23.2 +/- 0.50; D-Ext LLM 23.7 +/- 0.50.
+- Unclear Language: D-Gen human 8.7 +/- 0.33; D-Gen LLM 6.9 +/- 0.30;
+  D-Ext human 11.2 +/- 0.37; D-Ext LLM 9.2 +/- 0.34.
+- Multiple Best Answers: D-Gen human 12.2 +/- 0.39; D-Gen LLM 15.3 +/- 0.43;
+  D-Ext human 29.3 +/- 0.54; D-Ext LLM 28.6 +/- 0.54.
+- Has Convergence Cues: D-Gen human 21.6 +/- 0.49; D-Gen LLM 19.1 +/- 0.47;
+  D-Ext human 20.6 +/- 0.48; D-Ext LLM 19.3 +/- 0.47.
+- Has Extraneous Information: D-Gen human 52.7 +/- 0.59; D-Gen LLM
+  51.4 +/- 0.59; D-Ext human 50.0 +/- 0.59; D-Ext LLM 50.4 +/- 0.59.
+- Unfocused Stem: D-Gen human 28.4 +/- 0.54; D-Gen LLM 28.5 +/- 0.54;
+  D-Ext human 28.6 +/- 0.54; D-Ext LLM 28.6 +/- 0.54.
+- Problem Not in Stem: D-Gen human 12.2 +/- 0.39; D-Gen LLM 11.4 +/- 0.38;
+  D-Ext human 11.2 +/- 0.37; D-Ext LLM 11.2 +/- 0.38.
+- Unordered Options: D-Gen human 11.3 +/- 0.38; D-Gen LLM 11.2 +/- 0.37;
+  D-Ext human 11.3 +/- 0.38; D-Ext LLM 11.5 +/- 0.38.
+- Has Vague Terms: D-Gen human 5.6 +/- 0.27; D-Gen LLM 5.6 +/- 0.27;
+  D-Ext human 12.2 +/- 0.39; D-Ext LLM 13.0 +/- 0.40.
+- Has Logical Cues: D-Gen human 6.1 +/- 0.28; D-Gen LLM 4.4 +/- 0.24;
+  D-Ext human 11.7 +/- 0.38; D-Ext LLM 10.0 +/- 0.36.
+- Grammatical Inconsistency: D-Gen human 5.1 +/- 0.26; D-Gen LLM 4.4 +/- 0.24;
+  D-Ext human 8.6 +/- 0.33; D-Ext LLM 7.3 +/- 0.31.
+- Has K-Type Options: D-Gen human 3.0 +/- 0.20; D-Gen LLM 2.4 +/- 0.18;
+  D-Ext human 9.5 +/- 0.35; D-Ext LLM 8.1 +/- 0.32.
+- Has Repetition: D-Gen human 5.9 +/- 0.28; D-Gen LLM 4.0 +/- 0.23;
+  D-Ext human 2.9 +/- 0.20; D-Ext LLM 3.4 +/- 0.21.
+- Has Negatives: D-Gen human 3.8 +/- 0.23; D-Gen LLM 3.8 +/- 0.23;
+  D-Ext human 3.5 +/- 0.22; D-Ext LLM 3.6 +/- 0.22.
+- Has Fill-in-the-Blank: D-Gen human 3.2 +/- 0.21; D-Gen LLM 3.1 +/- 0.21;
+  D-Ext human 3.3 +/- 0.21; D-Ext LLM 3.3 +/- 0.21.
+- Has None of the Above: D-Gen human 0.1 +/- 0.04; D-Gen LLM 0.2 +/- 0.05;
+  D-Ext human 0.7 +/- 0.10; D-Ext LLM 0.6 +/- 0.09.
+- Has All of the Above: D-Gen human 0.1 +/- 0.04; D-Gen LLM 0.1 +/- 0.03;
+  D-Ext human 0.3 +/- 0.06; D-Ext LLM 0.2 +/- 0.05.
+
+
+E1. AI assistant use reminder
+-----------------------------
+Reminder for you to add manually:
+
+Add the actual disclosure for whether AI assistants were used in research,
+coding, writing, debugging, editing, or figure/table preparation. The
+experimental generator/test-taker LLMs are already described in the methods;
+E1 is about author assistance. If no assistants were used, mark E as No and E1
+as N/A. If assistants were used, add a sentence like:
+
+"The authors used [ASSISTANT NAME(S)] for [coding/debugging/writing/editing/etc.].
+All generated suggestions were reviewed and edited by the authors, who take
+responsibility for the final content."
