@@ -1,0 +1,43 @@
+---------------------------------------------------------                       
+augmented_mcqa_eval_augment_model_m3_full_question (200 samples):               
+vllm/ibm-granite/granite-4.0-micro                                              
+max_tokens: 32768, reasoning_effort: medium, fail_on_error: False,              
+retry_on_error: 2, dataset: (samples)                                           
+---------------------------------------------------------                       
+                                                                                
+Steps:  10/200   5% | Samples:   1/200 | mean:  n/a | vllm:  0/10 | HTTP retries: 0
+Steps:  18/200   9% | Samples:  16/200 | mean: 0.50 | vllm:  6/10 | HTTP retries: 0
+Steps:  30/200  15% | Samples:  29/200 | mean: 0.54 | vllm:  6/10 | HTTP retries: 0
+Steps:  41/200  20% | Samples:  40/200 | mean: 0.56 | vllm:  5/10 | HTTP retries: 0
+Steps:  53/200  26% | Samples:  51/200 | mean: 0.55 | vllm:  4/10 | HTTP retries: 0
+Steps:  65/200  32% | Samples:  62/200 | mean: 0.57 | vllm:  3/10 | HTTP retries: 0
+Steps:  77/200  38% | Samples:  74/200 | mean: 0.57 | vllm:  4/10 | HTTP retries: 0
+Steps:  88/200  44% | Samples:  85/200 | mean: 0.56 | vllm:  4/10 | HTTP retries: 0
+Steps:  97/200  48% | Samples:  94/200 | mean: 0.55 | vllm:  3/10 | HTTP retries: 0
+Steps: 106/200  53% | Samples: 104/200 | mean: 0.55 | vllm:  6/10 | HTTP retries: 0
+Steps: 119/200  59% | Samples: 115/200 | mean: 0.53 | vllm:  3/10 | HTTP retries: 0
+Steps: 130/200  65% | Samples: 127/200 | mean: 0.54 | vllm:  4/10 | HTTP retries: 0
+Steps: 140/200  70% | Samples: 138/200 | mean: 0.54 | vllm:  4/10 | HTTP retries: 0
+Steps: 151/200  75% | Samples: 150/200 | mean: 0.52 | vllm:  7/10 | HTTP retries: 0
+Steps: 162/200  81% | Samples: 161/200 | mean: 0.53 | vllm:  5/10 | HTTP retries: 0
+Steps: 173/200  86% | Samples: 172/200 | mean: 0.53 | vllm:  4/10 | HTTP retries: 0
+Steps: 184/200  92% | Samples: 182/200 | mean: 0.54 | vllm:  4/10 | HTTP retries: 0
+Steps: 200/200 100% | Samples: 198/200 | mean: 0.54 | vllm:  0/10 | HTTP retries: 0
+
+---------------------------------------------------------                       
+augmented_mcqa_eval_augment_model_m3_full_question (200 samples):               
+vllm/ibm-granite/granite-4.0-micro                                              
+max_tokens: 32768, reasoning_effort: medium, fail_on_error: False,              
+retry_on_error: 2, dataset: (samples)                                           
+                                                                                
+total time:                              0:03:11                                
+vllm/ibm-granite/granite-4.0-micro       50,373 tokens [I: 48,373, O: 2,000]    
+augmented_mcqa_eval                                                             
+mean                 0.550                                                      
+stderr               0.035                                                      
+Log:                                                                            
+results/inspect/evaluation/gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/…
+---------------------------------------------------------                       
+                                                                                
+Evaluation logs: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_ibm-granite_granite-4.0-micro
+Running: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/python3 main.py evaluate --model vllm/ibm-granite/granite-4.0-micro --run-name gen_gpt52_v2 --generator gpt52 --dataset-types arc_challenge --settings augment_model_m3 --modes full_question --question-start 0 --limit 995 --skip-collect-evaluated --max-tokens 32768 --reasoning-effort medium --retry-on-error 2

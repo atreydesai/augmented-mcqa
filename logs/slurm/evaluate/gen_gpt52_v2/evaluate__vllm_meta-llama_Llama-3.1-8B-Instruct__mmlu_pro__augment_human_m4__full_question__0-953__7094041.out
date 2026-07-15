@@ -1,0 +1,75 @@
+---------------------------------------------------------                       
+augmented_mcqa_eval_augment_human_m4_full_question (200 samples):               
+vllm/meta-llama/Llama-3.1-8B-Instruct                                           
+max_tokens: 32768, reasoning_effort: medium, fail_on_error: False,              
+retry_on_error: 2, dataset: (samples)                                           
+---------------------------------------------------------                       
+                                                                                
+[07/14/26 18:42:26] ERROR    Server process exited           local_server.py:249
+                             unexpectedly with code 1. Try                      
+                             rerunning with '--log-level                        
+                             debug' to see the full                             
+                             traceback. Alternatively, you                      
+                             can run the following launch                       
+                             command manually to see the                        
+                             full traceback:                                    
+                                                                                
+                             vllm serve                                         
+                             meta-llama/Llama-3.1-8B-Instruc                    
+                             t --host 0.0.0.0 --api-key                         
+                             inspectai --enforce-eager                          
+                             --max-model-len 65536 --port                       
+                             34191                                              
+                                                                                
+[07/14/26 18:42:27] WARNING  Sample error (id: mmlu_pro:71, epoch:    run.py:765
+                             1): RuntimeError("Failed to start vLLM             
+                             server: Server process exited                      
+                             unexpectedly with code 1. Try rerunning            
+                             with '--log-level debug' to see the full           
+                             traceback. Alternatively, you can run              
+                             the following launch command manually to           
+                             see the full traceback:\n\nvllm serve              
+                             meta-llama/Llama-3.1-8B-Instruct --host            
+                             0.0.0.0 --api-key inspectai                        
+                             --enforce-eager --max-model-len 65536              
+                             --port 34191\n\n")). Sample will be                
+                             retried.                                           
+Steps:  10/200   5% | Samples:   1/200 | mean:  n/a | vllm:  0/10 | HTTP retries: 0
+Steps:  22/200  11% | Samples:  15/200 | mean: 0.43 | vllm:  2/10 | HTTP retries: 1
+Steps:  28/200  14% | Samples:  28/200 | mean: 0.52 | vllm:  6/10 | HTTP retries: 2
+Steps:  38/200  19% | Samples:  38/200 | mean: 0.58 | vllm:  6/10 | HTTP retries: 2
+Steps:  49/200  24% | Samples:  47/200 | mean: 0.54 | vllm:  3/10 | HTTP retries: 2
+Steps:  58/200  28% | Samples:  55/200 | mean: 0.52 | vllm:  5/10 | HTTP retries: 2
+Steps:  67/200  33% | Samples:  65/200 | mean: 0.52 | vllm:  6/10 | HTTP retries: 2
+Steps:  74/200  37% | Samples:  73/200 | mean: 0.50 | vllm:  4/10 | HTTP retries: 2
+Steps:  86/200  43% | Samples:  83/200 | mean: 0.51 | vllm:  5/10 | HTTP retries: 2
+Steps:  95/200  47% | Samples:  94/200 | mean: 0.51 | vllm:  6/10 | HTTP retries: 2
+Steps: 105/200  52% | Samples: 102/200 | mean: 0.48 | vllm:  4/10 | HTTP retries: 2
+Steps: 114/200  56% | Samples: 111/200 | mean: 0.48 | vllm:  5/10 | HTTP retries: 2
+Steps: 122/200  61% | Samples: 120/200 | mean: 0.47 | vllm:  4/10 | HTTP retries: 2
+Steps: 132/200  66% | Samples: 130/200 | mean: 0.46 | vllm:  6/10 | HTTP retries: 2
+Steps: 139/200  69% | Samples: 138/200 | mean: 0.45 | vllm:  4/10 | HTTP retries: 2
+Steps: 150/200  75% | Samples: 149/200 | mean: 0.44 | vllm:  7/10 | HTTP retries: 2
+Steps: 158/200  79% | Samples: 158/200 | mean: 0.43 | vllm:  6/10 | HTTP retries: 2
+Steps: 170/200  85% | Samples: 167/200 | mean: 0.42 | vllm:  4/10 | HTTP retries: 2
+Steps: 181/200  90% | Samples: 179/200 | mean: 0.40 | vllm:  6/10 | HTTP retries: 2
+Steps: 191/200  95% | Samples: 188/200 | mean: 0.39 | vllm:  5/10 | HTTP retries: 2
+Steps: 200/200 100% | Samples: 200/200 | mean: 0.39 | vllm:  0/10 | HTTP retries: 2
+
+---------------------------------------------------------                       
+augmented_mcqa_eval_augment_human_m4_full_question (200 samples):               
+vllm/meta-llama/Llama-3.1-8B-Instruct                                           
+max_tokens: 32768, reasoning_effort: medium, fail_on_error: False,              
+retry_on_error: 2, dataset: (samples)                                           
+                                                                                
+total time:                               0:03:47                               
+vllm/meta-llama/Llama-3.1-8B-Instruct     66,356 tokens [I: 64,356, O: 2,000]   
+augmented_mcqa_eval                                                             
+mean                 0.385                                                      
+stderr               0.034                                                      
+Log:                                                                            
+results/inspect/evaluation/gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/…
+---------------------------------------------------------                       
+                                                                                
+Evaluation logs: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct
+Running: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/python3 main.py evaluate --model vllm/meta-llama/Llama-3.1-8B-Instruct --run-name gen_gpt52_v2 --generator gpt52 --dataset-types mmlu_pro --settings augment_human_m4 --modes full_question --question-start 0 --limit 954 --skip-collect-evaluated --max-tokens 32768 --reasoning-effort medium --retry-on-error 2

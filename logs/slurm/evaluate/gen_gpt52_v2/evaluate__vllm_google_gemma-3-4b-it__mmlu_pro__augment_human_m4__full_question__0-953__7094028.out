@@ -1,0 +1,50 @@
+---------------------------------------------------------                       
+augmented_mcqa_eval_augment_human_m4_full_question (200 samples):               
+vllm/google/gemma-3-4b-it                                                       
+max_tokens: 32768, reasoning_effort: medium, fail_on_error: False,              
+retry_on_error: 2, dataset: (samples)                                           
+---------------------------------------------------------                       
+                                                                                
+Steps:  10/200   5% | Samples:   1/200 | mean:  n/a | vllm:  0/10 | HTTP retries: 0
+Steps:  20/200  10% | Samples:  11/200 | mean: 0.60 | vllm:  0/10 | HTTP retries: 1
+Steps:  21/200  10% | Samples:  21/200 | mean: 0.45 | vllm:  9/10 | HTTP retries: 1
+Steps:  23/200  11% | Samples:  22/200 | mean: 0.45 | vllm:  0/10 | HTTP retries: 1
+Steps:  41/200  20% | Samples:  32/200 | mean: 0.43 | vllm:  0/10 | HTTP retries: 2
+Steps:  51/200  25% | Samples:  42/200 | mean: 0.46 | vllm:  0/10 | HTTP retries: 3
+Steps:  52/200  26% | Samples:  52/200 | mean: 0.43 | vllm:  9/10 | HTTP retries: 3
+Steps:  62/200  31% | Samples:  61/200 | mean: 0.42 | vllm:  6/10 | HTTP retries: 3
+Steps:  70/200  35% | Samples:  69/200 | mean: 0.40 | vllm:  6/10 | HTTP retries: 3
+Steps:  79/200  39% | Samples:  78/200 | mean: 0.40 | vllm:  6/10 | HTTP retries: 3
+Steps:  87/200  43% | Samples:  86/200 | mean: 0.38 | vllm:  5/10 | HTTP retries: 3
+Steps:  95/200  47% | Samples:  95/200 | mean: 0.39 | vllm:  8/10 | HTTP retries: 4
+Steps: 106/200  53% | Samples: 102/200 | mean: 0.40 | vllm:  3/10 | HTTP retries: 4
+Steps: 114/200  56% | Samples: 112/200 | mean: 0.41 | vllm:  5/10 | HTTP retries: 4
+Steps: 124/200  62% | Samples: 119/200 | mean: 0.38 | vllm:  2/10 | HTTP retries: 4
+Steps: 131/200  65% | Samples: 131/200 | mean: 0.37 | vllm:  9/10 | HTTP retries: 5
+Steps: 144/200  72% | Samples: 136/200 | mean: 0.37 | vllm:  1/10 | HTTP retries: 5
+Steps: 147/200  73% | Samples: 147/200 | mean: 0.35 | vllm:  9/10 | HTTP retries: 5
+Steps: 158/200  79% | Samples: 153/200 | mean: 0.34 | vllm:  2/10 | HTTP retries: 5
+Steps: 166/200  83% | Samples: 161/200 | mean: 0.34 | vllm:  0/10 | HTTP retries: 6
+Steps: 173/200  86% | Samples: 172/200 | mean: 0.33 | vllm:  7/10 | HTTP retries: 6
+Steps: 182/200  91% | Samples: 178/200 | mean: 0.33 | vllm:  3/10 | HTTP retries: 6
+Steps: 187/200  93% | Samples: 187/200 | mean: 0.31 | vllm:  8/10 | HTTP retries: 6
+Steps: 197/200  98% | Samples: 192/200 | mean: 0.31 | vllm:  2/10 | HTTP retries: 6
+Steps: 200/200 100% | Samples: 200/200 | mean: 0.29 | vllm:  0/10 | HTTP retries: 7
+
+---------------------------------------------------------                       
+augmented_mcqa_eval_augment_human_m4_full_question (200 samples):               
+vllm/google/gemma-3-4b-it                                                       
+max_tokens: 32768, reasoning_effort: medium, fail_on_error: False,              
+retry_on_error: 2, dataset: (samples)                                           
+                                                                                
+total time:                        0:03:30                                      
+vllm/google/gemma-3-4b-it          65,617 tokens [I: 62,287, O: 3,330]          
+augmented_mcqa_eval                                                             
+mean                 0.295                                                      
+stderr               0.032                                                      
+Log:                                                                            
+results/inspect/evaluation/gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/…
+---------------------------------------------------------                       
+                                                                                
+Evaluation logs: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_google_gemma-3-4b-it
+Running: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/python3 main.py evaluate --model vllm/google/gemma-3-4b-it --run-name gen_gpt52_v2 --generator gpt52 --dataset-types mmlu_pro --settings augment_human_m4 --modes full_question --question-start 0 --limit 954 --skip-collect-evaluated --max-tokens 32768 --reasoning-effort medium --retry-on-error 2

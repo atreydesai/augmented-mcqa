@@ -122,6 +122,26 @@ def test_load_irt_frame_excludes_unusable_evaluations_but_keeps_fallbacks(tmp_pa
     }
 
 
+def test_load_irt_frame_skips_saved_empty_slices(tmp_path):
+    write_group(
+        tmp_path / "collected",
+        generator="generator",
+        test_taker="taker",
+        rows_by_split={
+            (
+                "arc_challenge",
+                "human_from_scratch",
+                "full_question",
+            ): [row("kept", "arc_challenge", "human_from_scratch", "full_question", 4, True)],
+            ("gpqa", "augment_model", "full_question"): [],
+        },
+    )
+
+    frame = load_irt_frame(tmp_path / "collected")
+
+    assert list(frame["sample_id"]) == ["kept"]
+
+
 def test_gradient_matches_finite_difference(tmp_path):
     design = make_design(load_irt_frame(synthetic_collected(tmp_path / "collected")))
     beta = np.linspace(-0.05, 0.05, design.n_params)

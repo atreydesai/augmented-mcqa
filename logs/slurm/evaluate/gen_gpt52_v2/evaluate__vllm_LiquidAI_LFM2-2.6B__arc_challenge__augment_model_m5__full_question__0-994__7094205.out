@@ -1,0 +1,54 @@
+---------------------------------------------------------                       
+augmented_mcqa_eval_augment_model_m5_full_question (200 samples):               
+vllm/LiquidAI/LFM2-2.6B                                                         
+max_tokens: 32768, reasoning_effort: medium, fail_on_error: False,              
+retry_on_error: 2, dataset: (samples)                                           
+---------------------------------------------------------                       
+                                                                                
+Steps:  10/200   5% | Samples:   1/200 | mean:  n/a | vllm:  0/10 | HTTP retries: 0
+Steps:  15/200   7% | Samples:  14/200 | mean: 0.69 | vllm:  5/10 | HTTP retries: 0
+Steps:  25/200  12% | Samples:  20/200 | mean: 0.68 | vllm:  3/10 | HTTP retries: 0
+Steps:  29/200  14% | Samples:  28/200 | mean: 0.62 | vllm:  6/10 | HTTP retries: 0
+Steps:  38/200  19% | Samples:  34/200 | mean: 0.58 | vllm:  3/10 | HTTP retries: 0
+Steps:  44/200  22% | Samples:  42/200 | mean: 0.56 | vllm:  6/10 | HTTP retries: 0
+Steps:  52/200  26% | Samples:  48/200 | mean: 0.60 | vllm:  3/10 | HTTP retries: 0
+Steps:  57/200  28% | Samples:  55/200 | mean: 0.56 | vllm:  5/10 | HTTP retries: 0
+Steps:  61/200  30% | Samples:  60/200 | mean: 0.54 | vllm:  5/10 | HTTP retries: 0
+Steps:  64/200  32% | Samples:  62/200 | mean: 0.56 | vllm:  3/10 | HTTP retries: 0
+Steps:  78/200  39% | Samples:  69/200 | mean: 0.56 | vllm:  0/10 | HTTP retries: 2
+Steps:  88/200  44% | Samples:  79/200 | mean: 0.55 | vllm:  0/10 | HTTP retries: 2
+Steps:  98/200  49% | Samples:  89/200 | mean: 0.53 | vllm:  0/10 | HTTP retries: 2
+Steps: 107/200  53% | Samples:  99/200 | mean: 0.54 | vllm:  1/10 | HTTP retries: 3
+Steps: 109/200  54% | Samples: 108/200 | mean: 0.54 | vllm:  8/10 | HTTP retries: 3
+Steps: 114/200  56% | Samples: 110/200 | mean: 0.55 | vllm:  3/10 | HTTP retries: 3
+Steps: 118/200  59% | Samples: 115/200 | mean: 0.54 | vllm:  4/10 | HTTP retries: 3
+Steps: 119/200  59% | Samples: 119/200 | mean: 0.55 | vllm:  8/10 | HTTP retries: 4
+Steps: 128/200  64% | Samples: 121/200 | mean: 0.55 | vllm:  2/10 | HTTP retries: 4
+Steps: 129/200  64% | Samples: 128/200 | mean: 0.54 | vllm:  7/10 | HTTP retries: 4
+Steps: 140/200  70% | Samples: 131/200 | mean: 0.55 | vllm:  0/10 | HTTP retries: 4
+Steps: 150/200  75% | Samples: 141/200 | mean: 0.57 | vllm:  0/10 | HTTP retries: 4
+Steps: 160/200  80% | Samples: 151/200 | mean: 0.55 | vllm:  0/10 | HTTP retries: 4
+Steps: 166/200  83% | Samples: 162/200 | mean: 0.54 | vllm:  1/10 | HTTP retries: 4
+Steps: 173/200  86% | Samples: 172/200 | mean: 0.56 | vllm:  5/10 | HTTP retries: 4
+Steps: 182/200  91% | Samples: 179/200 | mean: 0.56 | vllm:  5/10 | HTTP retries: 4
+Steps: 189/200  94% | Samples: 189/200 | mean: 0.56 | vllm:  9/10 | HTTP retries: 4
+Steps: 199/200  99% | Samples: 197/200 | mean: 0.57 | vllm:  0/10 | HTTP retries: 4
+Steps: 200/200 100% | Samples: 200/200 | mean: 0.57 | vllm:  0/10 | HTTP retries: 4
+
+---------------------------------------------------------                       
+augmented_mcqa_eval_augment_model_m5_full_question (200 samples):               
+vllm/LiquidAI/LFM2-2.6B                                                         
+max_tokens: 32768, reasoning_effort: medium, fail_on_error: False,              
+retry_on_error: 2, dataset: (samples)                                           
+                                                                                
+total time:                      0:04:11                                        
+vllm/LiquidAI/LFM2-2.6B          56,007 tokens [I: 53,867, O: 2,140]            
+augmented_mcqa_eval                                                             
+mean                 0.570                                                      
+stderr               0.035                                                      
+Log:                                                                            
+results/inspect/evaluation/gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/…
+---------------------------------------------------------                       
+                                                                                
+Evaluation logs: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_LiquidAI_LFM2-2.6B
+Running: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/python3 main.py evaluate --model vllm/LiquidAI/LFM2-2.6B --run-name gen_gpt52_v2 --generator gpt52 --dataset-types arc_challenge --settings augment_model_m5 --modes full_question --question-start 0 --limit 995 --skip-collect-evaluated --max-tokens 32768 --reasoning-effort medium --retry-on-error 2

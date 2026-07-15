@@ -1,0 +1,78 @@
+---------------------------------------------------------                       
+augmented_mcqa_eval_augment_model_m3_full_question (200 samples):               
+vllm/google/gemma-3-12b-it                                                      
+max_tokens: 32768, reasoning_effort: medium, fail_on_error: False,              
+retry_on_error: 2, dataset: (samples)                                           
+---------------------------------------------------------                       
+                                                                                
+[07/14/26 18:30:58] ERROR    Server process exited           local_server.py:249
+                             unexpectedly with code 1. Try                      
+                             rerunning with '--log-level                        
+                             debug' to see the full                             
+                             traceback. Alternatively, you                      
+                             can run the following launch                       
+                             command manually to see the                        
+                             full traceback:                                    
+                                                                                
+                             vllm serve                                         
+                             google/gemma-3-12b-it --host                       
+                             0.0.0.0 --api-key inspectai                        
+                             --enforce-eager --max-model-len                    
+                             123904 --port 30804                                
+                                                                                
+[07/14/26 18:30:59] WARNING  Sample error (id:                        run.py:765
+                             arc_challenge:Mercury_7175875, epoch:              
+                             1): RuntimeError("Failed to start vLLM             
+                             server: Server process exited                      
+                             unexpectedly with code 1. Try rerunning            
+                             with '--log-level debug' to see the full           
+                             traceback. Alternatively, you can run              
+                             the following launch command manually to           
+                             see the full traceback:\n\nvllm serve              
+                             google/gemma-3-12b-it --host 0.0.0.0               
+                             --api-key inspectai --enforce-eager                
+                             --max-model-len 123904 --port                      
+                             30804\n\n")). Sample will be retried.              
+Steps:  10/200   5% | Samples:   1/200 | mean:  n/a | vllm:  0/10 | HTTP retries: 0
+Steps:  13/200   6% | Samples:  13/200 | mean: 0.73 | vllm:  9/10 | HTTP retries: 0
+Steps:  23/200  11% | Samples:  20/200 | mean: 0.68 | vllm:  6/10 | HTTP retries: 0
+Steps:  34/200  17% | Samples:  25/200 | mean: 0.71 | vllm:  0/10 | HTTP retries: 0
+Steps:  37/200  18% | Samples:  36/200 | mean: 0.74 | vllm:  0/10 | HTTP retries: 0
+Steps:  48/200  24% | Samples:  48/200 | mean: 0.78 | vllm:  9/10 | HTTP retries: 0
+Steps:  59/200  29% | Samples:  55/200 | mean: 0.78 | vllm:  5/10 | HTTP retries: 0
+Steps:  65/200  32% | Samples:  63/200 | mean: 0.78 | vllm:  6/10 | HTTP retries: 1
+Steps:  72/200  36% | Samples:  71/200 | mean: 0.74 | vllm:  4/10 | HTTP retries: 1
+Steps:  80/200  40% | Samples:  80/200 | mean: 0.75 | vllm:  8/10 | HTTP retries: 2
+Steps:  90/200  45% | Samples:  88/200 | mean: 0.73 | vllm:  6/10 | HTTP retries: 2
+Steps: 104/200  52% | Samples:  96/200 | mean: 0.74 | vllm:  0/10 | HTTP retries: 2
+Steps: 112/200  56% | Samples: 108/200 | mean: 0.74 | vllm:  0/10 | HTTP retries: 3
+Steps: 118/200  59% | Samples: 118/200 | mean: 0.75 | vllm:  8/10 | HTTP retries: 3
+Steps: 128/200  64% | Samples: 122/200 | mean: 0.74 | vllm:  2/10 | HTTP retries: 3
+Steps: 131/200  65% | Samples: 130/200 | mean: 0.75 | vllm:  7/10 | HTTP retries: 3
+Steps: 134/200  67% | Samples: 134/200 | mean: 0.75 | vllm:  8/10 | HTTP retries: 3
+Steps: 138/200  69% | Samples: 135/200 | mean: 0.75 | vllm:  2/10 | HTTP retries: 4
+Steps: 142/200  71% | Samples: 142/200 | mean: 0.74 | vllm:  7/10 | HTTP retries: 6
+Steps: 152/200  76% | Samples: 143/200 | mean: 0.74 | vllm:  0/10 | HTTP retries: 6
+Steps: 162/200  81% | Samples: 153/200 | mean: 0.73 | vllm:  0/10 | HTTP retries: 6
+Steps: 172/200  86% | Samples: 163/200 | mean: 0.74 | vllm:  0/10 | HTTP retries: 6
+Steps: 182/200  91% | Samples: 173/200 | mean: 0.74 | vllm:  0/10 | HTTP retries: 6
+Steps: 192/200  96% | Samples: 183/200 | mean: 0.74 | vllm:  0/10 | HTTP retries: 6
+Steps: 200/200 100% | Samples: 193/200 | mean: 0.75 | vllm:  0/10 | HTTP retries: 6
+
+---------------------------------------------------------                       
+augmented_mcqa_eval_augment_model_m3_full_question (200 samples):               
+vllm/google/gemma-3-12b-it                                                      
+max_tokens: 32768, reasoning_effort: medium, fail_on_error: False,              
+retry_on_error: 2, dataset: (samples)                                           
+                                                                                
+total time:                         0:21:24                                     
+vllm/google/gemma-3-12b-it          49,984 tokens [I: 46,584, O: 3,400]         
+augmented_mcqa_eval                                                             
+mean                 0.750                                                      
+stderr               0.031                                                      
+Log:                                                                            
+results/inspect/evaluation/gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/…
+---------------------------------------------------------                       
+                                                                                
+Evaluation logs: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_google_gemma-3-12b-it
+Running: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/python3 main.py evaluate --model vllm/google/gemma-3-12b-it --run-name gen_gpt52_v2 --generator gpt52 --dataset-types arc_challenge --settings augment_model_m3 --modes full_question --question-start 0 --limit 995 --skip-collect-evaluated --max-tokens 32768 --reasoning-effort medium --retry-on-error 2

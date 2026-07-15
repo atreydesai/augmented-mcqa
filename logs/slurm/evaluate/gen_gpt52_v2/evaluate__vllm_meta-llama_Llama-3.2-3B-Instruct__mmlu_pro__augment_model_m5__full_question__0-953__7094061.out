@@ -1,0 +1,46 @@
+---------------------------------------------------------                       
+augmented_mcqa_eval_augment_model_m5_full_question (200 samples):               
+vllm/meta-llama/Llama-3.2-3B-Instruct                                           
+max_tokens: 32768, reasoning_effort: medium, fail_on_error: False,              
+retry_on_error: 2, dataset: (samples)                                           
+---------------------------------------------------------                       
+                                                                                
+Steps:  10/200   5% | Samples:   1/200 | mean:  n/a | vllm:  0/10 | HTTP retries: 0
+Steps:  14/200   7% | Samples:  14/200 | mean: 0.25 | vllm:  6/10 | HTTP retries: 0
+Steps:  26/200  13% | Samples:  24/200 | mean: 0.35 | vllm:  3/10 | HTTP retries: 0
+Steps:  35/200  17% | Samples:  33/200 | mean: 0.33 | vllm:  3/10 | HTTP retries: 0
+Steps:  46/200  23% | Samples:  44/200 | mean: 0.30 | vllm:  5/10 | HTTP retries: 1
+Steps:  57/200  28% | Samples:  54/200 | mean: 0.27 | vllm:  5/10 | HTTP retries: 1
+Steps:  67/200  33% | Samples:  64/200 | mean: 0.29 | vllm:  5/10 | HTTP retries: 1
+Steps:  76/200  38% | Samples:  74/200 | mean: 0.33 | vllm:  5/10 | HTTP retries: 1
+Steps:  85/200  42% | Samples:  83/200 | mean: 0.35 | vllm:  6/10 | HTTP retries: 1
+Steps:  95/200  47% | Samples:  93/200 | mean: 0.35 | vllm:  5/10 | HTTP retries: 1
+Steps: 104/200  52% | Samples: 103/200 | mean: 0.36 | vllm:  5/10 | HTTP retries: 1
+Steps: 113/200  56% | Samples: 113/200 | mean: 0.37 | vllm:  6/10 | HTTP retries: 1
+Steps: 123/200  61% | Samples: 121/200 | mean: 0.38 | vllm:  3/10 | HTTP retries: 1
+Steps: 132/200  66% | Samples: 130/200 | mean: 0.37 | vllm:  3/10 | HTTP retries: 1
+Steps: 143/200  71% | Samples: 140/200 | mean: 0.36 | vllm:  4/10 | HTTP retries: 1
+Steps: 153/200  76% | Samples: 150/200 | mean: 0.35 | vllm:  4/10 | HTTP retries: 1
+Steps: 163/200  81% | Samples: 160/200 | mean: 0.35 | vllm:  4/10 | HTTP retries: 1
+Steps: 174/200  87% | Samples: 170/200 | mean: 0.35 | vllm:  3/10 | HTTP retries: 1
+Steps: 184/200  92% | Samples: 180/200 | mean: 0.34 | vllm:  4/10 | HTTP retries: 1
+Steps: 190/200  95% | Samples: 188/200 | mean: 0.33 | vllm:  5/10 | HTTP retries: 2
+Steps: 200/200 100% | Samples: 200/200 | mean: 0.32 | vllm:  0/10 | HTTP retries: 2
+
+---------------------------------------------------------                       
+augmented_mcqa_eval_augment_model_m5_full_question (200 samples):               
+vllm/meta-llama/Llama-3.2-3B-Instruct                                           
+max_tokens: 32768, reasoning_effort: medium, fail_on_error: False,              
+retry_on_error: 2, dataset: (samples)                                           
+                                                                                
+total time:                               0:02:34                               
+vllm/meta-llama/Llama-3.2-3B-Instruct     75,314 tokens [I: 73,833, O: 1,481]   
+augmented_mcqa_eval                                                             
+mean                 0.315                                                      
+stderr               0.033                                                      
+Log:                                                                            
+results/inspect/evaluation/gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/…
+---------------------------------------------------------                       
+                                                                                
+Evaluation logs: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.2-3B-Instruct
+Running: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/python3 main.py evaluate --model vllm/meta-llama/Llama-3.2-3B-Instruct --run-name gen_gpt52_v2 --generator gpt52 --dataset-types mmlu_pro --settings augment_model_m5 --modes full_question --question-start 0 --limit 954 --skip-collect-evaluated --max-tokens 32768 --reasoning-effort medium --retry-on-error 2

@@ -11,7 +11,13 @@
     "model_from_scratch",
     "augment_human",
     "augment_model",
-    "augment_ablation"
+    "augment_ablation",
+    "augment_human_m3",
+    "augment_model_m3",
+    "augment_human_m4",
+    "augment_model_m4",
+    "augment_human_m5",
+    "augment_model_m5"
   ],
   "modes": [
     "full_question"
@@ -19,6 +25,6 @@
   "generation_run_name": "gen_gpt52_v2",
   "generation_model": "openai/gpt-5.2-2025-12-11",
   "evaluation_model": "vllm/LiquidAI/LFM2-1.2B",
-  "source_results_root": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/more_local_eval_models/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_LiquidAI_LFM2-1.2B",
+  "source_results_root": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_LiquidAI_LFM2-1.2B",
   "collection_state_file": "collected_state.json"
 }

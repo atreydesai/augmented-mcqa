@@ -1,0 +1,7 @@
+Exception ignored in atexit callback: <function compress_trace_log.<locals>.compress at 0x7f1a389f1760>
+Traceback (most recent call last):
+  File "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/lib/python3.12/site-packages/inspect_ai/_util/trace.py", line 299, in compress
+    log_handler.close()
+  File "/fs/clip-projects/rlab/atrey/miniconda3/lib/python3.12/logging/__init__.py", line 1247, in close
+    stream.close()
+OSError: [Errno 116] Stale file handle

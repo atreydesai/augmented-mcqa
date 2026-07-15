@@ -1,0 +1,50 @@
+---------------------------------------------------------                       
+augmented_mcqa_eval_augment_model_m3_full_question (200 samples):               
+vllm/allenai/Olmo-3-7B-Instruct                                                 
+max_tokens: 32768, reasoning_effort: medium, fail_on_error: False,              
+retry_on_error: 2, dataset: (samples)                                           
+---------------------------------------------------------                       
+                                                                                
+Steps:  10/200   5% | Samples:   1/200 | mean:  n/a | vllm:  0/10 | HTTP retries: 0
+Steps:  15/200   7% | Samples:  13/200 | mean: 0.50 | vllm:  6/10 | HTTP retries: 0
+Steps:  25/200  12% | Samples:  20/200 | mean: 0.53 | vllm:  3/10 | HTTP retries: 0
+Steps:  31/200  15% | Samples:  30/200 | mean: 0.55 | vllm:  6/10 | HTTP retries: 0
+Steps:  41/200  20% | Samples:  39/200 | mean: 0.55 | vllm:  4/10 | HTTP retries: 0
+Steps:  50/200  25% | Samples:  48/200 | mean: 0.52 | vllm:  6/10 | HTTP retries: 0
+Steps:  59/200  29% | Samples:  57/200 | mean: 0.47 | vllm:  4/10 | HTTP retries: 0
+Steps:  68/200  34% | Samples:  66/200 | mean: 0.50 | vllm:  6/10 | HTTP retries: 0
+Steps:  73/200  36% | Samples:  72/200 | mean: 0.45 | vllm:  7/10 | HTTP retries: 0
+Steps:  79/200  39% | Samples:  74/200 | mean: 0.47 | vllm:  3/10 | HTTP retries: 0
+Steps:  82/200  41% | Samples:  80/200 | mean: 0.48 | vllm:  5/10 | HTTP retries: 1
+Steps:  90/200  45% | Samples:  84/200 | mean: 0.47 | vllm:  1/10 | HTTP retries: 3
+Steps:  93/200  46% | Samples:  92/200 | mean: 0.47 | vllm:  7/10 | HTTP retries: 3
+Steps:  99/200  49% | Samples:  95/200 | mean: 0.48 | vllm:  2/10 | HTTP retries: 3
+Steps: 104/200  52% | Samples: 101/200 | mean: 0.48 | vllm:  5/10 | HTTP retries: 3
+Steps: 114/200  56% | Samples: 105/200 | mean: 0.48 | vllm:  0/10 | HTTP retries: 3
+Steps: 124/200  62% | Samples: 115/200 | mean: 0.45 | vllm:  0/10 | HTTP retries: 4
+Steps: 134/200  67% | Samples: 125/200 | mean: 0.47 | vllm:  0/10 | HTTP retries: 5
+Steps: 144/200  72% | Samples: 135/200 | mean: 0.46 | vllm:  0/10 | HTTP retries: 5
+Steps: 154/200  77% | Samples: 145/200 | mean: 0.46 | vllm:  0/10 | HTTP retries: 5
+Steps: 164/200  82% | Samples: 159/200 | mean: 0.45 | vllm:  2/10 | HTTP retries: 5
+Steps: 175/200  87% | Samples: 167/200 | mean: 0.45 | vllm:  0/10 | HTTP retries: 6
+Steps: 180/200  90% | Samples: 180/200 | mean: 0.46 | vllm:  6/10 | HTTP retries: 7
+Steps: 193/200  96% | Samples: 189/200 | mean: 0.46 | vllm:  4/10 | HTTP retries: 7
+Steps: 200/200 100% | Samples: 200/200 | mean: 0.47 | vllm:  0/10 | HTTP retries: 7
+
+---------------------------------------------------------                       
+augmented_mcqa_eval_augment_model_m3_full_question (200 samples):               
+vllm/allenai/Olmo-3-7B-Instruct                                                 
+max_tokens: 32768, reasoning_effort: medium, fail_on_error: False,              
+retry_on_error: 2, dataset: (samples)                                           
+                                                                                
+total time:                            0:04:34                                  
+vllm/allenai/Olmo-3-7B-Instruct        51,474 tokens [I: 49,573, O: 1,901]      
+augmented_mcqa_eval                                                             
+mean                 0.465                                                      
+stderr               0.035                                                      
+Log:                                                                            
+results/inspect/evaluation/gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/…
+---------------------------------------------------------                       
+                                                                                
+Evaluation logs: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_allenai_Olmo-3-7B-Instruct
+Running: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/python3 main.py evaluate --model vllm/allenai/Olmo-3-7B-Instruct --run-name gen_gpt52_v2 --generator gpt52 --dataset-types arc_challenge --settings augment_model_m3 --modes full_question --question-start 0 --limit 995 --skip-collect-evaluated --max-tokens 32768 --reasoning-effort medium --retry-on-error 2

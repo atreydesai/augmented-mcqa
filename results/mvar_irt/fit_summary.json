@@ -1,0 +1,42 @@
+{
+  "n_obs": 530040,
+  "n_test_takers": 14,
+  "n_stems": 2364,
+  "n_instantiated_items": 37860,
+  "n_params": 115970,
+  "equation": "P(X_ij=1)=c_i+(1-c_i)*sigmoid(1.702*a_i*(theta_j-b_i)); b_i=dataset+stem+generator+setting+item_noise",
+  "fit": {
+    "success": true,
+    "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+    "iterations": 19,
+    "log_likelihood": -181179.8342842391,
+    "aic": 594299.6685684782,
+    "bic": 1890926.3468437612
+  },
+  "regularization": {
+    "stem_sd": 3.0,
+    "item_noise_sd": 1.0,
+    "log_discrimination_sd": 0.75,
+    "guessing_logit_sd": 1.0,
+    "guessing_center": "logit(1 / num_choices)"
+  },
+  "quality_figure": {
+    "benchmarker_jsonl": "results/atrey_writing_flaw_rows_strict.jsonl"
+  },
+  "references": {
+    "theta": "vllm/nvidia/NVIDIA-Nemotron-Nano-9B-v2",
+    "dataset": "arc_challenge",
+    "stem": "arc_challenge::arc_challenge:ACTAAP_2007_7_3",
+    "generator": "google/gemini-3.1-pro-preview",
+    "setting": "human_from_scratch"
+  },
+  "filters": {
+    "generators": [],
+    "test_takers": [],
+    "datasets": [],
+    "settings": [],
+    "modes": [
+      "full_question"
+    ]
+  }
+}

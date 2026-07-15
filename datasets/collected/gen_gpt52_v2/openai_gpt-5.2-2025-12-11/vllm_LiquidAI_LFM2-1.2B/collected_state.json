@@ -1,12 +1,267 @@
 {
   "schema_version": "augmented_mcqa_collected_state_v1",
   "storage_kind": "evaluation_slice_state",
-  "generated_at": "2026-05-08T07:47:07+00:00",
-  "run_name": "more_local_eval_models",
+  "generated_at": "2026-07-14T22:23:47+00:00",
+  "run_name": "gen_gpt52_v2",
   "generation_run_name": "gen_gpt52_v2",
   "generation_model": "openai/gpt-5.2-2025-12-11",
   "evaluation_model": "vllm/LiquidAI/LFM2-1.2B",
-  "slice_count": 0,
-  "status_counts": {},
-  "slices": []
+  "slice_count": 6,
+  "status_counts": {
+    "current": 6
+  },
+  "slices": [
+    {
+      "slice_ref": "evaluation|gen_gpt52_v2|vllm_LiquidAI_LFM2-1.2B|arc_challenge__mmlu_pro|augment_human_m3|full_question|0|400",
+      "stage": "evaluate",
+      "run_name": "gen_gpt52_v2",
+      "model": "vllm/LiquidAI/LFM2-1.2B",
+      "dataset_type": "arc_challenge__mmlu_pro",
+      "dataset_types": [
+        "arc_challenge",
+        "mmlu_pro"
+      ],
+      "strategy": "",
+      "setting": "augment_human_m3",
+      "mode": "full_question",
+      "task_slug": "evaluate__vllm_LiquidAI_LFM2-1.2B__arc_challenge__mmlu_pro__augment_human_m3__full_question__0-399",
+      "question_start": 0,
+      "question_end": 400,
+      "state_dependency_refs": [],
+      "submit_dependency_refs": [],
+      "force": false,
+      "generation_run_name": "gen_gpt52_v2",
+      "generation_model": "openai/gpt-5.2-2025-12-11",
+      "submission_count": 1,
+      "latest_attempt": {
+        "slice_ref": "evaluation|gen_gpt52_v2|vllm_LiquidAI_LFM2-1.2B|arc_challenge__mmlu_pro|augment_human_m3|full_question|0|400",
+        "status": "success",
+        "completed_at": "2026-07-14T22:02:05+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_LiquidAI_LFM2-1.2B/2026-07-14T21-56-29-00-00_augmented-mcqa-eval-augment-human-m3-full-question_kP6WJgQi6QQN8obbCFuGcd.eval",
+        "sample_count": 400
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|gen_gpt52_v2|vllm_LiquidAI_LFM2-1.2B|arc_challenge__mmlu_pro|augment_human_m3|full_question|0|400",
+        "status": "success",
+        "completed_at": "2026-07-14T22:02:05+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_LiquidAI_LFM2-1.2B/2026-07-14T21-56-29-00-00_augmented-mcqa-eval-augment-human-m3-full-question_kP6WJgQi6QQN8obbCFuGcd.eval",
+        "sample_count": 400
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-07-14T22:02:05+00:00",
+      "latest_success_at": "2026-07-14T22:02:05+00:00",
+      "dependency_change_at": "2026-07-14T22:02:05+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|gen_gpt52_v2|vllm_LiquidAI_LFM2-1.2B|arc_challenge__mmlu_pro|augment_human_m4|full_question|0|400",
+      "stage": "evaluate",
+      "run_name": "gen_gpt52_v2",
+      "model": "vllm/LiquidAI/LFM2-1.2B",
+      "dataset_type": "arc_challenge__mmlu_pro",
+      "dataset_types": [
+        "arc_challenge",
+        "mmlu_pro"
+      ],
+      "strategy": "",
+      "setting": "augment_human_m4",
+      "mode": "full_question",
+      "task_slug": "evaluate__vllm_LiquidAI_LFM2-1.2B__arc_challenge__mmlu_pro__augment_human_m4__full_question__0-399",
+      "question_start": 0,
+      "question_end": 400,
+      "state_dependency_refs": [],
+      "submit_dependency_refs": [],
+      "force": false,
+      "generation_run_name": "gen_gpt52_v2",
+      "generation_model": "openai/gpt-5.2-2025-12-11",
+      "submission_count": 1,
+      "latest_attempt": {
+        "slice_ref": "evaluation|gen_gpt52_v2|vllm_LiquidAI_LFM2-1.2B|arc_challenge__mmlu_pro|augment_human_m4|full_question|0|400",
+        "status": "success",
+        "completed_at": "2026-07-14T22:09:36+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_LiquidAI_LFM2-1.2B/2026-07-14T22-05-24-00-00_augmented-mcqa-eval-augment-human-m4-full-question_e2dAzWk4BXNZAPXSNnVypW.eval",
+        "sample_count": 400
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|gen_gpt52_v2|vllm_LiquidAI_LFM2-1.2B|arc_challenge__mmlu_pro|augment_human_m4|full_question|0|400",
+        "status": "success",
+        "completed_at": "2026-07-14T22:09:36+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_LiquidAI_LFM2-1.2B/2026-07-14T22-05-24-00-00_augmented-mcqa-eval-augment-human-m4-full-question_e2dAzWk4BXNZAPXSNnVypW.eval",
+        "sample_count": 400
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-07-14T22:09:36+00:00",
+      "latest_success_at": "2026-07-14T22:09:36+00:00",
+      "dependency_change_at": "2026-07-14T22:09:36+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|gen_gpt52_v2|vllm_LiquidAI_LFM2-1.2B|arc_challenge__mmlu_pro|augment_human_m5|full_question|0|400",
+      "stage": "evaluate",
+      "run_name": "gen_gpt52_v2",
+      "model": "vllm/LiquidAI/LFM2-1.2B",
+      "dataset_type": "arc_challenge__mmlu_pro",
+      "dataset_types": [
+        "arc_challenge",
+        "mmlu_pro"
+      ],
+      "strategy": "",
+      "setting": "augment_human_m5",
+      "mode": "full_question",
+      "task_slug": "evaluate__vllm_LiquidAI_LFM2-1.2B__arc_challenge__mmlu_pro__augment_human_m5__full_question__0-399",
+      "question_start": 0,
+      "question_end": 400,
+      "state_dependency_refs": [],
+      "submit_dependency_refs": [],
+      "force": false,
+      "generation_run_name": "gen_gpt52_v2",
+      "generation_model": "openai/gpt-5.2-2025-12-11",
+      "submission_count": 1,
+      "latest_attempt": {
+        "slice_ref": "evaluation|gen_gpt52_v2|vllm_LiquidAI_LFM2-1.2B|arc_challenge__mmlu_pro|augment_human_m5|full_question|0|400",
+        "status": "success",
+        "completed_at": "2026-07-14T22:17:48+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_LiquidAI_LFM2-1.2B/2026-07-14T22-13-45-00-00_augmented-mcqa-eval-augment-human-m5-full-question_MiViLxC9pQXVej4axKZVE3.eval",
+        "sample_count": 400
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|gen_gpt52_v2|vllm_LiquidAI_LFM2-1.2B|arc_challenge__mmlu_pro|augment_human_m5|full_question|0|400",
+        "status": "success",
+        "completed_at": "2026-07-14T22:17:48+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_LiquidAI_LFM2-1.2B/2026-07-14T22-13-45-00-00_augmented-mcqa-eval-augment-human-m5-full-question_MiViLxC9pQXVej4axKZVE3.eval",
+        "sample_count": 400
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-07-14T22:17:48+00:00",
+      "latest_success_at": "2026-07-14T22:17:48+00:00",
+      "dependency_change_at": "2026-07-14T22:17:48+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|gen_gpt52_v2|vllm_LiquidAI_LFM2-1.2B|arc_challenge__mmlu_pro|augment_model_m3|full_question|0|400",
+      "stage": "evaluate",
+      "run_name": "gen_gpt52_v2",
+      "model": "vllm/LiquidAI/LFM2-1.2B",
+      "dataset_type": "arc_challenge__mmlu_pro",
+      "dataset_types": [
+        "arc_challenge",
+        "mmlu_pro"
+      ],
+      "strategy": "",
+      "setting": "augment_model_m3",
+      "mode": "full_question",
+      "task_slug": "evaluate__vllm_LiquidAI_LFM2-1.2B__arc_challenge__mmlu_pro__augment_model_m3__full_question__0-399",
+      "question_start": 0,
+      "question_end": 400,
+      "state_dependency_refs": [],
+      "submit_dependency_refs": [],
+      "force": false,
+      "generation_run_name": "gen_gpt52_v2",
+      "generation_model": "openai/gpt-5.2-2025-12-11",
+      "submission_count": 1,
+      "latest_attempt": {
+        "slice_ref": "evaluation|gen_gpt52_v2|vllm_LiquidAI_LFM2-1.2B|arc_challenge__mmlu_pro|augment_model_m3|full_question|0|400",
+        "status": "success",
+        "completed_at": "2026-07-14T22:05:23+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_LiquidAI_LFM2-1.2B/2026-07-14T22-02-06-00-00_augmented-mcqa-eval-augment-model-m3-full-question_be4taoGaw47cS65L5KQeC5.eval",
+        "sample_count": 400
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|gen_gpt52_v2|vllm_LiquidAI_LFM2-1.2B|arc_challenge__mmlu_pro|augment_model_m3|full_question|0|400",
+        "status": "success",
+        "completed_at": "2026-07-14T22:05:23+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_LiquidAI_LFM2-1.2B/2026-07-14T22-02-06-00-00_augmented-mcqa-eval-augment-model-m3-full-question_be4taoGaw47cS65L5KQeC5.eval",
+        "sample_count": 400
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-07-14T22:05:23+00:00",
+      "latest_success_at": "2026-07-14T22:05:23+00:00",
+      "dependency_change_at": "2026-07-14T22:05:23+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|gen_gpt52_v2|vllm_LiquidAI_LFM2-1.2B|arc_challenge__mmlu_pro|augment_model_m4|full_question|0|400",
+      "stage": "evaluate",
+      "run_name": "gen_gpt52_v2",
+      "model": "vllm/LiquidAI/LFM2-1.2B",
+      "dataset_type": "arc_challenge__mmlu_pro",
+      "dataset_types": [
+        "arc_challenge",
+        "mmlu_pro"
+      ],
+      "strategy": "",
+      "setting": "augment_model_m4",
+      "mode": "full_question",
+      "task_slug": "evaluate__vllm_LiquidAI_LFM2-1.2B__arc_challenge__mmlu_pro__augment_model_m4__full_question__0-399",
+      "question_start": 0,
+      "question_end": 400,
+      "state_dependency_refs": [],
+      "submit_dependency_refs": [],
+      "force": false,
+      "generation_run_name": "gen_gpt52_v2",
+      "generation_model": "openai/gpt-5.2-2025-12-11",
+      "submission_count": 1,
+      "latest_attempt": {
+        "slice_ref": "evaluation|gen_gpt52_v2|vllm_LiquidAI_LFM2-1.2B|arc_challenge__mmlu_pro|augment_model_m4|full_question|0|400",
+        "status": "success",
+        "completed_at": "2026-07-14T22:13:43+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_LiquidAI_LFM2-1.2B/2026-07-14T22-09-38-00-00_augmented-mcqa-eval-augment-model-m4-full-question_5LhPKLXfHEqWmDinARgaZ3.eval",
+        "sample_count": 400
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|gen_gpt52_v2|vllm_LiquidAI_LFM2-1.2B|arc_challenge__mmlu_pro|augment_model_m4|full_question|0|400",
+        "status": "success",
+        "completed_at": "2026-07-14T22:13:43+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_LiquidAI_LFM2-1.2B/2026-07-14T22-09-38-00-00_augmented-mcqa-eval-augment-model-m4-full-question_5LhPKLXfHEqWmDinARgaZ3.eval",
+        "sample_count": 400
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-07-14T22:13:43+00:00",
+      "latest_success_at": "2026-07-14T22:13:43+00:00",
+      "dependency_change_at": "2026-07-14T22:13:43+00:00",
+      "status": "current"
+    },
+    {
+      "slice_ref": "evaluation|gen_gpt52_v2|vllm_LiquidAI_LFM2-1.2B|arc_challenge__mmlu_pro|augment_model_m5|full_question|0|400",
+      "stage": "evaluate",
+      "run_name": "gen_gpt52_v2",
+      "model": "vllm/LiquidAI/LFM2-1.2B",
+      "dataset_type": "arc_challenge__mmlu_pro",
+      "dataset_types": [
+        "arc_challenge",
+        "mmlu_pro"
+      ],
+      "strategy": "",
+      "setting": "augment_model_m5",
+      "mode": "full_question",
+      "task_slug": "evaluate__vllm_LiquidAI_LFM2-1.2B__arc_challenge__mmlu_pro__augment_model_m5__full_question__0-399",
+      "question_start": 0,
+      "question_end": 400,
+      "state_dependency_refs": [],
+      "submit_dependency_refs": [],
+      "force": false,
+      "generation_run_name": "gen_gpt52_v2",
+      "generation_model": "openai/gpt-5.2-2025-12-11",
+      "submission_count": 1,
+      "latest_attempt": {
+        "slice_ref": "evaluation|gen_gpt52_v2|vllm_LiquidAI_LFM2-1.2B|arc_challenge__mmlu_pro|augment_model_m5|full_question|0|400",
+        "status": "success",
+        "completed_at": "2026-07-14T22:23:36+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_LiquidAI_LFM2-1.2B/2026-07-14T22-17-49-00-00_augmented-mcqa-eval-augment-model-m5-full-question_3vkxH69ymhYssqcdfX6kTY.eval",
+        "sample_count": 400
+      },
+      "latest_success": {
+        "slice_ref": "evaluation|gen_gpt52_v2|vllm_LiquidAI_LFM2-1.2B|arc_challenge__mmlu_pro|augment_model_m5|full_question|0|400",
+        "status": "success",
+        "completed_at": "2026-07-14T22:23:36+00:00",
+        "log_path": "/fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_LiquidAI_LFM2-1.2B/2026-07-14T22-17-49-00-00_augmented-mcqa-eval-augment-model-m5-full-question_3vkxH69ymhYssqcdfX6kTY.eval",
+        "sample_count": 400
+      },
+      "latest_submitted_at": "",
+      "latest_attempt_at": "2026-07-14T22:23:36+00:00",
+      "latest_success_at": "2026-07-14T22:23:36+00:00",
+      "dependency_change_at": "2026-07-14T22:23:36+00:00",
+      "status": "current"
+    }
+  ]
 }

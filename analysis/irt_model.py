@@ -210,6 +210,12 @@ def load_irt_frame(
                     path = group_root / dataset / setting / mode
                     if not path.exists():
                         continue
+                    # Hugging Face can persist an empty Dataset directory without
+                    # any Arrow shards. load_from_disk() raises IndexError for
+                    # those directories, so treat them like any other absent
+                    # dataset/setting/mode slice.
+                    if not any(path.glob("*.arrow")):
+                        continue
                     loaded = load_from_disk(str(path))
                     selected_columns = [
                         "sample_id",

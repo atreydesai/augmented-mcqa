@@ -1,0 +1,51 @@
+---------------------------------------------------------                       
+augmented_mcqa_eval_augment_model_m3_full_question (200 samples):               
+vllm/meta-llama/Llama-3.1-8B-Instruct                                           
+max_tokens: 32768, reasoning_effort: medium, fail_on_error: False,              
+retry_on_error: 2, dataset: (samples)                                           
+---------------------------------------------------------                       
+                                                                                
+Steps:  10/200   5% | Samples:   1/200 | mean:  n/a | vllm:  0/10 | HTTP retries: 0
+Steps:  16/200   8% | Samples:  12/200 | mean: 0.55 | vllm:  2/10 | HTTP retries: 0
+Steps:  20/200  10% | Samples:  17/200 | mean: 0.53 | vllm:  6/10 | HTTP retries: 0
+Steps:  22/200  11% | Samples:  22/200 | mean: 0.52 | vllm:  9/10 | HTTP retries: 1
+Steps:  30/200  15% | Samples:  23/200 | mean: 0.50 | vllm:  2/10 | HTTP retries: 1
+Steps:  40/200  20% | Samples:  31/200 | mean: 0.47 | vllm:  0/10 | HTTP retries: 3
+Steps:  50/200  25% | Samples:  41/200 | mean: 0.53 | vllm:  0/10 | HTTP retries: 4
+Steps:  60/200  30% | Samples:  51/200 | mean: 0.54 | vllm:  0/10 | HTTP retries: 5
+Steps:  70/200  35% | Samples:  61/200 | mean: 0.52 | vllm:  0/10 | HTTP retries: 5
+Steps:  80/200  40% | Samples:  71/200 | mean: 0.50 | vllm:  0/10 | HTTP retries: 5
+Steps:  90/200  45% | Samples:  81/200 | mean: 0.53 | vllm:  0/10 | HTTP retries: 5
+Steps:  92/200  46% | Samples:  92/200 | mean: 0.52 | vllm:  5/10 | HTTP retries: 5
+Steps: 101/200  50% | Samples:  99/200 | mean: 0.54 | vllm:  4/10 | HTTP retries: 5
+Steps: 106/200  53% | Samples: 106/200 | mean: 0.56 | vllm:  8/10 | HTTP retries: 5
+Steps: 116/200  57% | Samples: 111/200 | mean: 0.55 | vllm:  3/10 | HTTP retries: 6
+Steps: 120/200  60% | Samples: 120/200 | mean: 0.56 | vllm:  8/10 | HTTP retries: 6
+Steps: 131/200  65% | Samples: 125/200 | mean: 0.55 | vllm:  3/10 | HTTP retries: 6
+Steps: 135/200  67% | Samples: 135/200 | mean: 0.54 | vllm:  5/10 | HTTP retries: 6
+Steps: 145/200  72% | Samples: 141/200 | mean: 0.55 | vllm:  5/10 | HTTP retries: 6
+Steps: 153/200  76% | Samples: 148/200 | mean: 0.54 | vllm:  3/10 | HTTP retries: 7
+Steps: 161/200  80% | Samples: 159/200 | mean: 0.56 | vllm:  5/10 | HTTP retries: 8
+Steps: 169/200  84% | Samples: 167/200 | mean: 0.56 | vllm:  5/10 | HTTP retries: 8
+Steps: 177/200  88% | Samples: 175/200 | mean: 0.57 | vllm:  5/10 | HTTP retries: 9
+Steps: 186/200  93% | Samples: 184/200 | mean: 0.57 | vllm:  5/10 | HTTP retries: 9
+Steps: 193/200  96% | Samples: 191/200 | mean: 0.56 | vllm:  5/10 | HTTP retries: 9
+Steps: 200/200 100% | Samples: 200/200 | mean: 0.57 | vllm:  0/10 | HTTP retries: 9
+
+---------------------------------------------------------                       
+augmented_mcqa_eval_augment_model_m3_full_question (200 samples):               
+vllm/meta-llama/Llama-3.1-8B-Instruct                                           
+max_tokens: 32768, reasoning_effort: medium, fail_on_error: False,              
+retry_on_error: 2, dataset: (samples)                                           
+                                                                                
+total time:                               0:04:55                               
+vllm/meta-llama/Llama-3.1-8B-Instruct     51,371 tokens [I: 49,371, O: 2,000]   
+augmented_mcqa_eval                                                             
+mean                 0.580                                                      
+stderr               0.035                                                      
+Log:                                                                            
+results/inspect/evaluation/gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/…
+---------------------------------------------------------                       
+                                                                                
+Evaluation logs: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/results/inspect/evaluation/gen_gpt52_v2/gen_gpt52_v2/openai_gpt-5.2-2025-12-11/vllm_meta-llama_Llama-3.1-8B-Instruct
+Running: /fs/nexus-projects/rlab/atrey/qgqa/augmented-mcqa/.venv/bin/python3 main.py evaluate --model vllm/meta-llama/Llama-3.1-8B-Instruct --run-name gen_gpt52_v2 --generator gpt52 --dataset-types arc_challenge --settings augment_model_m3 --modes full_question --question-start 0 --limit 995 --skip-collect-evaluated --max-tokens 32768 --reasoning-effort medium --retry-on-error 2
